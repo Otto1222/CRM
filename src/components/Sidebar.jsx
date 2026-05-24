@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, Users, ClipboardList,
-  ScrollText, UserCheck, Calendar, Settings, LogOut, Wrench,
+  ScrollText, UserCheck, Calendar, Settings, LogOut, Sun,
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import Avatar from "./Avatar";
@@ -27,9 +27,9 @@ export default function Sidebar({ page, onNav, user, onLogout }) {
       {/* Logo */}
       <div style={{ padding: "24px 20px 18px", borderBottom: `1px solid ${C.sidebarBorder}`, display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 36, height: 36, background: C.accent, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Wrench size={18} color="#fff" />
+          <Sun size={18} color="#fff" />
         </div>
-        <span style={{ fontFamily: FONT_HEADING, color: "#fff", fontWeight: 800, fontSize: 18 }}>SzakiFlow</span>
+        <span style={{ fontFamily: FONT_HEADING, color: "#fff", fontWeight: 800, fontSize: 18 }}>CRM Napelem</span>
       </div>
 
       {/* Nav */}

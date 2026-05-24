@@ -1,7 +1,7 @@
 {
-  "name": "szakiflow-crm",
+  "name": "crm-napelem",
   "version": "1.0.0",
-  "description": "SzakiFlow – Munkavégzési és számlázási rendszer klímaszerelőknek",
+  "description": "CRM Napelem – Munkavégzési és számlázási rendszer klímaszerelőknek",
   "private": true,
   "scripts": {
     "dev": "vite",

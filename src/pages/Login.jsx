@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Wrench, CheckCircle2, Loader2 } from "lucide-react";
+import { Sun, CheckCircle2, Loader2 } from "lucide-react";
 import { USERS, C, FONT, FONT_HEADING } from "../lib/constants";
 import Avatar from "../components/Avatar";
 
 export default function Login({ onLogin }) {
-  const [sel, setSel]     = useState(null);
-  const [loading, setLd]  = useState(false);
+  const [sel, setSel]    = useState(null);
+  const [loading, setLd] = useState(false);
 
   async function submit() {
     if (!sel) return;
@@ -24,18 +24,16 @@ export default function Login({ onLogin }) {
       <div style={{
         animation: "fadeUp .4s ease",
         background: "#fff", borderRadius: 22,
-        padding: "44px 40px 36px", width: 440,
+        padding: "44px 40px 36px", width: "100%", maxWidth: 440,
         boxShadow: "0 32px 80px rgba(0,0,0,.35)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-          <div style={{ width: 44, height: 44, background: C.accent, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Wrench size={22} color="#fff" />
+          <div style={{ width: 48, height: 48, background: C.accent, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Sun size={26} color="#fff" />
           </div>
-          <span style={{ fontFamily: FONT_HEADING, fontSize: 26, fontWeight: 800, color: C.text }}>SzakiFlow</span>
+          <span style={{ fontFamily: FONT_HEADING, fontSize: 26, fontWeight: 800, color: C.text }}>CRM Napelem</span>
         </div>
-        <p style={{ color: C.muted, fontSize: 14, marginBottom: 32 }}>
-          Munkavégzési &amp; számlázási rendszer
-        </p>
+        <p style={{ color: C.muted, fontSize: 14, marginBottom: 32 }}>Munkavégzési &amp; számlázási rendszer</p>
 
         <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: C.muted, textTransform: "uppercase", marginBottom: 12 }}>
           Felhasználó kiválasztása
@@ -70,7 +68,6 @@ export default function Login({ onLogin }) {
         }}>
           {loading ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> : "Belépés"}
         </button>
-
         <p style={{ textAlign: "center", fontSize: 12, color: C.muted, marginTop: 20 }}>
           🔒 Google Drive szinkronizáció aktív
         </p>

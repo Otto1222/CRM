@@ -1,7 +1,7 @@
 /**
  * Google Drive MCP integráció
  * Adatok mentése/betöltése felhasználónként
- * Elérési út: SzakiFlow/{userId}/data.json
+ * Elérési út: CRM Napelem/{userId}/data.json
  */
 
 async function callDriveMCP(prompt, maxTokens = 1000) {
@@ -31,7 +31,7 @@ async function callDriveMCP(prompt, maxTokens = 1000) {
 export async function driveLoad(userId, key = "data") {
   try {
     const text = await callDriveMCP(
-      `Olvasd ki a "SzakiFlow/${userId}/${key}.json" fájl tartalmát a Google Drive-ból. Csak a JSON tartalmat add vissza.`
+      `Olvasd ki a "CRM Napelem/${userId}/${key}.json" fájl tartalmát a Google Drive-ból. Csak a JSON tartalmat add vissza.`
     );
     const clean = text.replace(/```json|```/g, "").trim();
     return clean === "null" || !clean ? null : JSON.parse(clean);
@@ -44,7 +44,7 @@ export async function driveLoad(userId, key = "data") {
 export async function driveSave(userId, data, key = "data") {
   try {
     await callDriveMCP(
-      `Mentsd el a következő JSON-t a "SzakiFlow/${userId}/${key}.json" fájlba (ha nem létezik, hozd létre a "SzakiFlow/${userId}" mappában): ${JSON.stringify(data)}`,
+      `Mentsd el a következő JSON-t a "CRM Napelem/${userId}/${key}.json" fájlba (ha nem létezik, hozd létre a "CRM Napelem/${userId}" mappában): ${JSON.stringify(data)}`,
       200
     );
     return true;
