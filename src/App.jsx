@@ -9,16 +9,19 @@ import Dashboard from "./pages/Dashboard";
 import { MunkalapLista, MunkalapDetail } from "./pages/Munkalapok";
 import Ugyfelek from "./pages/Ugyfelek";
 import AdminPanel from "./pages/AdminPanel";
+import MunkakiosztasBeallitasok from "./pages/MunkakiosztasBeallitasok";
+import Munkakiosztas from "./pages/Munkakiosztas";
 import ComingSoon from "./pages/ComingSoon";
 import {
   LayoutDashboard, FileText, Users, ClipboardList,
-  ScrollText, UserCheck, Calendar, Settings, LogOut, Sun, ChevronRight,
+  ScrollText, UserCheck, Calendar, Settings, LogOut, Sun, ChevronRight, Hammer,
 } from "lucide-react";
 import { FONT, FONT_HEADING } from "./lib/constants";
 import Avatar from "./components/Avatar";
 
 const PAGE_TITLES = {
   dashboard:"Irányítópult", munkalapok:"Munkalapok", ugyfelek:"Ügyfelek",
+  munkakiosztas:"Munkakiosztás",
   arajanlatok:"Árajánlatok", szerzodesek:"Szerződések", csapat:"Csapat",
   naptar:"Naptár", beallitasok:"Beállítások",
 };
@@ -34,14 +37,15 @@ function useIsMobile() {
 }
 
 const MOB_NAV = [
-  { id:"dashboard",   label:"Irányítópult", icon:LayoutDashboard, desc:"Összefoglaló & statisztikák" },
-  { id:"munkalapok",  label:"Munkalapok",   icon:FileText,        desc:"Munkák kezelése & számlázás" },
-  { id:"ugyfelek",    label:"Ügyfelek",     icon:Users,           desc:"Ügyféladatbázis" },
-  { id:"arajanlatok", label:"Árajánlatok",  icon:ClipboardList,   desc:"Ajánlatok készítése" },
-  { id:"szerzodesek", label:"Szerződések",  icon:ScrollText,      desc:"Szerződések kezelése" },
-  { id:"csapat",      label:"Csapat",       icon:UserCheck,       desc:"Munkatársak" },
-  { id:"naptar",      label:"Naptár",       icon:Calendar,        desc:"Ütemezés & időpontok" },
-  { id:"beallitasok", label:"Beállítások",  icon:Settings,        desc:"Felhasználók & beállítások" },
+  { id:"dashboard",     label:"Irányítópult",  icon:LayoutDashboard, desc:"Összefoglaló & statisztikák" },
+  { id:"munkalapok",    label:"Munkalapok",    icon:FileText,        desc:"Munkák kezelése & számlázás" },
+  { id:"munkakiosztas", label:"Munkakiosztás", icon:Hammer,          desc:"Excel import & csapat kiosztás" },
+  { id:"ugyfelek",      label:"Ügyfelek",      icon:Users,           desc:"Ügyféladatbázis" },
+  { id:"arajanlatok",   label:"Árajánlatok",   icon:ClipboardList,   desc:"Ajánlatok készítése" },
+  { id:"szerzodesek",   label:"Szerződések",   icon:ScrollText,      desc:"Szerződések kezelése" },
+  { id:"csapat",        label:"Csapat",        icon:UserCheck,       desc:"Munkatársak" },
+  { id:"naptar",        label:"Naptár",        icon:Calendar,        desc:"Ütemezés & időpontok" },
+  { id:"beallitasok",   label:"Beállítások",   icon:Settings,        desc:"Felhasználók & kiosztás" },
 ];
 
 function MobileSidebarFull({ page, onNav, user, onLogout }) {
@@ -92,16 +96,23 @@ function MobileSidebarFull({ page, onNav, user, onLogout }) {
   );
 }
 
-function PageContent({ page, sel, setSel, data, user, drive }) {
+function PageContent({ page, sel, setSel, data, user }) {
   if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} />;
-  if (page === "dashboard")   return <Dashboard data={data} user={user} />;
-  if (page === "munkalapok")  return <MunkalapLista data={data} onSelect={setSel} onNew={() => alert("Hamarosan: Új munkalap")} />;
-  if (page === "ugyfelek")    return <Ugyfelek data={data} />;
-  if (page === "beallitasok") return <AdminPanel currentUser={user} />;
-  if (page === "arajanlatok") return <ComingSoon title="Árajánlatok" />;
-  if (page === "szerzodesek") return <ComingSoon title="Szerződések" />;
-  if (page === "csapat")      return <ComingSoon title="Csapat" />;
-  if (page === "naptar")      return <ComingSoon title="Naptár" />;
+  if (page === "dashboard")     return <Dashboard data={data} user={user} />;
+  if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={() => alert("Hamarosan: Új munkalap")} />;
+  if (page === "munkakiosztas") return <Munkakiosztas />;
+  if (page === "ugyfelek")      return <Ugyfelek data={data} />;
+  if (page === "beallitasok")   return (
+    <div>
+      <AdminPanel currentUser={user} />
+      <div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} />
+      <MunkakiosztasBeallitasok />
+    </div>
+  );
+  if (page === "arajanlatok")   return <ComingSoon title="Árajánlatok" />;
+  if (page === "szerzodesek")   return <ComingSoon title="Szerződések" />;
+  if (page === "csapat")        return <ComingSoon title="Csapat" />;
+  if (page === "naptar")        return <ComingSoon title="Naptár" />;
   return null;
 }
 
@@ -135,9 +146,10 @@ export default function App() {
 
   if (!user) return <Login onLogin={setUser} />;
 
-  const topTitle = page === "munkalapok" && sel ? `${sel.id} – ${sel.title}` : PAGE_TITLES[page];
-  const topBack  = page === "munkalapok" && sel ? () => setSel(null) : isMobile ? () => setShowSidebar(true) : undefined;
-  const topBackLabel = page === "munkalapok" && sel ? "Munkalapok" : "Főmenü";
+  const isMunkalapDetail = page === "munkalapok" && sel;
+  const topTitle    = isMunkalapDetail ? `${sel.id}` : PAGE_TITLES[page];
+  const topBackFn   = isMunkalapDetail ? () => setSel(null) : isMobile ? () => setShowSidebar(true) : undefined;
+  const topBackLbl  = isMunkalapDetail ? "Munkalapok" : "Főmenü";
 
   if (isMobile) {
     if (showSidebar) return (
@@ -149,8 +161,8 @@ export default function App() {
     return (
       <div style={{ minHeight:"100vh", background:C.bg }}>
         <style>{gStyles}</style>
-        <TopBar title={topTitle} user={user} driveStatus={drive} onBack={topBack} backLabel={topBackLabel} isMobile />
-        <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} drive={drive} />
+        <TopBar title={topTitle} user={user} driveStatus={drive} onBack={topBackFn} backLabel={topBackLbl} isMobile />
+        <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} />
       </div>
     );
   }
@@ -160,8 +172,8 @@ export default function App() {
       <style>{gStyles}</style>
       <Sidebar page={page} onNav={p => { setPage(p); setSel(null); }} user={user} onLogout={logout} />
       <div style={{ flex:1, overflow:"auto" }}>
-        <TopBar title={topTitle} user={user} driveStatus={drive} onBack={page === "munkalapok" && sel ? () => setSel(null) : undefined} backLabel="Munkalapok" />
-        <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} drive={drive} />
+        <TopBar title={topTitle} user={user} driveStatus={drive} onBack={isMunkalapDetail ? () => setSel(null) : undefined} backLabel="Munkalapok" />
+        <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} />
       </div>
     </div>
   );
