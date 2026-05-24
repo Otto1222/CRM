@@ -1,9 +1,27 @@
 import { useState } from "react";
-import { Sun, CheckCircle2, Loader2, Eye, EyeOff, ArrowLeft, User, Lock, Mail, Shield } from "lucide-react";
+import { Sun, Loader2, Eye, EyeOff, ArrowLeft, Lock, Mail, User, CheckCircle2 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
-import { registerUser, loginUser, forgotPassword, ROLES } from "../lib/authApi";
+import { registerUser, loginUser, forgotPassword } from "../lib/authApi";
 
-// ─── Közös input komponens ────────────────────────────────────
+// ─── Előre definiált fiókok ───────────────────────────────────
+const PRESET_USERS = [
+  { name: "E.D.I. Solutions",  role: "Admin",            color: "#2563EB", initials: "ED" },
+  { name: "Kutasi László",     role: "Telepítő",         color: "#059669", initials: "KL" },
+  { name: "Csapat2",           role: "Telepítő",         color: "#9333EA", initials: "C2" },
+  { name: "Projektmenedzser",  role: "Projektmenedzser", color: "#D97706", initials: "PM" },
+  { name: "Iroda/Könyvelés",   role: "Iroda/Könyvelés",  color: "#0891B2", initials: "IK" },
+];
+
+// ─── Avatar ───────────────────────────────────────────────────
+function Avatar({ initials, color, size = 44 }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", background: color, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: size * 0.35, flexShrink: 0 }}>
+      {initials}
+    </div>
+  );
+}
+
+// ─── Input mező ───────────────────────────────────────────────
 function Input({ icon: Icon, type = "text", placeholder, value, onChange, right }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#F8FAFC", border: `1.5px solid ${C.border}`, borderRadius: 11, padding: "0 14px", marginBottom: 12 }}>
@@ -18,51 +36,143 @@ function Input({ icon: Icon, type = "text", placeholder, value, onChange, right 
   );
 }
 
-// ─── Hibaüzenet ───────────────────────────────────────────────
 function ErrorBox({ msg }) {
   if (!msg) return null;
-  return (
-    <div style={{ background: "#FEF2F2", border: `1px solid #FECACA`, borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: C.danger, display: "flex", alignItems: "center", gap: 8 }}>
-      ⚠️ {msg}
-    </div>
-  );
+  return <div style={{ background: "#FEF2F2", border: `1px solid #FECACA`, borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: C.danger }}>⚠️ {msg}</div>;
 }
-
-// ─── Sikeres üzenet ───────────────────────────────────────────
 function SuccessBox({ msg }) {
   if (!msg) return null;
-  return (
-    <div style={{ background: "#ECFDF5", border: `1px solid #A7F3D0`, borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: C.success, display: "flex", alignItems: "center", gap: 8 }}>
-      ✅ {msg}
-    </div>
-  );
+  return <div style={{ background: "#ECFDF5", border: `1px solid #A7F3D0`, borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: C.success }}>✅ {msg}</div>;
 }
 
-// ─── Fejléc ───────────────────────────────────────────────────
-function Header({ onBack, backLabel }) {
+// ════════════════════════════════════════════════════════
+// 1. FŐKÉPERNYŐ – felhasználó választó kártyák
+// ════════════════════════════════════════════════════════
+function UserSelectScreen({ onSelect }) {
   return (
-    <div style={{ marginBottom: 28 }}>
-      {onBack && (
-        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, color: C.accent, border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: FONT, marginBottom: 16 }}>
-          <ArrowLeft size={16} /> {backLabel}
-        </button>
-      )}
+    <div>
+      {/* Logo */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
         <div style={{ width: 48, height: 48, background: C.accent, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Sun size={26} color="#fff" />
         </div>
         <span style={{ fontFamily: FONT_HEADING, fontSize: 26, fontWeight: 800, color: C.text }}>CRM Napelem</span>
       </div>
-      <p style={{ color: C.muted, fontSize: 14 }}>Munkavégzési &amp; számlázási rendszer</p>
+      <p style={{ color: C.muted, fontSize: 14, marginBottom: 28 }}>Munkavégzési &amp; számlázási rendszer</p>
+
+      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: C.muted, textTransform: "uppercase", marginBottom: 14 }}>
+        Válassz fiókot
+      </p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {PRESET_USERS.map(u => (
+          <button
+            key={u.name}
+            onClick={() => onSelect(u)}
+            style={{
+              display: "flex", alignItems: "center", gap: 14,
+              padding: "14px 18px", borderRadius: 14,
+              border: `1.5px solid ${C.border}`,
+              background: "#fff",
+              cursor: "pointer", transition: "all .15s",
+              textAlign: "left", fontFamily: FONT,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = u.color; e.currentTarget.style.background = u.color + "08"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = "#fff"; }}
+          >
+            <Avatar initials={u.initials} color={u.color} size={46} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{u.name}</div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{u.role}</div>
+            </div>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: u.color + "15", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ color: u.color, fontSize: 16, fontWeight: 700 }}>›</span>
+            </div>
+          </button>
+        ))}
+      </div>
+      <p style={{ textAlign: "center", fontSize: 12, color: C.muted, marginTop: 20 }}>🔒 Google Drive szinkronizáció aktív</p>
     </div>
   );
 }
 
-// ════════════════════════════════════════════════════════════
-// BEJELENTKEZÉS
-// ════════════════════════════════════════════════════════════
-function LoginForm({ onSuccess, onRegister, onForgot }) {
+// ════════════════════════════════════════════════════════
+// 2. REGISZTRÁCIÓ – adott névhez, rögzített szerepkörrel
+// ════════════════════════════════════════════════════════
+function RegisterScreen({ preset, onBack, onSuccess }) {
   const [username, setUsername] = useState("");
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm,  setConfirm]  = useState("");
+  const [showPw,   setShowPw]   = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState("");
+  const [success,  setSuccess]  = useState("");
+
+  async function submit() {
+    setError("");
+    if (password !== confirm) { setError("A két jelszó nem egyezik!"); return; }
+    setLoading(true);
+    const res = await registerUser({
+      name:     preset.name,
+      username,
+      email,
+      password,
+      role:     preset.role,
+    });
+    setLoading(false);
+    if (!res.ok) { setError(res.error); return; }
+    setSuccess(`Sikeres regisztráció! Küldtünk egy e-mailt a ${email} címre.`);
+    setTimeout(() => onSuccess(res.user), 2200);
+  }
+
+  const pwToggle = (
+    <button onClick={() => setShowPw(p => !p)} style={{ border: "none", background: "none", cursor: "pointer", padding: 0 }}>
+      {showPw ? <EyeOff size={16} color={C.muted} /> : <Eye size={16} color={C.muted} />}
+    </button>
+  );
+
+  return (
+    <div>
+      {/* Vissza gomb */}
+      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, color: C.accent, border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: FONT, marginBottom: 22 }}>
+        <ArrowLeft size={16} /> Vissza a fiókválasztóhoz
+      </button>
+
+      {/* Kiválasztott fiók */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, background: preset.color + "10", border: `1.5px solid ${preset.color}30`, borderRadius: 14, padding: "14px 18px", marginBottom: 24 }}>
+        <Avatar initials={preset.initials} color={preset.color} size={46} />
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 16, color: C.text }}>{preset.name}</div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Szerepkör: <b style={{ color: preset.color }}>{preset.role}</b></div>
+        </div>
+      </div>
+
+      <p style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 18 }}>Fiók létrehozása</p>
+      <ErrorBox msg={error} />
+      <SuccessBox msg={success} />
+
+      {!success && <>
+        <Input icon={User}  placeholder="Felhasználónév"          value={username} onChange={setUsername} />
+        <Input icon={Mail}  placeholder="E-mail cím (kötelező)"   value={email}    onChange={setEmail} />
+        <Input icon={Lock}  type={showPw ? "text" : "password"} placeholder="Jelszó (min. 6 karakter)" value={password} onChange={setPassword} right={pwToggle} />
+        <Input icon={Lock}  type={showPw ? "text" : "password"} placeholder="Jelszó megerősítése"       value={confirm}  onChange={setConfirm}  right={pwToggle} />
+
+        <button onClick={submit} disabled={loading} style={{ width: "100%", marginTop: 8, padding: "13px", borderRadius: 12, border: "none", background: preset.color, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: FONT }}>
+          {loading ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> : "Regisztráció & E-mail küldés"}
+        </button>
+        <p style={{ textAlign: "center", fontSize: 12, color: C.muted, marginTop: 12 }}>📧 A belépési adatokat kiküldük az e-mail címedre</p>
+      </>}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════
+// 3. BEJELENTKEZÉS – adott névhez
+// ════════════════════════════════════════════════════════
+function LoginScreen({ preset, onBack, onSuccess, onForgot }) {
+  const [username, setUsername] = useState(preset.name); // előre kitöltve
   const [password, setPassword] = useState("");
   const [showPw,   setShowPw]   = useState(false);
   const [loading,  setLoading]  = useState(false);
@@ -76,13 +186,24 @@ function LoginForm({ onSuccess, onRegister, onForgot }) {
     onSuccess(res.user);
   }
 
-  function handleKey(e) { if (e.key === "Enter") submit(); }
-
   return (
     <div>
-      <Header />
-      <p style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>Bejelentkezés</p>
+      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, color: C.accent, border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: FONT, marginBottom: 22 }}>
+        <ArrowLeft size={16} /> Vissza a fiókválasztóhoz
+      </button>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 14, background: preset.color + "10", border: `1.5px solid ${preset.color}30`, borderRadius: 14, padding: "14px 18px", marginBottom: 24 }}>
+        <Avatar initials={preset.initials} color={preset.color} size={46} />
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 16, color: C.text }}>{preset.name}</div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Szerepkör: <b style={{ color: preset.color }}>{preset.role}</b></div>
+        </div>
+        <CheckCircle2 size={20} color={C.success} style={{ marginLeft: "auto" }} />
+      </div>
+
+      <p style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 18 }}>Bejelentkezés</p>
       <ErrorBox msg={error} />
+
       <Input icon={User} placeholder="Felhasználónév vagy e-mail" value={username} onChange={setUsername} />
       <Input
         icon={Lock} type={showPw ? "text" : "password"}
@@ -93,112 +214,40 @@ function LoginForm({ onSuccess, onRegister, onForgot }) {
           </button>
         }
       />
-      <div style={{ textAlign: "right", marginBottom: 20, marginTop: -4 }}>
+      <div style={{ textAlign: "right", marginBottom: 18, marginTop: -4 }}>
         <button onClick={onForgot} style={{ color: C.accent, border: "none", background: "none", cursor: "pointer", fontSize: 13, fontFamily: FONT }}>
           Elfelejtett jelszó?
         </button>
       </div>
-      <button onClick={submit} onKeyDown={handleKey} disabled={loading} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: C.accent, color: "#fff", fontWeight: 700, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: FONT, marginBottom: 14 }}>
+
+      <button onClick={submit} disabled={loading} style={{ width: "100%", padding: "13px", borderRadius: 12, border: "none", background: preset.color, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: FONT }}>
         {loading ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> : "Bejelentkezés"}
       </button>
-      <div style={{ textAlign: "center", fontSize: 14, color: C.muted }}>
+
+      <p style={{ textAlign: "center", fontSize: 13, color: C.muted, marginTop: 14 }}>
         Nincs még fiókod?{" "}
-        <button onClick={onRegister} style={{ color: C.accent, border: "none", background: "none", cursor: "pointer", fontWeight: 700, fontFamily: FONT, fontSize: 14 }}>
+        <button onClick={onForgot} style={{ color: C.accent, border: "none", background: "none", cursor: "pointer", fontWeight: 700, fontFamily: FONT, fontSize: 13 }}>
           Regisztráció
         </button>
-      </div>
+      </p>
     </div>
   );
 }
 
-// ════════════════════════════════════════════════════════════
-// REGISZTRÁCIÓ
-// ════════════════════════════════════════════════════════════
-function RegisterForm({ onBack, onSuccess }) {
-  const [name,     setName]     = useState("");
-  const [username, setUsername] = useState("");
-  const [email,    setEmail]    = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm,  setConfirm]  = useState("");
-  const [role,     setRole]     = useState("");
-  const [showPw,   setShowPw]   = useState(false);
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState("");
-  const [success,  setSuccess]  = useState("");
+// ════════════════════════════════════════════════════════
+// 4. ELFELEJTETT JELSZÓ
+// ════════════════════════════════════════════════════════
+function ForgotScreen({ preset, onBack }) {
+  const [email,   setEmail]   = useState("");
+  const [newPw,   setNewPw]   = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [showPw,  setShowPw]  = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState("");
+  const [success, setSuccess] = useState("");
 
   async function submit() {
-    setError(""); setSuccess("");
-    if (password !== confirm) { setError("A két jelszó nem egyezik!"); return; }
-    setLoading(true);
-    const res = await registerUser({ name, username, email, password, role });
-    setLoading(false);
-    if (!res.ok) { setError(res.error); return; }
-    setSuccess(`Sikeres regisztráció! Küldtünk egy e-mailt a ${email} címre a belépési adataiddal.`);
-    setTimeout(() => onSuccess(res.user), 2500);
-  }
-
-  return (
-    <div>
-      <Header onBack={onBack} backLabel="Vissza a bejelentkezéshez" />
-      <p style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>Új fiók létrehozása</p>
-      <ErrorBox msg={error} />
-      <SuccessBox msg={success} />
-
-      {!success && <>
-        <Input icon={User}   placeholder="Teljes név (pl. Kutasi László)" value={name}     onChange={setName} />
-        <Input icon={Shield} placeholder="Felhasználónév"                  value={username} onChange={setUsername} />
-        <Input icon={Mail}   placeholder="E-mail cím (kötelező)"           value={email}    onChange={setEmail} />
-        <Input
-          icon={Lock} type={showPw ? "text" : "password"}
-          placeholder="Jelszó (min. 6 karakter)" value={password} onChange={setPassword}
-          right={
-            <button onClick={() => setShowPw(p => !p)} style={{ border: "none", background: "none", cursor: "pointer", padding: 0 }}>
-              {showPw ? <EyeOff size={16} color={C.muted} /> : <Eye size={16} color={C.muted} />}
-            </button>
-          }
-        />
-        <Input icon={Lock} type={showPw ? "text" : "password"} placeholder="Jelszó megerősítése" value={confirm} onChange={setConfirm} />
-
-        {/* Szerepkör választó */}
-        <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: C.muted, textTransform: "uppercase", marginBottom: 10 }}>Szerepkör</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {ROLES.map(r => (
-              <button key={r.value} onClick={() => setRole(r.value)} style={{ padding: "10px 12px", borderRadius: 10, border: `2px solid ${role === r.value ? r.color : C.border}`, background: role === r.value ? r.color + "15" : "#fff", color: role === r.value ? r.color : C.textSub, fontWeight: role === r.value ? 700 : 400, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: FONT }}>
-                {role === r.value && <CheckCircle2 size={14} />}
-                {r.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button onClick={submit} disabled={loading} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: C.accent, color: "#fff", fontWeight: 700, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: FONT }}>
-          {loading
-            ? <><Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />Regisztráció…</>
-            : "Regisztráció & E-mail küldés"}
-        </button>
-        <p style={{ textAlign: "center", fontSize: 12, color: C.muted, marginTop: 12 }}>
-          📧 A belépési adatokat kiküldük az e-mail címedre
-        </p>
-      </>}
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════
-// ELFELEJTETT JELSZÓ
-// ════════════════════════════════════════════════════════════
-function ForgotForm({ onBack }) {
-  const [email,    setEmail]    = useState("");
-  const [newPw,    setNewPw]    = useState("");
-  const [confirm,  setConfirm]  = useState("");
-  const [showPw,   setShowPw]   = useState(false);
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState("");
-  const [success,  setSuccess]  = useState("");
-
-  async function submit() {
-    setError(""); setSuccess("");
+    setError("");
     if (newPw !== confirm) { setError("A két jelszó nem egyezik!"); return; }
     setLoading(true);
     const res = await forgotPassword(email, newPw);
@@ -208,26 +257,26 @@ function ForgotForm({ onBack }) {
     setTimeout(onBack, 3000);
   }
 
+  const pwToggle = (
+    <button onClick={() => setShowPw(p => !p)} style={{ border: "none", background: "none", cursor: "pointer", padding: 0 }}>
+      {showPw ? <EyeOff size={16} color={C.muted} /> : <Eye size={16} color={C.muted} />}
+    </button>
+  );
+
   return (
     <div>
-      <Header onBack={onBack} backLabel="Vissza a bejelentkezéshez" />
-      <p style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 8 }}>Jelszó visszaállítása</p>
+      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, color: C.accent, border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: FONT, marginBottom: 22 }}>
+        <ArrowLeft size={16} /> Vissza
+      </button>
+      <p style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 6 }}>Jelszó visszaállítása</p>
       <p style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Add meg a regisztrált e-mail címed és az új jelszót.</p>
       <ErrorBox msg={error} />
       <SuccessBox msg={success} />
       {!success && <>
-        <Input icon={Mail} placeholder="Regisztrált e-mail cím" value={email} onChange={setEmail} />
-        <Input
-          icon={Lock} type={showPw ? "text" : "password"}
-          placeholder="Új jelszó (min. 6 karakter)" value={newPw} onChange={setNewPw}
-          right={
-            <button onClick={() => setShowPw(p => !p)} style={{ border: "none", background: "none", cursor: "pointer", padding: 0 }}>
-              {showPw ? <EyeOff size={16} color={C.muted} /> : <Eye size={16} color={C.muted} />}
-            </button>
-          }
-        />
-        <Input icon={Lock} type={showPw ? "text" : "password"} placeholder="Új jelszó megerősítése" value={confirm} onChange={setConfirm} />
-        <button onClick={submit} disabled={loading} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: C.accent, color: "#fff", fontWeight: 700, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: FONT }}>
+        <Input icon={Mail} placeholder="Regisztrált e-mail cím"      value={email}   onChange={setEmail} />
+        <Input icon={Lock} type={showPw ? "text" : "password"} placeholder="Új jelszó (min. 6 karakter)" value={newPw}   onChange={setNewPw}   right={pwToggle} />
+        <Input icon={Lock} type={showPw ? "text" : "password"} placeholder="Új jelszó megerősítése"       value={confirm} onChange={setConfirm} right={pwToggle} />
+        <button onClick={submit} disabled={loading} style={{ width: "100%", marginTop: 8, padding: "13px", borderRadius: 12, border: "none", background: preset?.color || C.accent, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: FONT }}>
           {loading ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> : "Jelszó mentése & Küldés"}
         </button>
       </>}
@@ -235,19 +284,29 @@ function ForgotForm({ onBack }) {
   );
 }
 
-// ════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // FŐ EXPORT
-// ════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 export default function Login({ onLogin }) {
-  const [screen, setScreen] = useState("login"); // login | register | forgot
+  const [screen,      setScreen]     = useState("select"); // select | auth | register | forgot
+  const [selected,    setSelected]   = useState(null);
+  const [registeredUsers, setRegistered] = useState([]);
+
+  async function handleSelect(preset) {
+    setSelected(preset);
+    // Ellenőrizzük hogy már regisztrált-e ez a fiók
+    try {
+      const { loadUsers } = await import("../lib/authApi");
+      const users = await loadUsers();
+      const exists = users.find(u => u.name === preset.name);
+      setScreen(exists ? "login" : "register");
+    } catch {
+      setScreen("register"); // fallback: regisztráció
+    }
+  }
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: `linear-gradient(145deg, ${C.sidebar} 0%, #0a2540 60%, #1a3a5c 100%)`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 24, fontFamily: FONT,
-    }}>
+    <div style={{ minHeight: "100vh", background: `linear-gradient(145deg, ${C.sidebar} 0%, #0a2540 60%, #1a3a5c 100%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: FONT }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@700;800&display=swap');
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -256,17 +315,22 @@ export default function Login({ onLogin }) {
         input::placeholder { color: #94A3B8; }
       `}</style>
 
-      <div style={{
-        animation: "fadeUp .4s ease",
-        background: "#fff", borderRadius: 22,
-        padding: "40px 36px",
-        width: "100%", maxWidth: 460,
-        boxShadow: "0 32px 80px rgba(0,0,0,.35)",
-        maxHeight: "90vh", overflowY: "auto",
-      }}>
-        {screen === "login"    && <LoginForm    onSuccess={onLogin} onRegister={() => setScreen("register")} onForgot={() => setScreen("forgot")} />}
-        {screen === "register" && <RegisterForm onBack={() => setScreen("login")} onSuccess={onLogin} />}
-        {screen === "forgot"   && <ForgotForm   onBack={() => setScreen("login")} />}
+      <div style={{ animation: "fadeUp .4s ease", background: "#fff", borderRadius: 22, padding: "36px 32px", width: "100%", maxWidth: 460, boxShadow: "0 32px 80px rgba(0,0,0,.35)", maxHeight: "92vh", overflowY: "auto" }}>
+
+        {/* Logo csak a főképernyőn nem látszik belül (RegisterScreen/LoginScreen saját header) */}
+        {screen === "select" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+            <div style={{ width: 48, height: 48, background: C.accent, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Sun size={26} color="#fff" />
+            </div>
+            <span style={{ fontFamily: FONT_HEADING, fontSize: 26, fontWeight: 800, color: C.text }}>CRM Napelem</span>
+          </div>
+        )}
+
+        {screen === "select"   && <UserSelectScreen onSelect={handleSelect} />}
+        {screen === "register" && <RegisterScreen preset={selected} onBack={() => setScreen("select")} onSuccess={onLogin} />}
+        {screen === "login"    && <LoginScreen    preset={selected} onBack={() => setScreen("select")} onSuccess={onLogin} onForgot={() => setScreen("forgot")} />}
+        {screen === "forgot"   && <ForgotScreen   preset={selected} onBack={() => setScreen(selected ? "login" : "select")} />}
       </div>
     </div>
   );
