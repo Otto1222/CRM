@@ -28,17 +28,25 @@ function CimkeBadge({ label, color }) {
 // ═══════════════════════════════════════════════════════════════
 // LISTA
 // ═══════════════════════════════════════════════════════════════
-export function MunkalapLista({ data, onSelect, onNew, userRole }) {
+export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) {
   const [q, setQ] = useState("");
   const [tab, setTab] = useState("Összes");
   const isMobile = useIsMobile();
   const STATUSES = ["Összes","Folyamatban","Ütemezett","Kész","Meghiúsult","Megkezdésre Vár"];
 
-  const filtered = data.munkalapok.filter(m =>
-    (tab === "Összes" || m.status === tab) &&
-    (m.id.toLowerCase().includes(q.toLowerCase()) ||
-     (data.ugyfelek.find(u => u.id === m.clientId)?.name || "").toLowerCase().includes(q.toLowerCase()))
-  );
+  const filtered = data.munkalapok.filter(m => {
+    // Telepítőnek csak a nevéhez rendelt munkák
+    if (userRole === "Telepítő" && currentUser) {
+      const match = m.assigneeNev === currentUser.name ||
+                    m.csapatNev   === currentUser.name ||
+                    m.assigneeId  === currentUser.id;
+      if (!match) return false;
+    }
+    const clientNev = m.clientNev || data.ugyfelek?.find(u => u.id === m.clientId)?.name || "";
+    return (tab === "Összes" || m.status === tab) &&
+      (m.id.toLowerCase().includes(q.toLowerCase()) ||
+       clientNev.toLowerCase().includes(q.toLowerCase()));
+  });
 
   return (
     <div style={{ padding: isMobile ? "12px 16px" : "28px 32px", fontFamily: FONT }}>
@@ -77,7 +85,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole }) {
             </thead>
             <tbody>
               {filtered.map(m => {
-                const cl = data.ugyfelek.find(u=>u.id===m.clientId);
+                const cl = data.ugyfelek?.find(u=>u.id===m.clientId);
                 const as = USERS.find(u=>u.id===m.assigneeId);
                 const tot = totals(m.items||[]);
                 return (
@@ -107,7 +115,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole }) {
         /* Mobil kártyák */
         <div>
           {filtered.map(m => {
-            const cl = data.ugyfelek.find(u=>u.id===m.clientId);
+            const cl = data.ugyfelek?.find(u=>u.id===m.clientId);
             return (
               <button key={m.id} onClick={()=>onSelect(m)} style={{ width:"100%", background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", marginBottom:10, cursor:"pointer", textAlign:"left", fontFamily:FONT }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
@@ -117,7 +125,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole }) {
                 </div>
                 {m.status&&<span style={{ color:m.statusSzin||C.muted, fontSize:13, fontWeight:600 }}>{m.status}</span>}
                 {m.projektMegnevezes&&<p style={{ fontSize:13, color:C.textSub, marginTop:4 }}>{m.projektMegnevezes}</p>}
-                {cl&&<div style={{ marginTop:8 }}><p style={{ fontWeight:700, fontSize:14, color:C.text }}>{cl.name}</p><p style={{ fontSize:12, color:C.muted }}>{cl.address}</p></div>}
+                {(m.clientNev||cl)&&<div style={{ marginTop:8 }}><p style={{ fontWeight:700, fontSize:14, color:C.text }}>{m.clientNev||cl?.name}</p><p style={{ fontSize:12, color:C.muted }}>{m.clientCim||cl?.address}</p></div>}
               </button>
             );
           })}
@@ -549,7 +557,7 @@ function AdminMobileDetail({ m, data, userRole }) {
 // ADMIN/PM/IRODA – ASZTALI NÉZET
 // ═══════════════════════════════════════════════════════════════
 function AdminDesktopDetail({ m, data, userRole }) {
-  const cl = data.ugyfelek.find(u=>u.id===m.clientId);
+  const cl = data.ugyfelek?.find(u=>u.id===m.clientId);
   const as = USERS.find(u=>u.id===m.assigneeId);
   const tot = totals(m.items||[]);
   const [saving, setSaving] = useState(false);
