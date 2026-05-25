@@ -7,7 +7,7 @@ import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
 import Dashboard from "./pages/Dashboard";
-import { MunkalapLista, MunkalapDetail } from "./pages/Munkalapok";
+import { MunkalapLista, MunkalapDetail, UjMunkalapModal } from "./pages/Munkalapok";
 import Ugyfelek from "./pages/Ugyfelek";
 import AdminPanel from "./pages/AdminPanel";
 import MunkakiosztasBeallitasok from "./pages/MunkakiosztasBeallitasok";
@@ -100,7 +100,7 @@ function PageContent({ page, sel, setSel, data, user }) {
   const role = user?.role;
   if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} userRole={role} />;
   if (page === "dashboard")     return <Dashboard data={data} user={user} />;
-  if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={() => alert("Hamarosan: Új munkalap")} userRole={role} />;
+  if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={() => setUjMunkalapModal(true)} userRole={role} />;
   if (page === "munkakiosztas") return <Munkakiosztas />;
   if (page === "ugyfelek")      return <Ugyfelek data={data} />;
   if (page === "beallitasok")   return <div><AdminPanel currentUser={user} /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><MunkakiosztasBeallitasok /></div>;
@@ -118,6 +118,7 @@ export default function App() {
   const [data,        setData]        = useState(SAMPLE_DATA);
   const [drive,       setDrive]       = useState("idle");
   const [showSidebar, setShowSidebar] = useState(true);
+  const [ujMunkalapModal, setUjMunkalapModal] = useState(false);
   const isMobile = useIsMobile();
 
   const allowedPages = user ? getAllowedPages(user.role) : [];
@@ -149,6 +150,11 @@ export default function App() {
   }, [user]);
 
   function logout() { setUser(null); setSel(null); setPage("dashboard"); setShowSidebar(true); setData(SAMPLE_DATA); }
+
+  function handleUjMunkalapSave(ml) {
+    setData(prev => ({ ...prev, munkalapok: [ml, ...prev.munkalapok] }));
+    setUjMunkalapModal(false);
+  }
 
   if (!user) return <Login onLogin={setUser} />;
 
@@ -221,6 +227,7 @@ export default function App() {
         />
         <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} />
       </div>
+      {ujMunkalapModal && <UjMunkalapModal data={data} onClose={() => setUjMunkalapModal(false)} onSave={handleUjMunkalapSave} />}
     </div>
   );
 }
