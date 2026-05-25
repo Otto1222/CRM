@@ -35,10 +35,13 @@ export const USERS = [
 
 // ─── STÁTUSZ CONFIG ───────────────────────────────────────────
 export const STATUS_CFG = {
-  "Folyamatban": { bg:"#EFF6FF", text:"#2563EB", dot:"#2563EB" },
-  "Ütemezett":   { bg:"#FFFBEB", text:"#D97706", dot:"#D97706" },
-  "Kész":        { bg:"#ECFDF5", text:"#059669", dot:"#059669" },
-  "Meghiúsult":  { bg:"#FEF2F2", text:"#DC2626", dot:"#DC2626" },
+  "Folyamatban":            { bg:"#EFF6FF", text:"#2563EB", dot:"#2563EB" },
+  "Ütemezett":              { bg:"#FFFBEB", text:"#D97706", dot:"#D97706" },
+  "Kész":                   { bg:"#ECFDF5", text:"#059669", dot:"#059669" },
+  "Meghiúsult":             { bg:"#FEF2F2", text:"#DC2626", dot:"#DC2626" },
+  "Megkezdésre Vár":        { bg:"#F0F9FF", text:"#38BDF8", dot:"#38BDF8" },
+  "Munkavégzés Folyamatban":{ bg:"#EFF6FF", text:"#2563EB", dot:"#2563EB" },
+  "Befejezett":             { bg:"#ECFDF5", text:"#059669", dot:"#059669" },
 };
 
 export const ALL_STATUSES = ["Összes","Folyamatban","Ütemezett","Kész","Meghiúsult"];
