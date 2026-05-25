@@ -8,6 +8,7 @@ import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
 import Dashboard from "./pages/Dashboard";
 import { MunkalapLista, MunkalapDetail, UjMunkalapModal } from "./pages/Munkalapok";
+import UjMunkalap from "./pages/UjMunkalap";
 import Ugyfelek from "./pages/Ugyfelek";
 import AdminPanel from "./pages/AdminPanel";
 import MunkakiosztasBeallitasok from "./pages/MunkakiosztasBeallitasok";
@@ -100,7 +101,7 @@ function PageContent({ page, sel, setSel, data, user }) {
   const role = user?.role;
   if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} userRole={role} />;
   if (page === "dashboard")     return <Dashboard data={data} user={user} />;
-  if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={() => setUjMunkalapModal(true)} userRole={role} />;
+  if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={() => setUjMunkalapPage(true)} userRole={role} />;
   if (page === "munkakiosztas") return <Munkakiosztas />;
   if (page === "ugyfelek")      return <Ugyfelek data={data} />;
   if (page === "beallitasok")   return <div><AdminPanel currentUser={user} /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><MunkakiosztasBeallitasok /></div>;
@@ -119,6 +120,7 @@ export default function App() {
   const [drive,       setDrive]       = useState("idle");
   const [showSidebar, setShowSidebar] = useState(true);
   const [ujMunkalapModal, setUjMunkalapModal] = useState(false);
+  const [ujMunkalapPage, setUjMunkalapPage] = useState(false);
   const isMobile = useIsMobile();
 
   const allowedPages = user ? getAllowedPages(user.role) : [];
@@ -164,6 +166,14 @@ export default function App() {
   // ── TELEPÍTŐ SPECIÁLIS NÉZET ─────────────────────────────
   // Telepítőnél a munkalap detail saját TopBar-ral jelenik meg
   if (isMobile) {
+    // Új munkalap teljes képernyős oldal
+    if (ujMunkalapPage) return (
+      <div style={{ minHeight:"100vh", background:C.bg }}>
+        <style>{gStyles}</style>
+        <UjMunkalap data={data} onBack={() => setUjMunkalapPage(false)} onSave={ml => { handleUjMunkalapSave(ml); setUjMunkalapPage(false); }} />
+      </div>
+    );
+
     if (showSidebar && !isTelepito) {
       return (
         <div style={{ minHeight:"100vh", background:C.sidebar }}>
@@ -199,7 +209,7 @@ export default function App() {
                     Kilépés
                   </button>
                 </div>
-                <MunkalapLista data={data} onSelect={setSel} onNew={null} userRole={user.role} />
+                <MunkalapLista data={data} onSelect={setSel} onNew={() => setUjMunkalapPage(true)} userRole={user.role} />
               </div>
             ) : (
               <>
@@ -228,6 +238,11 @@ export default function App() {
         <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} />
       </div>
       {ujMunkalapModal && <UjMunkalapModal data={data} onClose={() => setUjMunkalapModal(false)} onSave={handleUjMunkalapSave} />}
+      {ujMunkalapPage && (
+        <div style={{ position:"fixed", inset:0, zIndex:50, background:C.bg, overflowY:"auto" }}>
+          <UjMunkalap data={data} onBack={() => setUjMunkalapPage(false)} onSave={ml => { handleUjMunkalapSave(ml); setUjMunkalapPage(false); }} />
+        </div>
+      )}
     </div>
   );
 }

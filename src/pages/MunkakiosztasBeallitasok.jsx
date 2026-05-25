@@ -282,3 +282,17 @@ export default function MunkakiosztasBeallitasok() {
     </div>
   );
 }
+
+// ─── Export: Eszköz kategória beállítások ────────────────────
+const LS_ESZKOZ = "crm_eszkoz_kategoriak";
+const DEFAULT_ESZKOZ_KAT = [
+  { id:"inverter",  label:"Inverter",              icon:"⚡", szin:"#2563EB" },
+  { id:"akku",      label:"Akkumulátor",            icon:"🔋", szin:"#059669" },
+  { id:"akku_vez",  label:"Akkumulátor vezérlő",    icon:"🖥️", szin:"#9333EA" },
+  { id:"energia_m", label:"Energia mérő",           icon:"📊", szin:"#D97706" },
+  { id:"tarto",     label:"Tartószerkezet elemek",  icon:"🏗️", szin:"#0891B2" },
+  { id:"ac_eszkoz", label:"AC eszközök",            icon:"🔌", szin:"#DC2626" },
+  { id:"dc_eszkoz", label:"DC eszközök",            icon:"⚡", szin:"#7C3AED" },
+  { id:"panel",     label:"Napelem panel",          icon:"☀️", szin:"#CA8A04" },
+  { id:"egyeb",     label:"Egyéb anyagok",          icon:"📦", szin:"#64748B" },
+];
