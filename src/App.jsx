@@ -198,7 +198,14 @@ export default function App() {
     // Az adatok megmaradnak a következő belépéshez.
   }
 
-  if (!user) return <Login onLogin={setUser} />;
+  // ── FEJLESZTÉSI MÓD: automatikus bejelentkezés ──────────────
+  // TODO: visszakapcsolni éles üzembe: if (!user) return <Login onLogin={setUser} />;
+  useEffect(() => {
+    if (!user) {
+      setUser({ id:"u1", name:"E.D.I. Solutions", role:"Admin", color:"#2563EB", initials:"ED" });
+    }
+  }, []);
+  if (!user) return null; // rövid villanás elkerülése
 
   const isMunkalapDetail = page === "munkalapok" && sel;
   const isTelepito = user.role === "Telepítő";
