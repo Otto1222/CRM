@@ -296,7 +296,7 @@ export default function App() {
               </button>
               <span style={{ fontSize:13, color:"#94A3B8", marginLeft:"auto" }}>{sel.id}</span>
             </div>
-            <MunkalapDetail m={sel} data={data} userRole={user.role} />
+            <MunkalapDetail m={sel} data={data} userRole={user.role} onBack={() => setSel(null)} onDelete={user.role !== "Telepítő" ? handleDeleteRequest : undefined} />
           </>
         ) : (
           <>
@@ -326,6 +326,7 @@ export default function App() {
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg }}>
       <style>{gStyles}</style>
+      {deleteConfirm && <DeleteConfirmModal ml={deleteConfirm} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteConfirm(null)} />}
       <Sidebar page={page} onNav={p => { setPage(p); setSel(null); }} user={user} onLogout={logout} allowedPages={allowedPages} />
       <div style={{ flex:1, overflow:"auto" }}>
         <TopBar
