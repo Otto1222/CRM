@@ -1,4 +1,5 @@
 import { useState } from "react";
+import TelepItoMunkalap from "./TelepItoMunkalap";
 import {
   Search, Plus, ChevronRight, FileText, Phone, MapPin,
   ClipboardList, Package, Ruler, Printer, Send, Loader2,
@@ -735,9 +736,9 @@ function TelepItoDetail({ m, data }) {
 // ═══════════════════════════════════════════════════════════════
 // FŐ EXPORT
 // ═══════════════════════════════════════════════════════════════
-export function MunkalapDetail({ m, data, userRole }) {
+export function MunkalapDetail({ m, data, userRole, onBack }) {
   const isMobile = useIsMobile();
-  if (userRole === "Telepítő") return <TelepItoDetail m={m} data={data} />;
+  if (userRole === "Telepítő") return <TelepItoMunkalap m={m} data={data} onBack={onBack||(() => window.history.back())} />;
   if (isMobile) return <AdminMobileDetail m={m} data={data} userRole={userRole} />;
   return <AdminDesktopDetail m={m} data={data} userRole={userRole} />;
 }

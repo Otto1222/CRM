@@ -111,7 +111,7 @@ function MobileSidebarFull({ page, onNav, user, onLogout, allowedPages }) {
 
 function PageContent({ page, sel, setSel, data, user, onNewMunkalap }) {
   const role = user?.role;
-  if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} userRole={role} />;
+  if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} userRole={role} onBack={() => setSel(null)} />;
   if (page === "dashboard")     return <Dashboard data={data} user={user} />;
   if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={onNewMunkalap} userRole={role} currentUser={user} />;
   if (page === "munkakiosztas") return <Munkakiosztas />;
