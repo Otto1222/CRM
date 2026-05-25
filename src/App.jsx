@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
 import { driveLoad, driveSave } from "./lib/driveApi";
-import { loadLocal, saveLocal, addItem } from "./lib/localDb";
+import { loadLocal, saveLocal, addItem, removeItem } from "./lib/localDb";
 import { getAllowedPages, getHomePage, canCreateMunkalap } from "./lib/roles";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
@@ -22,6 +22,46 @@ import {
 } from "lucide-react";
 import { FONT, FONT_HEADING } from "./lib/constants";
 import Avatar from "./components/Avatar";
+
+// ─── Törlés megerősítő modal ─────────────────────────────────
+function DeleteConfirmModal({ ml, onConfirm, onCancel }) {
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
+      <div style={{ background:"#fff", borderRadius:20, padding:"32px 28px", width:"100%", maxWidth:420, boxShadow:"0 20px 60px rgba(0,0,0,.3)", fontFamily:"'DM Sans',sans-serif" }}>
+        <div style={{ width:56, height:56, borderRadius:"50%", background:"#FEF2F2", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 20px" }}>
+          <span style={{ fontSize:28 }}>🗑️</span>
+        </div>
+        <h2 style={{ textAlign:"center", fontSize:20, fontWeight:800, color:"#0F172A", marginBottom:10 }}>
+          Munkalap törlése
+        </h2>
+        <p style={{ textAlign:"center", fontSize:14, color:"#64748B", marginBottom:6 }}>
+          Biztosan törölni szeretnéd ezt a munkalapot?
+        </p>
+        <div style={{ background:"#F8FAFC", borderRadius:12, padding:"12px 16px", margin:"16px 0 24px", textAlign:"center" }}>
+          <p style={{ fontWeight:800, fontSize:16, color:"#0F172A" }}>{ml.id}</p>
+          <p style={{ fontSize:13, color:"#64748B" }}>{ml.clientNev || ml.projektMegnevezes || ml.feladat || ""}</p>
+        </div>
+        <p style={{ textAlign:"center", fontSize:13, color:"#DC2626", marginBottom:24, fontWeight:600 }}>
+          ⚠️ Ez a művelet nem visszavonható! Az összes adat törlődik.
+        </p>
+        <div style={{ display:"flex", gap:12 }}>
+          <button
+            onClick={onCancel}
+            style={{ flex:1, padding:"13px", borderRadius:12, border:"1.5px solid #E2E8F0", background:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", color:"#475569", fontFamily:"'DM Sans',sans-serif" }}
+          >
+            Mégsem
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{ flex:1, padding:"13px", borderRadius:12, border:"none", background:"#DC2626", color:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}
+          >
+            Igen, törlöm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const PAGE_TITLES = {
   dashboard:"Irányítópult", munkalapok:"Munkalapok", ugyfelek:"Ügyfelek",
@@ -109,9 +149,9 @@ function MobileSidebarFull({ page, onNav, user, onLogout, allowedPages }) {
   );
 }
 
-function PageContent({ page, sel, setSel, data, user, onNewMunkalap }) {
+function PageContent({ page, sel, setSel, data, user, onNewMunkalap, onDelete }) {
   const role = user?.role;
-  if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} userRole={role} onBack={() => setSel(null)} />;
+  if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} userRole={role} onBack={() => setSel(null)} onDelete={onDelete} />;
   if (page === "dashboard")     return <Dashboard data={data} user={user} />;
   if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={onNewMunkalap} userRole={role} currentUser={user} />;
   if (page === "munkakiosztas") return <Munkakiosztas />;
@@ -176,6 +216,23 @@ export default function App() {
   }, [user]);
 
   // ─── Új munkalap mentése ──────────────────────────────────────
+  // ─── Törlés megerősítő dialog + törlés ─────────────────────
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // munkalap obj
+
+  function handleDeleteRequest(ml) {
+    setDeleteConfirm(ml);
+  }
+
+  function handleDeleteConfirm() {
+    if (!deleteConfirm) return;
+    const newMunkalapok = removeItem("munkalapok", deleteConfirm.id);
+    setData(prev => ({ ...prev, munkalapok: newMunkalapok }));
+    // Drive szinkron
+    driveSave("munkalapok", { munkalapok: newMunkalapok });
+    setSel(null);
+    setDeleteConfirm(null);
+  }
+
   function handleUjMunkalapSave(ml) {
     // 1. LocalStorage frissítés AZONNAL
     const newMunkalapok = addItem("munkalapok", ml);
@@ -230,6 +287,7 @@ export default function App() {
     return (
       <div style={{ minHeight:"100vh", background: isMunkalapDetail ? "#2C4A6E" : C.bg }}>
         <style>{gStyles}</style>
+        {deleteConfirm && <DeleteConfirmModal ml={deleteConfirm} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteConfirm(null)} />}
         {isMunkalapDetail ? (
           <>
             <div style={{ background:"#2C4A6E", padding:"44px 16px 0", display:"flex", alignItems:"center", gap:10 }}>
@@ -255,7 +313,7 @@ export default function App() {
             ) : (
               <>
                 <TopBar title={PAGE_TITLES[page]} user={user} driveStatus={drive} onBack={() => setShowSidebar(true)} backLabel="Főmenü" isMobile />
-                <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} onNewMunkalap={() => setUjMunkalapPage(true)} />
+                <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} onNewMunkalap={() => setUjMunkalapPage(true)} onDelete={handleDeleteRequest} />
               </>
             )}
           </>
@@ -276,7 +334,7 @@ export default function App() {
           onBack={isMunkalapDetail ? () => setSel(null) : undefined}
           backLabel="Munkalapok"
         />
-        <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} onNewMunkalap={() => setUjMunkalapPage(true)} />
+        <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} onNewMunkalap={() => setUjMunkalapPage(true)} onDelete={handleDeleteRequest} />
       </div>
     </div>
   );

@@ -487,7 +487,7 @@ function DetailHeader({ m, client, isMobile }) {
 // ═══════════════════════════════════════════════════════════════
 // ADMIN/PM/IRODA – MOBIL TAB NÉZET (árakkal, szerkesztéssel)
 // ═══════════════════════════════════════════════════════════════
-function AdminMobileDetail({ m, data, userRole }) {
+function AdminMobileDetail({ m, data, userRole, onDelete }) {
   const [tab, setTab] = useState(0);
   const client = data.ugyfelek.find(u=>u.id===m.clientId);
   const as = USERS.find(u=>u.id===m.assigneeId);
@@ -555,8 +555,8 @@ function AdminMobileDetail({ m, data, userRole }) {
                 {a.icon} {a.label}
               </button>
             ))}
-            <button style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#FEF2F2", color:C.danger, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT }}>
-              🗑️ Törlés
+            <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#FEF2F2", color:C.danger, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
+              🗑️ Munkalap törlése
             </button>
           </div>
         </div>
@@ -648,7 +648,7 @@ function AdminMobileDetail({ m, data, userRole }) {
 // ═══════════════════════════════════════════════════════════════
 // ADMIN/PM/IRODA – ASZTALI NÉZET
 // ═══════════════════════════════════════════════════════════════
-function AdminDesktopDetail({ m, data, userRole }) {
+function AdminDesktopDetail({ m, data, userRole, onDelete }) {
   const cl = data.ugyfelek?.find(u=>u.id===m.clientId);
   const as = USERS.find(u=>u.id===m.assigneeId);
   const tot = totals(m.items||[]);
@@ -749,11 +749,14 @@ function AdminDesktopDetail({ m, data, userRole }) {
         <FelhasznaltAnyagokCard m={m} />
         <Card style={{ padding:"20px 22px", marginTop:16 }}>
           <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Műveletek</h4>
-          {[{icon:Pencil,label:"Szerkesztés"},{icon:FileText,label:"PDF export"},{icon:Eye,label:"Előnézet"},{icon:Trash2,label:"Törlés",danger:true}].map(a=>(
-            <button key={a.label} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"transparent", color:a.danger?C.danger:C.textSub, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT }}>
+          {[{icon:Pencil,label:"Szerkesztés"},{icon:FileText,label:"PDF export"},{icon:Eye,label:"Előnézet"}].map(a=>(
+            <button key={a.label} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"transparent", color:C.textSub, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT }}>
               <a.icon size={15}/>{a.label}
             </button>
           ))}
+          <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"#FEF2F2", color:C.danger, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
+            <Trash2 size={15}/>Munkalap törlése
+          </button>
         </Card>
       </div>
     </div>
@@ -829,9 +832,9 @@ function TelepItoDetail({ m, data }) {
 // ═══════════════════════════════════════════════════════════════
 // FŐ EXPORT
 // ═══════════════════════════════════════════════════════════════
-export function MunkalapDetail({ m, data, userRole, onBack }) {
+export function MunkalapDetail({ m, data, userRole, onBack, onDelete }) {
   const isMobile = useIsMobile();
   if (userRole === "Telepítő") return <TelepItoMunkalap m={m} data={data} onBack={onBack||(() => window.history.back())} />;
-  if (isMobile) return <AdminMobileDetail m={m} data={data} userRole={userRole} />;
-  return <AdminDesktopDetail m={m} data={data} userRole={userRole} />;
+  if (isMobile) return <AdminMobileDetail m={m} data={data} userRole={userRole} onDelete={onDelete} />;
+  return <AdminDesktopDetail m={m} data={data} userRole={userRole} onDelete={onDelete} />;
 }
