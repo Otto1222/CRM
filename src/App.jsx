@@ -97,11 +97,11 @@ function MobileSidebarFull({ page, onNav, user, onLogout, allowedPages }) {
   );
 }
 
-function PageContent({ page, sel, setSel, data, user }) {
+function PageContent({ page, sel, setSel, data, user, onNewMunkalap }) {
   const role = user?.role;
   if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} userRole={role} />;
   if (page === "dashboard")     return <Dashboard data={data} user={user} />;
-  if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={() => setUjMunkalapPage(true)} userRole={role} />;
+  if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={onNewMunkalap} userRole={role} />;
   if (page === "munkakiosztas") return <Munkakiosztas />;
   if (page === "ugyfelek")      return <Ugyfelek data={data} />;
   if (page === "beallitasok")   return <div><AdminPanel currentUser={user} /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><MunkakiosztasBeallitasok /></div>;
@@ -214,7 +214,7 @@ export default function App() {
             ) : (
               <>
                 <TopBar title={PAGE_TITLES[page]} user={user} driveStatus={drive} onBack={() => setShowSidebar(true)} backLabel="Főmenü" isMobile />
-                <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} />
+                <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} onNewMunkalap={() => setUjMunkalapPage(true)} />
               </>
             )}
           </>
@@ -235,7 +235,7 @@ export default function App() {
           onBack={isMunkalapDetail ? () => setSel(null) : undefined}
           backLabel="Munkalapok"
         />
-        <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} />
+        <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} onNewMunkalap={() => setUjMunkalapPage(true)} />
       </div>
       {ujMunkalapModal && <UjMunkalapModal data={data} onClose={() => setUjMunkalapModal(false)} onSave={handleUjMunkalapSave} />}
       {ujMunkalapPage && (
