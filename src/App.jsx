@@ -1,22 +1,24 @@
 import { useState, useEffect } from "react";
 import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
-import { driveLoad } from "./lib/driveApi";
+import { driveLoad, driveSave } from "./lib/driveApi";
+import { loadLocal, saveLocal, addItem } from "./lib/localDb";
 import { getAllowedPages, getHomePage, canCreateMunkalap } from "./lib/roles";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
 import Dashboard from "./pages/Dashboard";
-import { MunkalapLista, MunkalapDetail, UjMunkalapModal } from "./pages/Munkalapok";
-import UjMunkalap from "./pages/UjMunkalap";
+import { MunkalapLista, MunkalapDetail } from "./pages/Munkalapok";
 import Ugyfelek from "./pages/Ugyfelek";
 import AdminPanel from "./pages/AdminPanel";
 import MunkakiosztasBeallitasok from "./pages/MunkakiosztasBeallitasok";
 import Munkakiosztas from "./pages/Munkakiosztas";
+import UjMunkalap from "./pages/UjMunkalap";
 import ComingSoon from "./pages/ComingSoon";
 import {
   LayoutDashboard, FileText, Users, ClipboardList,
-  ScrollText, UserCheck, Calendar, Settings, LogOut, Sun, ChevronRight, Hammer,
+  ScrollText, UserCheck, Calendar, Settings, LogOut,
+  Sun, ChevronRight, Hammer,
 } from "lucide-react";
 import { FONT, FONT_HEADING } from "./lib/constants";
 import Avatar from "./components/Avatar";
@@ -28,13 +30,23 @@ const PAGE_TITLES = {
 };
 
 function useIsMobile() {
-  const [mob, setMob] = useState(window.innerWidth < 768);
+  const [mob, setMob] = useState(window.innerWidth < 900);
   useEffect(() => {
-    const fn = () => setMob(window.innerWidth < 768);
+    const fn = () => setMob(window.innerWidth < 900);
     window.addEventListener("resize", fn);
     return () => window.removeEventListener("resize", fn);
   }, []);
   return mob;
+}
+
+// ─── Adatok inicializálása: localStorage → sample data ────────
+function initData() {
+  const localMl = loadLocal("munkalapok");
+  const localUk = loadLocal("ugyfelek");
+  return {
+    munkalapok: localMl ?? SAMPLE_DATA.munkalapok,
+    ugyfelek:   localUk ?? SAMPLE_DATA.ugyfelek,
+  };
 }
 
 const ALL_MOB_NAV = [
@@ -113,14 +125,14 @@ function PageContent({ page, sel, setSel, data, user, onNewMunkalap }) {
 }
 
 export default function App() {
-  const [user,        setUser]        = useState(null);
-  const [page,        setPage]        = useState("dashboard");
-  const [sel,         setSel]         = useState(null);
-  const [data,        setData]        = useState(SAMPLE_DATA);
-  const [drive,       setDrive]       = useState("idle");
-  const [showSidebar, setShowSidebar] = useState(true);
-  const [ujMunkalapModal, setUjMunkalapModal] = useState(false);
-  const [ujMunkalapPage, setUjMunkalapPage] = useState(false);
+  const [user,          setUser]          = useState(null);
+  const [page,          setPage]          = useState("dashboard");
+  const [sel,           setSel]           = useState(null);
+  // ── Adatok: localStorage-ból indul, Drive szinkronizál ───────
+  const [data,          setData]          = useState(initData);
+  const [drive,         setDrive]         = useState("idle");
+  const [showSidebar,   setShowSidebar]   = useState(true);
+  const [ujMunkalapPage,setUjMunkalapPage]= useState(false);
   const isMobile = useIsMobile();
 
   const allowedPages = user ? getAllowedPages(user.role) : [];
@@ -131,31 +143,59 @@ export default function App() {
     if (isMobile) setShowSidebar(false);
   }
 
+  // ─── Bejelentkezés után: Drive szinkron ──────────────────────
   useEffect(() => {
     if (!user) return;
-    // Telepítő automatikusan a munkalapokra kerül
     const home = getHomePage(user.role);
     setPage(home);
     setShowSidebar(user.role === "Telepítő" ? false : true);
 
+    // Szinkronizálás a Drive-ból (háttérben)
     (async () => {
       setDrive("saving");
-      const [ml, uk] = await Promise.all([driveLoad("munkalapok"), driveLoad("ugyfelek")]);
-      if (ml || uk) setData(prev => ({
-        ...prev,
-        munkalapok: ml?.munkalapok || prev.munkalapok,
-        ugyfelek:   uk?.ugyfelek   || prev.ugyfelek,
-      }));
+      const [ml, uk] = await Promise.all([
+        driveLoad("munkalapok"),
+        driveLoad("ugyfelek"),
+      ]);
+
+      let updated = false;
+      const next = { ...data };
+      if (ml?.munkalapok) { next.munkalapok = ml.munkalapok; updated = true; }
+      if (uk?.ugyfelek)   { next.ugyfelek   = uk.ugyfelek;   updated = true; }
+
+      if (updated) {
+        setData(next);
+        // Frissítjük a localStorage-t is a Drive adataival
+        if (ml?.munkalapok) saveLocal("munkalapok", ml.munkalapok);
+        if (uk?.ugyfelek)   saveLocal("ugyfelek",   uk.ugyfelek);
+      }
+
       setDrive("ok");
       setTimeout(() => setDrive("idle"), 2500);
     })();
   }, [user]);
 
-  function logout() { setUser(null); setSel(null); setPage("dashboard"); setShowSidebar(true); setData(SAMPLE_DATA); }
-
+  // ─── Új munkalap mentése ──────────────────────────────────────
   function handleUjMunkalapSave(ml) {
-    setData(prev => ({ ...prev, munkalapok: [ml, ...prev.munkalapok] }));
-    setUjMunkalapModal(false);
+    // 1. LocalStorage frissítés AZONNAL
+    const newMunkalapok = addItem("munkalapok", ml);
+    // 2. React state frissítés
+    setData(prev => ({ ...prev, munkalapok: newMunkalapok }));
+    // 3. Drive szinkron háttérben (nem blokkoló)
+    setDrive("saving");
+    driveSave("munkalapok", { munkalapok: newMunkalapok })
+      .then(ok => { setDrive(ok ? "ok" : "error"); setTimeout(() => setDrive("idle"), 2500); });
+    // 4. Visszaugrás a listára
+    setUjMunkalapPage(false);
+    setPage("munkalapok");
+    if (isMobile) setShowSidebar(false);
+  }
+
+  function logout() {
+    setUser(null); setSel(null); setPage("dashboard");
+    setShowSidebar(true); setUjMunkalapPage(false);
+    // FONTOS: kilépéskor NEM töröljük a localStorage-t!
+    // Az adatok megmaradnak a következő belépéshez.
   }
 
   if (!user) return <Login onLogin={setUser} />;
@@ -163,17 +203,22 @@ export default function App() {
   const isMunkalapDetail = page === "munkalapok" && sel;
   const isTelepito = user.role === "Telepítő";
 
-  // ── TELEPÍTŐ SPECIÁLIS NÉZET ─────────────────────────────
-  // Telepítőnél a munkalap detail saját TopBar-ral jelenik meg
-  if (isMobile) {
-    // Új munkalap teljes képernyős oldal
-    if (ujMunkalapPage) return (
+  // ─── Teljes képernyős Új munkalap oldal ──────────────────────
+  if (ujMunkalapPage) {
+    return (
       <div style={{ minHeight:"100vh", background:C.bg }}>
         <style>{gStyles}</style>
-        <UjMunkalap data={data} onBack={() => setUjMunkalapPage(false)} onSave={ml => { handleUjMunkalapSave(ml); setUjMunkalapPage(false); }} />
+        <UjMunkalap
+          data={data}
+          onBack={() => setUjMunkalapPage(false)}
+          onSave={handleUjMunkalapSave}
+        />
       </div>
     );
+  }
 
+  // ── MOBIL ─────────────────────────────────────────────────────
+  if (isMobile) {
     if (showSidebar && !isTelepito) {
       return (
         <div style={{ minHeight:"100vh", background:C.sidebar }}>
@@ -182,14 +227,11 @@ export default function App() {
         </div>
       );
     }
-
     return (
       <div style={{ minHeight:"100vh", background: isMunkalapDetail ? "#2C4A6E" : C.bg }}>
         <style>{gStyles}</style>
-        {/* Telepítőnél a munkalap detail saját fejléccel rendelkezik */}
         {isMunkalapDetail ? (
           <>
-            {/* Vissza gomb felül */}
             <div style={{ background:"#2C4A6E", padding:"44px 16px 0", display:"flex", alignItems:"center", gap:10 }}>
               <button onClick={() => setSel(null)} style={{ border:"none", background:"none", color:"#94A3B8", cursor:"pointer", display:"flex", alignItems:"center", gap:6, fontSize:13, fontFamily:FONT, fontWeight:600 }}>
                 <span style={{ fontSize:18 }}>←</span> {isTelepito ? "Feladatok" : "Munkalapok"}
@@ -200,7 +242,6 @@ export default function App() {
           </>
         ) : (
           <>
-            {/* Telepítőnek nincs TopBar, csak a lista */}
             {isTelepito ? (
               <div>
                 <div style={{ background:"#2C4A6E", padding:"44px 16px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -209,7 +250,7 @@ export default function App() {
                     Kilépés
                   </button>
                 </div>
-                <MunkalapLista data={data} onSelect={setSel} onNew={() => setUjMunkalapPage(true)} userRole={user.role} currentUser={user} />
+                <MunkalapLista data={data} onSelect={setSel} onNew={null} userRole={user.role} currentUser={user} />
               </div>
             ) : (
               <>
@@ -223,11 +264,11 @@ export default function App() {
     );
   }
 
-  // ── ASZTALI NÉZET ────────────────────────────────────────────
+  // ── ASZTALI ───────────────────────────────────────────────────
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg }}>
       <style>{gStyles}</style>
-      <Sidebar page={page} onNav={nav} user={user} onLogout={logout} allowedPages={allowedPages} />
+      <Sidebar page={page} onNav={p => { setPage(p); setSel(null); }} user={user} onLogout={logout} allowedPages={allowedPages} />
       <div style={{ flex:1, overflow:"auto" }}>
         <TopBar
           title={isMunkalapDetail ? sel.id : PAGE_TITLES[page]}
@@ -237,12 +278,6 @@ export default function App() {
         />
         <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} onNewMunkalap={() => setUjMunkalapPage(true)} />
       </div>
-      {ujMunkalapModal && <UjMunkalapModal data={data} onClose={() => setUjMunkalapModal(false)} onSave={handleUjMunkalapSave} />}
-      {ujMunkalapPage && (
-        <div style={{ position:"fixed", inset:0, zIndex:50, background:C.bg, overflowY:"auto" }}>
-          <UjMunkalap data={data} onBack={() => setUjMunkalapPage(false)} onSave={ml => { handleUjMunkalapSave(ml); setUjMunkalapPage(false); }} />
-        </div>
-      )}
     </div>
   );
 }
@@ -252,7 +287,7 @@ const gStyles = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'DM Sans', sans-serif; }
   button { font-family: 'DM Sans', sans-serif; }
-  input, textarea { font-family: 'DM Sans', sans-serif; }
+  input, textarea, select { font-family: 'DM Sans', sans-serif; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
   ::-webkit-scrollbar { width: 5px; }
