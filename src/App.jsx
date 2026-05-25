@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
 import { driveLoad } from "./lib/driveApi";
+import { getAllowedPages, getHomePage, canCreateMunkalap } from "./lib/roles";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
@@ -21,9 +22,8 @@ import Avatar from "./components/Avatar";
 
 const PAGE_TITLES = {
   dashboard:"Irányítópult", munkalapok:"Munkalapok", ugyfelek:"Ügyfelek",
-  munkakiosztas:"Munkakiosztás",
-  arajanlatok:"Árajánlatok", szerzodesek:"Szerződések", csapat:"Csapat",
-  naptar:"Naptár", beallitasok:"Beállítások",
+  munkakiosztas:"Munkakiosztás", arajanlatok:"Árajánlatok", szerzodesek:"Szerződések",
+  csapat:"Csapat", naptar:"Naptár", beallitasok:"Beállítások",
 };
 
 function useIsMobile() {
@@ -36,9 +36,9 @@ function useIsMobile() {
   return mob;
 }
 
-const MOB_NAV = [
+const ALL_MOB_NAV = [
   { id:"dashboard",     label:"Irányítópult",  icon:LayoutDashboard, desc:"Összefoglaló & statisztikák" },
-  { id:"munkalapok",    label:"Munkalapok",    icon:FileText,        desc:"Munkák kezelése & számlázás" },
+  { id:"munkalapok",    label:"Munkalapok",    icon:FileText,        desc:"Munkák kezelése" },
   { id:"munkakiosztas", label:"Munkakiosztás", icon:Hammer,          desc:"Excel import & csapat kiosztás" },
   { id:"ugyfelek",      label:"Ügyfelek",      icon:Users,           desc:"Ügyféladatbázis" },
   { id:"arajanlatok",   label:"Árajánlatok",   icon:ClipboardList,   desc:"Ajánlatok készítése" },
@@ -48,7 +48,8 @@ const MOB_NAV = [
   { id:"beallitasok",   label:"Beállítások",   icon:Settings,        desc:"Felhasználók & kiosztás" },
 ];
 
-function MobileSidebarFull({ page, onNav, user, onLogout }) {
+function MobileSidebarFull({ page, onNav, user, onLogout, allowedPages }) {
+  const navItems = ALL_MOB_NAV.filter(n => allowedPages.includes(n.id));
   return (
     <div style={{ minHeight:"100vh", background:C.sidebar, display:"flex", flexDirection:"column", fontFamily:FONT }}>
       <div style={{ padding:"52px 24px 24px", borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
@@ -70,8 +71,7 @@ function MobileSidebarFull({ page, onNav, user, onLogout }) {
         </div>
       </div>
       <nav style={{ flex:1, padding:"16px", overflowY:"auto" }}>
-        <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.5, color:"#3a5070", textTransform:"uppercase", marginBottom:10, paddingLeft:4 }}>Főmenü</p>
-        {MOB_NAV.map(({ id, label, icon:Icon, desc }) => {
+        {navItems.map(({ id, label, icon:Icon, desc }) => {
           const active = page === id;
           return (
             <button key={id} onClick={() => onNav(id)} style={{ width:"100%", display:"flex", alignItems:"center", gap:14, padding:"14px 16px", borderRadius:14, border:"none", background:active?"rgba(37,99,235,0.3)":"rgba(255,255,255,0.03)", cursor:"pointer", marginBottom:6, textAlign:"left", borderLeft:active?`3px solid ${C.accent}`:"3px solid transparent" }}>
@@ -97,18 +97,13 @@ function MobileSidebarFull({ page, onNav, user, onLogout }) {
 }
 
 function PageContent({ page, sel, setSel, data, user }) {
-  if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} />;
+  const role = user?.role;
+  if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} userRole={role} />;
   if (page === "dashboard")     return <Dashboard data={data} user={user} />;
-  if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={() => alert("Hamarosan: Új munkalap")} />;
+  if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={() => alert("Hamarosan: Új munkalap")} userRole={role} />;
   if (page === "munkakiosztas") return <Munkakiosztas />;
   if (page === "ugyfelek")      return <Ugyfelek data={data} />;
-  if (page === "beallitasok")   return (
-    <div>
-      <AdminPanel currentUser={user} />
-      <div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} />
-      <MunkakiosztasBeallitasok />
-    </div>
-  );
+  if (page === "beallitasok")   return <div><AdminPanel currentUser={user} /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><MunkakiosztasBeallitasok /></div>;
   if (page === "arajanlatok")   return <ComingSoon title="Árajánlatok" />;
   if (page === "szerzodesek")   return <ComingSoon title="Szerződések" />;
   if (page === "csapat")        return <ComingSoon title="Csapat" />;
@@ -125,10 +120,21 @@ export default function App() {
   const [showSidebar, setShowSidebar] = useState(true);
   const isMobile = useIsMobile();
 
-  function nav(p) { setPage(p); setSel(null); if (isMobile) setShowSidebar(false); }
+  const allowedPages = user ? getAllowedPages(user.role) : [];
+
+  function nav(p) {
+    if (!allowedPages.includes(p)) return;
+    setPage(p); setSel(null);
+    if (isMobile) setShowSidebar(false);
+  }
 
   useEffect(() => {
     if (!user) return;
+    // Telepítő automatikusan a munkalapokra kerül
+    const home = getHomePage(user.role);
+    setPage(home);
+    setShowSidebar(user.role === "Telepítő" ? false : true);
+
     (async () => {
       setDrive("saving");
       const [ml, uk] = await Promise.all([driveLoad("munkalapok"), driveLoad("ugyfelek")]);
@@ -142,37 +148,77 @@ export default function App() {
     })();
   }, [user]);
 
-  function logout() { setUser(null); setSel(null); setPage("dashboard"); setShowSidebar(true); }
+  function logout() { setUser(null); setSel(null); setPage("dashboard"); setShowSidebar(true); setData(SAMPLE_DATA); }
 
   if (!user) return <Login onLogin={setUser} />;
 
   const isMunkalapDetail = page === "munkalapok" && sel;
-  const topTitle    = isMunkalapDetail ? `${sel.id}` : PAGE_TITLES[page];
-  const topBackFn   = isMunkalapDetail ? () => setSel(null) : isMobile ? () => setShowSidebar(true) : undefined;
-  const topBackLbl  = isMunkalapDetail ? "Munkalapok" : "Főmenü";
+  const isTelepito = user.role === "Telepítő";
 
+  // ── TELEPÍTŐ SPECIÁLIS NÉZET ─────────────────────────────
+  // Telepítőnél a munkalap detail saját TopBar-ral jelenik meg
   if (isMobile) {
-    if (showSidebar) return (
-      <div style={{ minHeight:"100vh", background:C.sidebar }}>
-        <style>{gStyles}</style>
-        <MobileSidebarFull page={page} onNav={nav} user={user} onLogout={logout} />
-      </div>
-    );
+    if (showSidebar && !isTelepito) {
+      return (
+        <div style={{ minHeight:"100vh", background:C.sidebar }}>
+          <style>{gStyles}</style>
+          <MobileSidebarFull page={page} onNav={nav} user={user} onLogout={logout} allowedPages={allowedPages} />
+        </div>
+      );
+    }
+
     return (
-      <div style={{ minHeight:"100vh", background:C.bg }}>
+      <div style={{ minHeight:"100vh", background: isMunkalapDetail ? "#2C4A6E" : C.bg }}>
         <style>{gStyles}</style>
-        <TopBar title={topTitle} user={user} driveStatus={drive} onBack={topBackFn} backLabel={topBackLbl} isMobile />
-        <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} />
+        {/* Telepítőnél a munkalap detail saját fejléccel rendelkezik */}
+        {isMunkalapDetail ? (
+          <>
+            {/* Vissza gomb felül */}
+            <div style={{ background:"#2C4A6E", padding:"44px 16px 0", display:"flex", alignItems:"center", gap:10 }}>
+              <button onClick={() => setSel(null)} style={{ border:"none", background:"none", color:"#94A3B8", cursor:"pointer", display:"flex", alignItems:"center", gap:6, fontSize:13, fontFamily:FONT, fontWeight:600 }}>
+                <span style={{ fontSize:18 }}>←</span> {isTelepito ? "Feladatok" : "Munkalapok"}
+              </button>
+              <span style={{ fontSize:13, color:"#94A3B8", marginLeft:"auto" }}>{sel.id}</span>
+            </div>
+            <MunkalapDetail m={sel} data={data} userRole={user.role} />
+          </>
+        ) : (
+          <>
+            {/* Telepítőnek nincs TopBar, csak a lista */}
+            {isTelepito ? (
+              <div>
+                <div style={{ background:"#2C4A6E", padding:"44px 16px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <span style={{ fontFamily:FONT_HEADING, color:"#fff", fontWeight:800, fontSize:20 }}>Feladatok</span>
+                  <button onClick={logout} style={{ border:"none", background:"rgba(255,255,255,0.1)", color:"#94A3B8", cursor:"pointer", borderRadius:8, padding:"6px 12px", fontSize:12, fontFamily:FONT }}>
+                    Kilépés
+                  </button>
+                </div>
+                <MunkalapLista data={data} onSelect={setSel} onNew={null} userRole={user.role} />
+              </div>
+            ) : (
+              <>
+                <TopBar title={PAGE_TITLES[page]} user={user} driveStatus={drive} onBack={() => setShowSidebar(true)} backLabel="Főmenü" isMobile />
+                <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} />
+              </>
+            )}
+          </>
+        )}
       </div>
     );
   }
 
+  // ── ASZTALI NÉZET ────────────────────────────────────────────
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg }}>
       <style>{gStyles}</style>
-      <Sidebar page={page} onNav={p => { setPage(p); setSel(null); }} user={user} onLogout={logout} />
+      <Sidebar page={page} onNav={nav} user={user} onLogout={logout} allowedPages={allowedPages} />
       <div style={{ flex:1, overflow:"auto" }}>
-        <TopBar title={topTitle} user={user} driveStatus={drive} onBack={isMunkalapDetail ? () => setSel(null) : undefined} backLabel="Munkalapok" />
+        <TopBar
+          title={isMunkalapDetail ? sel.id : PAGE_TITLES[page]}
+          user={user} driveStatus={drive}
+          onBack={isMunkalapDetail ? () => setSel(null) : undefined}
+          backLabel="Munkalapok"
+        />
         <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} />
       </div>
     </div>
@@ -184,7 +230,7 @@ const gStyles = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'DM Sans', sans-serif; }
   button { font-family: 'DM Sans', sans-serif; }
-  input { font-family: 'DM Sans', sans-serif; }
+  input, textarea { font-family: 'DM Sans', sans-serif; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
   ::-webkit-scrollbar { width: 5px; }
