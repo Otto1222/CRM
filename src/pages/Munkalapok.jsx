@@ -29,6 +29,95 @@ function CimkeBadge({ label, color }) {
 // ═══════════════════════════════════════════════════════════════
 // LISTA
 // ═══════════════════════════════════════════════════════════════
+// ─── Időtartam formázó ───────────────────────────────────────
+function formatElapsedTime(startIso, endIso) {
+  if (!startIso) return null;
+  const start = new Date(startIso);
+  const end   = endIso ? new Date(endIso) : new Date();
+  const diff  = Math.max(0, Math.floor((end - start) / 1000));
+  const h = Math.floor(diff / 3600);
+  const m = Math.floor((diff % 3600) / 60);
+  const s = diff % 60;
+  return `${String(h).padStart(2,"0")} óra ${String(m).padStart(2,"0")} perc ${String(s).padStart(2,"0")} mp`;
+}
+
+function formatDateTime(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString("hu-HU", {
+    year:"numeric", month:"2-digit", day:"2-digit",
+    hour:"2-digit", minute:"2-digit", second:"2-digit"
+  });
+}
+
+// ─── Munka idő kártya (Admin/PM/Iroda nézetbe) ───────────────
+function MunkaIdoBontasCard({ m }) {
+  if (!m.megkezdesIdopont && !m.befejezesIdopont) return null;
+  const elapsed = formatElapsedTime(m.megkezdesIdopont, m.befejezesIdopont);
+  return (
+    <div style={{ marginTop:16, background:"#F0F9FF", border:"1px solid #BAE6FD", borderRadius:12, padding:"14px 16px" }}>
+      <p style={{ fontSize:11, fontWeight:700, color:"#0369A1", textTransform:"uppercase", letterSpacing:.8, marginBottom:12 }}>
+        ⏱ Munkaidő összesítés
+      </p>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+        <div>
+          <p style={{ fontSize:11, color:"#64748B", fontWeight:600, marginBottom:4 }}>Megkezdés időpontja</p>
+          <p style={{ fontSize:13, fontWeight:700, color:"#0369A1" }}>{formatDateTime(m.megkezdesIdopont)}</p>
+        </div>
+        <div>
+          <p style={{ fontSize:11, color:"#64748B", fontWeight:600, marginBottom:4 }}>
+            {m.befejezesIdopont ? "Lezárás időpontja" : "Folyamatban (aktuális)"}
+          </p>
+          <p style={{ fontSize:13, fontWeight:700, color: m.befejezesIdopont ? C.success : C.warning }}>
+            {formatDateTime(m.befejezesIdopont || new Date().toISOString())}
+          </p>
+        </div>
+      </div>
+      {elapsed && (
+        <div style={{ marginTop:12, padding:"10px 14px", background:"#fff", borderRadius:10, border:"1px solid #BAE6FD" }}>
+          <p style={{ fontSize:11, color:"#64748B", fontWeight:600, marginBottom:4 }}>Eltelt munkaidő</p>
+          <p style={{ fontSize:16, fontWeight:800, color:"#0369A1", fontFamily:"monospace" }}>{elapsed}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Felhasznált anyagok kártya (Admin/PM/Iroda) ─────────────
+function FelhasznaltAnyagokCard({ m }) {
+  const anyagok = m.felhasznaltAnyagok;
+  if (!anyagok || anyagok.length === 0) return null;
+  const SERIAL_ITEMS = ["Inverter","Optimalizáló","Akkumulátor modul","Akkumulátor vezérlő","Smart Méter","Tűzeseti leválasztó"];
+  return (
+    <div style={{ marginTop:16 }}>
+      <Card style={{ padding:"20px 22px" }}>
+        <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>
+          ⚙️ Felhasznált anyagok ({anyagok.length} tétel)
+        </h4>
+        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+          <thead>
+            <tr style={{ borderBottom:`2px solid ${C.border}` }}>
+              {["Megnevezés","Mennyiség","Sorozatszám"].map(h=>(
+                <th key={h} style={{ padding:"8px 10px", textAlign:"left", fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.7 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {anyagok.map((a,i) => (
+              <tr key={i} style={{ borderBottom:`1px solid ${C.border}` }}>
+                <td style={{ padding:"10px 10px", fontWeight:600, color:C.text }}>{a.nev}</td>
+                <td style={{ padding:"10px 10px", color:C.textSub, whiteSpace:"nowrap" }}>{a.menny} {a.egyseg}</td>
+                <td style={{ padding:"10px 10px", color: a.sorozatszam ? C.text : C.muted, fontFamily:"monospace", fontSize:12 }}>
+                  {a.sorozatszam || (a.kotelezőSerial ? "⚠️ Hiányzik!" : "—")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </div>
+  );
+}
+
 export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) {
   const [q, setQ] = useState("");
   const [tab, setTab] = useState("Összes");
@@ -446,6 +535,8 @@ function AdminMobileDetail({ m, data, userRole }) {
           <FieldRow label="Értékesítő" value={m.ertekesito}/>
           <FieldRow label="Dátum" value={m.date}/>
           {as&&<FieldRow label="Szerelő" value={as.name}/>}
+          <MunkaIdoBontasCard m={m} />
+          <FelhasznaltAnyagokCard m={m} />
           {/* Státusz */}
           <div style={{ padding:"16px" }}>
             <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, marginBottom:10 }}>Státusz módosítása</p>
@@ -586,10 +677,11 @@ function AdminDesktopDetail({ m, data, userRole }) {
             <StatusBadge s={m.status||"Ütemezett"}/>
           </div>
           <p style={{ fontSize:13.5, color:C.textSub, lineHeight:1.7 }}>{m.description}</p>
-          <div style={{ display:"flex", gap:24, marginTop:16 }}>
+          <div style={{ display:"flex", gap:24, marginTop:16, flexWrap:"wrap" }}>
             <div><span style={{ fontSize:11, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:.8 }}>Dátum</span><p style={{ fontSize:13, fontWeight:600, color:C.text, marginTop:3 }}>{m.date}</p></div>
             {as&&<div><span style={{ fontSize:11, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:.8 }}>Szerelő</span><div style={{ display:"flex", alignItems:"center", gap:7, marginTop:3 }}><Avatar u={as} size={24}/><span style={{ fontSize:13, fontWeight:600, color:C.text }}>{as.name}</span></div></div>}
           </div>
+          <MunkaIdoBontasCard m={m} />
         </Card>
         {canSeePrice(userRole)&&(
           <Card style={{ padding:"22px 24px" }}>
@@ -654,7 +746,8 @@ function AdminDesktopDetail({ m, data, userRole }) {
             })}
           </div>
         </Card>
-        <Card style={{ padding:"20px 22px" }}>
+        <FelhasznaltAnyagokCard m={m} />
+        <Card style={{ padding:"20px 22px", marginTop:16 }}>
           <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Műveletek</h4>
           {[{icon:Pencil,label:"Szerkesztés"},{icon:FileText,label:"PDF export"},{icon:Eye,label:"Előnézet"},{icon:Trash2,label:"Törlés",danger:true}].map(a=>(
             <button key={a.label} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"transparent", color:a.danger?C.danger:C.textSub, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT }}>
