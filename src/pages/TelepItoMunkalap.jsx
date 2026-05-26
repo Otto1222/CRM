@@ -88,13 +88,7 @@ function VbfInput({ value, onCommit, unit, piros }) {
         onBlur={()=>onCommit(local)} placeholder="0"
         style={{ flex:1, padding:"10px 12px", border:`1.5px solid ${piros&&empty?"#EF4444":C.border}`, borderRadius:9, fontSize:16, fontFamily:FONT, color:C.text, outline:"none", background:piros&&empty?"#FEF2F2":"#F8FAFC" }}/>
       <span style={{ width:44, fontSize:13, color:C.muted, textAlign:"right", flexShrink:0 }}>{unit}</span>
-    {showAlairas && (
-      <AlairasModal
-        m={m}
-        onClose={() => setShowAlairas(false)}
-        onSave={(alairasData) => handleBefejezes(alairasData)}
-      />
-    )}
+    </div>
   );
 }
 function MeroSor({ label, value, onCommit, unit, piros }) {
@@ -306,6 +300,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   useEffect(()=>{
     const toSave = Object.fromEntries(Object.entries(fotok).map(([k,v])=>[k,v.map(f=>({name:f.name,size:f.size,type:f.type,originalName:f.originalName}))]));
     saveLocal(`fotok_${m.id}`, toSave);
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection:`fotok_${m.id}` } }));
   },[fotok,m.id]);
 
   function updVbf(section,field,val) {
@@ -666,7 +661,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
           ))}
         </div>
         {figy&&<div style={{ background:"#FEF2F2",border:`1px solid #FECACA`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.danger }}>⚠️ A VBF Jegyzőkönyv hiányos! Írj "0"-t minden üres mezőbe.</div>}
-        <button onClick={handleBefejezes} style={{ width:"100%",padding:"15px",borderRadius:12,border:"none",background:C.success,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",fontFamily:FONT,display:"flex",alignItems:"center",justifyContent:"center",gap:8 }}>
+        <button onClick={handleBefejezesKezdete} style={{ width:"100%",padding:"15px",borderRadius:12,border:"none",background:C.success,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",fontFamily:FONT,display:"flex",alignItems:"center",justifyContent:"center",gap:8 }}>
           ✅ Munka befejezése
         </button>
       </div>
@@ -684,6 +679,13 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       {megkezdve&&activeTab===4&&<VbfTab/>}
       {megkezdve&&activeTab===5&&<FotokTab/>}
       {megkezdve&&activeTab===6&&<EllenorzesTab/>}
+      {showAlairas && (
+        <AlairasModal
+          m={m}
+          onClose={() => setShowAlairas(false)}
+          onSave={(alairasData) => handleBefejezes(alairasData)}
+        />
+      )}
     </div>
   );
 }
