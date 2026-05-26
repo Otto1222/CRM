@@ -7,6 +7,10 @@
 
 const SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL || "";
 
+// Drive mappa ID-k (CRM/CRM_db)
+export const DRIVE_DB_FOLDER_ID    = "1BDxc7MjKidp82A52dAeAArBWeNnqGVxJ";
+export const DRIVE_MUNKA_FOLDER_ID = "1gbns44t8w_h9eHjUODC41jjnwtTi2bpO";
+
 // ─── Alap POST hívás ──────────────────────────────────────────
 async function post(body) {
   if (!SCRIPT_URL) return { ok: false, offline: true };
