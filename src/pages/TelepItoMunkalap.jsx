@@ -6,6 +6,7 @@ import {
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AlairasModal from "../components/AlairasModal";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
+import { driveSave } from "../lib/driveApi";
 
 // ─── Sorozatszámot igénylő anyagok ────────────────────────
 const SERIAL_KEYWORDS = [
@@ -371,8 +372,6 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     
     // 2. Drive szinkron - az összes munkalap mentése
     try {
-      const { loadLocal } = await import("../lib/localDb");
-      const { driveSave } = await import("../lib/driveApi");
       const osszesMl = loadLocal("munkalapok") || [];
       await driveSave("munkalapok", { munkalapok: osszesMl });
     } catch(e) { console.warn("[Drive sync]", e); }
@@ -682,6 +681,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       {showAlairas && (
         <AlairasModal
           m={m}
+          userRole="Telepítő"
           onClose={() => setShowAlairas(false)}
           onSave={(alairasData) => handleBefejezes(alairasData)}
         />

@@ -25,7 +25,8 @@ function buildSzoveg(sablon, m, cegNev) {
     .replace(/\{csapat_neve\}/g,  m.assigneeNev|| "—");
 }
 
-export default function AlairasModal({ m, onClose, onSave }) {
+export default function AlairasModal({ m, onClose, onSave, userRole }) {
+  const canPrint = userRole && userRole !== "Telepítő";
   const canvasRef = useRef(null);
   const printRef  = useRef(null);
   const [drawing, setDrawing] = useState(false);
@@ -130,7 +131,7 @@ export default function AlairasModal({ m, onClose, onSave }) {
             <p style={{ color:"#94A3B8", fontSize:12 }}>{m.id} · {m.clientNev || ""}</p>
           </div>
           <div style={{ display:"flex", gap:8 }}>
-            {step==="preview" && (
+            {step==="preview" && canPrint && (
               <button onClick={handlePrint} style={{ border:"none", background:"rgba(255,255,255,0.15)", color:"#fff", cursor:"pointer", borderRadius:8, padding:"6px 12px", display:"flex", alignItems:"center", gap:5, fontSize:13 }}>
                 <Printer size={16}/> PDF
               </button>
@@ -155,9 +156,11 @@ export default function AlairasModal({ m, onClose, onSave }) {
               </p>
             </div>
             <div style={{ padding:"16px 24px", borderTop:`1px solid ${C.border}`, display:"flex", gap:10 }}>
-              <button onClick={handlePrint} style={{ flex:1, padding:"13px", borderRadius:12, border:`1.5px solid ${C.border}`, background:"#fff", color:C.text, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, fontFamily:FONT }}>
-                <Printer size={16}/> Nyomtatás / PDF
-              </button>
+              {canPrint && (
+                <button onClick={handlePrint} style={{ flex:1, padding:"13px", borderRadius:12, border:`1.5px solid ${C.border}`, background:"#fff", color:C.text, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, fontFamily:FONT }}>
+                  <Printer size={16}/> Nyomtatás / PDF
+                </button>
+              )}
               <button onClick={()=>setStep("sign")} style={{ flex:2, padding:"13px", borderRadius:12, border:"none", background:"#1e3a5c", color:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:FONT }}>
                 Tovább az aláíráshoz →
               </button>
@@ -202,9 +205,11 @@ export default function AlairasModal({ m, onClose, onSave }) {
             <p style={{ fontSize:20, fontWeight:800, color:C.text, marginBottom:8 }}>Aláírva!</p>
             <p style={{ fontSize:14, color:C.muted, marginBottom:24 }}>A jegyzőkönyv és az aláírás mentve lett a munkalaphoz.</p>
             <div style={{ display:"flex", gap:10 }}>
-              <button onClick={handlePrint} style={{ padding:"12px 20px", borderRadius:12, border:`1.5px solid ${C.border}`, background:"#fff", color:C.text, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:6, fontFamily:FONT }}>
-                <Printer size={16}/>PDF letöltés
-              </button>
+              {canPrint && (
+                <button onClick={handlePrint} style={{ padding:"12px 20px", borderRadius:12, border:`1.5px solid ${C.border}`, background:"#fff", color:C.text, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:6, fontFamily:FONT }}>
+                  <Printer size={16}/>PDF letöltés
+                </button>
+              )}
               <button onClick={onClose} style={{ padding:"12px 24px", borderRadius:12, border:"none", background:C.accent, color:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:FONT }}>
                 Bezárás
               </button>
