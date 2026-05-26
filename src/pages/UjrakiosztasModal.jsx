@@ -76,8 +76,8 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
     const e = {};
     if (!csapatId) e.csapat = "Válassz csapatot!";
     if (!datum)    e.datum  = "Add meg az új dátumot!";
-    if (!indoklas.trim() || indoklas.trim().length < 10)
-      e.indoklas = "Az indoklás kötelező (min. 10 karakter)!";
+    if (!indoklas.trim() || indoklas.trim().length < 3)
+      e.indoklas = "Az indoklás kötelező (min. 3 karakter)!";
     const hianySerial = plusAnyagok.filter(a => a.kotelezőSerial && !a.sorozatszam?.trim());
     if (hianySerial.length > 0)
       e.serial = `Hiányzó sorozatszám: ${hianySerial.map(a=>a.nev).join(", ")}`;
@@ -221,10 +221,10 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
                   <MessageSquare size={14}/> Indoklás (kötelező)
                 </label>
                 <textarea value={indoklas} onChange={e=>setIndoklas(e.target.value)}
-                  placeholder="Írd le az újrakiosztás okát (pl. csapat betegség, dátumütközés, stb.)"
+                  placeholder="Pl. csapat betegség, dátumütközés…"
                   rows={3}
                   style={{ width:"100%", padding:"11px 14px", border:`1.5px solid ${errors.indoklas?C.danger:C.border}`, borderRadius:10, fontSize:14, fontFamily:FONT, outline:"none", resize:"vertical", background:"#F8FAFC" }}/>
-                <p style={{ fontSize:11, color:C.muted, marginTop:4 }}>{indoklas.length}/200 karakter</p>
+                <p style={{ fontSize:11, color:C.muted, marginTop:4 }}>{indoklas.length} karakter (min. 3)</p>
                 {errors.indoklas && <p style={{ fontSize:12, color:C.danger }}>{errors.indoklas}</p>}
               </div>
 
@@ -250,6 +250,29 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
               <ReadOnlyField label="Jelenlegi dátum" value={m.date}/>
               <ReadOnlyField label="Jelenlegi csapat" value={m.assigneeNev}/>
               <ReadOnlyField label="Értékesítő" value={m.ertekesito}/>
+              {m.megkezdesIdopont && (
+                <div style={{ background:"#EFF6FF", borderRadius:10, padding:"12px 14px", marginTop:12, border:"1px solid #BFDBFE" }}>
+                  <p style={{ fontSize:12, fontWeight:700, color:"#0369A1", marginBottom:10, textTransform:"uppercase", letterSpacing:.7 }}>⏱ Munkaidő adatok</p>
+                  <ReadOnlyField label="Megkezdés időpontja" value={m.megkezdesIdopont ? new Date(m.megkezdesIdopont).toLocaleString("hu-HU", {year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}) : null}/>
+                  <ReadOnlyField label="Befejezés időpontja" value={m.befejezesIdopont ? new Date(m.befejezesIdopont).toLocaleString("hu-HU", {year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "Még folyamatban"}/>
+                  {m.megkezdesIdopont && (
+                    <div style={{ marginTop:8 }}>
+                      <p style={{ fontSize:11, color:"#64748B", fontWeight:600, textTransform:"uppercase", letterSpacing:.7, marginBottom:4 }}>Eltelt munkaidő</p>
+                      <div style={{ background:"#fff", borderRadius:8, padding:"9px 12px", fontSize:14, color:"#0369A1", fontWeight:800, fontFamily:"monospace", border:"1px solid #BAE6FD" }}>
+                        {(() => {
+                          const start = new Date(m.megkezdesIdopont);
+                          const end   = m.befejezesIdopont ? new Date(m.befejezesIdopont) : new Date();
+                          const diff  = Math.max(0, Math.floor((end - start) / 1000));
+                          const h = Math.floor(diff / 3600);
+                          const min = Math.floor((diff % 3600) / 60);
+                          const s = diff % 60;
+                          return `${String(h).padStart(2,"0")} óra ${String(min).padStart(2,"0")} perc ${String(s).padStart(2,"0")} mp`;
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               {(m.anyagok||[]).length > 0 && (
                 <div>
                   <p style={{ fontSize:12, color:C.muted, fontWeight:700, textTransform:"uppercase", letterSpacing:.7, marginBottom:10, marginTop:16 }}>Anyagok ({m.anyagok.length} tétel)</p>
