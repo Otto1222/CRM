@@ -1,4 +1,5 @@
 import { useState } from "react";
+import UjrakiosztasModal from "./UjrakiosztasModal";
 import TelepItoMunkalap from "./TelepItoMunkalap";
 import {
   Search, Plus, ChevronRight, FileText, Phone, MapPin,
@@ -487,7 +488,8 @@ function DetailHeader({ m, client, isMobile }) {
 // ═══════════════════════════════════════════════════════════════
 // ADMIN/PM/IRODA – MOBIL TAB NÉZET (árakkal, szerkesztéssel)
 // ═══════════════════════════════════════════════════════════════
-function AdminMobileDetail({ m, data, userRole, onDelete }) {
+function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
+  const [showUjrakiosztas, setShowUjrakiosztas] = useState(false);
   const [tab, setTab] = useState(0);
   const client = data.ugyfelek.find(u=>u.id===m.clientId);
   const as = USERS.find(u=>u.id===m.assigneeId);
@@ -558,8 +560,14 @@ function AdminMobileDetail({ m, data, userRole, onDelete }) {
             <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#FEF2F2", color:C.danger, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
               🗑️ Munkalap törlése
             </button>
+            <button onClick={()=>setShowUjrakiosztas(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#EFF6FF", color:C.accent, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
+              ✏️ Újrakiosztás / Szerkesztés
+            </button>
           </div>
         </div>
+      )}
+      {showUjrakiosztas && (
+        <UjrakiosztasModal m={m} data={data} onClose={() => setShowUjrakiosztas(false)} onSave={(updates) => { onRefresh && onRefresh(updates); setShowUjrakiosztas(false); }} />
       )}
 
       {/* Tab 1 – Anyagok + Számlázás */}
@@ -648,11 +656,12 @@ function AdminMobileDetail({ m, data, userRole, onDelete }) {
 // ═══════════════════════════════════════════════════════════════
 // ADMIN/PM/IRODA – ASZTALI NÉZET
 // ═══════════════════════════════════════════════════════════════
-function AdminDesktopDetail({ m, data, userRole, onDelete }) {
+function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
   const cl = data.ugyfelek?.find(u=>u.id===m.clientId);
   const as = USERS.find(u=>u.id===m.assigneeId);
   const tot = totals(m.items||[]);
   const [saving, setSaving] = useState(false);
+  const [showUjrakiosztas, setShowUjrakiosztas] = useState(false);
 
   async function issueInvoice() {
     setSaving(true);
@@ -749,7 +758,10 @@ function AdminDesktopDetail({ m, data, userRole, onDelete }) {
         <FelhasznaltAnyagokCard m={m} />
         <Card style={{ padding:"20px 22px", marginTop:16 }}>
           <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Műveletek</h4>
-          {[{icon:Pencil,label:"Szerkesztés"},{icon:FileText,label:"PDF export"},{icon:Eye,label:"Előnézet"}].map(a=>(
+          <button onClick={() => setShowUjrakiosztas(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"#EFF6FF", color:C.accent, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
+            <Pencil size={15}/>Újrakiosztás / Szerkesztés
+          </button>
+          {[{icon:FileText,label:"PDF export"},{icon:Eye,label:"Előnézet"}].map(a=>(
             <button key={a.label} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"transparent", color:C.textSub, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT }}>
               <a.icon size={15}/>{a.label}
             </button>
@@ -832,9 +844,9 @@ function TelepItoDetail({ m, data }) {
 // ═══════════════════════════════════════════════════════════════
 // FŐ EXPORT
 // ═══════════════════════════════════════════════════════════════
-export function MunkalapDetail({ m, data, userRole, onBack, onDelete }) {
+export function MunkalapDetail({ m, data, userRole, onBack, onDelete, onRefresh }) {
   const isMobile = useIsMobile();
   if (userRole === "Telepítő") return <TelepItoMunkalap m={m} data={data} onBack={onBack||(() => window.history.back())} />;
-  if (isMobile) return <AdminMobileDetail m={m} data={data} userRole={userRole} onDelete={onDelete} />;
-  return <AdminDesktopDetail m={m} data={data} userRole={userRole} onDelete={onDelete} />;
+  if (isMobile) return <AdminMobileDetail m={m} data={data} userRole={userRole} onDelete={onDelete} onRefresh={onRefresh} />;
+  return <AdminDesktopDetail m={m} data={data} userRole={userRole} onDelete={onDelete} onRefresh={onRefresh} />;
 }

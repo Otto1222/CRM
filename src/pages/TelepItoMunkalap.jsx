@@ -133,7 +133,7 @@ function FotoKartya({ kat, photos, onChange }) {
     const arr = Array.from(files).map((f,i) => {
       const ext = f.name.split(".").pop();
       const safe = kat.nev.replace(/[^a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/g,"_").replace(/_+/g,"_");
-      return { originalName:f.name, name:`${safe}_${photos.length+i+1}.${ext}`, size:f.size, type:f.type, url:URL.createObjectURL(f) };
+      return { originalName:f.name, name:`${safe}_${photos.length+i+1}.${ext}`, size:f.size, type:f.type, url:URL.createObjectURL(f), fileObj:f };
     });
     onChange([...photos, ...arr]);
   }
@@ -386,7 +386,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       
       // 2. Fotók feltöltése egyenként
       const osszesFoto = Object.entries(fotok).flatMap(([katId, photos]) =>
-        photos.filter(p => p.file || p.url).map(p => ({ ...p, katId }))
+        photos.filter(p => p.fileObj || p.file || (p.url && p.url.startsWith("blob:"))).map(p => ({ ...p, katId }))
       );
       
       if (osszesFoto.length === 0) return;
@@ -396,20 +396,26 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
         try {
           // Fájl base64 konverzió
           let base64 = "";
-          if (foto.file) {
+          // fileObj = tényleges File objektum (legmegbízhatóbb)
+          const fileSource = foto.fileObj || foto.file;
+          if (fileSource) {
             base64 = await new Promise(res => {
               const r = new FileReader();
               r.onload = e => res(e.target.result.split(",")[1]);
-              r.readAsDataURL(foto.file);
+              r.onerror = () => res("");
+              r.readAsDataURL(fileSource);
             });
           } else if (foto.url && foto.url.startsWith("blob:")) {
-            const resp = await fetch(foto.url);
-            const blob = await resp.blob();
-            base64 = await new Promise(res => {
-              const r = new FileReader();
-              r.onload = e => res(e.target.result.split(",")[1]);
-              r.readAsDataURL(blob);
-            });
+            try {
+              const resp = await fetch(foto.url);
+              const blob = await resp.blob();
+              base64 = await new Promise(res => {
+                const r = new FileReader();
+                r.onload = e => res(e.target.result.split(",")[1]);
+                r.onerror = () => res("");
+                r.readAsDataURL(blob);
+              });
+            } catch(e) { console.warn("blob fetch failed:", e); }
           }
           
           if (!base64) continue;
