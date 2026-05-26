@@ -152,7 +152,14 @@ function MobileSidebarFull({ page, onNav, user, onLogout, allowedPages }) {
 
 function PageContent({ page, sel, setSel, data, user, onNewMunkalap, onDelete }) {
   const role = user?.role;
-  if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} userRole={role} onBack={() => setSel(null)} onDelete={onDelete} />;
+  if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} userRole={role} onBack={(refresh) => {
+    setSel(null);
+    if (refresh) {
+      // Újratölti az adatokat localStorage-ból (frissítés után)
+      const fresh = loadLocal("munkalapok");
+      if (fresh) setData(prev => ({ ...prev, munkalapok: fresh }));
+    }
+  }} onDelete={onDelete} />;
   if (page === "dashboard")     return <Dashboard data={data} user={user} />;
   if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={onNewMunkalap} userRole={role} currentUser={user} />;
   if (page === "munkakiosztas") return <Munkakiosztas />;
@@ -304,7 +311,13 @@ export default function App() {
               </button>
               <span style={{ fontSize:13, color:"#94A3B8", marginLeft:"auto" }}>{sel.id}</span>
             </div>
-            <MunkalapDetail m={sel} data={data} userRole={user.role} onBack={() => setSel(null)} onDelete={user.role !== "Telepítő" ? handleDeleteRequest : undefined} />
+            <MunkalapDetail m={sel} data={data} userRole={user.role} onBack={(refresh) => {
+              setSel(null);
+              if (refresh) {
+                const fresh = loadLocal("munkalapok");
+                if (fresh) setData(prev => ({ ...prev, munkalapok: fresh }));
+              }
+            }} onDelete={user.role !== "Telepítő" ? handleDeleteRequest : undefined} />
           </>
         ) : (
           <>

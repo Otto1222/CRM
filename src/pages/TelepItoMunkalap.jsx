@@ -7,13 +7,27 @@ import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
 
 // ─── Sorozatszámot igénylő anyagok ────────────────────────
-const SERIAL_ITEMS = [
-  "Inverter", "Optimalizáló", "Akkumulátor modul",
-  "Akkumulátor vezérlő", "Smart Méter", "Tűzeseti leválasztó"
+const SERIAL_KEYWORDS = [
+  "inverter", "optimalizáló", "optimalizalo",
+  "akkumulátor modul", "akkumulator modul",
+  "akkumulátor vezérlő", "akkumulator vezerlő", "akkumulator vezerlő",
+  "smart méter", "smart meter", "eastron", "sdm",
+  "tűzeseti leválasztó", "tuzeseti levalaszto", "leválasztó", "levalaszto",
 ];
 
 function requiresSerial(nev) {
-  return SERIAL_ITEMS.some(s => nev?.toLowerCase().includes(s.toLowerCase()));
+  if (!nev) return false;
+  const lower = nev.toLowerCase()
+    .replace(/á/g,"a").replace(/é/g,"e").replace(/í/g,"i")
+    .replace(/ó/g,"o").replace(/ö/g,"o").replace(/ő/g,"o")
+    .replace(/ú/g,"u").replace(/ü/g,"u").replace(/ű/g,"u");
+  return SERIAL_KEYWORDS.some(k => {
+    const kl = k.toLowerCase()
+      .replace(/á/g,"a").replace(/é/g,"e").replace(/í/g,"i")
+      .replace(/ó/g,"o").replace(/ö/g,"o").replace(/ő/g,"o")
+      .replace(/ú/g,"u").replace(/ü/g,"u").replace(/ű/g,"u");
+    return lower.includes(kl);
+  });
 }
 
 // ─── Fotó kategóriák ──────────────────────────────────────
@@ -268,7 +282,8 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   const clientNev = m.clientNev||client?.name||"";
   const clientCim = m.clientCim||client?.address||"";
   const clientTel = m.clientTel||client?.phone||"";
-  const lezart    = m.lezarva || m.status==="Befejezett";
+  // Lezárt állapot: lokális state hogy azonnal frissüljön
+  const [lezart, setLezart] = useState(m.lezarva || m.status === "Befejezett");
 
   const [megkezdve,  setMegkezdve]  = useState(m.megkezdve||false);
   const [activeTab,  setActiveTab]  = useState(0);
@@ -331,40 +346,106 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     }
 
     const ts = new Date().toISOString();
-    updateItem("munkalapok",m.id,{ status:"Befejezett", statusSzin:"#059669", befejezesIdopont:ts, lezarva:true });
+    const updates = { status:"Befejezett", statusSzin:"#059669", befejezesIdopont:ts, lezarva:true };
+    
+    // 1. localStorage frissítés
+    updateItem("munkalapok", m.id, updates);
+    
+    // 2. Drive szinkron - az összes munkalap mentése
+    try {
+      const { loadLocal } = await import("../lib/localDb");
+      const { driveSave } = await import("../lib/driveApi");
+      const osszesMl = loadLocal("munkalapok") || [];
+      await driveSave("munkalapok", { munkalapok: osszesMl });
+    } catch(e) { console.warn("[Drive sync]", e); }
 
+    // 3. Helyi állapot frissítés
+    setLezart(true);
+    
     await new Promise(r=>setTimeout(r,600));
     setProgress(null);
-    onBack();
+    
+    // 4. Visszatérés - onBack hívja a parent refresh-t
+    onBack(true); // true = frissítsd az adatokat
   }
 
-  // Drive feltöltés: Claude/CRM/Munkák/{munkalap_id}/
+  // Drive feltöltés: Apps Script webhook-on keresztül
   async function uploadFotokToDrive() {
+    const scriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
+    if (!scriptUrl) { console.warn("[Drive] Nincs VITE_APPS_SCRIPT_URL"); return; }
+    
     try {
-      const osszesFoto = Object.entries(fotok).flatMap(([katId,photos])=>
-        photos.map(p=>({ ...p, kategoria:katId }))
+      // 1. Mappa létrehozás
+      setProgressMsg("Drive mappa létrehozása…");
+      await fetch(scriptUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "createMunkalapFolder", munkalapId: m.id }),
+      });
+      
+      // 2. Fotók feltöltése egyenként
+      const osszesFoto = Object.entries(fotok).flatMap(([katId, photos]) =>
+        photos.filter(p => p.file || p.url).map(p => ({ ...p, katId }))
       );
-      if (osszesFoto.length===0) return;
-
-      // API hívás a proxy-n keresztül
-      await fetch("/api/proxy",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          model:"claude-sonnet-4-20250514",
-          max_tokens:500,
-          system:"Hajtsd végre a feladatot.",
-          messages:[{ role:"user", content:
-            `Hozz létre egy mappát a Google Drive-ban: "Claude/CRM/Munkák/${m.id}" ha még nem létezik. ` +
-            `A mappában lesznek a feltöltött képek nevei: ${osszesFoto.map(f=>f.name).join(", ")}. ` +
-            `Csak a mappa létrehozásáról adj visszajelzést JSON-ban: {"ok":true}`
-          }],
-          mcp_servers:[{type:"url",url:"https://drivemcp.googleapis.com/mcp/v1",name:"gdrive"}],
+      
+      if (osszesFoto.length === 0) return;
+      
+      let feltoltve = 0;
+      for (const foto of osszesFoto) {
+        try {
+          // Fájl base64 konverzió
+          let base64 = "";
+          if (foto.file) {
+            base64 = await new Promise(res => {
+              const r = new FileReader();
+              r.onload = e => res(e.target.result.split(",")[1]);
+              r.readAsDataURL(foto.file);
+            });
+          } else if (foto.url && foto.url.startsWith("blob:")) {
+            const resp = await fetch(foto.url);
+            const blob = await resp.blob();
+            base64 = await new Promise(res => {
+              const r = new FileReader();
+              r.onload = e => res(e.target.result.split(",")[1]);
+              r.readAsDataURL(blob);
+            });
+          }
+          
+          if (!base64) continue;
+          
+          await fetch(scriptUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "saveFoto",
+              munkalapId: m.id,
+              fotoNev: foto.name,
+              fotoBase64: base64,
+              mimeType: foto.type || "image/jpeg",
+            }),
+          });
+          
+          feltoltve++;
+          setProgressMsg(`Fotók feltöltése Drive-ba… (${feltoltve}/${osszesFoto.length})`);
+        } catch(e) { console.warn("[foto upload]", foto.name, e); }
+      }
+      
+      // 3. VBF JSON mentés
+      await fetch(scriptUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "saveJson",
+          fileName: `vbf_${m.id}.json`,
+          content: vbf,
         }),
       });
+      
     } catch(e) {
       console.warn("[Drive upload]", e);
-      // Nem blokkolja a befejezést ha a Drive nem elérhető
     }
   }
 
