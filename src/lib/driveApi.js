@@ -1,92 +1,76 @@
 /**
  * driveApi.js – Google Drive szinkronizálás
- * Apps Script webhook-on keresztül (ingyenes, API kulcs nem kell)
- *
- * Beállítás:
- * 1. Google Drive → CRM/CRM_db/Apps_Script_telepito.gs tartalmát
- *    másold be egy új Google Apps Script projektbe
- * 2. Telepítsd webalkalmazásként (Futtatás → Webalkalmazásként telepítés)
- *    - Következőként futtatja: Én
- *    - Hozzáférés: Mindenki
- * 3. Másold be az URL-t az APPS_SCRIPT_URL változóba
- * 4. Vercel → Environment Variables → VITE_APPS_SCRIPT_URL = URL
+ * 
+ * Ha VITE_APPS_SCRIPT_URL be van állítva → Apps Script webhook
+ * Fallback: localStorage csak (offline mód)
  */
 
-const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL || "";
+const SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL || "";
 
-const FOLDER_IDS = {
-  db:    "1BDxc7MjKidp82A52dAeAArBWeNnqGVxJ",
-  munka: "1gbns44t8w_h9eHjUODC41jjnwtTi2bpO",
-};
-
-// ─── Alap hívás ───────────────────────────────────────────────
-async function callScript(body) {
-  if (!APPS_SCRIPT_URL) return { ok: false, error: "VITE_APPS_SCRIPT_URL nincs beállítva" };
+// ─── Alap POST hívás ──────────────────────────────────────────
+async function post(body) {
+  if (!SCRIPT_URL) return { ok: false, offline: true };
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(SCRIPT_URL, {
       method: "POST",
+      mode: "no-cors", // Apps Script CORS bypass
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    return await res.json();
+    // no-cors → response opaque, feltételezzük hogy OK volt
+    return { ok: true };
   } catch (e) {
-    console.warn("[driveApi]", e.message);
+    console.warn("[driveApi POST]", e.message);
     return { ok: false, error: e.message };
   }
 }
 
-async function getScript(params) {
-  if (!APPS_SCRIPT_URL) return { ok: false };
+// GET – adatok betöltése
+async function get(params) {
+  if (!SCRIPT_URL) return { ok: false, offline: true };
   try {
-    const url = new URL(APPS_SCRIPT_URL);
-    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k,v));
-    const res = await fetch(url.toString());
-    return await res.json();
+    const url = new URL(SCRIPT_URL);
+    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+    const res  = await fetch(url.toString());
+    const data = await res.json();
+    return data;
   } catch (e) {
+    console.warn("[driveApi GET]", e.message);
     return { ok: false };
   }
 }
 
-// ─── Betöltés Drive-ból ───────────────────────────────────────
+// ─── PUBLIC API ───────────────────────────────────────────────
+
 export async function driveLoad(collection) {
-  const res = await getScript({ action: "loadJson", fileName: `${collection}.json` });
-  if (res.ok && res.content) return res.content;
+  const res = await get({ action: "loadJson", fileName: `${collection}.json` });
+  if (res?.ok && res.content) return res.content;
   return null;
 }
 
-// ─── Mentés Drive-ba ──────────────────────────────────────────
 export async function driveSave(collection, data) {
-  const res = await callScript({ action: "saveJson", fileName: `${collection}.json`, content: data });
-  return res.ok === true;
+  return post({ action: "saveJson", fileName: `${collection}.json`, content: data });
 }
 
-// ─── VBF mentés ───────────────────────────────────────────────
 export async function driveVbfSave(munkalapId, vbfData) {
-  return callScript({
-    action: "saveJson",
-    fileName: `vbf_${munkalapId}.json`,
-    content: vbfData,
-    folderId: FOLDER_IDS.db,
-  });
+  return post({ action: "saveJson", fileName: `vbf_${munkalapId}.json`, content: vbfData });
 }
 
-// ─── Munkalap mappa létrehozás ────────────────────────────────
 export async function driveCreateMunkalapFolder(munkalapId) {
-  return callScript({ action: "createMunkalapFolder", munkalapId });
+  return post({ action: "createMunkalapFolder", munkalapId });
 }
 
-// ─── Fotó feltöltés ──────────────────────────────────────────
 export async function driveUploadFoto(munkalapId, file) {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64 = e.target.result.split(",")[1];
-      const res = await callScript({
-        action:   "saveFoto",
+      const res = await post({
+        action:     "saveFoto",
         munkalapId,
-        fotoNev:  file.name,
+        fotoNev:    file.name,
         fotoBase64: base64,
-        mimeType: file.type || "image/jpeg",
+        mimeType:   file.type || "image/jpeg",
       });
       resolve(res);
     };
@@ -95,8 +79,10 @@ export async function driveUploadFoto(munkalapId, file) {
   });
 }
 
-// ─── Kapcsolat teszt ─────────────────────────────────────────
 export async function drivePing() {
-  const res = await callScript({ action: "ping" });
-  return res.ok === true;
+  if (!SCRIPT_URL) return false;
+  const res = await get({ action: "ping" });
+  return res?.ok === true;
 }
+
+export const driveAvailable = () => !!SCRIPT_URL;

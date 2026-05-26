@@ -3,6 +3,7 @@ import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
 import { driveLoad, driveSave } from "./lib/driveApi";
 import { loadLocal, saveLocal, addItem, removeItem } from "./lib/localDb";
+import { drivePing, driveAvailable } from "./lib/driveApi";
 import { getAllowedPages, getHomePage, canCreateMunkalap } from "./lib/roles";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
@@ -171,6 +172,7 @@ export default function App() {
   // ── Adatok: localStorage-ból indul, Drive szinkronizál ───────
   const [data,          setData]          = useState(initData);
   const [drive,         setDrive]         = useState("idle");
+  const [driveOnline,   setDriveOnline]   = useState(false);
   const [showSidebar,   setShowSidebar]   = useState(true);
   const [ujMunkalapPage,setUjMunkalapPage]= useState(false);
   const isMobile = useIsMobile();
@@ -192,6 +194,12 @@ export default function App() {
 
     // Szinkronizálás a Drive-ból (háttérben)
     (async () => {
+      // Drive kapcsolat teszt
+      if (driveAvailable()) {
+        const online = await drivePing();
+        setDriveOnline(online);
+        if (online) setDrive("ok");
+      }
       setDrive("saving");
       const [ml, uk] = await Promise.all([
         driveLoad("munkalapok"),
