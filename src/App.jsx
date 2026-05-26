@@ -195,6 +195,29 @@ export default function App() {
     if (isMobile) setShowSidebar(false);
   }
 
+  // ─── Azonnali frissítés: localStorage változáskor ────────────
+  useEffect(() => {
+    function handleDbUpdate(e) {
+      const { collection } = e.detail || {};
+      if (collection === "munkalapok") {
+        const fresh = loadLocal("munkalapok");
+        if (fresh) setData(prev => ({ ...prev, munkalapok: fresh }));
+        // Ha éppen egy munkalap részletét nézzük, azt is frissítjük
+        setSel(prev => {
+          if (!prev) return prev;
+          const updated = fresh?.find(m => m.id === prev.id);
+          return updated || prev;
+        });
+      }
+      if (collection === "ugyfelek") {
+        const fresh = loadLocal("ugyfelek");
+        if (fresh) setData(prev => ({ ...prev, ugyfelek: fresh }));
+      }
+    }
+    window.addEventListener("crm-db-updated", handleDbUpdate);
+    return () => window.removeEventListener("crm-db-updated", handleDbUpdate);
+  }, []);
+
   // ─── Bejelentkezés után: Drive szinkron ──────────────────────
   useEffect(() => {
     if (!user) return;

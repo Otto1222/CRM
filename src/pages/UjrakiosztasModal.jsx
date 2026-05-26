@@ -371,10 +371,16 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
 
         {/* Mentés */}
         <div style={{ padding:"16px 24px", borderTop:`1px solid ${C.border}`, flexShrink:0 }}>
-          <button onClick={handleSave} disabled={saving}
+          {!saving ? (
+          <button onClick={handleSave}
             style={{ width:"100%", padding:"14px", borderRadius:12, border:"none", background:C.accent, color:"#fff", fontWeight:700, fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:FONT }}>
-            <Save size={18}/>{saving ? "Mentés…" : "Újrakiosztás mentése"}
+            <Save size={18}/>✅ Megerősítem az újrakiosztást
           </button>
+        ) : (
+          <div style={{ width:"100%", padding:"14px", borderRadius:12, background:"#F0FDF4", border:`1px solid #A7F3D0`, textAlign:"center", fontSize:15, fontWeight:700, color:C.success }}>
+            ⏳ Mentés folyamatban…
+          </div>
+        )}
         </div>
       </div>
     </div>

@@ -30,6 +30,7 @@ export function addItem(collection, item) {
     ? current.map((i, j) => j === idx ? { ...i, ...item } : i)
     : [item, ...current];
   saveLocal(collection, next);
+  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection, action: "add", id: item.id } }));
   return next;
 }
 
@@ -37,6 +38,7 @@ export function removeItem(collection, id) {
   const current = loadLocal(collection) || [];
   const next = current.filter(i => i.id !== id);
   saveLocal(collection, next);
+  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection, action: "remove", id } }));
   return next;
 }
 
@@ -44,5 +46,7 @@ export function updateItem(collection, id, updates) {
   const current = loadLocal(collection) || [];
   const next = current.map(i => i.id === id ? { ...i, ...updates } : i);
   saveLocal(collection, next);
+  // Értesíti az App-ot hogy frissítse a React state-t
+  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection, action: "update", id } }));
   return next;
 }

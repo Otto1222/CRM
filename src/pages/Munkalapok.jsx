@@ -771,6 +771,13 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           </button>
         </Card>
       </div>
+      {showUjrakiosztas && (
+        <UjrakiosztasModal
+          m={m} data={data}
+          onClose={() => setShowUjrakiosztas(false)}
+          onSave={(updates) => { onRefresh && onRefresh(updates); setShowUjrakiosztas(false); }}
+        />
+      )}
     </div>
   );
 }
