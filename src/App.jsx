@@ -13,6 +13,7 @@ import { MunkalapLista, MunkalapDetail } from "./pages/Munkalapok";
 import Ugyfelek from "./pages/Ugyfelek";
 import AdminPanel from "./pages/AdminPanel";
 import MunkakiosztasBeallitasok from "./pages/MunkakiosztasBeallitasok";
+import JegyzokonyviBeallitasok from "./pages/JegyzokonyviBeallitasok";
 import Munkakiosztas from "./pages/Munkakiosztas";
 import UjMunkalap from "./pages/UjMunkalap";
 import ComingSoon from "./pages/ComingSoon";
@@ -167,7 +168,7 @@ function PageContent({ page, sel, setSel, data, user, onNewMunkalap, onDelete })
   if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={onNewMunkalap} userRole={role} currentUser={user} />;
   if (page === "munkakiosztas") return <Munkakiosztas />;
   if (page === "ugyfelek")      return <Ugyfelek data={data} />;
-  if (page === "beallitasok")   return <div><AdminPanel currentUser={user} /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><MunkakiosztasBeallitasok /></div>;
+  if (page === "beallitasok")   return <div><AdminPanel currentUser={user} /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><JegyzokonyviBeallitasok /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><MunkakiosztasBeallitasok /></div>;
   if (page === "arajanlatok")   return <ComingSoon title="Árajánlatok" />;
   if (page === "szerzodesek")   return <ComingSoon title="Szerződések" />;
   if (page === "csapat")        return <ComingSoon title="Csapat" />;

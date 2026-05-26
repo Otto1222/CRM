@@ -87,23 +87,23 @@ function VbfInput({ value, onCommit, unit, piros }) {
       <input inputMode="decimal" value={local} onChange={e=>setLocal(e.target.value)}
         onBlur={()=>onCommit(local)} placeholder="0"
         style={{ flex:1, padding:"10px 12px", border:`1.5px solid ${piros&&empty?"#EF4444":C.border}`, borderRadius:9, fontSize:16, fontFamily:FONT, color:C.text, outline:"none", background:piros&&empty?"#FEF2F2":"#F8FAFC" }}/>
-      <span style={{ width:44, fontSize:13, color:C.muted, textAlign:"right", flexShrink:0 }}>{unit}</span>
+      <span style={{ width:36, fontSize:12, color:C.muted, textAlign:"right", flexShrink:0 }}>{unit}</span>
     </div>
   );
 }
 function MeroSor({ label, value, onCommit, unit, piros }) {
   return (
-    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-      <span style={{ width:40, fontSize:14, color:C.textSub, flexShrink:0 }}>{label}</span>
+    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}>
+      <span style={{ width:36, fontSize:13, color:C.textSub, flexShrink:0 }}>{label}</span>
       <VbfInput value={value} onCommit={onCommit} unit={unit} piros={piros}/>
     </div>
   );
 }
 function EgyMero({ label, value, onCommit, unit, piros }) {
   return (
-    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-      <span style={{ flex:1, fontSize:14, color:C.textSub }}>{label}</span>
-      <div style={{ width:180, display:"flex" }}>
+    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}>
+      <span style={{ flex:1, fontSize:13, color:C.textSub }}>{label}</span>
+      <div style={{ width:160, display:"flex" }}>
         <VbfInput value={value} onCommit={onCommit} unit={unit} piros={piros}/>
       </div>
     </div>
