@@ -1,5 +1,7 @@
 import { useState } from "react";
 import UjrakiosztasModal from "./UjrakiosztasModal";
+import VbfAdminCard from "../components/VbfAdminCard";
+import FotokAdminCard from "../components/FotokAdminCard";
 import TelepItoMunkalap from "./TelepItoMunkalap";
 import {
   Search, Plus, ChevronRight, FileText, Phone, MapPin,
@@ -538,6 +540,16 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
           <FieldRow label="Dátum" value={m.date}/>
           {as&&<FieldRow label="Szerelő" value={as.name}/>}
           <MunkaIdoBontasCard m={m} />
+          {/* Megjegyzések */}
+          {m.alairas && (
+            <div style={{ marginTop:16, background:"#ECFDF5", border:"1px solid #A7F3D0", borderRadius:12, padding:"14px 16px" }}>
+              <p style={{ fontSize:12, fontWeight:700, color:C.success, marginBottom:8, textTransform:"uppercase", letterSpacing:.7 }}>✍️ Ügyfél aláírás</p>
+              <p style={{ fontSize:12, color:C.textSub }}>Aláírva: {m.alairas.datum ? new Date(m.alairas.datum).toLocaleString("hu-HU") : "—"}</p>
+              {m.alairas.dataUrl && <img src={m.alairas.dataUrl} alt="Aláírás" style={{ marginTop:8, maxWidth:"100%", maxHeight:100, background:"#fff", borderRadius:8, border:"1px solid #D1FAE5" }}/>}
+            </div>
+          )}
+          <VbfAdminCard munkalapId={m.id} />
+          <FotokAdminCard munkalapId={m.id} />
           <FelhasznaltAnyagokCard m={m} />
           {/* Státusz */}
           <div style={{ padding:"16px" }}>

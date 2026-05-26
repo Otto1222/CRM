@@ -4,6 +4,7 @@ import {
   X, FileText, Play, Phone, MapPin, Lock, Plus, Trash2, Hash
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
+import AlairasModal from "../components/AlairasModal";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
 
 // ─── Sorozatszámot igénylő anyagok ────────────────────────
@@ -87,7 +88,13 @@ function VbfInput({ value, onCommit, unit, piros }) {
         onBlur={()=>onCommit(local)} placeholder="0"
         style={{ flex:1, padding:"10px 12px", border:`1.5px solid ${piros&&empty?"#EF4444":C.border}`, borderRadius:9, fontSize:16, fontFamily:FONT, color:C.text, outline:"none", background:piros&&empty?"#FEF2F2":"#F8FAFC" }}/>
       <span style={{ width:44, fontSize:13, color:C.muted, textAlign:"right", flexShrink:0 }}>{unit}</span>
-    </div>
+    {showAlairas && (
+      <AlairasModal
+        m={m}
+        onClose={() => setShowAlairas(false)}
+        onSave={(alairasData) => handleBefejezes(alairasData)}
+      />
+    )}
   );
 }
 function MeroSor({ label, value, onCommit, unit, piros }) {
@@ -288,6 +295,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   const [megkezdve,  setMegkezdve]  = useState(m.megkezdve||false);
   const [activeTab,  setActiveTab]  = useState(0);
   const [figy,       setFigy]       = useState(false);
+  const [showAlairas, setShowAlairas] = useState(false);
   const [progress,   setProgress]   = useState(null); // null = nincs folyamat
   const [progressMsg,setProgressMsg]= useState("");
 
@@ -319,9 +327,24 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   }
 
   // ── BEFEJEZÉS progress + Drive feltöltés ───────────────
-  async function handleBefejezes() {
+  function handleBefejezesKezdete() {
     if (checkHianyos()) { setFigy(true); return; }
     setFigy(false);
+    setShowAlairas(true); // Aláírás modal megnyitása
+  }
+
+  async function handleBefejezes(alairasData) {
+    setShowAlairas(false);
+    // Aláírás mentése a munkalaphoz
+    if (alairasData) {
+      updateItem("munkalapok", m.id, {
+        alairas: {
+          dataUrl: alairasData.alairasDataUrl,
+          datum:   alairasData.alairasDatum,
+          szoveg:  alairasData.szoveg,
+        }
+      });
+    }
 
     const steps = [
       { msg:"Adatok ellenőrzése…",      pct:10 },
