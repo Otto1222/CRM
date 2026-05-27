@@ -49,3 +49,18 @@ export function validateVbf(data, fields) {
   });
   return hibak;
 }
+
+// ─── Felmérési fotók ────────────────────────────────────────
+export function saveFelmeresFotok(munkalapId, fotok) {
+  try {
+    localStorage.setItem(key(munkalapId, "felmeres_fotok"), JSON.stringify(fotok));
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: `felmeres_fotok_${munkalapId}` } }));
+    return true;
+  } catch { return false; }
+}
+export function loadFelmeresFotok(munkalapId) {
+  try {
+    const r = localStorage.getItem(key(munkalapId, "felmeres_fotok"));
+    return r ? JSON.parse(r) : [];
+  } catch { return []; }
+}
