@@ -3,12 +3,22 @@ import * as XLSX from "xlsx";
 import {
   Upload, Play, Download, RefreshCw, AlertCircle,
   CheckCircle2, Clock, MapPin, Users, FileSpreadsheet,
-  ChevronDown, ChevronUp, Loader2,
+  ChevronDown, ChevronUp, Loader2, Save, Tag,
 } from "lucide-react";
-import { C, FONT, FONT_HEADING } from "../lib/constants";
+import { C, FONT, FONT_HEADING, STATUS_CFG } from "../lib/constants";
 import { getSettings } from "../lib/munkakiosztasSettings";
 import { kioszt } from "../lib/munkakiosztasAlgo";
+import { addItem, loadLocal } from "../lib/localDb";
 import Card from "../components/Card";
+
+// ─── Felmérési státuszok (Munkakiosztáshoz) ───────────────────
+const KIOSZT_STATUSZOK = [
+  { id: "Megkezdésre Vár",  szin: "#38BDF8", bg: "#F0F9FF" },
+  { id: "Felmérés",         szin: "#0EA5E9", bg: "#E0F2FE" },
+  { id: "Kivitelezés",      szin: "#EA580C", bg: "#FFF7ED" },
+  { id: "Folyamatban",      szin: "#2563EB", bg: "#EFF6FF" },
+  { id: "Ütemezett",        szin: "#D97706", bg: "#FFFBEB" },
+];
 
 // ─── Segéd: Badge ─────────────────────────────────────────────
 function Badge({ label, color }) {
@@ -43,9 +53,20 @@ export default function Munkakiosztas() {
   const [hibak,         setHibak]         = useState([]);
   const [dragOver,      setDragOver]      = useState(false);
   const [expandedDays,  setExpandedDays]  = useState({});
+  const [statusMap,     setStatusMap]     = useState({}); // { [_id]: statusId }
+  const [mentveDb,      setMentveDb]      = useState(0);  // mentett munkalapok száma
+  const [mentesFolyamat,setMentesFolyamat]= useState(false);
   const fileRef = useRef();
 
   const settings = getSettings();
+
+  // ─── Státusz beállítás egy munkához ─────────────────────────
+  function setStatus(id, st) {
+    setStatusMap(prev => ({ ...prev, [id]: st }));
+  }
+  function getStatus(id) {
+    return statusMap[id] || "Megkezdésre Vár";
+  }
 
   // ─── Excel beolvasás ────────────────────────────────────────
   function parseExcel(file) {
@@ -144,6 +165,62 @@ export default function Munkakiosztas() {
     XLSX.writeFile(wb, `munkakiosztas_${new Date().toISOString().split("T")[0]}.xlsx`);
   }
 
+  // ─── Munkalapok mentése a CRM rendszerbe ────────────────────
+  async function handleMunkalapokMentese() {
+    if (!kiosztottSorok) return;
+    setMentesFolyamat(true);
+    const csapatok = settings.csapatok || [];
+    let mentett = 0;
+    const meglevo = loadLocal("munkalapok") || [];
+    const meglevoIdk = new Set(meglevo.map(m => m.id));
+
+    for (const sor of kiosztottSorok) {
+      if (sor.csapatNev === "—") continue; // kiosztás nélküli skip
+      const ugyszam = sor.egyeb?.["Ügyszám"] || sor.egyeb?.["ugyszam"] || sor.egyeb?.["Munkaszám"] || "";
+      const id = ugyszam || \`ML_\${sor._id}\`;
+      if (meglevoIdk.has(id)) continue; // már létező skip
+
+      const csapat = csapatok.find(c => c.nev === sor.csapatNev);
+      const ml = {
+        id,
+        ugyszam: id,
+        status:            getStatus(sor._id),
+        statusSzin:        KIOSZT_STATUSZOK.find(s => s.id === getStatus(sor._id))?.szin || "#38BDF8",
+        cimke:             sor.egyeb?.["Cimke"] || sor.egyeb?.["cimke"] || "Junior Vital",
+        cimkeSzin:         "#2563EB",
+        projektMegnevezes: sor.egyeb?.["Projekt"] || sor.egyeb?.["projekt"] || "",
+        feladat:           sor.munkatipus || "",
+        description:       sor.munkatipus || "",
+        date:              sor.datum || "",
+        ertekesito:        sor.egyeb?.["Értékesítő"] || "",
+        // Csapat
+        assigneeId:        csapat?.id || "",
+        assigneeNev:       sor.csapatNev,
+        csapatNev:         sor.csapatNev,
+        // Ügyfél szabad szövegként
+        clientId:          null,
+        clientNev:         sor.egyeb?.["Ügyfél neve"] || sor.egyeb?.["Név"] || "",
+        clientCim:         sor.cim || "",
+        clientTel:         sor.egyeb?.["Telefon"] || "",
+        anyagok:           [],
+        felmeres:          {},
+        items:             [],
+        files:             [],
+        createdAt:         new Date().toISOString(),
+        // Munkakiosztásból jött flag
+        forrasKiosztas:    true,
+        tavolsag:          sor.tavolsag,
+      };
+      addItem("munkalapok", ml);
+      mentett++;
+    }
+    setMentveDb(mentett);
+    setMentesFolyamat(false);
+    // crm-db-updated esemény (ha más tab is hallgatja)
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+    setTimeout(() => setMentveDb(0), 4000);
+  }
+
   // ─── Csoportosítás dátum + csapat szerint ────────────────────
   function csoportosit(sorok) {
     const csoportok = {};
@@ -175,9 +252,15 @@ export default function Munkakiosztas() {
         </div>
         <div style={{ display:"flex", gap:10 }}>
           {kiosztottSorok && (
-            <button onClick={handleExport} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 16px", background:C.success, color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
-              <Download size={15} /> Excel export
-            </button>
+            <>
+              <button onClick={handleExport} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 16px", background:C.success, color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+                <Download size={15} /> Excel export
+              </button>
+              <button onClick={handleMunkalapokMentese} disabled={mentesFolyamat} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 16px", background: mentesFolyamat ? C.muted : "#7C3AED", color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+                {mentesFolyamat ? <Loader2 size={15} style={{ animation:"spin 1s linear infinite" }}/> : <Save size={15}/>}
+                {mentveDb > 0 ? `${mentveDb} munkalap mentve ✓` : "Mentés CRM-be"}
+              </button>
+            </>
           )}
           {excelSorok.length > 0 && !loading && (
             <button onClick={handleKioszt} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 18px", background:C.accent, color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:14, fontFamily:FONT }}>
@@ -314,23 +397,62 @@ export default function Munkakiosztas() {
 
                 {open && (
                   <div style={{ borderTop:`1px solid ${C.border}` }}>
-                    {csoport.munkak.map((m, i) => (
-                      <div key={m._id} style={{ display:"flex", alignItems:"flex-start", gap:14, padding:"12px 20px", borderBottom: i < csoport.munkak.length-1 ? `1px solid ${C.border}` : "none" }}>
-                        <div style={{ width:24, height:24, borderRadius:"50%", background: csoport.csapatSzin + "20", color: csoport.csapatSzin, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, flexShrink:0, marginTop:2 }}>
-                          {i + 1}
-                        </div>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontWeight:600, fontSize:14, color:C.text }}>{m.cim}</div>
-                          <div style={{ display:"flex", gap:10, marginTop:6, flexWrap:"wrap" }}>
-                            <Badge label={m.munkatipus} color={C.accent} />
-                            {m.tavolsag && <span style={{ fontSize:12, color:C.muted, display:"flex", alignItems:"center", gap:4 }}><MapPin size={12} />{m.tavolsag} km</span>}
-                            {Object.entries(m.egyeb || {}).filter(([,v]) => v).map(([k, v]) => (
-                              <span key={k} style={{ fontSize:12, color:C.muted }}>{k}: {v}</span>
+                    {csoport.munkak.map((m, i) => {
+                      const st = getStatus(m._id);
+                      const stCfg = KIOSZT_STATUSZOK.find(s => s.id === st) || KIOSZT_STATUSZOK[0];
+                      return (
+                        <div key={m._id} style={{ padding:"12px 20px", borderBottom: i < csoport.munkak.length-1 ? `1px solid ${C.border}` : "none" }}>
+                          <div style={{ display:"flex", alignItems:"flex-start", gap:14 }}>
+                            <div style={{ width:24, height:24, borderRadius:"50%", background: csoport.csapatSzin + "20", color: csoport.csapatSzin, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, flexShrink:0, marginTop:2 }}>
+                              {i + 1}
+                            </div>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div style={{ fontWeight:600, fontSize:14, color:C.text }}>{m.cim}</div>
+                              <div style={{ display:"flex", gap:10, marginTop:6, flexWrap:"wrap", alignItems:"center" }}>
+                                <Badge label={m.munkatipus} color={C.accent} />
+                                {m.tavolsag && <span style={{ fontSize:12, color:C.muted, display:"flex", alignItems:"center", gap:4 }}><MapPin size={12} />{m.tavolsag} km</span>}
+                                {Object.entries(m.egyeb || {}).filter(([,v]) => v).slice(0,3).map(([k, v]) => (
+                                  <span key={k} style={{ fontSize:12, color:C.muted }}>{k}: {v}</span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* ── Státusz selector ── */}
+                          <div style={{ marginTop:10, marginLeft:38, display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+                            <Tag size={12} color={C.muted} style={{ flexShrink:0 }}/>
+                            {KIOSZT_STATUSZOK.map(s => (
+                              <button
+                                key={s.id}
+                                onClick={() => setStatus(m._id, s.id)}
+                                style={{
+                                  padding:"4px 12px",
+                                  borderRadius:20,
+                                  border:`1.5px solid ${st === s.id ? s.szin : C.border}`,
+                                  background: st === s.id ? s.bg : "#fff",
+                                  color: st === s.id ? s.szin : C.muted,
+                                  fontSize:11, fontWeight: st === s.id ? 700 : 400,
+                                  cursor:"pointer", fontFamily:FONT,
+                                  transition:"all .12s",
+                                  // Felmérés kiemelés
+                                  boxShadow: s.id === "Felmérés" && st === s.id ? `0 0 0 2px ${s.szin}40` : "none",
+                                }}
+                              >
+                                {s.id}
+                                {s.id === "Felmérés" && " 📸"}
+                              </button>
                             ))}
                           </div>
+
+                          {/* Felmérés info */}
+                          {st === "Felmérés" && (
+                            <div style={{ marginTop:8, marginLeft:38, padding:"7px 12px", background:"#E0F2FE", borderRadius:8, fontSize:12, color:"#0369A1", display:"flex", alignItems:"center", gap:6 }}>
+                              📸 A telepítő előbb felmérési fotókat tölt fel, mielőtt kivitelezésre kerül sor.
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </Card>
