@@ -126,7 +126,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
   const [q, setQ] = useState("");
   const [tab, setTab] = useState("Összes");
   const isMobile = useIsMobile();
-  const STATUSES = ["Összes","Folyamatban","Ütemezett","Kész","Meghiúsult","Megkezdésre Vár"];
+  const STATUSES = ["Összes","Felmérés","Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"];
 
   const filtered = data.munkalapok.filter(m => {
     // Telepítőnek csak a nevéhez rendelt munkák
@@ -352,7 +352,7 @@ export function UjMunkalapModal({ data, onClose, onSave }) {
                 <div style={{ marginBottom:14 }}>
                   <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Státusz</label>
                   <select value={form.status} onChange={e=>upd("status",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
-                    {["Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=><option key={s}>{s}</option>)}
+                    {["Megkezdésre Vár","Felmérés","Kivitelezés","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=><option key={s}>{s}</option>)}
                   </select>
                 </div>
               </div>
@@ -557,7 +557,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
           <div style={{ padding:"16px" }}>
             <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, marginBottom:10 }}>Státusz módosítása</p>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {["Folyamatban","Ütemezett","Kész","Meghiúsult","Megkezdésre Vár"].map(s=>{
+              {["Felmérés","Kivitelezés","Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=>{
                 const cfg=STATUS_CFG[s]||{bg:"#F1F5F9",text:C.muted,dot:C.muted};
                 return <button key={s} style={{ padding:"8px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
               })}
@@ -763,7 +763,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
         <Card style={{ padding:"20px 22px", marginBottom:16 }}>
           <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Státusz módosítása</h4>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-            {["Folyamatban","Ütemezett","Kész","Meghiúsult","Megkezdésre Vár"].map(s=>{
+            {["Felmérés","Kivitelezés","Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=>{
               const cfg=STATUS_CFG[s]||{bg:"#F1F5F9",text:C.muted,dot:C.muted};
               return <button key={s} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
             })}
