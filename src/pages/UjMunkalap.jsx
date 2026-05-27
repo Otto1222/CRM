@@ -243,7 +243,14 @@ export default function UjMunkalap({ data, onBack, onSave }) {
       cimke:             alap.cimke,
       cimkeSzin:         alap.cimkeSzin,
       status:            alap.status,
-      statusSzin:        "#38BDF8",
+      statusSzin:        {
+        "Felmérés":    "#0EA5E9",
+        "Kivitelezés": "#EA580C",
+        "Folyamatban": "#2563EB",
+        "Ütemezett":   "#D97706",
+        "Kész":        "#059669",
+        "Meghiúsult":  "#DC2626",
+      }[alap.status] || "#38BDF8",
       projektMegnevezes: alap.projektMegnevezes,
       feladat:           alap.feladat,
       description:       alap.feladat,
@@ -372,8 +379,20 @@ export default function UjMunkalap({ data, onBack, onSave }) {
               <div style={{ marginBottom:14 }}>
                 <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Státusz</label>
                 <select value={alap.status} onChange={e=>updAlap("status",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
-                  {["Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=><option key={s}>{s}</option>)}
+                  {["Megkezdésre Vár","Felmérés","Kivitelezés","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=><option key={s}>{s}</option>)}
                 </select>
+                {alap.status === "Felmérés" && (
+                  <div style={{ marginTop:8, padding:"8px 12px", background:"#E0F2FE", borderRadius:8, fontSize:12, color:"#0369A1", display:"flex", alignItems:"flex-start", gap:7, lineHeight:1.5 }}>
+                    <span style={{ fontSize:16, flexShrink:0 }}>📸</span>
+                    <span>A telepítő <b>felmérési fotókat tölthet fel</b>. Az összes korábban feltöltött kép megtekinthető marad minden következő státuszban is.</span>
+                  </div>
+                )}
+                {alap.status === "Kivitelezés" && (
+                  <div style={{ marginTop:8, padding:"8px 12px", background:"#FFF7ED", borderRadius:8, fontSize:12, color:"#9A3412", display:"flex", alignItems:"flex-start", gap:7, lineHeight:1.5 }}>
+                    <span style={{ fontSize:16, flexShrink:0 }}>🔧</span>
+                    <span>A telepítő látja a felmérési fotókat és <b>új kivitelezési képeket tölthet fel</b>.</span>
+                  </div>
+                )}
               </div>
             </div>
             <Field label="Értékesítő neve" value={alap.ertekesito} onChange={v=>updAlap("ertekesito",v)} placeholder="Értékesítő neve"/>
