@@ -65,7 +65,7 @@ export default function Munkakiosztas() {
     setStatusMap(prev => ({ ...prev, [id]: st }));
   }
   function getStatus(id) {
-    return statusMap[id] || "Megkezdésre Vár";
+    return statusMap[id] || "Felmérés";
   }
 
   // ─── Excel beolvasás ────────────────────────────────────────
@@ -177,7 +177,7 @@ export default function Munkakiosztas() {
     for (const sor of kiosztottSorok) {
       if (sor.csapatNev === "—") continue; // kiosztás nélküli skip
       const ugyszam = sor.egyeb?.["Ügyszám"] || sor.egyeb?.["ugyszam"] || sor.egyeb?.["Munkaszám"] || "";
-      const id = ugyszam || \`ML_\${sor._id}\`;
+      const id = ugyszam || ("ML_" + sor._id);
       if (meglevoIdk.has(id)) continue; // már létező skip
 
       const csapat = csapatok.find(c => c.nev === sor.csapatNev);
