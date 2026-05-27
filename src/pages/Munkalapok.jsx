@@ -2,6 +2,7 @@ import { useState } from "react";
 import UjrakiosztasModal from "./UjrakiosztasModal";
 import VbfAdminCard from "../components/VbfAdminCard";
 import FotokAdminCard from "../components/FotokAdminCard";
+import FelmeresFotokAdminCard from "../components/FelmeresFotokAdminCard";
 import TelepItoMunkalap from "./TelepItoMunkalap";
 import {
   Search, Plus, ChevronRight, FileText, Phone, MapPin,
@@ -549,7 +550,8 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
             </div>
           )}
           <VbfAdminCard munkalapId={m.id} />
-          <FotokAdminCard munkalapId={m.id} />
+          <FelmeresFotokAdminCard munkalapId={m.id} userRole={userRole} />
+        <FotokAdminCard munkalapId={m.id} />
           <FelhasznaltAnyagokCard m={m} />
           {/* Státusz */}
           <div style={{ padding:"16px" }}>
