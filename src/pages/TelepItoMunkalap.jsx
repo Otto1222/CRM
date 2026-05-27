@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AlairasModal from "../components/AlairasModal";
+import FelmeresTelepito from "./FelmeresTelepito";
 import FelmeresFotok from "./FelmeresFotok";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
 import { driveSave } from "../lib/driveApi";
@@ -481,6 +482,11 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     setProgress(100); setProgressMsg("VBF mentve ✓");
     await new Promise(r=>setTimeout(r,1200));
     setProgress(null);
+  }
+
+  // FELMÉRÉS STÁTUSZ → egyszerűsített felmérési nézet
+  if (m.status === "Felmérés" && !lezart) {
+    return <FelmeresTelepito m={m} data={data} onBack={onBack} />;
   }
 
   // LEZÁRT
