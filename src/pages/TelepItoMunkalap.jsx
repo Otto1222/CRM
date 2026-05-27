@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AlairasModal from "../components/AlairasModal";
+import FelmeresFotok from "./FelmeresFotok";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
 import { driveSave } from "../lib/driveApi";
 
@@ -523,8 +524,8 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     );
   }
 
-  const TABS_BEFORE = [{ icon:"📄" },{ icon:"📦" },{ icon:"📋" }];
-  const TABS_AFTER  = [{ icon:"📄" },{ icon:"📦" },{ icon:"📋" },{ icon:"⚙️" },{ icon:"📐" },{ icon:"📷" },{ icon:"✅" }];
+  const TABS_BEFORE = [{ icon:"📄" },{ icon:"📦" },{ icon:"📋" },{ icon:"📸" }];
+  const TABS_AFTER  = [{ icon:"📄" },{ icon:"📦" },{ icon:"📋" },{ icon:"📸" },{ icon:"⚙️" },{ icon:"📐" },{ icon:"📷" },{ icon:"✅" }];
   const TABS = megkezdve?TABS_AFTER:TABS_BEFORE;
 
   const Header = ()=>(
@@ -674,10 +675,16 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       {activeTab===0&&<InfoTab/>}
       {activeTab===1&&<AnyagokTab/>}
       {activeTab===2&&<FelmeresTab/>}
-      {megkezdve&&activeTab===3&&<FelhasznaltAnyagokTab munkalapId={m.id} meglevoAnyagok={m.anyagok||[]} onSave={()=>{}}/>}
-      {megkezdve&&activeTab===4&&<VbfTab/>}
-      {megkezdve&&activeTab===5&&<FotokTab/>}
-      {megkezdve&&activeTab===6&&<EllenorzesTab/>}
+      {activeTab===3&&!megkezdve&&(
+        <FelmeresFotok munkalapId={m.id} status={m.status} userRole="Telepítő" />
+      )}
+      {megkezdve&&activeTab===3&&(
+        <FelmeresFotok munkalapId={m.id} status={m.status} userRole="Telepítő" />
+      )}
+      {megkezdve&&activeTab===4&&<FelhasznaltAnyagokTab munkalapId={m.id} meglevoAnyagok={m.anyagok||[]} onSave={()=>{}}/>}
+      {megkezdve&&activeTab===5&&<VbfTab/>}
+      {megkezdve&&activeTab===6&&<FotokTab/>}
+      {megkezdve&&activeTab===7&&<EllenorzesTab/>}
       {showAlairas && (
         <AlairasModal
           m={m}
