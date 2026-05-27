@@ -4,6 +4,7 @@ import VbfAdminCard from "../components/VbfAdminCard";
 import FotokAdminCard from "../components/FotokAdminCard";
 import FelmeresFotokAdminCard from "../components/FelmeresFotokAdminCard";
 import TelepItoMunkalap from "./TelepItoMunkalap";
+import FelmeresTelepito from "./FelmeresTelepito";
 import {
   Search, Plus, ChevronRight, FileText, Phone, MapPin,
   ClipboardList, Package, Ruler, Printer, Send, Loader2,
@@ -867,7 +868,10 @@ function TelepItoDetail({ m, data }) {
 // ═══════════════════════════════════════════════════════════════
 export function MunkalapDetail({ m, data, userRole, onBack, onDelete, onRefresh }) {
   const isMobile = useIsMobile();
-  if (userRole === "Telepítő") return <TelepItoMunkalap m={m} data={data} onBack={onBack||(() => window.history.back())} />;
+  if (userRole === "Telepítő") {
+    if (m.status === "Felmérés") return <FelmeresTelepito m={m} data={data} onBack={onBack||(()=>window.history.back())} />;
+    return <TelepItoMunkalap m={m} data={data} onBack={onBack||(()=>window.history.back())} />;
+  }
   if (isMobile) return <AdminMobileDetail m={m} data={data} userRole={userRole} onDelete={onDelete} onRefresh={onRefresh} />;
   return <AdminDesktopDetail m={m} data={data} userRole={userRole} onDelete={onDelete} onRefresh={onRefresh} />;
 }
