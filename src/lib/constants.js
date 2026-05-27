@@ -39,6 +39,8 @@ export const STATUS_CFG = {
   "Ütemezett":              { bg:"#FFFBEB", text:"#D97706", dot:"#D97706" },
   "Kész":                   { bg:"#ECFDF5", text:"#059669", dot:"#059669" },
   "Meghiúsult":             { bg:"#FEF2F2", text:"#DC2626", dot:"#DC2626" },
+  "Felmérés":               { bg:"#F0F9FF", text:"#0EA5E9", dot:"#0EA5E9" },
+  "Kivitelezés":            { bg:"#FFF7ED", text:"#EA580C", dot:"#EA580C" },
   "Megkezdésre Vár":        { bg:"#F0F9FF", text:"#38BDF8", dot:"#38BDF8" },
   "Munkavégzés Folyamatban":{ bg:"#EFF6FF", text:"#2563EB", dot:"#2563EB" },
   "Befejezett":             { bg:"#ECFDF5", text:"#059669", dot:"#059669" },
