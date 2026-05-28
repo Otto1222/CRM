@@ -199,6 +199,7 @@ export default function UjMunkalap({ data, onBack, onSave }) {
     ugyszam:"", cimke:"Junior Vital", cimkeSzin:"#2563EB",
     projektMegnevezes:"", feladat:"", status:"Megkezdésre Vár",
     csapatId:"", csapatNev:"", date:"", ertekesito:"",
+    ar:0, munkaeroDij:0, kiszallasiDij:0, egyebKolts:0,
   });
   const [ugyfEl, setUgyfel]   = useState({ nev:"", cim:"", tel:"", email:"" });
   const [eszkozok, setEszkozok] = useState(
@@ -230,6 +231,7 @@ export default function UjMunkalap({ data, onBack, onSave }) {
   async function handleSave() {
     if(!validate()) { setActive("alap"); return; }
     setSaving(true);
+    const generaltEdi = nextEdiSorszam(); // Csak 1x generálódik;
 
     const anyagok = eszkozKat.flatMap(k =>
       (eszkozok[k.id]||[]).map(it=>({ ...it, kategoria:k.label }))
@@ -257,10 +259,14 @@ export default function UjMunkalap({ data, onBack, onSave }) {
       description:       alap.feladat,
       date:              alap.date,
       ertekesito:        alap.ertekesito,
+      ar:                Number(alap.ar) || 0,
+      munkaeroDij:       Number(alap.munkaeroDij) || 0,
+      kiszallasiDij:     Number(alap.kiszallasiDij) || 0,
+      egyebKolts:        Number(alap.egyebKolts) || 0,
       munkalapTipus:     alap.munkalapTipus || "Első kivitelezés",
       fovallalkoiAzonosito: alap.fovallalkoiAzonosito || "",
-      ediSorszam:        nextEdiSorszam(),
-      dokumentumszam:    fullDokumentumszam(nextEdiSorszam(), alap.fovallalkoiAzonosito),
+      ediSorszam:        generaltEdi,
+      dokumentumszam:    fullDokumentumszam(generaltEdi, alap.fovallalkoiAzonosito),
       // Csapat – a Telepítő szűrés erre támaszkodik
       assigneeId:        alap.csapatId,
       assigneeNev:       csapat?.nev || alap.csapatNev,

@@ -329,29 +329,37 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
 
   // ── BEFEJEZÉS progress + Drive feltöltés ───────────────
   function handleBefejezesKezdete() {
-    // 1. VBF ellenőrzés
-    if (checkHianyos()) { setFigy(true); return; }
-    setFigy(false);
-    // 2. Fotó ellenőrzés (spec 14. pont)
-    const osszesFoto = Object.values(fotok).reduce((s,a) => s+(a.length||0), 0);
-    if (osszesFoto === 0) {
-      alert("⚠️ A munkalap nem zárható le! Nincs feltöltve egyetlen fotó sem. A lezáráshoz feltölts legalább egy fotót, vagy adj megjegyzést minden kategóriához.");
+    // === SZIGORÚ VALIDÁCIÓ (spec 14. pont) ===
+
+    // 1. VBF kötelező
+    if (checkHianyos()) {
+      setFigy(true);
+      alert("⚠️ Lezárás sikertelen! A VBF Jegyzőkönyv nincs kitöltve. Írj '0'-t minden nem releváns mezőbe.");
       return;
     }
-    // 3. Kötelező: minden fotókategóriánál van kép VAGY megjegyzés
-    const fotoHiany = FOTO_KAT.filter(k => {
-      const vanFoto = (fotok[k.id]||[]).length > 0;
-      // A megjegyzés a VBF-ben vagy külön mezőben lenne - ha nincs fotó, figyelmeztetés
-      return !vanFoto;
-    });
-    if (fotoHiany.length > 0) {
-      const igenNemKell = window.confirm(
-        "⚠️ " + fotoHiany.length + " kategóriában nincs feltöltve fotó. " +
-        fotoHiany.map(k=>"• "+k.nev).join(", ") +
-        " A spec szerint hiányzó fotóhoz megjegyzés szükséges (Nincs ilyen eszköz / Nem látható / Nem releváns). Folytatod a lezárást?"
-      );
-      if (!igenNemKell) return;
+    setFigy(false);
+
+    // 2. Fotó kötelező (min. 1 db)
+    const osszesFoto = Object.values(fotok).reduce((s,a) => s+(a.length||0), 0);
+    if (osszesFoto === 0) {
+      alert("⚠️ Lezárás sikertelen! Nincs feltöltve egyetlen fotó sem. Tölts fel legalább 1 fotót.");
+      return;
     }
+
+    // 3. Minden hiányos kategóriához kötelező ok (Nincs ilyen eszköz / Nem látható / Nem releváns)
+    const hianyosKat = FOTO_KAT.filter(k => (fotok[k.id]||[]).length === 0);
+    const mindOk = hianyosKat.every(k => fotoHianyOkok[k.id]);
+    if (!mindOk) {
+      const missing = hianyosKat.filter(k => !fotoHianyOkok[k.id]);
+      alert(
+        "⚠️ Lezárás sikertelen! A következő kategóriáknál nincs ok megadva: " +
+        missing.map(k => k.nev).join(", ") +
+        ". Kérjük az Ellenőrzés fülön adj meg okot minden fotó nélküli kategóriához!"
+      );
+      return;
+    }
+
+    // Minden rendben → aláírás modal
     setShowAlairas(true);
   }
 

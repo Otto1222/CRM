@@ -45,8 +45,11 @@ export default function Dashboard({ data, user }) {
     const felmeres  = munkalapok.filter(m => m.status === "Felmérés" || m.status === "Befejezett Felmérés").length;
 
     // Pénzügyek
-    const osszesBev  = munkalapok.reduce((s,m) => s + (m.ar || 0), 0);
-    const osszesCost = munkalapok.reduce((s,m) => s + ((m.items||[]).reduce((x,i) => x + (i.ar||0)*(i.mennyiseg||1), 0)), 0);
+    const osszesBev  = munkalapok.reduce((s,m) => {
+      const itemsBrutto = (m.items||[]).reduce((x,i) => x + (i.qty||i.mennyiseg||1)*(i.net||i.ar||0)*(1+(i.vat||27)/100), 0);
+      return s + (m.ar || itemsBrutto || 0);
+    }, 0);
+    const osszesCost = munkalapok.reduce((s,m) => s + ((m.items||[]).reduce((x,i) => x + (i.net||i.ar||0)*(i.qty||i.mennyiseg||1), 0)) + (m.munkaeroDij||0) + (m.kiszallasiDij||0) + (m.egyebKolts||0), 0);
     const elfKartEritesek = karteritesek.filter(k=>k.elfogadott===true).reduce((s,k)=>s+k.osszeg,0);
     const eredmeny = osszesBev - osszesCost - elfKartEritesek;
 
@@ -56,8 +59,9 @@ export default function Dashboard({ data, user }) {
   // Táblázat adatok - minden munkalap pénzügyi összesítővel
   const tableData = useMemo(() => {
     return munkalapok.map(m => {
-      const bevetal = m.ar || 0;
-      const anyagKolts = (m.items||[]).reduce((s,i) => s + (i.ar||0)*(i.mennyiseg||1), 0);
+      const itemsBrutto = (m.items||[]).reduce((s,i) => s + (i.qty||i.mennyiseg||1)*(i.net||i.ar||0)*(1+(i.vat||27)/100), 0);
+      const bevetal = m.ar || itemsBrutto || 0;
+      const anyagKolts = (m.items||[]).reduce((s,i) => s + (i.net||i.ar||0)*(i.qty||i.mennyiseg||1), 0);
       const kartEritesElf = karteritesek.filter(k=>k.munkalapId===m.id&&k.elfogadott===true).reduce((s,k)=>s+k.osszeg,0);
       const osszesKolts = anyagKolts + (m.munkaeroDij||0) + (m.kiszallasiDij||0) + kartEritesElf + (m.egyebKolts||0);
       const eredmeny = bevetal - osszesKolts;

@@ -649,6 +649,23 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
           <FelhasznaltAnyagokCard m={m} />
           {/* Státusz */}
           <div style={{ padding:"16px" }}>
+            {/* Bevétel + Költségek (csak admin/PM) */}
+            {["Admin","Projektmenedzser","Iroda/Könyvelés"].includes(userRole) && (
+              <div style={{ marginBottom:16 }}>
+                <p style={{ fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:.8,marginBottom:10 }}>💰 Pénzügyi adatok</p>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:10 }}>
+                  {[{l:"Bevétel (Ft)",k:"ar"},{l:"Munkaerő (Ft)",k:"munkaeroDij"},{l:"Kiszállás (Ft)",k:"kiszallasiDij"},{l:"Egyéb (Ft)",k:"egyebKolts"}].map(f=>(
+                    <div key={f.k}>
+                      <label style={{fontSize:10,fontWeight:700,color:C.muted,display:"block",marginBottom:3}}>{f.l}</label>
+                      <input type="number" defaultValue={m[f.k]||0}
+                        onBlur={e=>{import("../lib/localDb").then(({updateItem})=>{updateItem("munkalapok",m.id,{[f.k]:Number(e.target.value)||0});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();});}}
+                        style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",border:"1.5px solid #E2E8F0",borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none"}}/>
+                    </div>
+                  ))}
+                </div>
+                {m.ar>0&&(()=>{const k=(m.munkaeroDij||0)+(m.kiszallasiDij||0)+(m.egyebKolts||0)+(m.items||[]).reduce((s,i)=>s+(i.net||0)*(i.qty||1),0);const er=(m.ar||0)-k;return(<div style={{padding:"8px 10px",background:er>=0?"#ECFDF5":"#FEF2F2",borderRadius:8}}><p style={{fontSize:12,fontWeight:700,color:er>=0?"#059669":"#DC2626",margin:0}}>Eredmény: {er.toLocaleString("hu-HU")} Ft{m.ar>0&&` (${Math.round((er/m.ar)*100)}%)`}</p></div>);})()}
+              </div>
+            )}
             <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, marginBottom:10 }}>Státusz módosítása</p>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
               {["Felmérés","Befejezett Felmérés","Kivitelezés","Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=>{
