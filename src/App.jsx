@@ -3,6 +3,9 @@ import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
 import { driveLoad, driveSave } from "./lib/driveApi";
 import { loadLocal, saveLocal, addItem, removeItem } from "./lib/localDb";
+import { StoreProvider } from "./lib/store.jsx";
+import { syncCsapatokWithUsers } from "./lib/munkakiosztasSettings";
+import { getUsers } from "./lib/crmUsers";
 import { drivePing, driveAvailable } from "./lib/driveApi";
 import { getAllowedPages, getHomePage, canCreateMunkalap } from "./lib/roles";
 import Login from "./pages/Login";
@@ -89,6 +92,11 @@ function useIsMobile() {
 function initData() {
   const localMl = loadLocal("munkalapok");
   const localUk = loadLocal("ugyfelek");
+  // Egyéb kollekciók kezdeti betöltése
+  const localUsers = (() => { try { const s=localStorage.getItem("crm_napelem_users"); return s?JSON.parse(s):null; } catch{return null;} })();
+  const localBeall = (() => { try { const s=localStorage.getItem("beallitasok"); return s?JSON.parse(s):{}; } catch{return {};} })();
+  const localKart  = (() => { try { const s=localStorage.getItem("karteritesek"); return s?JSON.parse(s):[]; } catch{return [];} })();
+  const localSabl  = (() => { try { const s=localStorage.getItem("sablonok"); return s?JSON.parse(s):[]; } catch{return [];} })();
   return {
     munkalapok: localMl ?? SAMPLE_DATA.munkalapok,
     ugyfelek:   localUk ?? SAMPLE_DATA.ugyfelek,
@@ -211,20 +219,56 @@ export default function App() {
   // ─── Azonnali frissítés: localStorage változáskor ────────────
   useEffect(() => {
     function handleDbUpdate(e) {
-      const { collection } = e.detail || {};
-      if (collection === "munkalapok") {
+      const col = e.detail?.collection || "";
+
+      // ── Munkalapok ─────────────────────────────────────────
+      if (col === "munkalapok" || col === "all") {
         const fresh = loadLocal("munkalapok");
-        if (fresh) setData(prev => ({ ...prev, munkalapok: fresh }));
-        // Ha éppen egy munkalap részletét nézzük, azt is frissítjük
-        setSel(prev => {
-          if (!prev) return prev;
-          const updated = fresh?.find(m => m.id === prev.id);
-          return updated || prev;
-        });
+        if (fresh) {
+          setData(prev => ({ ...prev, munkalapok: fresh }));
+          setSel(prev => {
+            if (!prev) return prev;
+            const updated = fresh.find(m => m.id === prev.id);
+            return updated || prev;
+          });
+        }
       }
-      if (collection === "ugyfelek") {
+      // ── Ügyfelek ───────────────────────────────────────────
+      if (col === "ugyfelek" || col === "all") {
         const fresh = loadLocal("ugyfelek");
         if (fresh) setData(prev => ({ ...prev, ugyfelek: fresh }));
+      }
+      // ── Felhasználók (csapatok) ────────────────────────────
+      if (col === "users" || col === "all") {
+        try {
+          const fresh = getUsers();
+          if (fresh) {
+            setData(prev => ({ ...prev, users: fresh }));
+            // Szinkronizáljuk a munkakiosztás csapatneveket is
+            syncCsapatokWithUsers(fresh);
+          }
+        } catch {}
+      }
+      // ── Beállítások ────────────────────────────────────────
+      if (col === "beallitasok" || col === "all") {
+        try {
+          const fresh = JSON.parse(localStorage.getItem("beallitasok") || "{}");
+          setData(prev => ({ ...prev, beallitasok: fresh }));
+        } catch {}
+      }
+      // ── Kártérítések ───────────────────────────────────────
+      if (col === "karteritesek" || col === "all") {
+        try {
+          const fresh = JSON.parse(localStorage.getItem("karteritesek") || "[]");
+          setData(prev => ({ ...prev, karteritesek: fresh }));
+        } catch {}
+      }
+      // ── Sablonok ───────────────────────────────────────────
+      if (col === "sablonok" || col === "all") {
+        try {
+          const fresh = JSON.parse(localStorage.getItem("sablonok") || "[]");
+          setData(prev => ({ ...prev, sablonok: fresh }));
+        } catch {}
       }
     }
     window.addEventListener("crm-db-updated", handleDbUpdate);
@@ -387,6 +431,7 @@ export default function App() {
 
   // ── ASZTALI ───────────────────────────────────────────────────
   return (
+    <StoreProvider initialData={data}>
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg }}>
       <style>{gStyles}</style>
       {deleteConfirm && <DeleteConfirmModal ml={deleteConfirm} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteConfirm(null)} />}
@@ -401,6 +446,7 @@ export default function App() {
         <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} onNewMunkalap={() => setUjMunkalapPage(true)} onDelete={handleDeleteRequest} />
       </div>
     </div>
+    </StoreProvider>
   );
 }
 

@@ -18,7 +18,8 @@ import {
   User, Mail, Calendar, Hash, Tag, MessageSquare,
   ChevronDown, Save
 } from "lucide-react";
-import { C, FONT, FONT_HEADING, USERS, STATUS_CFG, WORKFLOW_STATUSES } from "../lib/constants";
+import { C, FONT, FONT_HEADING, STATUS_CFG, WORKFLOW_STATUSES } from "../lib/constants";
+import { getUsers } from "../lib/crmUsers";
 import { loadLocal, updateItem } from "../lib/localDb";
 import { ft, totals, generateId } from "../lib/helpers";
 import { canSeePrice, canCreateMunkalap } from "../lib/roles";
@@ -131,6 +132,7 @@ function FelhasznaltAnyagokCard({ m }) {
 }
 
 export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) {
+  const USERS = getUsers(); // Mindig friss adatból!
   const [q, setQ] = useState("");
   const [tab, setTab] = useState("Összes");
   const isMobile = useIsMobile();
@@ -538,6 +540,7 @@ function DetailHeader({ m, client, isMobile }) {
 // ADMIN/PM/IRODA – MOBIL TAB NÉZET (árakkal, szerkesztéssel)
 // ═══════════════════════════════════════════════════════════════
 function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
+  const USERS = getUsers();
   const [showUjrakiosztas, setShowUjrakiosztas] = useState(false);
   const [tab, setTab] = useState(0);
   const client = data.ugyfelek.find(u=>u.id===m.clientId);
@@ -783,6 +786,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
 // ADMIN/PM/IRODA – ASZTALI NÉZET
 // ═══════════════════════════════════════════════════════════════
 function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
+  const USERS = getUsers();
   const cl = data.ugyfelek?.find(u=>u.id===m.clientId);
   const as = USERS.find(u=>u.id===m.assigneeId);
   const tot = totals(m.items||[]);

@@ -83,9 +83,13 @@ export function getUsers() {
   return DEFAULT_USERS;
 }
 
-/** Menti a felhasználókat localStorage-ba */
+/** Menti a felhasználókat localStorage-ba – reaktív frissítéssel */
 export function saveUsersLocal(users) {
   localStorage.setItem(LS_KEY, JSON.stringify(users));
+  // Reaktív store értesítés – minden komponens frissül
+  window.dispatchEvent(new CustomEvent("crm-db-updated", {
+    detail: { collection: "users" }
+  }));
 }
 
 /** SHA-256 hash számítás */

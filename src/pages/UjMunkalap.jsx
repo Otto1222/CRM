@@ -6,6 +6,7 @@ import {
 import { C, FONT, FONT_HEADING, MUNKALAP_TIPUSOK, WORKFLOW_STATUSES } from "../lib/constants";
 import { nextEdiSorszam, fullDokumentumszam } from "../lib/dokumentumszam";
 import { createBackup } from "../lib/backupService";
+import { getUsers } from "../lib/crmUsers";
 import { ft, totals } from "../lib/helpers";
 import { getSettings } from "../lib/munkakiosztasSettings";
 

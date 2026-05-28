@@ -172,7 +172,23 @@ export default function AdminPanel({ currentUser }) {
   async function handleSave(userId, updates) {
     const updated = users.map(u => u.id === userId ? { ...u, ...updates } : u);
     setUsers(updated);
-    saveUsersLocal(updated);
+    saveUsersLocal(updated); // saveUsersLocal most már dispatch-el crm-db-updated "users" event-et
+    // Frissítsük a munkalapokat is ahol ez a user assigneeNev-ként szerepel (ha nevét változtatta)
+    if (updates.name) {
+      const oldUser = users.find(u => u.id === userId);
+      if (oldUser && oldUser.name !== updates.name) {
+        const { loadLocal, saveLocal } = await import("../lib/localDb");
+        const mls = loadLocal("munkalapok") || [];
+        const updatedMls = mls.map(m => {
+          if (m.assigneeId === userId || m.assigneeNev === oldUser.name) {
+            return { ...m, assigneeNev: updates.name, csapatNev: updates.name };
+          }
+          return m;
+        });
+        saveLocal("munkalapok", updatedMls);
+        window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+      }
+    }
     setToast("Változtatások elmentve!");
     setTimeout(() => setToast(""), 3000);
   }
