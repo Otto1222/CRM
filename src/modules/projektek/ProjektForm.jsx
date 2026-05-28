@@ -1,0 +1,183 @@
+import { useState } from "react";
+import { X, Save } from "lucide-react";
+import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
+import { getUsers } from "../../lib/crmUsers.js";
+import { PROJEKT_STATUSZOK, PROJEKT_TIPUSOK } from "./projekt.schema.js";
+import { createProjekt, updateProjekt } from "./projekt.service.js";
+
+const Field = ({ label, children, half }) => (
+  <div style={{ gridColumn: half ? "span 1" : "span 2" }}>
+    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .7 }}>{label}</label>
+    {children}
+  </div>
+);
+
+const inp = {
+  width: "100%", boxSizing: "border-box", padding: "9px 12px",
+  border: "1.5px solid #E2E8F0", borderRadius: 9, fontSize: 14,
+  fontFamily: "inherit", outline: "none", background: "#FAFAFA",
+};
+
+export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) {
+  const isNew   = !projekt?.id;
+  const users   = getUsers();
+  const csapatok = users.filter(u => u.role === "Telepítő");
+  const pmList   = users.filter(u => ["Admin","Projektmenedzser"].includes(u.role));
+
+  const [form, setForm] = useState({
+    nev:                projekt?.nev               || "",
+    kulsoAzonosito:     projekt?.kulsoAzonosito    || "",
+    tipus:              projekt?.tipus             || "Napelem telepítés",
+    status:             projekt?.status            || "Felmérésre vár",
+    clientNev:          projekt?.clientNev         || "",
+    clientCim:          projekt?.clientCim         || "",
+    clientTel:          projekt?.clientTel         || "",
+    clientEmail:        projekt?.clientEmail       || "",
+    kapcsolattarto:     projekt?.kapcsolattarto    || "",
+    telepitesiCim:      projekt?.telepitesiCim     || "",
+    projektvezetoId:    projekt?.projektvezetoId   || "",
+    projektvezetoNev:   projekt?.projektvezetoNev  || "",
+    csapatId:           projekt?.csapatId          || "",
+    csapatNev:          projekt?.csapatNev         || "",
+    tervezettKezdes:    projekt?.tervezettKezdes   || "",
+    tervezettBefejezes: projekt?.tervezettBefejezes|| "",
+    elfogadottAjanlat:  projekt?.elfogadottAjanlat || 0,
+    megjegyzes:         "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [hiba,   setHiba]   = useState("");
+
+  function upd(k, v) { setForm(p => ({ ...p, [k]: v })); }
+
+  function handleCsapat(e) {
+    const u = users.find(x => x.id === e.target.value);
+    upd("csapatId",  u?.id   || "");
+    upd("csapatNev", u?.name || "");
+  }
+  function handlePM(e) {
+    const u = users.find(x => x.id === e.target.value);
+    upd("projektvezetoId",  u?.id   || "");
+    upd("projektvezetoNev", u?.name || "");
+  }
+
+  async function handleSave() {
+    if (!form.nev.trim()) { setHiba("A projekt neve kötelező!"); return; }
+    setSaving(true);
+    const data = { ...form, elfogadottAjanlat: Number(form.elfogadottAjanlat) || 0 };
+    delete data.megjegyzes;
+    let saved;
+    if (isNew) {
+      saved = createProjekt(data, currentUser?.name);
+    } else {
+      saved = updateProjekt(projekt.id, data, currentUser?.name);
+    }
+    setSaving(false);
+    onSaved?.(saved);
+    onClose?.();
+  }
+
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:2000, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"flex-start", justifyContent:"center", padding:"20px 16px", overflowY:"auto" }}
+      onClick={e => e.target===e.currentTarget && onClose?.()}>
+      <div style={{ background:"#fff", borderRadius:16, width:"100%", maxWidth:680, boxShadow:"0 24px 60px rgba(0,0,0,.25)", fontFamily:FONT }}>
+        {/* Fejléc */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"18px 24px", borderBottom:"1px solid #E2E8F0" }}>
+          <h2 style={{ fontFamily:FONT_HEADING, fontSize:18, fontWeight:800, margin:0 }}>{isNew ? "Új projekt" : "Projekt szerkesztése"}</h2>
+          <button onClick={onClose} style={{ border:"none", background:"none", cursor:"pointer", color:"#94A3B8" }}><X size={22}/></button>
+        </div>
+
+        <div style={{ padding:"20px 24px" }}>
+          {hiba && <div style={{ background:"#FEF2F2", border:"1.5px solid #FECACA", borderRadius:9, padding:"9px 12px", marginBottom:14, fontSize:13, color:"#DC2626", fontWeight:600 }}>{hiba}</div>}
+
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"14px 16px" }}>
+
+            <Field label="Projekt neve *">
+              <input value={form.nev} onChange={e=>upd("nev",e.target.value)} placeholder="pl. Kovács ház napelem" style={{...inp, border:"2px solid #2563EB", fontWeight:600}} />
+            </Field>
+
+            <Field label="Külső / fővállalkozói azonosító" half>
+              <input value={form.kulsoAzonosito} onChange={e=>upd("kulsoAzonosito",e.target.value)} placeholder="pl. FŐV-2026-145" style={inp}/>
+            </Field>
+
+            <Field label="Típus" half>
+              <select value={form.tipus} onChange={e=>upd("tipus",e.target.value)} style={inp}>
+                {PROJEKT_TIPUSOK.map(t=><option key={t}>{t}</option>)}
+              </select>
+            </Field>
+
+            <Field label="Státusz" half>
+              <select value={form.status} onChange={e=>upd("status",e.target.value)} style={inp}>
+                {PROJEKT_STATUSZOK.map(s=><option key={s.id}>{s.id}</option>)}
+              </select>
+            </Field>
+
+            {/* Ügyfél */}
+            <div style={{ gridColumn:"span 2", borderTop:"1px solid #E2E8F0", paddingTop:14 }}>
+              <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:10 }}>Ügyfél adatok</p>
+            </div>
+
+            <Field label="Ügyfél neve" half>
+              <input value={form.clientNev} onChange={e=>upd("clientNev",e.target.value)} placeholder="Kovács János" style={inp}/>
+            </Field>
+            <Field label="Kapcsolattartó" half>
+              <input value={form.kapcsolattarto} onChange={e=>upd("kapcsolattarto",e.target.value)} placeholder="Kapcsolattartó neve" style={inp}/>
+            </Field>
+            <Field label="Telefonszám" half>
+              <input value={form.clientTel} onChange={e=>upd("clientTel",e.target.value)} placeholder="+36..." style={inp}/>
+            </Field>
+            <Field label="E-mail" half>
+              <input value={form.clientEmail} onChange={e=>upd("clientEmail",e.target.value)} placeholder="email@example.com" style={inp}/>
+            </Field>
+            <Field label="Ügyfél lakcíme">
+              <input value={form.clientCim} onChange={e=>upd("clientCim",e.target.value)} placeholder="Város, utca, hsz." style={inp}/>
+            </Field>
+            <Field label="Telepítési cím (ha eltér)">
+              <input value={form.telepitesiCim} onChange={e=>upd("telepitesiCim",e.target.value)} placeholder="Ha eltér a lakcímtől" style={inp}/>
+            </Field>
+
+            {/* Csapat */}
+            <div style={{ gridColumn:"span 2", borderTop:"1px solid #E2E8F0", paddingTop:14 }}>
+              <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:10 }}>Csapat</p>
+            </div>
+
+            <Field label="Projektvezető" half>
+              <select value={form.projektvezetoId} onChange={handlePM} style={inp}>
+                <option value="">— Válassz —</option>
+                {pmList.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Kivitelező csapat" half>
+              <select value={form.csapatId} onChange={handleCsapat} style={inp}>
+                <option value="">— Válassz —</option>
+                {csapatok.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
+              </select>
+            </Field>
+
+            {/* Ütemezés */}
+            <div style={{ gridColumn:"span 2", borderTop:"1px solid #E2E8F0", paddingTop:14 }}>
+              <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:10 }}>Ütemezés</p>
+            </div>
+
+            <Field label="Tervezett kezdés" half>
+              <input type="date" value={form.tervezettKezdes} onChange={e=>upd("tervezettKezdes",e.target.value)} style={inp}/>
+            </Field>
+            <Field label="Tervezett befejezés" half>
+              <input type="date" value={form.tervezettBefejezes} onChange={e=>upd("tervezettBefejezes",e.target.value)} style={inp}/>
+            </Field>
+
+            <Field label="Elfogadott ajánlat (Ft)" half>
+              <input type="number" value={form.elfogadottAjanlat} onChange={e=>upd("elfogadottAjanlat",e.target.value)} placeholder="0" style={inp}/>
+            </Field>
+          </div>
+        </div>
+
+        <div style={{ padding:"14px 24px", borderTop:"1px solid #E2E8F0", display:"flex", gap:10, justifyContent:"flex-end" }}>
+          <button onClick={onClose} style={{ padding:"9px 18px", borderRadius:9, border:"1.5px solid #E2E8F0", background:"#fff", fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:FONT }}>Mégse</button>
+          <button onClick={handleSave} disabled={saving} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 22px", background: saving?"#94A3B8":"#2563EB", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:14, fontFamily:FONT }}>
+            <Save size={15}/>{saving ? "Mentés…" : isNew ? "Projekt létrehozása" : "Mentés"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
