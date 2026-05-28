@@ -412,12 +412,14 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
 
     // 3. Helyi állapot frissítés
     setLezart(true);
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection:"munkalapok" } }));
     
-    await new Promise(r=>setTimeout(r,600));
+    await new Promise(r=>setTimeout(r,800));
     setProgress(null);
     
-    // 4. Visszatérés - onBack hívja a parent refresh-t
-    onBack(true); // true = frissítsd az adatokat
+    // 4. Visszatérés - kis delay hogy a state frissülhessen
+    await new Promise(r=>setTimeout(r,200));
+    onBack(true);
   }
 
   // Drive feltöltés: Apps Script webhook-on keresztül

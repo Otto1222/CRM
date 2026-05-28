@@ -156,11 +156,13 @@ function MobileSidebarFull({ page, onNav, user, onLogout, allowedPages }) {
 function PageContent({ page, sel, setSel, data, user, onNewMunkalap, onDelete }) {
   const role = user?.role;
   if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} userRole={role} onBack={(refresh) => {
-    setSel(null);
+    // Először frissítjük az adatokat, UTÁNA töröljük a sel-t
     if (refresh) {
       const fresh = loadLocal("munkalapok");
       if (fresh) setData(prev => ({ ...prev, munkalapok: fresh }));
     }
+    // Kis delay hogy a React state-ek ne versenyezzenek
+    setTimeout(() => setSel(null), 50);
   }} onDelete={onDelete} onRefresh={(updates) => {
     const fresh = loadLocal("munkalapok");
     if (fresh) setData(prev => ({ ...prev, munkalapok: fresh }));
