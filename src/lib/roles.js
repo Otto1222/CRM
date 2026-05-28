@@ -4,9 +4,9 @@
 
 // Melyik oldalak láthatók az adott szerepkörnek
 export const ROLE_PAGES = {
-  "Admin": ["dashboard","munkalapok","munkakiosztas","ugyfelek","arajanlatok","szerzodesek","csapat","naptar","beallitasok"],
-  "Projektmenedzser": ["dashboard","munkalapok","munkakiosztas","ugyfelek","arajanlatok","szerzodesek","csapat","naptar","beallitasok"],
-  "Iroda/Könyvelés": ["dashboard","munkalapok","ugyfelek","arajanlatok","szerzodesek","naptar","beallitasok"],
+  "Admin": ["dashboard","projektek","munkalapok","munkakiosztas","ugyfelek","arajanlatok","szerzodesek","csapat","naptar","karteritesek","sablonok","biztmentes","beallitasok"],
+  "Projektmenedzser": ["dashboard","projektek","munkalapok","munkakiosztas","ugyfelek","arajanlatok","szerzodesek","csapat","naptar","karteritesek","beallitasok"],
+  "Iroda/Könyvelés": ["dashboard","projektek","munkalapok","ugyfelek","arajanlatok","szerzodesek","naptar","beallitasok"],
   "Telepítő": ["munkalapok"],
 };
 
