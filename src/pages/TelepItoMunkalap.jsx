@@ -316,19 +316,43 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     return Object.values(vbf).flatMap(v=>typeof v==="object"?Object.values(v):[v]).some(v=>v===""||v===null||v===undefined);
   }
 
-  // ── MEGKEZDÉS ───────────────────────────────────────────
+  // ── MEGKEZDÉS ── (spec 5: megnyitáskor auto Folyamatban) ─
   function handleMegkezdes() {
     const ts = new Date().toISOString();
-    updateItem("munkalapok",m.id,{ megkezdve:true, megkezdesIdopont:ts, status:"Munkavégzés Folyamatban", statusSzin:"#2563EB" });
+    // Auto státusz: Kivitelezésre vár / Megkezdésre Vár → Folyamatban
+    const ujStatus = ["Kivitelezésre vár","Megkezdésre Vár","Ütemezett","Kiosztásra vár"].includes(m.status)
+      ? "Folyamatban" : m.status;
+    updateItem("munkalapok",m.id,{ megkezdve:true, megkezdesIdopont:ts, status:ujStatus, statusSzin:"#2563EB" });
     setMegkezdve(true);
     setActiveTab(3);
   }
 
   // ── BEFEJEZÉS progress + Drive feltöltés ───────────────
   function handleBefejezesKezdete() {
+    // 1. VBF ellenőrzés
     if (checkHianyos()) { setFigy(true); return; }
     setFigy(false);
-    setShowAlairas(true); // Aláírás modal megnyitása
+    // 2. Fotó ellenőrzés (spec 14. pont)
+    const osszesFoto = Object.values(fotok).reduce((s,a) => s+(a.length||0), 0);
+    if (osszesFoto === 0) {
+      alert("⚠️ A munkalap nem zárható le! Nincs feltöltve egyetlen fotó sem. A lezáráshoz feltölts legalább egy fotót, vagy adj megjegyzést minden kategóriához.");
+      return;
+    }
+    // 3. Kötelező: minden fotókategóriánál van kép VAGY megjegyzés
+    const fotoHiany = FOTO_KAT.filter(k => {
+      const vanFoto = (fotok[k.id]||[]).length > 0;
+      // A megjegyzés a VBF-ben vagy külön mezőben lenne - ha nincs fotó, figyelmeztetés
+      return !vanFoto;
+    });
+    if (fotoHiany.length > 0) {
+      const igenNemKell = window.confirm(
+        "⚠️ " + fotoHiany.length + " kategóriában nincs feltöltve fotó. " +
+        fotoHiany.map(k=>"• "+k.nev).join(", ") +
+        " A spec szerint hiányzó fotóhoz megjegyzés szükséges (Nincs ilyen eszköz / Nem látható / Nem releváns). Folytatod a lezárást?"
+      );
+      if (!igenNemKell) return;
+    }
+    setShowAlairas(true);
   }
 
   async function handleBefejezes(alairasData) {
@@ -367,7 +391,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     }
 
     const ts = new Date().toISOString();
-    const updates = { status:"Befejezett", statusSzin:"#059669", befejezesIdopont:ts, lezarva:true };
+    const updates = { status:"Ellenőrzés alatt", statusSzin:"#D97706", befejezesIdopont:ts, lezarva:true };
     
     // 1. localStorage frissítés
     updateItem("munkalapok", m.id, updates);
@@ -651,25 +675,83 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     </div>
   );
 
+  const FOTO_HIANY_OKOK = ["Nincs ilyen eszköz","Nem látható","Nem releváns a munkatípushoz"];
+  const [fotoHianyOkok, setFotoHianyOkok] = useState({});
+
   const EllenorzesTab = ()=>{
     const vbfOk=!checkHianyos();
     const osszesFoto=Object.values(fotok).reduce((s,a)=>s+(a.length||0),0);
-    const mindenKatFoto=FOTO_KAT.every(k=>(fotok[k.id]||[]).length>0);
+    const hianyosKat=FOTO_KAT.filter(k=>(fotok[k.id]||[]).length===0);
+    const mindenKatOk=hianyosKat.every(k=>fotoHianyOkok[k.id]);
+    const lezarhatoE = vbfOk && (osszesFoto > 0 || mindenKatOk);
+
     return (
-      <div style={{ padding:"16px",background:"#F1F5F9" }}>
+      <div style={{ padding:"16px",background:"#F1F5F9",paddingBottom:80 }}>
+        {/* Ellenőrzési lista */}
         <div style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
-          <p style={{ fontSize:15,fontWeight:700,color:C.text,marginBottom:12 }}>Munka ellenőrzése</p>
-          {[{label:"VBF Jegyzőkönyv kitöltve",ok:vbfOk},{label:`Fotók feltöltve (${osszesFoto} db)`,ok:osszesFoto>0},{label:"Minden fotó kategória feltöltve",ok:mindenKatFoto}].map(item=>(
-            <div key={item.label} style={{ display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${C.border}` }}>
-              {item.ok?<CheckCircle2 size={20} color={C.success}/>:<AlertTriangle size={20} color={C.warning}/>}
-              <span style={{ fontSize:14,color:item.ok?C.success:C.warning,fontWeight:item.ok?600:400 }}>{item.label}</span>
+          <p style={{ fontSize:15,fontWeight:700,color:C.text,marginBottom:12 }}>✅ Munka ellenőrzése</p>
+          {[
+            {label:"VBF Jegyzőkönyv kitöltve",ok:vbfOk,info:"Írj '0'-t minden nem releváns mezőbe"},
+            {label:`Fotók feltöltve (${osszesFoto} db)`,ok:osszesFoto>0,info:"Minimum 1 fotó szükséges"},
+            {label:`Hiányos kategóriák indoklása (${hianyosKat.length} db)`,ok:mindenKatOk||hianyosKat.length===0,info:"Minden fotó nélküli kategóriához válassz okot"},
+          ].map(item=>(
+            <div key={item.label} style={{ display:"flex",alignItems:"flex-start",gap:10,padding:"10px 0",borderBottom:`1px solid ${C.border}` }}>
+              {item.ok?<CheckCircle2 size={20} color={C.success} style={{flexShrink:0,marginTop:2}}/>:<AlertTriangle size={20} color="#D97706" style={{flexShrink:0,marginTop:2}}/>}
+              <div>
+                <p style={{ fontSize:14,color:item.ok?C.success:"#D97706",fontWeight:item.ok?600:500,margin:0 }}>{item.label}</p>
+                {!item.ok&&<p style={{ fontSize:11,color:"#94A3B8",margin:"2px 0 0" }}>{item.info}</p>}
+              </div>
             </div>
           ))}
         </div>
-        {figy&&<div style={{ background:"#FEF2F2",border:`1px solid #FECACA`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.danger }}>⚠️ A VBF Jegyzőkönyv hiányos! Írj "0"-t minden üres mezőbe.</div>}
-        <button onClick={handleBefejezesKezdete} style={{ width:"100%",padding:"15px",borderRadius:12,border:"none",background:C.success,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",fontFamily:FONT,display:"flex",alignItems:"center",justifyContent:"center",gap:8 }}>
-          ✅ Munka befejezése
+
+        {/* Hiányos fotó kategóriák - indoklás (spec 6. pont) */}
+        {hianyosKat.length > 0 && (
+          <div style={{ background:"#fff",border:"1.5px solid #FED7AA",borderRadius:12,padding:16,marginBottom:16 }}>
+            <p style={{ fontSize:14,fontWeight:700,color:"#C2410C",marginBottom:12 }}>
+              ⚠️ Hiányos fotó kategóriák – válassz okot
+            </p>
+            <p style={{ fontSize:12,color:"#94A3B8",marginBottom:12 }}>
+              A munkalap nem zárható le, amíg minden hiányos kategóriához nincs ok megadva.
+            </p>
+            {hianyosKat.map(k=>(
+              <div key={k.id} style={{ marginBottom:10 }}>
+                <p style={{ fontSize:13,fontWeight:700,color:"#0F172A",marginBottom:5 }}>{k.icon} {k.nev}</p>
+                <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
+                  {FOTO_HIANY_OKOK.map(ok=>(
+                    <button key={ok} onClick={()=>setFotoHianyOkok(p=>({...p,[k.id]:ok}))}
+                      style={{ padding:"6px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT,
+                        background:fotoHianyOkok[k.id]===ok?"#FFF7ED":"#F8FAFC",
+                        color:fotoHianyOkok[k.id]===ok?"#C2410C":"#64748B",
+                        border:`1.5px solid ${fotoHianyOkok[k.id]===ok?"#FB923C":"#E2E8F0"}`,
+                      }}>
+                      {ok}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* VBF figyelmeztetés */}
+        {figy&&<div style={{ background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:"#DC2626" }}>
+          ⚠️ A VBF Jegyzőkönyv hiányos! Írj "0"-t minden üres mezőbe.
+        </div>}
+
+        {/* Befejezés gomb */}
+        <button onClick={handleBefejezesKezdete} disabled={!lezarhatoE}
+          style={{ width:"100%",padding:"15px",borderRadius:12,border:"none",
+            background:lezarhatoE?C.success:"#CBD5E1",color:"#fff",fontWeight:700,fontSize:16,
+            cursor:lezarhatoE?"pointer":"not-allowed",fontFamily:FONT,
+            display:"flex",alignItems:"center",justifyContent:"center",gap:8 }}>
+          {lezarhatoE ? "✅ Munka befejezése" : "🔒 Hiányos dokumentáció – lezárás nem lehetséges"}
         </button>
+        {!lezarhatoE && (
+          <p style={{ fontSize:12,color:"#DC2626",textAlign:"center",marginTop:8,fontWeight:600 }}>
+            A munkalap nem zárható le, mert hiányzik a kötelező dokumentáció.
+          </p>
+        )}
       </div>
     );
   };
