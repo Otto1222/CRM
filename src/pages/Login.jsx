@@ -1,13 +1,12 @@
 import { Sun, ChevronRight } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
+import { getUsers } from "../lib/crmUsers";
 
-const PRESET_USERS = [
-  { id:"u1", name:"E.D.I. Solutions",  role:"Admin",            color:"#2563EB", initials:"ED" },
-  { id:"u2", name:"Kutasi László",     role:"Telepítő",         color:"#059669", initials:"KL" },
-  { id:"u3", name:"Csapat2",           role:"Telepítő",         color:"#9333EA", initials:"C2" },
-  { id:"u4", name:"Projektmenedzser",  role:"Projektmenedzser", color:"#D97706", initials:"PM" },
-  { id:"u5", name:"Iroda/Könyvelés",   role:"Iroda/Könyvelés",  color:"#0891B2", initials:"IK" },
-];
+// Login képernyőn az élő felhasználói lista jelenik meg (nem hardcode)
+// Ha valaki nevet vált az AdminPanel-en, itt is azonnal frissül
+function getLoginUsers() {
+  return getUsers().map(({ passwordHash: _, ...u }) => u);
+}
 
 function Avatar({ u, size=46 }) {
   return (
@@ -37,7 +36,7 @@ export default function Login({ onLogin }) {
         <p style={{ color:C.muted, fontSize:14, marginBottom:28 }}>Válassz felhasználót a belépéshez</p>
 
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {PRESET_USERS.map(u => (
+          {getLoginUsers().map(u => (
             <button
               key={u.id}
               onClick={() => onLogin(u)}

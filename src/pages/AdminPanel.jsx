@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, EyeOff, Pencil, Check, X, Copy, RefreshCw, ShieldCheck, User, Lock } from "lucide-react";
+import { Eye, EyeOff, Pencil, Check, X, Copy, RefreshCw, ShieldCheck, User, Lock, Plus, Trash2, AlertTriangle, UserPlus } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getUsers, saveUsersLocal, hashPw } from "../lib/crmUsers";
 import Card from "../components/Card";
@@ -19,8 +19,9 @@ function genPassword() {
 }
 
 // ─── Egy felhasználó sor ─────────────────────────────────────
-function UserRow({ user, onSave }) {
+function UserRow({ user, onSave, onDelete }) {
   const [editing,  setEditing]  = useState(false);
+  const [name,     setName]     = useState(user.name);
   const [username, setUsername] = useState(user.username);
   const [newPw,    setNewPw]    = useState("");
   const [showPw,   setShowPw]   = useState(false);
@@ -35,9 +36,13 @@ function UserRow({ user, onSave }) {
   }
 
   async function save() {
-    if (!username.trim()) return;
+    if (!username.trim() || !name.trim()) return;
     setSaving(true);
-    const updates = { username: username.trim() };
+    const updates = {
+      name:     name.trim(),
+      username: username.trim(),
+      initials: name.trim().split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(),
+    };
     if (newPw.trim()) {
       if (newPw.trim().length < 4) { setSaving(false); return; }
       updates.passwordHash    = await hashPw(newPw.trim());
@@ -53,6 +58,7 @@ function UserRow({ user, onSave }) {
 
   function cancel() {
     setEditing(false);
+    setName(user.name);
     setUsername(user.username);
     setNewPw("");
   }
@@ -63,14 +69,21 @@ function UserRow({ user, onSave }) {
         <Avatar initials={user.initials} color={user.color} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{user.name}</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{name}</div>
           <div style={{ fontSize: 11, color: user.color, fontWeight: 600 }}>{user.role}</div>
         </div>
 
         {!editing ? (
-          <button onClick={() => setEditing(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: "#fff", color: C.textSub, cursor: "pointer", fontSize: 13, fontFamily: FONT }}>
-            <Pencil size={14} /> Szerkesztés
-          </button>
+          <div style={{ display:"flex", gap:6 }}>
+            <button onClick={() => setEditing(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: "#fff", color: C.textSub, cursor: "pointer", fontSize: 13, fontFamily: FONT }}>
+              <Pencil size={14} /> Szerkesztés
+            </button>
+            {onDelete && (
+              <button onClick={() => onDelete(user)} title="Felhasználó törlése" style={{ padding: "7px 10px", borderRadius: 8, border: "none", background: "#FEF2F2", color: "#DC2626", cursor: "pointer", display:"flex", alignItems:"center" }}>
+                <Trash2 size={14}/>
+              </button>
+            )}
+          </div>
         ) : (
           <div style={{ display: "flex", gap: 6 }}>
             <button onClick={save} disabled={saving} style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: C.success, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: FONT, display: "flex", alignItems: "center", gap: 4 }}>
@@ -117,9 +130,22 @@ function UserRow({ user, onSave }) {
       {/* Szerkesztő form */}
       {editing && (
         <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+          {/* Teljes Név – ez jelenik meg a login képernyőn és a rendszerben */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .8, display: "block", marginBottom: 6 }}>
+              Teljes neve <span style={{ color: "#EF4444", fontWeight: 700 }}>*</span>
+              <span style={{ color: C.muted, fontWeight: 400, textTransform: "none", marginLeft: 8 }}>– ez jelenik meg a login képernyőn és a munkalapokban</span>
+            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: `2px solid ${C.accent}`, borderRadius: 10, padding: "0 12px" }}>
+              <User size={14} color={C.accent} />
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="pl. Nagy Péter"
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 14, padding: "10px 0", fontFamily: FONT, background: "transparent", color: C.text, fontWeight: 600 }} />
+            </div>
+          </div>
+
           {/* Felhasználónév */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .8, display: "block", marginBottom: 6 }}>Felhasználónév</label>
+            <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .8, display: "block", marginBottom: 6 }}>Bejelentkezési név</label>
             <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: `1.5px solid ${C.border}`, borderRadius: 10, padding: "0 12px" }}>
               <User size={14} color={C.muted} />
               <input value={username} onChange={e => setUsername(e.target.value)} style={{ flex: 1, border: "none", outline: "none", fontSize: 14, padding: "10px 0", fontFamily: FONT, background: "transparent", color: C.text }} />
@@ -163,9 +189,16 @@ function UserRow({ user, onSave }) {
 // ════════════════════════════════════════════════════════
 // FŐ ADMIN PANEL
 // ════════════════════════════════════════════════════════
+const SZEREPKOROK = ["Telepítő","Projektmenedzser","Admin","Iroda/Könyvelés"];
+const SZINEK = ["#059669","#2563EB","#9333EA","#D97706","#0891B2","#DC2626","#EA580C","#0EA5E9"];
+
 export default function AdminPanel({ currentUser }) {
-  const [users, setUsers] = useState(getUsers());
-  const [toast, setToast] = useState("");
+  const [users,   setUsers]   = useState(getUsers());
+  const [toast,   setToast]   = useState("");
+  const [ujModal, setUjModal] = useState(false);
+  const [ujForm,  setUjForm]  = useState({ name:"", username:"", role:"Telepítő", password:"", szin:"#059669" });
+  const [ujHiba,  setUjHiba]  = useState("");
+  const [torles,  setTorles]  = useState(null); // user obj
 
   const isAdmin = currentUser?.role === "Admin";
 
@@ -193,6 +226,53 @@ export default function AdminPanel({ currentUser }) {
     setTimeout(() => setToast(""), 3000);
   }
 
+  async function handleUjUser() {
+    setUjHiba("");
+    const { name, username, role, password, szin } = ujForm;
+    if (!name.trim())     { setUjHiba("A teljes neve kötelező!"); return; }
+    if (!username.trim()) { setUjHiba("A bejelentkezési név kötelező!"); return; }
+    if (!password.trim() || password.trim().length < 4) { setUjHiba("Minimum 4 karakteres jelszó szükséges!"); return; }
+    if (users.find(u => u.username.toLowerCase() === username.trim().toLowerCase())) {
+      setUjHiba("Ez a bejelentkezési név már foglalt!"); return;
+    }
+    const pwHash = await hashPw(password.trim());
+    const initials = name.trim().split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+    const newUser = {
+      id:              "u" + Date.now(),
+      name:            name.trim(),
+      username:        username.trim().toLowerCase(),
+      role,
+      color:           szin,
+      initials,
+      passwordHash:    pwHash,
+      defaultPassword: password.trim(),
+    };
+    const updated = [...users, newUser];
+    setUsers(updated);
+    saveUsersLocal(updated);
+    setUjModal(false);
+    setUjForm({ name:"", username:"", role:"Telepítő", password:"", szin:"#059669" });
+    setToast("Új felhasználó sikeresen hozzáadva!");
+    setTimeout(() => setToast(""), 3000);
+  }
+
+  function handleTorles(user) {
+    if (user.id === currentUser?.id) {
+      setToast("Saját magadat nem törölheted!"); setTimeout(()=>setToast(""),3000); return;
+    }
+    setTorles(user);
+  }
+
+  function confirmTorles() {
+    if (!torles) return;
+    const updated = users.filter(u => u.id !== torles.id);
+    setUsers(updated);
+    saveUsersLocal(updated);
+    setTorles(null);
+    setToast(torles.name + " törölve!");
+    setTimeout(() => setToast(""), 3000);
+  }
+
   function copyAllCredentials() {
     const text = users.map(u =>
       `${u.name}\n  Felhasználónév: ${u.username}\n  Jelszó: ${u.defaultPassword || "(nincs megjelenítve)"}\n  Szerepkör: ${u.role}`
@@ -217,10 +297,14 @@ export default function AdminPanel({ currentUser }) {
           <h2 style={{ fontFamily: FONT_HEADING, fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 4 }}>
             {isAdmin ? "Felhasználók kezelése" : "Beállítások"}
           </h2>
-          {isAdmin && <p style={{ fontSize: 13, color: C.muted }}>Felhasználónevek és jelszavak megtekintése, módosítása</p>}
+          {isAdmin && <p style={{ fontSize: 13, color: C.muted }}>Nevek, jelszavak módosítása · Új csapat/felhasználó hozzáadása</p>}
         </div>
         {isAdmin && (
-          <button onClick={copyAllCredentials} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", background: C.accentLight, color: C.accent, border: `1px solid ${C.accent}30`, borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: FONT }}>
+          <button onClick={()=>setUjModal(true)} style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 18px", background:C.accent, color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+            <UserPlus size={15}/> Új felhasználó / Csapat
+          </button>
+        )}
+        <button onClick={copyAllCredentials} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", background: C.accentLight, color: C.accent, border: `1px solid ${C.accent}30`, borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: FONT }}>
             <Copy size={15} /> Összes adat másolása
           </button>
         )}
@@ -235,7 +319,7 @@ export default function AdminPanel({ currentUser }) {
             <span style={{ fontSize: 12, color: C.muted, marginLeft: 4 }}>— csak te látod ezt a részt</span>
           </div>
           {users.map(u => (
-            <UserRow key={u.id} user={u} onSave={handleSave} />
+            <UserRow key={u.id} user={u} onSave={handleSave} onDelete={isAdmin ? handleTorles : null} />
           ))}
           <div style={{ padding: "16px 0 8px" }}>
             <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.7 }}>
@@ -251,6 +335,126 @@ export default function AdminPanel({ currentUser }) {
             A felhasználók kezelése csak az <b>Admin</b> szerepkörrel érhető el.
           </p>
         </Card>
+      )}
+
+      {/* ════ ÚJ FELHASZNÁLÓ MODAL ════ */}
+      {ujModal && (
+        <div style={{ position:"fixed", inset:0, zIndex:2000, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+          <div style={{ background:"#fff", borderRadius:16, width:"100%", maxWidth:440, padding:"28px 24px", fontFamily:FONT }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
+              <h3 style={{ fontFamily:FONT_HEADING, fontSize:18, fontWeight:800, color:C.text, margin:0 }}>
+                👤 Új felhasználó / Csapat
+              </h3>
+              <button onClick={()=>{setUjModal(false);setUjHiba("");}} style={{ border:"none", background:"none", cursor:"pointer", color:C.muted }}>
+                <X size={20}/>
+              </button>
+            </div>
+
+            {ujHiba && (
+              <div style={{ background:"#FEF2F2", border:"1.5px solid #FECACA", borderRadius:9, padding:"9px 12px", marginBottom:14, fontSize:13, color:"#DC2626", fontWeight:600, display:"flex", gap:8 }}>
+                <AlertTriangle size={16} style={{flexShrink:0}}/> {ujHiba}
+              </div>
+            )}
+
+            <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              {/* Teljes neve */}
+              <div>
+                <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, display:"block", marginBottom:6 }}>
+                  Teljes neve <span style={{ color:"#EF4444" }}>*</span>
+                  <span style={{ color:C.muted, fontWeight:400, textTransform:"none", marginLeft:6 }}>– ez jelenik meg mindenhol</span>
+                </label>
+                <input value={ujForm.name} onChange={e=>setUjForm(p=>({...p, name:e.target.value}))}
+                  placeholder="pl. Kovács Péter" autoFocus
+                  style={{ width:"100%", boxSizing:"border-box", padding:"10px 14px", border:`2px solid ${C.accent}`, borderRadius:10, fontSize:14, fontFamily:FONT, outline:"none", fontWeight:600 }}/>
+              </div>
+
+              {/* Bejelentkezési név */}
+              <div>
+                <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, display:"block", marginBottom:6 }}>Bejelentkezési név <span style={{ color:"#EF4444" }}>*</span></label>
+                <input value={ujForm.username} onChange={e=>setUjForm(p=>({...p, username:e.target.value.toLowerCase()}))}
+                  placeholder="pl. kovacspeter"
+                  style={{ width:"100%", boxSizing:"border-box", padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:10, fontSize:14, fontFamily:FONT, outline:"none" }}/>
+              </div>
+
+              {/* Szerepkör */}
+              <div>
+                <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, display:"block", marginBottom:6 }}>Szerepkör</label>
+                <select value={ujForm.role} onChange={e=>setUjForm(p=>({...p, role:e.target.value}))}
+                  style={{ width:"100%", padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:10, fontSize:14, fontFamily:FONT, outline:"none", background:"#F8FAFC" }}>
+                  {SZEREPKOROK.map(r=><option key={r}>{r}</option>)}
+                </select>
+              </div>
+
+              {/* Jelszó */}
+              <div>
+                <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, display:"block", marginBottom:6 }}>Jelszó <span style={{ color:"#EF4444" }}>*</span></label>
+                <div style={{ display:"flex", gap:8 }}>
+                  <input value={ujForm.password} onChange={e=>setUjForm(p=>({...p, password:e.target.value}))}
+                    placeholder="Min. 4 karakter"
+                    style={{ flex:1, padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:10, fontSize:14, fontFamily:FONT, outline:"none" }}/>
+                  <button onClick={()=>setUjForm(p=>({...p, password:genPassword()}))}
+                    style={{ padding:"0 12px", borderRadius:10, border:`1.5px solid ${C.border}`, background:"#fff", color:C.textSub, cursor:"pointer", fontSize:12, fontFamily:FONT, whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:4 }}>
+                    <RefreshCw size={13}/> Generál
+                  </button>
+                </div>
+                {ujForm.password && <p style={{ fontSize:11, color:C.muted, marginTop:4 }}>💡 Jegyezd fel a jelszót!</p>}
+              </div>
+
+              {/* Szín */}
+              <div>
+                <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, display:"block", marginBottom:8 }}>Avatar szín</label>
+                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                  {SZINEK.map(szin=>(
+                    <button key={szin} onClick={()=>setUjForm(p=>({...p, szin}))}
+                      style={{ width:32, height:32, borderRadius:"50%", background:szin, border:`3px solid ${ujForm.szin===szin?"#0F172A":"transparent"}`, cursor:"pointer" }}/>
+                  ))}
+                </div>
+              </div>
+
+              {/* Előnézet */}
+              {ujForm.name && (
+                <div style={{ background:"#F8FAFC", borderRadius:10, padding:"10px 14px", display:"flex", alignItems:"center", gap:12 }}>
+                  <div style={{ width:38, height:38, borderRadius:"50%", background:ujForm.szin, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:14, flexShrink:0 }}>
+                    {ujForm.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p style={{ fontWeight:700, fontSize:14, color:C.text, margin:0 }}>{ujForm.name}</p>
+                    <p style={{ fontSize:11, color:ujForm.szin, fontWeight:600, margin:0 }}>{ujForm.role}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display:"flex", gap:10, marginTop:20 }}>
+              <button onClick={()=>{setUjModal(false);setUjHiba("");}} style={{ flex:1, padding:"11px", borderRadius:9, border:`1.5px solid ${C.border}`, background:"#fff", fontWeight:600, fontSize:14, cursor:"pointer", fontFamily:FONT }}>Mégse</button>
+              <button onClick={handleUjUser} style={{ flex:2, padding:"11px", borderRadius:9, border:"none", background:C.accent, color:"#fff", fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:FONT, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                <Plus size={16}/> Felhasználó létrehozása
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════ TÖRLÉS MEGERŐSÍTŐ MODAL ════ */}
+      {torles && (
+        <div style={{ position:"fixed", inset:0, zIndex:2000, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+          <div style={{ background:"#fff", borderRadius:16, width:"100%", maxWidth:380, padding:"28px 24px", fontFamily:FONT, textAlign:"center" }}>
+            <div style={{ width:56, height:56, borderRadius:"50%", background:"#FEF2F2", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px" }}>
+              <Trash2 size={26} color="#DC2626"/>
+            </div>
+            <h3 style={{ fontSize:18, fontWeight:800, color:C.text, marginBottom:8 }}>Felhasználó törlése</h3>
+            <p style={{ fontSize:13, color:C.textSub, marginBottom:6 }}>
+              Biztosan törlöd <strong>{torles.name}</strong> felhasználót?
+            </p>
+            <p style={{ fontSize:12, color:"#DC2626", fontWeight:600, marginBottom:20 }}>
+              ⚠️ Ez nem visszavonható! A hozzárendelt munkalapok megmaradnak, csak a belépési jog szűnik meg.
+            </p>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={()=>setTorles(null)} style={{ flex:1, padding:"11px", borderRadius:9, border:`1.5px solid ${C.border}`, background:"#fff", fontWeight:600, cursor:"pointer", fontFamily:FONT }}>Mégse</button>
+              <button onClick={confirmTorles} style={{ flex:1, padding:"11px", borderRadius:9, border:"none", background:"#DC2626", color:"#fff", fontWeight:700, cursor:"pointer", fontFamily:FONT }}>Törlöm</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
