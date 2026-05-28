@@ -13,6 +13,9 @@ import { MunkalapLista, MunkalapDetail } from "./pages/Munkalapok";
 import Ugyfelek from "./pages/Ugyfelek";
 import AdminPanel from "./pages/AdminPanel";
 import KarteritesekTab from "./pages/KarteritesekTab";
+import SablonKezelo from "./pages/SablonKezelo";
+import BackupKezelo from "./pages/BackupKezelo";
+import { createBackup } from "./lib/backupService";
 import MunkakiosztasBeallitasok from "./pages/MunkakiosztasBeallitasok";
 import JegyzokonyviBeallitasok from "./pages/JegyzokonyviBeallitasok";
 import Munkakiosztas from "./pages/Munkakiosztas";
@@ -96,6 +99,8 @@ const ALL_MOB_NAV = [
   { id:"dashboard",     label:"Irányítópult",  icon:LayoutDashboard, desc:"Összefoglaló & statisztikák" },
   { id:"munkalapok",    label:"Munkalapok",    icon:FileText,        desc:"Munkák kezelése" },
   { id:"karteritesek",  label:"Kártérítések",  icon:FileText,        desc:"Kártérítések kezelése" },
+  { id:"sablonok",      label:"Sablonok",      icon:FileText,        desc:"Dokumentum sablonok" },
+  { id:"biztmentes",    label:"Mentések",       icon:FileText,        desc:"Biztonsági mentések" },
   { id:"munkakiosztas", label:"Munkakiosztás", icon:Hammer,          desc:"Excel import & csapat kiosztás" },
   { id:"ugyfelek",      label:"Ügyfelek",      icon:Users,           desc:"Ügyféladatbázis" },
   { id:"arajanlatok",   label:"Árajánlatok",   icon:ClipboardList,   desc:"Ajánlatok készítése" },
@@ -173,6 +178,8 @@ function PageContent({ page, sel, setSel, data, user, onNewMunkalap, onDelete })
   if (page === "munkakiosztas") return <Munkakiosztas />;
   if (page === "ugyfelek")      return <Ugyfelek data={data} />;
   if (page === "karteritesek") return <KarteritesekTab userRole={role} currentUser={user} munkalapok={data.munkalapok} />;
+  if (page === "sablonok")     return <SablonKezelo userRole={role} />;
+  if (page === "biztmentes")   return <BackupKezelo userRole={role} />;
   if (page === "beallitasok")   return <div><AdminPanel currentUser={user} /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><JegyzokonyviBeallitasok /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><MunkakiosztasBeallitasok /></div>;
   if (page === "arajanlatok")   return <ComingSoon title="Árajánlatok" />;
   if (page === "szerzodesek")   return <ComingSoon title="Szerződések" />;

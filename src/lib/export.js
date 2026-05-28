@@ -1,3 +1,11 @@
+/**
+ * export.js – Legacy compatibility wrapper
+ * Az exportService.js-t használja belsőleg
+ * Megtartjuk a régi API-t hogy a meglévő hívások ne törendjenek
+ */
+export { exportToExcel as exportExcel, exportToPDF as exportPDF, exportToCSV } from "./exportService";
+// ───────────────────────────────────────────────────────────────
+// RÉGI LOGIKA (visszafelé kompatibilitás) – ne töröld!
 // ─── Export modul: Excel + PDF ────────────────────────────────
 import * as XLSX from "xlsx";
 import { ft } from "./helpers";

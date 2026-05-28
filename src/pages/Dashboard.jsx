@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Clock, FileText,
 import { C, FONT, FONT_HEADING, STATUS_CFG } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import { loadKarteritesek } from "../lib/karterites";
+import { calcMunkalapPenzugy, calcProjektPenzugy } from "../lib/costEngine";
 import { canSeePrice } from "../lib/roles";
 
 function StatCard({ label, value, sub, color, bg, icon: Icon }) {

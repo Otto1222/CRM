@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { C, FONT, FONT_HEADING, MUNKALAP_TIPUSOK, WORKFLOW_STATUSES } from "../lib/constants";
 import { nextEdiSorszam, fullDokumentumszam } from "../lib/dokumentumszam";
+import { createBackup } from "../lib/backupService";
 import { ft, totals } from "../lib/helpers";
 import { getSettings } from "../lib/munkakiosztasSettings";
 
@@ -231,6 +232,7 @@ export default function UjMunkalap({ data, onBack, onSave }) {
   async function handleSave() {
     if(!validate()) { setActive("alap"); return; }
     setSaving(true);
+    createBackup("Új munkalap mentés előtt");
     const generaltEdi = nextEdiSorszam(); // Csak 1x generálódik;
 
     const anyagok = eszkozKat.flatMap(k =>

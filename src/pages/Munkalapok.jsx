@@ -9,7 +9,7 @@ import FelmeresTelepito from "./FelmeresTelepito";
 import KarteritesekTab from "./KarteritesekTab";
 import { karteritesOsszesMunkalaphoz } from "../lib/karterites";
 import { getHelyszinSorszam } from "../lib/dokumentumszam";
-import { exportExcel, exportPDF } from "../lib/export";
+import { exportToExcel as exportExcel, exportToPDF as exportPDF, exportToCSV } from "../lib/exportService";
 import { Download } from "lucide-react";
 import {
   Search, Plus, ChevronRight, FileText, Phone, MapPin,
@@ -187,6 +187,10 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
             <button onClick={() => exportPDF(filtered, "Munkalapok összesítő")} title="PDF export"
               style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 14px", background:"#DC2626", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
               <Download size={14}/> PDF
+            </button>
+            <button onClick={() => exportToCSV(filtered, [], { fajlnev:"munkalapok" })} title="CSV export"
+              style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 14px", background:"#7C3AED", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+              <Download size={14}/> CSV
             </button>
           </>
         )}
