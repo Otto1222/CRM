@@ -224,12 +224,23 @@ export default function FelmeresTelepito({m, data, onBack}) {
 
   async function handleMentes() {
     setSaving(true);
-    const felmeresAdat={...adatok,nyilatkozat,felmeresIdopont:new Date().toISOString().slice(0,10),felmeresKesz:true};
+    const ma = new Date().toISOString().slice(0,10);
+    const felmeresAdat={...adatok,nyilatkozat,felmeresIdopont:ma,felmeresKesz:true};
     FOTO_KAT.forEach(k=>{felmeresAdat[k.id+"_kepDb"]=(katFotok[k.id]||[]).length;felmeresAdat[k.id+"_note"]=fotoNotes[k.id]||"";});
-    updateItem("munkalapok",m.id,{felmeres:{...(m.felmeres||{}),...felmeresAdat},felmeresKesz:true,felmeresAlairas:alairas});
+    // Munkalap lezárása: status → "Befejezett Felmérés", lezarva=true
+    updateItem("munkalapok", m.id, {
+      felmeres:       { ...(m.felmeres||{}), ...felmeresAdat },
+      felmeresKesz:   true,
+      felmeresAlairas: alairas,
+      status:         "Befejezett Felmérés",
+      lezarva:        true,
+      lezarvaDate:    ma,
+    });
     window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
     await new Promise(r=>setTimeout(r,500));
     setSaving(false); setMentve(true); setTimeout(()=>setMentve(false),3000);
+    // Vissza a listához mentés után
+    setTimeout(()=>onBack(), 1500);
   }
 
   const osszesKep=FOTO_KAT.reduce((s,k)=>s+(katFotok[k.id]?.length||0),0);

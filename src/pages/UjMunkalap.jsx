@@ -3,7 +3,8 @@ import {
   ArrowLeft, Save, Plus, Trash2, Upload, X,
   ChevronDown, ChevronUp, FileText, Search
 } from "lucide-react";
-import { C, FONT, FONT_HEADING } from "../lib/constants";
+import { C, FONT, FONT_HEADING, MUNKALAP_TIPUSOK, WORKFLOW_STATUSES } from "../lib/constants";
+import { nextEdiSorszam, fullDokumentumszam } from "../lib/dokumentumszam";
 import { ft, totals } from "../lib/helpers";
 import { getSettings } from "../lib/munkakiosztasSettings";
 
@@ -256,6 +257,10 @@ export default function UjMunkalap({ data, onBack, onSave }) {
       description:       alap.feladat,
       date:              alap.date,
       ertekesito:        alap.ertekesito,
+      munkalapTipus:     alap.munkalapTipus || "Első kivitelezés",
+      fovallalkoiAzonosito: alap.fovallalkoiAzonosito || "",
+      ediSorszam:        nextEdiSorszam(),
+      dokumentumszam:    fullDokumentumszam(nextEdiSorszam(), alap.fovallalkoiAzonosito),
       // Csapat – a Telepítő szűrés erre támaszkodik
       assigneeId:        alap.csapatId,
       assigneeNev:       csapat?.nev || alap.csapatNev,
@@ -379,7 +384,7 @@ export default function UjMunkalap({ data, onBack, onSave }) {
               <div style={{ marginBottom:14 }}>
                 <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Státusz</label>
                 <select value={alap.status} onChange={e=>updAlap("status",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
-                  {["Megkezdésre Vár","Felmérés","Kivitelezés","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=><option key={s}>{s}</option>)}
+                  {WORKFLOW_STATUSES.map(s=><option key={s}>{s}</option>)}
                 </select>
                 {alap.status === "Felmérés" && (
                   <div style={{ marginTop:8, padding:"8px 12px", background:"#E0F2FE", borderRadius:8, fontSize:12, color:"#0369A1", display:"flex", alignItems:"flex-start", gap:7, lineHeight:1.5 }}>
@@ -396,6 +401,19 @@ export default function UjMunkalap({ data, onBack, onSave }) {
               </div>
             </div>
             <Field label="Értékesítő neve" value={alap.ertekesito} onChange={v=>updAlap("ertekesito",v)} placeholder="Értékesítő neve"/>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              <div>
+                <label style={{ fontSize:12, fontWeight:700, color:"#64748B", display:"block", marginBottom:5 }}>Fővállalkozói azonosító</label>
+                <input value={alap.fovallalkoiAzonosito||""} onChange={e=>updAlap("fovallalkoiAzonosito",e.target.value)} placeholder="pl. FŐV-2026-145" style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:"1.5px solid #E2E8F0", borderRadius:9, fontSize:14, fontFamily:"inherit", outline:"none" }} />
+                <p style={{ fontSize:10, color:"#94A3B8", marginTop:3 }}>EDI sorszám (E.D.I. 001) mentéskor kap</p>
+              </div>
+              <div>
+                <label style={{ fontSize:12, fontWeight:700, color:"#64748B", display:"block", marginBottom:5 }}>Munkalap típusa</label>
+                <select value={alap.munkalapTipus||"Első kivitelezés"} onChange={e=>updAlap("munkalapTipus",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:"1.5px solid #E2E8F0", borderRadius:9, fontSize:14, fontFamily:"inherit", color:"#0F172A", outline:"none", background:"#F8FAFC" }}>
+                  {MUNKALAP_TIPUSOK.map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
           </div>
         )}
 

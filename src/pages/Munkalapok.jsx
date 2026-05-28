@@ -6,6 +6,9 @@ import FelmeresFotokAdminCard from "../components/FelmeresFotokAdminCard";
 import FelmeresJegyzokonyv from "./FelmeresJegyzokonyv";
 import TelepItoMunkalap from "./TelepItoMunkalap";
 import FelmeresTelepito from "./FelmeresTelepito";
+import KarteritesekTab from "./KarteritesekTab";
+import { karteritesOsszesMunkalaphoz } from "../lib/karterites";
+import { getHelyszinSorszam } from "../lib/dokumentumszam";
 import {
   Search, Plus, ChevronRight, FileText, Phone, MapPin,
   ClipboardList, Package, Ruler, Printer, Send, Loader2,
@@ -128,11 +131,12 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
   const [q, setQ] = useState("");
   const [tab, setTab] = useState("Összes");
   const isMobile = useIsMobile();
-  const STATUSES = ["Összes","Felmérés","Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"];
+  const STATUSES = ["Összes", ...WORKFLOW_STATUSES];
 
   const filtered = data.munkalapok.filter(m => {
-    // Telepítőnek csak a nevéhez rendelt munkák
+    // Telepítőnek csak a nevéhez rendelt munkák, "Befejezett Felmérés" ne látsszon
     if (userRole === "Telepítő" && currentUser) {
+      if (m.status === "Befejezett Felmérés") return false;
       const match = m.assigneeNev === currentUser.name ||
                     m.csapatNev   === currentUser.name ||
                     m.assigneeId  === currentUser.id;
@@ -190,8 +194,12 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
                     onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                     <td style={{ padding:"14px 16px" }}>
                       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <span style={{ fontWeight:700, color:C.accent }}>{m.id}</span>
+                        <div>
+                          <span style={{ fontWeight:700, color:C.accent }}>{m.dokumentumszam || m.ediSorszam || m.id}</span>
+                          {m.dokumentumszam && <span style={{ fontSize:10, color:C.muted, display:"block" }}>{m.id}</span>}
+                        </div>
                         {m.cimke && <CimkeBadge label={m.cimke} color={m.cimkeSzin||C.accent} />}
+                        {m.munkalapTipus && <span style={{ fontSize:10, background:"#F1F5F9", color:C.muted, padding:"2px 7px", borderRadius:6, fontWeight:600 }}>{m.munkalapTipus}</span>}
                       </div>
                     </td>
                     <td style={{ padding:"14px 16px", color:C.textSub }}>{cl?.name||"—"}</td>
@@ -215,7 +223,10 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
             return (
               <button key={m.id} onClick={()=>onSelect(m)} style={{ width:"100%", background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", marginBottom:10, cursor:"pointer", textAlign:"left", fontFamily:FONT }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                  <span style={{ fontWeight:800, fontSize:15, color:C.text }}>{m.id}</span>
+                  <div>
+                    <span style={{ fontWeight:800, fontSize:15, color:C.text }}>{m.dokumentumszam || m.ediSorszam || m.id}</span>
+                    {m.munkalapTipus && <span style={{ fontSize:10, background:"#F1F5F9", color:C.muted, padding:"1px 6px", borderRadius:5, fontWeight:600, marginLeft:6 }}>{m.munkalapTipus}</span>}
+                  </div>
                   {m.cimke&&<CimkeBadge label={m.cimke} color={m.cimkeSzin||C.accent}/>}
                   <span style={{ marginLeft:"auto", fontSize:12, color:C.muted }}>{m.date}</span>
                 </div>
@@ -580,7 +591,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
           <div style={{ padding:"16px" }}>
             <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, marginBottom:10 }}>Státusz módosítása</p>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {["Felmérés","Kivitelezés","Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=>{
+              {["Felmérés","Befejezett Felmérés","Kivitelezés","Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=>{
                 const cfg=STATUS_CFG[s]||{bg:"#F1F5F9",text:C.muted,dot:C.muted};
                 return <button key={s} style={{ padding:"8px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
               })}
@@ -699,6 +710,8 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
   const tot = totals(m.items||[]);
   const [saving, setSaving] = useState(false);
   const [showUjrakiosztas, setShowUjrakiosztas] = useState(false);
+  const [showFelmeresJkvD, setShowFelmeresJkvD] = useState(false);
+  const isBefejezettFelmeres = m.status === "Befejezett Felmérés" || m.felmeresKesz;
 
   async function issueInvoice() {
     setSaving(true);
@@ -723,6 +736,24 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
             <StatusBadge s={m.status||"Ütemezett"}/>
           </div>
           <p style={{ fontSize:13.5, color:C.textSub, lineHeight:1.7 }}>{m.description}</p>
+          {/* Befejezett Felmérés panel */}
+          {isBefejezettFelmeres && (
+            <div style={{ marginTop:16, padding:"12px 14px", background:"#F0FDF4", borderRadius:10, border:"1.5px solid #86EFAC", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <span style={{ fontSize:20 }}>✅</span>
+                <div>
+                  <p style={{ fontWeight:700, fontSize:13, color:"#166534", margin:0 }}>Felmérés lezárva</p>
+                  <p style={{ fontSize:11, color:"#15803D", margin:"2px 0 0" }}>
+                    {m.felmeres?.felmeresIdopont || m.lezarvaDate || "—"} · {m.assigneeNev || "—"}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setShowFelmeresJkvD(true)} style={{ display:"flex", alignItems:"center", gap:7, padding:"8px 16px", background:"#16A34A", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
+                📋 Nyilatkozat PDF
+              </button>
+            </div>
+          )}
+          {showFelmeresJkvD && <FelmeresJegyzokonyv m={m} onClose={() => setShowFelmeresJkvD(false)} />}
           <div style={{ display:"flex", gap:24, marginTop:16, flexWrap:"wrap" }}>
             <div><span style={{ fontSize:11, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:.8 }}>Dátum</span><p style={{ fontSize:13, fontWeight:600, color:C.text, marginTop:3 }}>{m.date}</p></div>
             {as&&<div><span style={{ fontSize:11, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:.8 }}>Szerelő</span><div style={{ display:"flex", alignItems:"center", gap:7, marginTop:3 }}><Avatar u={as} size={24}/><span style={{ fontSize:13, fontWeight:600, color:C.text }}>{as.name}</span></div></div>}
@@ -786,7 +817,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
         <Card style={{ padding:"20px 22px", marginBottom:16 }}>
           <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Státusz módosítása</h4>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-            {["Felmérés","Kivitelezés","Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=>{
+            {["Felmérés","Befejezett Felmérés","Kivitelezés","Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=>{
               const cfg=STATUS_CFG[s]||{bg:"#F1F5F9",text:C.muted,dot:C.muted};
               return <button key={s} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
             })}
