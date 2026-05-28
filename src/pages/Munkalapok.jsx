@@ -3,6 +3,7 @@ import UjrakiosztasModal from "./UjrakiosztasModal";
 import VbfAdminCard from "../components/VbfAdminCard";
 import FotokAdminCard from "../components/FotokAdminCard";
 import FelmeresFotokAdminCard from "../components/FelmeresFotokAdminCard";
+import FelmeresJegyzokonyv from "./FelmeresJegyzokonyv";
 import TelepItoMunkalap from "./TelepItoMunkalap";
 import FelmeresTelepito from "./FelmeresTelepito";
 import {
@@ -500,6 +501,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
   const tot = totals(m.items||[]);
   const [saving, setSaving] = useState(false);
 
+  const [showFelmeresJkv, setShowFelmeresJkv] = useState(false);
   const tabs = [
     { icon:"📄" }, { icon:"📦" }, { icon:"📋" }
   ];
@@ -551,7 +553,27 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
             </div>
           )}
           <VbfAdminCard munkalapId={m.id} />
-          <FelmeresFotokAdminCard munkalapId={m.id} userRole={userRole} />
+          <div style={{ marginBottom: 12 }}>
+          <button
+            onClick={() => setShowFelmeresJkv(true)}
+            style={{
+              display:"flex", alignItems:"center", gap:8,
+              padding:"10px 18px", background:"#0EA5E9", color:"#fff",
+              border:"none", borderRadius:10, cursor:"pointer",
+              fontWeight:700, fontSize:14, fontFamily:"'DM Sans',sans-serif",
+            }}
+          >
+            📋 Felmérési Jegyzőkönyv (PDF)
+          </button>
+        </div>
+        {showFelmeresJkv && <FelmeresJegyzokonyv m={m} onClose={() => setShowFelmeresJkv(false)} />}
+        <button
+          onClick={() => setShowFelmeresJkv(true)}
+          style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 16px", background:"#0EA5E9", color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"'DM Sans',sans-serif", marginBottom:12, width:"100%" }}
+        >
+          📋 Felmérési Jegyzőkönyv (PDF)
+        </button>
+        <FelmeresFotokAdminCard munkalapId={m.id} userRole={userRole} />
         <FotokAdminCard munkalapId={m.id} />
           <FelhasznaltAnyagokCard m={m} />
           {/* Státusz */}
