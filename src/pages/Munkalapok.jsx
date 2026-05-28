@@ -18,7 +18,8 @@ import {
   User, Mail, Calendar, Hash, Tag, MessageSquare,
   ChevronDown, Save
 } from "lucide-react";
-import { C, FONT, FONT_HEADING, USERS, STATUS_CFG } from "../lib/constants";
+import { C, FONT, FONT_HEADING, USERS, STATUS_CFG, WORKFLOW_STATUSES } from "../lib/constants";
+import { loadLocal, updateItem } from "../lib/localDb";
 import { ft, totals, generateId } from "../lib/helpers";
 import { canSeePrice, canCreateMunkalap } from "../lib/roles";
 import Card from "../components/Card";
@@ -613,11 +614,9 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
             <div style={{ display:"flex", gap:8 }}>
               <button onClick={() => {
                 const { updateItem } = require ? null : null;
-                import("../lib/localDb").then(({updateItem}) => {
-                  updateItem("munkalapok", m.id, { status:"Lezárva", statusSzin:"#059669" });
+                updateItem("munkalapok", m.id, { status:"Lezárva", statusSzin:"#059669" });
                   window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
                   if(onRefresh) onRefresh();
-                });
               }} style={{ flex:1, padding:"10px", background:"#059669", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 ✅ Lezárva (munkát átvettem)
               </button>
@@ -628,11 +627,9 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
           <div style={{ background:"#F0FDF4", border:"1.5px solid #86EFAC", borderRadius:12, padding:"14px 16px", marginBottom:12 }}>
             <p style={{ fontSize:13, fontWeight:700, color:"#166534", margin:"0 0 10px" }}>✅ Lezárva – számlázásra kész</p>
             <button onClick={() => {
-              import("../lib/localDb").then(({updateItem}) => {
-                updateItem("munkalapok", m.id, { status:"Számlázva", statusSzin:"#15803D" });
+              updateItem("munkalapok", m.id, { status:"Számlázva", statusSzin:"#15803D" });
                 window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
                 if(onRefresh) onRefresh();
-              });
             }} style={{ width:"100%", padding:"10px", background:"#15803D", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
               💰 Számlázva
             </button>
@@ -658,7 +655,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
                     <div key={f.k}>
                       <label style={{fontSize:10,fontWeight:700,color:C.muted,display:"block",marginBottom:3}}>{f.l}</label>
                       <input type="number" defaultValue={m[f.k]||0}
-                        onBlur={e=>{import("../lib/localDb").then(({updateItem})=>{updateItem("munkalapok",m.id,{[f.k]:Number(e.target.value)||0});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();});}}
+                        onBlur={e=>{updateItem("munkalapok",m.id,{[f.k]:Number(e.target.value)||0});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}}
                         style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",border:"1.5px solid #E2E8F0",borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none"}}/>
                     </div>
                   ))}
@@ -905,14 +902,14 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
             {["Felmérés","Befejezett Felmérés","Kiosztásra vár","Kivitelezésre vár","Megkezdésre Vár","Folyamatban","Kivitelezés","Ellenőrzés alatt","Lezárva","Számlázva","Kész","Meghiúsult"].map(s=>{
               const cfg=STATUS_CFG[s]||{bg:"#F1F5F9",text:C.muted,dot:C.muted};
-              return <button key={s} onClick={()=>{import("../lib/localDb").then(({updateItem})=>{updateItem("munkalapok",m.id,{status:s});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();});}} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
+              return <button key={s} onClick={()=>{updateItem("munkalapok",m.id,{status:s});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
             })}
           </div>
           {/* PM Workflow gyorsgombok */}
           {m.status === "Ellenőrzés alatt" && ["Projektmenedzser","Admin"].includes(userRole) && (
             <div style={{ marginTop:12, padding:"12px 14px", background:"#FFFBEB", border:"1.5px solid #FCD34D", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <p style={{ fontSize:13, fontWeight:700, color:"#92400E", margin:0 }}>⚠️ Ellenőrzésre vár – PM átvétel szükséges</p>
-              <button onClick={()=>{import("../lib/localDb").then(({updateItem})=>{updateItem("munkalapok",m.id,{status:"Lezárva",statusSzin:"#059669"});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();});}} style={{ padding:"9px 18px", background:"#059669", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
+              <button onClick={()=>{updateItem("munkalapok",m.id,{status:"Lezárva",statusSzin:"#059669"});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}} style={{ padding:"9px 18px", background:"#059669", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 ✅ Lezárva (munkát átvettem)
               </button>
             </div>
@@ -920,7 +917,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           {m.status === "Lezárva" && ["Iroda/Könyvelés","Projektmenedzser","Admin"].includes(userRole) && (
             <div style={{ marginTop:12, padding:"12px 14px", background:"#F0FDF4", border:"1.5px solid #86EFAC", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <p style={{ fontSize:13, fontWeight:700, color:"#166534", margin:0 }}>✅ Lezárva – TIG kiállítható, számlázásra kész</p>
-              <button onClick={()=>{import("../lib/localDb").then(({updateItem})=>{updateItem("munkalapok",m.id,{status:"Számlázva",statusSzin:"#15803D"});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();});}} style={{ padding:"9px 18px", background:"#15803D", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
+              <button onClick={()=>{updateItem("munkalapok",m.id,{status:"Számlázva",statusSzin:"#15803D"});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}} style={{ padding:"9px 18px", background:"#15803D", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 💰 Számlázva
               </button>
             </div>
