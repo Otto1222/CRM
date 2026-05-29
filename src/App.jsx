@@ -470,5 +470,4 @@ const gStyles = `
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
   ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
-`;
+  ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }`;
