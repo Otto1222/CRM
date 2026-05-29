@@ -307,7 +307,6 @@ export default function AdminPanel({ currentUser }) {
         <button onClick={copyAllCredentials} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", background: C.accentLight, color: C.accent, border: `1px solid ${C.accent}30`, borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: FONT }}>
             <Copy size={15} /> Összes adat másolása
           </button>
-        )}
       </div>
 
       {/* Admin nézet */}
