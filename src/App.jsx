@@ -19,6 +19,7 @@ import KarteritesekTab from "./pages/KarteritesekTab";
 import SablonKezelo from "./pages/SablonKezelo";
 import BackupKezelo from "./pages/BackupKezelo";
 import FovallalkozoPage from "./modules/fovallalkozok/FovallalkozoPage.jsx";
+import MunkatipusokPage from "./modules/munkatipusok/MunkatipusokPage.jsx";
 import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
 import { createBackup } from "./lib/backupService";
 import MunkakiosztasBeallitasok from "./pages/MunkakiosztasBeallitasok";
@@ -110,6 +111,8 @@ const ALL_MOB_NAV = [
   { id:"projektek",      label:"Projektek",       icon:FileText,        desc:"Projekt kezelés" },
   { id:"munkakiosztas",  label:"Munkakiosztás",   icon:Hammer,          desc:"Excel import & csapat kiosztás" },
   { id:"fovallalkozok",  label:"Fővállalkozók",   icon:FileText,        desc:"Elszámolási szabályok" },
+  { id:"munkatipusok",   label:"Munkatípusok",   icon:FileText,        desc:"Munkatípus definíciók" },
+  { id:"munkatipusok",   label:"Munkatípusok",   icon:FileText,        desc:"Munkatípus definíciók" },
   { id:"ugyfelek",       label:"Ügyfelek",        icon:Users,           desc:"Ügyféladatbázis" },
   { id:"arajanlatok",    label:"Árajánlatok",     icon:ClipboardList,   desc:"Ajánlatok készítése" },
   { id:"szerzodesek",    label:"Szerződések",     icon:ScrollText,      desc:"Szerződések kezelése" },
@@ -198,6 +201,7 @@ function PageContent({ page, sel, setSel, data, user, onNewMunkalap, onDelete })
   );
   if (page === "karteritesek") return <KarteritesekTab userRole={role} currentUser={user} munkalapok={data.munkalapok} />;
   if (page === "fovallalkozok") return <FovallalkozoPage userRole={user?.role} />;
+  if (page === "munkatipusok")  return <MunkatipusokPage userRole={user?.role} />;
   if (page === "sablonok")     return <SablonKezelo userRole={role} />;
   if (page === "biztmentes")   return <BackupKezelo userRole={role} />;
   if (page === "beallitasok")   return <div><AdminPanel currentUser={user} /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><JegyzokonyviBeallitasok /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><MunkakiosztasBeallitasok /></div>;

@@ -5,6 +5,8 @@ import { getUsers } from "../../lib/crmUsers.js";
 import { PROJEKT_STATUSZOK, PROJEKT_TIPUSOK } from "./projekt.schema.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
+import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
+import { loadElszamolasiKontextus, hasHianyosTetelek, generateBeveteliTetelek } from "../../services/settlementRule.service.js";
 import { createProjekt, updateProjekt } from "./projekt.service.js";
 
 const Field = ({ label, children, half }) => (
@@ -25,6 +27,7 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
   const users   = getUsers();
   const csapatok       = users.filter(u => u.role === "Telepítő");
   const fovallalkozok  = getAktivFovallalkozok();
+  const munkatipusok   = getAktivMunkatipusok();
   const pmList   = users.filter(u => ["Admin","Projektmenedzser"].includes(u.role));
 
   const [form, setForm] = useState({
@@ -49,7 +52,7 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
     penzugy: projekt?.penzugy || {
       fovallalkoziId: "", munkatipus: "", elszamolasiSzabalyId: "",
       tavKm: 0, csapatLetszam: 1, munkanapok: 1,
-      felultBevitel: null, keziCsapatBer: null, keziUtikoltség: null,
+      darabszam: 1, felultBevitel: null, keziCsapatBer: null, keziUtikoltség: null,
       keziAnyagkoltség: null, keziKartérités: null,
       emelőgepKoltseg: 0, egyebKoltseg: 0,
     },
@@ -72,11 +75,15 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
   }
 
   function handleFovallalkozo(fvId) {
-    const filled = autoFillPenzugy(fvId, form.tipus, form.penzugy);
-    const sz = filled.elszamolasiSzabalyId
-      ? null
-      : findSzabaly(fvId, form.tipus);
-    setForm(p => ({ ...p, penzugy: { ...filled, elszamolasiSzabalyId: sz?.id || "" } }));
+    const filled = autoFillPenzugy(fvId, form.penzugy?.munkatipus || "", form.penzugy);
+    const sz = findSzabaly(fvId, form.penzugy?.munkatipus || "");
+    setForm(p => ({ ...p, penzugy: { ...filled, fovallalkoziId: fvId, elszamolasiSzabalyId: sz?.id || "" } }));
+  }
+
+  function handleMunkatipus(mtId) {
+    const filled = autoFillPenzugy(form.penzugy?.fovallalkoziId || "", mtId, form.penzugy);
+    const sz = findSzabaly(form.penzugy?.fovallalkoziId || "", mtId);
+    setForm(p => ({ ...p, tipus: mtId, penzugy: { ...filled, munkatipus: mtId, elszamolasiSzabalyId: sz?.id || "" } }));
   }
 
   function updPenz(k, v) {
@@ -122,9 +129,10 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
               <input value={form.kulsoAzonosito} onChange={e=>upd("kulsoAzonosito",e.target.value)} placeholder="pl. FŐV-2026-145" style={inp}/>
             </Field>
 
-            <Field label="Típus" half>
-              <select value={form.tipus} onChange={e=>upd("tipus",e.target.value)} style={inp}>
-                {PROJEKT_TIPUSOK.map(t=><option key={t}>{t}</option>)}
+            <Field label="Munkatípus" half>
+              <select value={form.tipus} onChange={e=>handleMunkatipus(e.target.value)} style={inp}>
+                <option value="">— Válassz munkatípust —</option>
+                {munkatipusok.map(t=><option key={t.id} value={t.id}>{t.nev}</option>)}
               </select>
             </Field>
 
@@ -203,6 +211,9 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
               {form.penzugy.fovallalkoziId && !form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize:10, color:"#D97706", marginTop:3 }}>⚠️ Nincs aktív szabály ehhez a munkatípushoz</p>}
             </Field>
 
+            <Field label="Darabszám (pl. panel db)" half>
+              <input type="number" value={form.penzugy.darabszam||1} onChange={e=>updPenz("darabszam",e.target.value)} placeholder="1" style={inp}/>
+            </Field>
             <Field label="Távolság (km, oda)" half>
               <input type="number" value={form.penzugy.tavKm||""} onChange={e=>updPenz("tavKm",e.target.value)} placeholder="0" style={inp}/>
             </Field>
