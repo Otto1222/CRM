@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import { MunkalapLista, MunkalapDetail } from "./pages/Munkalapok";
 import Ugyfelek from "./pages/Ugyfelek";
 import AdminPanel from "./pages/AdminPanel";
+import BeallitasokPage from "./pages/BeallitasokPage.jsx";
 import KarteritesekTab from "./pages/KarteritesekTab";
 import SablonKezelo from "./pages/SablonKezelo";
 import BackupKezelo from "./pages/BackupKezelo";
@@ -122,8 +123,7 @@ const ALL_MOB_NAV = [
   { id:"dashboard",      label:"Irányítópult",    icon:LayoutDashboard, desc:"Összefoglaló & statisztikák" },
   { id:"projektek",      label:"Projektek",       icon:FileText,        desc:"Projekt kezelés" },
   { id:"munkakiosztas",  label:"Munkakiosztás",   icon:Hammer,          desc:"Excel import & csapat kiosztás" },
-  { id:"fovallalkozok",  label:"Fővállalkozók",   icon:FileText,        desc:"Elszámolási szabályok" },
-  { id:"munkatipusok",   label:"Munkatípusok",   icon:FileText,        desc:"Munkatípus definíciók" },
+
   { id:"ugyfelek",       label:"Ügyfelek",        icon:Users,           desc:"Ügyféladatbázis" },
   { id:"arajanlatok",    label:"Árajánlatok",     icon:ClipboardList,   desc:"Ajánlatok készítése" },
   { id:"szerzodesek",    label:"Szerződések",     icon:ScrollText,      desc:"Szerződések kezelése" },
@@ -215,7 +215,7 @@ function PageContent({ page, sel, setSel, data, user, onNewMunkalap, onDelete })
   if (page === "munkatipusok")  return <MunkatipusokPage userRole={user?.role} />;
   if (page === "sablonok")     return <SablonKezelo userRole={role} />;
   if (page === "biztmentes")   return <BackupKezelo userRole={role} />;
-  if (page === "beallitasok")   return <div><AdminPanel currentUser={user} /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><JegyzokonyviBeallitasok /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><MunkakiosztasBeallitasok /></div>;
+  if (page === "beallitasok")   return <BeallitasokPage currentUser={user} />;
   if (page === "arajanlatok")   return <ComingSoon title="Árajánlatok" />;
   if (page === "szerzodesek")   return <ComingSoon title="Szerződések" />;
   if (page === "csapat")        return <ComingSoon title="Csapat" />;
