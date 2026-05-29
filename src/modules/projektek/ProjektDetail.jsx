@@ -14,6 +14,7 @@ import TabUtemezas      from "./tabs/TabUtemezas.jsx";
 import TabSzamlazas     from "./tabs/TabSzamlazas.jsx";
 import TabKommunikacio  from "./tabs/TabKommunikacio.jsx";
 import TabNaplo         from "./tabs/TabNaplo.jsx";
+import TabRiport        from "./tabs/TabRiport.jsx";
 
 const TABS = [
   { id:"attekintes",   label:"Áttekintés",    icon:"📊" },
@@ -25,6 +26,7 @@ const TABS = [
   { id:"szamlazas",    label:"Számlázás",     icon:"🧾" },
   { id:"kommunikacio", label:"Kommunikáció",  icon:"💬" },
   { id:"naplo",        label:"Napló",         icon:"📝" },
+  { id:"riport",       label:"Riport / PDF",  icon:"🖨️" },
 ];
 
 export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateMunkalap, currentUser }) {
@@ -55,6 +57,7 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
       case "szamlazas":    return <TabSzamlazas     {...props}/>;
       case "kommunikacio": return <TabKommunikacio  {...props}/>;
       case "naplo":        return <TabNaplo         {...props}/>;
+      case "riport":       return <TabRiport        {...props}/>;
       default:             return null;
     }
   };
