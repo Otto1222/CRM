@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  Users, Settings, FileText, Wrench, Building2, ChevronRight
+  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AdminPanel from "./AdminPanel";
@@ -8,6 +8,8 @@ import JegyzokonyviBeallitasok from "./JegyzokonyviBeallitasok";
 import MunkakiosztasBeallitasok from "./MunkakiosztasBeallitasok";
 import FovallalkozoPage from "../modules/fovallalkozok/FovallalkozoPage";
 import MunkatipusokPage from "../modules/munkatipusok/MunkatipusokPage";
+import SablonKezelo from "./SablonKezelo";
+import BackupKezelo from "./BackupKezelo";
 
 const MENU_ITEMS = [
   {
@@ -50,6 +52,22 @@ const MENU_ITEMS = [
     color: "#0891B2",
     bg: "#ECFEFF",
   },
+  {
+    id: "sablonok",
+    label: "Dokumentum sablonok",
+    desc: "Word-szerű sablonszerkesztő, fejléc/lábléc kezelés",
+    icon: FileText,
+    color: "#DC2626",
+    bg: "#FEF2F2",
+  },
+  {
+    id: "mentes",
+    label: "Biztonsági mentések",
+    desc: "Adatok mentése, visszaállítás, export JSON",
+    icon: Shield,
+    color: "#475569",
+    bg: "#F8FAFC",
+  },
 ];
 
 export default function BeallitasokPage({ currentUser }) {
@@ -81,6 +99,24 @@ export default function BeallitasokPage({ currentUser }) {
       </div>
     );
   }
+  if (aktiv === "sablonok") {
+    return (
+      <div>
+        <BackBtn onClick={() => setAktiv(null)} label="Dokumentum sablonok" />
+        <SablonKezelo userRole={role} />
+      </div>
+    );
+  }
+  if (aktiv === "mentes") {
+    return (
+      <div>
+        <BackBtn onClick={() => setAktiv(null)} label="Biztonsági mentések" />
+        <div style={{ padding: "0 0" }}>
+          <BackupKezelo userRole={role} />
+        </div>
+      </div>
+    );
+  }
   if (aktiv === "munkakiosztas") {
     return (
       <div>
@@ -105,7 +141,7 @@ export default function BeallitasokPage({ currentUser }) {
   // Főmenü – kártyás elrendezés
   const lathatoMenuk = MENU_ITEMS.filter(m => {
     if (role === "Admin") return true;
-    if (role === "Projektmenedzser") return ["fovallalkozok","munkatipusok","munkakiosztas"].includes(m.id);
+    if (role === "Projektmenedzser") return ["fovallalkozok","munkatipusok","munkakiosztas","sablonok"].includes(m.id);
     return false;
   });
 

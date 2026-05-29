@@ -127,11 +127,8 @@ const ALL_MOB_NAV = [
   { id:"ugyfelek",       label:"Ügyfelek",        icon:Users,           desc:"Ügyféladatbázis" },
   { id:"arajanlatok",    label:"Árajánlatok",     icon:ClipboardList,   desc:"Ajánlatok készítése" },
   { id:"szerzodesek",    label:"Szerződések",     icon:ScrollText,      desc:"Szerződések kezelése" },
-  { id:"csapat",         label:"Csapat",          icon:UserCheck,       desc:"Munkatársak" },
   { id:"naptar",         label:"Naptár",          icon:Calendar,        desc:"Ütemezés & időpontok" },
   { id:"karteritesek",   label:"Kártérítések",    icon:FileText,        desc:"Kártérítések kezelése" },
-  { id:"sablonok",       label:"Sablonok",        icon:FileText,        desc:"Dokumentum sablonok" },
-  { id:"biztmentes",     label:"Mentések",        icon:FileText,        desc:"Biztonsági mentések" },
   { id:"munkalapok",     label:"Munkalapok",      icon:FileText,        desc:"Munkák kezelése" },
   { id:"beallitasok",    label:"Beállítások",     icon:Settings,        desc:"Felhasználók & kiosztás" },
 ];
