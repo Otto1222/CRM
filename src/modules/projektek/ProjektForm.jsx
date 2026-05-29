@@ -2,11 +2,11 @@ import { useState } from "react";
 import { X, Save } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
-import { PROJEKT_STATUSZOK, PROJEKT_TIPUSOK } from "./projekt.schema.js";
+import { PROJEKT_STATUSZOK } from "./projekt.schema.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
 import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
-import { loadElszamolasiKontextus, hasHianyosTetelek, generateBeveteliTetelek } from "../../services/settlementRule.service.js";
+// settlementRule is used by workOrderFinancial
 import { createProjekt, updateProjekt } from "./projekt.service.js";
 
 const Field = ({ label, children, half }) => (

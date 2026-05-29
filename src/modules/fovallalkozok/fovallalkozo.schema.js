@@ -10,9 +10,11 @@ export const CSAPAT_BER_TIPUSOK = [
 ];
 
 export const UTIKOLTSÉG_TIPUSOK = [
-  { id: "nincs",  label: "Nincs útiköltség" },
-  { id: "Ft/km",  label: "Ft / km (oda-vissza)" },
-  { id: "fix",    label: "Fix összeg" },
+  { id: "nincs",         label: "Nincs km elszámolás" },
+  { id: "oda_vissza",    label: "Teljes oda-vissza km" },
+  { id: "kuszob_folott", label: "Csak küszöb feletti km" },
+  { id: "fix_kiszallas", label: "Fix kiszállási díj" },
+  { id: "kezi",          label: "Kézi elszámolás" },
 ];
 
 export const ANYAGKOLTSÉG_MODJAI = [
@@ -48,9 +50,14 @@ export const ELSZAMOLASI_SZABALY_SCHEMA = {
   // Csapat bér
   csapatBerTipus:        "fix",
   csapatBerOsszeg:       0,
-  // Útiköltség
-  utikoltsegTipus:       "Ft/km",
-  utikoltsegFtKm:        0,      // 0 = fővállalkozó alapja
+  // Útiköltség / Km-elszámolás
+  utikoltsegTipus:       "oda_vissza",  // KM_TIPUSOK id-je
+  utikoltsegFtKm:        0,             // 0 = fővállalkozó alapja
+  kmKuszob:              0,             // küszöb km (kuszob_folott esetén)
+  kmFixOsszeg:           0,             // fix kiszállási díj (fix_kiszallas esetén)
+  // Tételes árak override (munkatípus tételdefiníció fölé írja)
+  // { [tetelTipusId]: Ft } pl. { napelem_telepites: 15000 }
+  tetelArak:             {},
   // Anyagköltség
   anyagkoltségModja:     "tényleges",
   anyagkoltségErtek:     0,      // % vagy fix összeg, ha nem tényleges

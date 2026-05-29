@@ -100,9 +100,21 @@ function initData() {
   const localBeall = (() => { try { const s=localStorage.getItem("beallitasok"); return s?JSON.parse(s):{}; } catch{return {};} })();
   const localKart  = (() => { try { const s=localStorage.getItem("karteritesek"); return s?JSON.parse(s):[]; } catch{return [];} })();
   const localSabl  = (() => { try { const s=localStorage.getItem("sablonok"); return s?JSON.parse(s):[]; } catch{return [];} })();
+  const localFv = (() => { try { const s=localStorage.getItem("fovallalkozok"); return s?JSON.parse(s):null; } catch{return null;} })();
+  const localMt = (() => { try { const s=localStorage.getItem("munkatipusok"); return s?JSON.parse(s):null; } catch{return null;} })();
+  const localSz = (() => { try { const s=localStorage.getItem("elszamolasi_szabalyok"); return s?JSON.parse(s):[]; } catch{return [];} })();
+  const localPr = (() => { try { const s=localStorage.getItem("projektek"); return s?JSON.parse(s):[]; } catch{return [];} })();
   return {
-    munkalapok: localMl ?? SAMPLE_DATA.munkalapok,
-    ugyfelek:   localUk ?? SAMPLE_DATA.ugyfelek,
+    munkalapok:            localMl ?? SAMPLE_DATA.munkalapok,
+    ugyfelek:              localUk ?? SAMPLE_DATA.ugyfelek,
+    users:                 localUsers,
+    beallitasok:           localBeall,
+    karteritesek:          localKart,
+    sablonok:              localSabl,
+    fovallalkozok:         localFv || [],
+    munkatipusok:          localMt  || [],
+    elszamolasi_szabalyok: localSz,
+    projektek:             localPr,
   };
 }
 
@@ -111,7 +123,6 @@ const ALL_MOB_NAV = [
   { id:"projektek",      label:"Projektek",       icon:FileText,        desc:"Projekt kezelés" },
   { id:"munkakiosztas",  label:"Munkakiosztás",   icon:Hammer,          desc:"Excel import & csapat kiosztás" },
   { id:"fovallalkozok",  label:"Fővállalkozók",   icon:FileText,        desc:"Elszámolási szabályok" },
-  { id:"munkatipusok",   label:"Munkatípusok",   icon:FileText,        desc:"Munkatípus definíciók" },
   { id:"munkatipusok",   label:"Munkatípusok",   icon:FileText,        desc:"Munkatípus definíciók" },
   { id:"ugyfelek",       label:"Ügyfelek",        icon:Users,           desc:"Ügyféladatbázis" },
   { id:"arajanlatok",    label:"Árajánlatok",     icon:ClipboardList,   desc:"Ajánlatok készítése" },
@@ -284,6 +295,27 @@ export default function App() {
         try {
           const fresh = JSON.parse(localStorage.getItem("sablonok") || "[]");
           setData(prev => ({ ...prev, sablonok: fresh }));
+        } catch {}
+      }
+      // ── Fővállalkozók ──────────────────────────────────────
+      if (col === "fovallalkozok" || col === "all") {
+        try {
+          const fresh = JSON.parse(localStorage.getItem("fovallalkozok") || "[]");
+          setData(prev => ({ ...prev, fovallalkozok: fresh }));
+        } catch {}
+      }
+      // ── Munkatípusok ───────────────────────────────────────
+      if (col === "munkatipusok" || col === "all") {
+        try {
+          const fresh = JSON.parse(localStorage.getItem("munkatipusok") || "[]");
+          setData(prev => ({ ...prev, munkatipusok: fresh }));
+        } catch {}
+      }
+      // ── Elszámolási szabályok ──────────────────────────────
+      if (col === "elszamolasi_szabalyok" || col === "all") {
+        try {
+          const fresh = JSON.parse(localStorage.getItem("elszamolasi_szabalyok") || "[]");
+          setData(prev => ({ ...prev, elszamolasi_szabalyok: fresh }));
         } catch {}
       }
     }

@@ -13,8 +13,25 @@ const dispatch = (col) =>
 
 // ─── Fővállalkozók ────────────────────────────────────────────
 
+const DEFAULT_FOVALLALKOZOK = [
+  {
+    id: "fv_demo1",
+    nev: "JuniorVital Kft.",
+    aktiv: true,
+    alapUtikoltsegFtKm: 80,
+    alapSzamlazasiTipus: "fix",
+    megjegyzes: "Demo fővállalkozó – szerkeszd vagy töröld",
+    createdAt: new Date().toISOString(),
+  },
+];
+
 export function loadFovallalkozok() {
-  try { return JSON.parse(localStorage.getItem(FV_KEY) || "[]"); } catch { return []; }
+  try {
+    const stored = localStorage.getItem(FV_KEY);
+    if (stored) return JSON.parse(stored);
+    localStorage.setItem(FV_KEY, JSON.stringify(DEFAULT_FOVALLALKOZOK));
+    return DEFAULT_FOVALLALKOZOK;
+  } catch { return []; }
 }
 
 export function saveFovallalkozok(list) {

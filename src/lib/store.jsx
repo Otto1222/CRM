@@ -23,7 +23,10 @@ const COLLECTIONS = {
   beallitasok: () => { try { return JSON.parse(localStorage.getItem("beallitasok")||"{}"); } catch { return {}; } },
   karteritesek:() => { try { return JSON.parse(localStorage.getItem("karteritesek")||"[]"); } catch { return []; } },
   sablonok:    () => { try { return JSON.parse(localStorage.getItem("sablonok")||"[]");     } catch { return []; } },
-  projektek:   () => { try { return JSON.parse(localStorage.getItem("projektek")||"[]");  } catch { return []; } },
+  projektek:    () => { try { return JSON.parse(localStorage.getItem("projektek")||"[]");       } catch { return []; } },
+  fovallalkozok:() => { try { return JSON.parse(localStorage.getItem("fovallalkozok")||"[]"); } catch { return []; } },
+  munkatipusok: () => { try { return JSON.parse(localStorage.getItem("munkatipusok")||"[]");  } catch { return []; } },
+  elszamolasi_szabalyok: () => { try { return JSON.parse(localStorage.getItem("elszamolasi_szabalyok")||"[]"); } catch { return []; } },
 };
 
 /** Teljes store betöltése localStorage-ból */

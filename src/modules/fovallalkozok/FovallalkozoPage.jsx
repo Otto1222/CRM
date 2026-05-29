@@ -7,8 +7,9 @@ import {
   loadSzabalyok, createSzabaly, updateSzabaly, deleteSzabaly, getSzabalyokByFovallalkozo,
 } from "./fovallalkozo.service.js";
 import {
-  CSAPAT_BER_TIPUSOK, UTIKOLTSÉG_TIPUSOK, ANYAGKOLTSÉG_MODJAI, KARTÉRÍTÉS_MODJAI, PROJEKT_TIPUSOK_LABEL,
+  CSAPAT_BER_TIPUSOK, UTIKOLTSÉG_TIPUSOK, ANYAGKOLTSÉG_MODJAI, KARTÉRÍTÉS_MODJAI,
 } from "./fovallalkozo.schema.js";
+import { BEVETELI_TETEL_TIPUSOK } from "../munkatipusok/munkatipus.schema.js";
 import { PROJEKT_TIPUSOK } from "../projektek/projekt.schema.js";
 
 const inp = { width:"100%", boxSizing:"border-box", padding:"8px 11px", border:"1.5px solid #E2E8F0", borderRadius:8, fontSize:13, fontFamily:"inherit", outline:"none" };
@@ -29,8 +30,11 @@ function SzabalyForm({ szabaly, fovallalkoziId, onSave, onClose }) {
     nettoBevitel:        szabaly?.nettoBevitel         || 0,
     csapatBerTipus:      szabaly?.csapatBerTipus       || "fix",
     csapatBerOsszeg:     szabaly?.csapatBerOsszeg      || 0,
-    utikoltsegTipus:     szabaly?.utikoltsegTipus      || "Ft/km",
+    utikoltsegTipus:     szabaly?.utikoltsegTipus      || "oda_vissza",
     utikoltsegFtKm:      szabaly?.utikoltsegFtKm       || 0,
+    kmKuszob:            szabaly?.kmKuszob              || 0,
+    kmFixOsszeg:         szabaly?.kmFixOsszeg           || 0,
+    tetelArak:           szabaly?.tetelArak             || {},
     anyagkoltségModja:   szabaly?.anyagkoltségModja    || "tényleges",
     anyagkoltségErtek:   szabaly?.anyagkoltségErtek    || 0,
     kartériétasModja:    szabaly?.kartériétasModja     || "tényleges",
@@ -70,15 +74,26 @@ function SzabalyForm({ szabaly, fovallalkoziId, onSave, onClose }) {
             <input type="number" value={f.csapatBerOsszeg} onChange={e=>u("csapatBerOsszeg",Number(e.target.value))} style={inp}/>
           </FL>
 
-          <FL label="Útiköltség típusa" half>
+          <FL label="Km-elszámolás típusa" half>
             <select value={f.utikoltsegTipus} onChange={e=>u("utikoltsegTipus",e.target.value)} style={inp}>
               {UTIKOLTSÉG_TIPUSOK.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
             </select>
           </FL>
-          <FL label="Ft/km díj (0 = fővállalkozó alapja)" half>
-            <input type="number" value={f.utikoltsegFtKm} onChange={e=>u("utikoltsegFtKm",Number(e.target.value))} style={inp}
-              disabled={f.utikoltsegTipus==="nincs"}/>
-          </FL>
+          {f.utikoltsegTipus !== "nincs" && f.utikoltsegTipus !== "fix_kiszallas" && f.utikoltsegTipus !== "kezi" && (
+            <FL label="Ft/km díj (0 = fővállalkozó alapja)" half>
+              <input type="number" value={f.utikoltsegFtKm} onChange={e=>u("utikoltsegFtKm",Number(e.target.value))} style={inp}/>
+            </FL>
+          )}
+          {f.utikoltsegTipus === "kuszob_folott" && (
+            <FL label="Küszöb (km) – ez alatt nincs elszámolás">
+              <input type="number" value={f.kmKuszob} onChange={e=>u("kmKuszob",Number(e.target.value))} placeholder="pl. 50" style={inp}/>
+            </FL>
+          )}
+          {f.utikoltsegTipus === "fix_kiszallas" && (
+            <FL label="Fix kiszállási díj (Ft)">
+              <input type="number" value={f.kmFixOsszeg} onChange={e=>u("kmFixOsszeg",Number(e.target.value))} placeholder="0" style={inp}/>
+            </FL>
+          )}
 
           <FL label="Anyagköltség módja" half>
             <select value={f.anyagkoltségModja} onChange={e=>u("anyagkoltségModja",e.target.value)} style={inp}>
@@ -105,6 +120,26 @@ function SzabalyForm({ szabaly, fovallalkoziId, onSave, onClose }) {
           <FL label="Megjegyzés">
             <input value={f.megjegyzes} onChange={e=>u("megjegyzes",e.target.value)} style={inp}/>
           </FL>
+
+          {/* Tételes árak override */}
+          <div style={{ gridColumn:"span 2", paddingTop:10, borderTop:"1px solid #E2E8F0" }}>
+            <p style={{ fontSize:11, fontWeight:700, color:"#64748B", marginBottom:8 }}>
+              Tételes árak (felülírja a munkatípus definíciót)
+              <span style={{ fontWeight:400, marginLeft:6 }}>– csak ha ettől a fővállalkozótól eltérő összeg jár</span>
+            </p>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+              {BEVETELI_TETEL_TIPUSOK.filter(t => t.id !== "km_elszamolas").map(t => (
+                <div key={t.id}>
+                  <label style={{ fontSize:10, color:"#64748B", display:"block", marginBottom:2 }}>{t.label} (Ft, 0 = nem ír felül)</label>
+                  <input type="number"
+                    value={f.tetelArak?.[t.id] || ""}
+                    onChange={e => u("tetelArak", { ...f.tetelArak, [t.id]: e.target.value === "" ? undefined : Number(e.target.value) })}
+                    placeholder="0"
+                    style={{...inp, padding:"6px 10px"}}/>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div style={{ display:"flex", gap:10, marginTop:18, justifyContent:"flex-end" }}>
