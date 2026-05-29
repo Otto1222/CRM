@@ -58,16 +58,10 @@ function DeleteConfirmModal({ ml, onConfirm, onCancel }) {
           ⚠️ Ez a művelet nem visszavonható! Az összes adat törlődik.
         </p>
         <div style={{ display:"flex", gap:12 }}>
-          <button
-            onClick={onCancel}
-            style={{ flex:1, padding:"13px", borderRadius:12, border:"1.5px solid #E2E8F0", background:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", color:"#475569", fontFamily:"'DM Sans',sans-serif" }}
-          >
+          <button onClick={onCancel} style={{ flex:1, padding:"13px", borderRadius:12, border:"1.5px solid #E2E8F0", background:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", color:"#475569", fontFamily:"'DM Sans',sans-serif" }}>
             Mégsem
           </button>
-          <button
-            onClick={onConfirm}
-            style={{ flex:1, padding:"13px", borderRadius:12, border:"none", background:"#DC2626", color:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}
-          >
+          <button onClick={onConfirm} style={{ flex:1, padding:"13px", borderRadius:12, border:"none", background:"#DC2626", color:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>
             Igen, törlöm
           </button>
         </div>
@@ -96,15 +90,14 @@ function useIsMobile() {
 function initData() {
   const localMl = loadLocal("munkalapok");
   const localUk = loadLocal("ugyfelek");
-  // Egyéb kollekciók kezdeti betöltése
   const localUsers = (() => { try { const s=localStorage.getItem("crm_napelem_users"); return s?JSON.parse(s):null; } catch{return null;} })();
-  const localBeall = (() => { try { const s=localStorage.getItem("beallitasok"); return s?JSON.parse(s):{}; } catch{return {};} })();
-  const localKart  = (() => { try { const s=localStorage.getItem("karteritesek"); return s?JSON.parse(s):[]; } catch{return [];} })();
-  const localSabl  = (() => { try { const s=localStorage.getItem("sablonok"); return s?JSON.parse(s):[]; } catch{return [];} })();
-  const localFv = (() => { try { const s=localStorage.getItem("fovallalkozok"); return s?JSON.parse(s):null; } catch{return null;} })();
-  const localMt = (() => { try { const s=localStorage.getItem("munkatipusok"); return s?JSON.parse(s):null; } catch{return null;} })();
-  const localSz = (() => { try { const s=localStorage.getItem("elszamolasi_szabalyok"); return s?JSON.parse(s):[]; } catch{return [];} })();
-  const localPr = (() => { try { const s=localStorage.getItem("projektek"); return s?JSON.parse(s):[]; } catch{return [];} })();
+  const localBeall = (() => { try { const s=localStorage.getItem("beallitasok"); return s?JSON.parse(s):{};  } catch{return {};} })();
+  const localKart  = (() => { try { const s=localStorage.getItem("karteritesek"); return s?JSON.parse(s):[];  } catch{return [];} })();
+  const localSabl  = (() => { try { const s=localStorage.getItem("sablonok");     return s?JSON.parse(s):[];  } catch{return [];} })();
+  const localFv = (() => { try { const s=localStorage.getItem("fovallalkozok");          return s?JSON.parse(s):null; } catch{return null;} })();
+  const localMt = (() => { try { const s=localStorage.getItem("munkatipusok");           return s?JSON.parse(s):null; } catch{return null;} })();
+  const localSz = (() => { try { const s=localStorage.getItem("elszamolasi_szabalyok");  return s?JSON.parse(s):[];   } catch{return [];} })();
+  const localPr = (() => { try { const s=localStorage.getItem("projektek");              return s?JSON.parse(s):[];   } catch{return [];} })();
   return {
     munkalapok:            localMl ?? SAMPLE_DATA.munkalapok,
     ugyfelek:              localUk ?? SAMPLE_DATA.ugyfelek,
@@ -121,15 +114,14 @@ function initData() {
 
 const ALL_MOB_NAV = [
   { id:"dashboard",      label:"Pénzügy",         icon:LayoutDashboard, desc:"Pénzügyi összesítő & kártérítések" },
-  { id:"projektek",      label:"Projektek",       icon:FileText,        desc:"Projekt kezelés" },
-  { id:"munkakiosztas",  label:"Munkakiosztás",   icon:Hammer,          desc:"Excel import & csapat kiosztás" },
-
-  { id:"ugyfelek",       label:"Ügyfelek",        icon:Users,           desc:"Ügyféladatbázis" },
-  { id:"arajanlatok",    label:"Árajánlatok",     icon:ClipboardList,   desc:"Ajánlatok készítése" },
-  { id:"szerzodesek",    label:"Szerződések",     icon:ScrollText,      desc:"Szerződések kezelése" },
-  { id:"naptar",         label:"Naptár",          icon:Calendar,        desc:"Ütemezés & időpontok" },
-  { id:"munkalapok",     label:"Munkalapok",      icon:FileText,        desc:"Munkák kezelése" },
-  { id:"beallitasok",    label:"Beállítások",     icon:Settings,        desc:"Felhasználók & kiosztás" },
+  { id:"projektek",      label:"Projektek",        icon:FileText,        desc:"Projekt kezelés" },
+  { id:"munkakiosztas",  label:"Munkakiosztás",    icon:Hammer,          desc:"Excel import & csapat kiosztás" },
+  { id:"ugyfelek",       label:"Ügyfelek",         icon:Users,           desc:"Ügyféladatbázis" },
+  { id:"arajanlatok",    label:"Árajánlatok",      icon:ClipboardList,   desc:"Ajánlatok készítése" },
+  { id:"szerzodesek",    label:"Szerződések",      icon:ScrollText,      desc:"Szerződések kezelése" },
+  { id:"naptar",         label:"Naptár",           icon:Calendar,        desc:"Ütemezés & időpontok" },
+  { id:"munkalapok",     label:"Munkalapok",       icon:FileText,        desc:"Munkák kezelése" },
+  { id:"beallitasok",    label:"Beállítások",      icon:Settings,        desc:"Felhasználók & kiosztás" },
 ];
 
 function MobileSidebarFull({ page, onNav, user, onLogout, allowedPages }) {
@@ -180,37 +172,47 @@ function MobileSidebarFull({ page, onNav, user, onLogout, allowedPages }) {
   );
 }
 
-function PageContent({ page, sel, setSel, data, user, onNewMunkalap, onDelete }) {
+// ─── FIX 1: setPage és setData prop-on át PageContent-nek ─────
+function PageContent({ page, sel, setSel, data, setData, setPage, user, onNewMunkalap, onDelete }) {
   const role = user?.role;
-  if (page === "munkalapok" && sel) return <MunkalapDetail m={sel} data={data} userRole={role} onBack={(refresh) => {
-    // Először frissítjük az adatokat, UTÁNA töröljük a sel-t
-    if (refresh) {
-      const fresh = loadLocal("munkalapok");
-      if (fresh) setData(prev => ({ ...prev, munkalapok: fresh }));
-    }
-    // Kis delay hogy a React state-ek ne versenyezzenek
-    setTimeout(() => setSel(null), 50);
-  }} onDelete={onDelete} onRefresh={(updates) => {
-    const fresh = loadLocal("munkalapok");
-    if (fresh) setData(prev => ({ ...prev, munkalapok: fresh }));
-    setSel(prev => prev ? { ...prev, ...updates } : prev);
-  }} />;
+
+  if (page === "munkalapok" && sel) return (
+    <MunkalapDetail
+      m={sel}
+      data={data}
+      userRole={role}
+      onBack={(refresh) => {
+        if (refresh) {
+          const fresh = loadLocal("munkalapok");
+          if (fresh) setData(prev => ({ ...prev, munkalapok: fresh }));
+        }
+        setTimeout(() => setSel(null), 50);
+      }}
+      onDelete={onDelete}
+      onRefresh={(updates) => {
+        const fresh = loadLocal("munkalapok");
+        if (fresh) setData(prev => ({ ...prev, munkalapok: fresh }));
+        setSel(prev => prev ? { ...prev, ...updates } : prev);
+      }}
+    />
+  );
+
   if (page === "dashboard")     return <Dashboard data={data} user={user} />;
   if (page === "munkalapok")    return <MunkalapLista data={data} onSelect={setSel} onNew={onNewMunkalap} userRole={role} currentUser={user} />;
   if (page === "munkakiosztas") return <Munkakiosztas />;
   if (page === "ugyfelek")      return <Ugyfelek data={data} />;
-  if (page === "projektek") return (
+  if (page === "projektek")     return (
     <ProjektekPage
       data={data}
       currentUser={user}
       onNavigateMunkalap={(m) => { setPage("munkalapok"); setSel(m); }}
     />
   );
-  if (page === "karteritesek") return <KarteritesekTab userRole={role} currentUser={user} munkalapok={data.munkalapok} />;
+  if (page === "karteritesek")  return <KarteritesekTab userRole={role} currentUser={user} munkalapok={data.munkalapok} />;
   if (page === "fovallalkozok") return <FovallalkozoPage userRole={user?.role} />;
   if (page === "munkatipusok")  return <MunkatipusokPage userRole={user?.role} />;
-  if (page === "sablonok")     return <SablonKezelo userRole={role} />;
-  if (page === "biztmentes")   return <BackupKezelo userRole={role} />;
+  if (page === "sablonok")      return <SablonKezelo userRole={role} />;
+  if (page === "biztmentes")    return <BackupKezelo userRole={role} />;
   if (page === "beallitasok")   return <BeallitasokPage currentUser={user} />;
   if (page === "arajanlatok")   return <ComingSoon title="Árajánlatok" />;
   if (page === "szerzodesek")   return <ComingSoon title="Szerződések" />;
@@ -220,15 +222,15 @@ function PageContent({ page, sel, setSel, data, user, onNewMunkalap, onDelete })
 }
 
 export default function App() {
-  const [user,          setUser]          = useState(null);
-  const [page,          setPage]          = useState("dashboard");
-  const [sel,           setSel]           = useState(null);
-  // ── Adatok: localStorage-ból indul, Drive szinkronizál ───────
-  const [data,          setData]          = useState(initData);
-  const [drive,         setDrive]         = useState("idle");
-  const [driveOnline,   setDriveOnline]   = useState(false);
-  const [showSidebar,   setShowSidebar]   = useState(true);
-  const [ujMunkalapPage,setUjMunkalapPage]= useState(false);
+  const [user,           setUser]           = useState(null);
+  const [page,           setPage]           = useState("dashboard");
+  const [sel,            setSel]            = useState(null);
+  const [data,           setData]           = useState(initData);
+  const [drive,          setDrive]          = useState("idle");
+  const [driveOnline,    setDriveOnline]    = useState(false);
+  const [showSidebar,    setShowSidebar]    = useState(true);
+  const [ujMunkalapPage, setUjMunkalapPage] = useState(false);
+  const [deleteConfirm,  setDeleteConfirm]  = useState(null);
   const isMobile = useIsMobile();
 
   const allowedPages = user ? getAllowedPages(user.role) : [];
@@ -239,81 +241,54 @@ export default function App() {
     if (isMobile) setShowSidebar(false);
   }
 
-  // ─── Azonnali frissítés: localStorage változáskor ────────────
-  // Stale closure ellen: setData mindig friss (React garantálja)
+  // ─── FIX 2: crm-db-updated → data frissítés (mobil + asztali) ──
   useEffect(() => {
     function handleDbUpdate(e) {
       const col = e.detail?.collection || "";
 
-      // ── Munkalapok ─────────────────────────────────────────
       if (col === "munkalapok" || col === "all") {
         const fresh = loadLocal("munkalapok");
         if (fresh) {
           setData(prev => ({ ...prev, munkalapok: fresh }));
           setSel(prev => {
             if (!prev) return prev;
-            const updated = fresh.find(m => m.id === prev.id);
-            return updated || prev;
+            return fresh.find(m => m.id === prev.id) || prev;
           });
         }
       }
-      // ── Ügyfelek ───────────────────────────────────────────
       if (col === "ugyfelek" || col === "all") {
         const fresh = loadLocal("ugyfelek");
         if (fresh) setData(prev => ({ ...prev, ugyfelek: fresh }));
       }
-      // ── Felhasználók (csapatok) ────────────────────────────
       if (col === "users" || col === "all") {
         try {
           const fresh = getUsers();
           if (fresh) {
             setData(prev => ({ ...prev, users: fresh }));
-            // Szinkronizáljuk a munkakiosztás csapatneveket is
             syncCsapatokWithUsers(fresh);
           }
         } catch {}
       }
-      // ── Beállítások ────────────────────────────────────────
       if (col === "beallitasok" || col === "all") {
-        try {
-          const fresh = JSON.parse(localStorage.getItem("beallitasok") || "{}");
-          setData(prev => ({ ...prev, beallitasok: fresh }));
-        } catch {}
+        try { setData(prev => ({ ...prev, beallitasok: JSON.parse(localStorage.getItem("beallitasok") || "{}") })); } catch {}
       }
-      // ── Kártérítések ───────────────────────────────────────
       if (col === "karteritesek" || col === "all") {
-        try {
-          const fresh = JSON.parse(localStorage.getItem("karteritesek") || "[]");
-          setData(prev => ({ ...prev, karteritesek: fresh }));
-        } catch {}
+        try { setData(prev => ({ ...prev, karteritesek: JSON.parse(localStorage.getItem("karteritesek") || "[]") })); } catch {}
       }
-      // ── Sablonok ───────────────────────────────────────────
       if (col === "sablonok" || col === "all") {
-        try {
-          const fresh = JSON.parse(localStorage.getItem("sablonok") || "[]");
-          setData(prev => ({ ...prev, sablonok: fresh }));
-        } catch {}
+        try { setData(prev => ({ ...prev, sablonok: JSON.parse(localStorage.getItem("sablonok") || "[]") })); } catch {}
       }
-      // ── Fővállalkozók ──────────────────────────────────────
       if (col === "fovallalkozok" || col === "all") {
-        try {
-          const fresh = JSON.parse(localStorage.getItem("fovallalkozok") || "[]");
-          setData(prev => ({ ...prev, fovallalkozok: fresh }));
-        } catch {}
+        try { setData(prev => ({ ...prev, fovallalkozok: JSON.parse(localStorage.getItem("fovallalkozok") || "[]") })); } catch {}
       }
-      // ── Munkatípusok ───────────────────────────────────────
       if (col === "munkatipusok" || col === "all") {
-        try {
-          const fresh = JSON.parse(localStorage.getItem("munkatipusok") || "[]");
-          setData(prev => ({ ...prev, munkatipusok: fresh }));
-        } catch {}
+        try { setData(prev => ({ ...prev, munkatipusok: JSON.parse(localStorage.getItem("munkatipusok") || "[]") })); } catch {}
       }
-      // ── Elszámolási szabályok ──────────────────────────────
       if (col === "elszamolasi_szabalyok" || col === "all") {
-        try {
-          const fresh = JSON.parse(localStorage.getItem("elszamolasi_szabalyok") || "[]");
-          setData(prev => ({ ...prev, elszamolasi_szabalyok: fresh }));
-        } catch {}
+        try { setData(prev => ({ ...prev, elszamolasi_szabalyok: JSON.parse(localStorage.getItem("elszamolasi_szabalyok") || "[]") })); } catch {}
+      }
+      if (col === "projektek" || col === "all") {
+        try { setData(prev => ({ ...prev, projektek: JSON.parse(localStorage.getItem("projektek") || "[]") })); } catch {}
       }
     }
     window.addEventListener("crm-db-updated", handleDbUpdate);
@@ -327,9 +302,7 @@ export default function App() {
     setPage(home);
     setShowSidebar(user.role === "Telepítő" ? false : true);
 
-    // Szinkronizálás a Drive-ból (háttérben)
     (async () => {
-      // Drive kapcsolat teszt
       if (driveAvailable()) {
         const online = await drivePing();
         setDriveOnline(online);
@@ -340,52 +313,37 @@ export default function App() {
         driveLoad("munkalapok"),
         driveLoad("ugyfelek"),
       ]);
-
       let updated = false;
       const next = { ...data };
       if (ml?.munkalapok) { next.munkalapok = ml.munkalapok; updated = true; }
       if (uk?.ugyfelek)   { next.ugyfelek   = uk.ugyfelek;   updated = true; }
-
       if (updated) {
         setData(next);
-        // Frissítjük a localStorage-t is a Drive adataival
         if (ml?.munkalapok) saveLocal("munkalapok", ml.munkalapok);
         if (uk?.ugyfelek)   saveLocal("ugyfelek",   uk.ugyfelek);
       }
-
       setDrive("ok");
       setTimeout(() => setDrive("idle"), 2500);
     })();
-  }, [user]);
+  }, [user]); // eslint-disable-line
 
-  // ─── Új munkalap mentése ──────────────────────────────────────
-  // ─── Törlés megerősítő dialog + törlés ─────────────────────
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // munkalap obj
-
-  function handleDeleteRequest(ml) {
-    setDeleteConfirm(ml);
-  }
+  function handleDeleteRequest(ml) { setDeleteConfirm(ml); }
 
   function handleDeleteConfirm() {
     if (!deleteConfirm) return;
     const newMunkalapok = removeItem("munkalapok", deleteConfirm.id);
     setData(prev => ({ ...prev, munkalapok: newMunkalapok }));
-    // Drive szinkron
     driveSave("munkalapok", { munkalapok: newMunkalapok });
     setSel(null);
     setDeleteConfirm(null);
   }
 
   function handleUjMunkalapSave(ml) {
-    // 1. LocalStorage frissítés AZONNAL
     const newMunkalapok = addItem("munkalapok", ml);
-    // 2. React state frissítés
     setData(prev => ({ ...prev, munkalapok: newMunkalapok }));
-    // 3. Drive szinkron háttérben (nem blokkoló)
     setDrive("saving");
     driveSave("munkalapok", { munkalapok: newMunkalapok })
       .then(ok => { setDrive(ok ? "ok" : "error"); setTimeout(() => setDrive("idle"), 2500); });
-    // 4. Visszaugrás a listára
     setUjMunkalapPage(false);
     setPage("munkalapok");
     if (isMobile) setShowSidebar(false);
@@ -394,8 +352,6 @@ export default function App() {
   function logout() {
     setUser(null); setSel(null); setPage("dashboard");
     setShowSidebar(true); setUjMunkalapPage(false);
-    // FONTOS: kilépéskor NEM töröljük a localStorage-t!
-    // Az adatok megmaradnak a következő belépéshez.
   }
 
   if (!user) return <Login onLogin={setUser} />;
@@ -403,94 +359,104 @@ export default function App() {
   const isMunkalapDetail = page === "munkalapok" && sel;
   const isTelepito = user.role === "Telepítő";
 
-  // ─── Teljes képernyős Új munkalap oldal ──────────────────────
   if (ujMunkalapPage) {
     return (
-      <div style={{ minHeight:"100vh", background:C.bg }}>
-        <style>{gStyles}</style>
-        <UjMunkalap
-          data={data}
-          onBack={() => setUjMunkalapPage(false)}
-          onSave={handleUjMunkalapSave}
-        />
-      </div>
-    );
-  }
-
-  // ── MOBIL ─────────────────────────────────────────────────────
-  if (isMobile) {
-    if (showSidebar && !isTelepito) {
-      return (
-        <div style={{ minHeight:"100vh", background:C.sidebar }}>
+      // ─── FIX 3: StoreProvider az UjMunkalap körül is ────────
+      <StoreProvider initialData={data}>
+        <div style={{ minHeight:"100vh", background:C.bg }}>
           <style>{gStyles}</style>
-          <MobileSidebarFull page={page} onNav={nav} user={user} onLogout={logout} allowedPages={allowedPages} />
+          <UjMunkalap data={data} onBack={() => setUjMunkalapPage(false)} onSave={handleUjMunkalapSave} />
         </div>
-      );
-    }
-    return (
-      <div style={{ minHeight:"100vh", background: isMunkalapDetail ? "#2C4A6E" : C.bg }}>
-        <style>{gStyles}</style>
-        {deleteConfirm && <DeleteConfirmModal ml={deleteConfirm} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteConfirm(null)} />}
-        {isMunkalapDetail ? (
-          <>
-            {/* Felmérés státusznál a FelmeresTelepito saját headert hoz */}
-            {!(isTelepito && sel.status === "Felmérés") && (
-              <div style={{ background:"#2C4A6E", padding:"44px 16px 0", display:"flex", alignItems:"center", gap:10 }}>
-                <button onClick={() => setSel(null)} style={{ border:"none", background:"none", color:"#94A3B8", cursor:"pointer", display:"flex", alignItems:"center", gap:6, fontSize:13, fontFamily:FONT, fontWeight:600 }}>
-                  <span style={{ fontSize:18 }}>←</span> {isTelepito ? "Feladatok" : "Munkalapok"}
-                </button>
-                <span style={{ fontSize:13, color:"#94A3B8", marginLeft:"auto" }}>{sel.id}</span>
-              </div>
-            )}
-            <MunkalapDetail m={sel} data={data} userRole={user.role} onBack={(refresh) => {
-              setSel(null);
-              if (refresh) {
-                const fresh = loadLocal("munkalapok");
-                if (fresh) setData(prev => ({ ...prev, munkalapok: fresh }));
-              }
-            }} onDelete={user.role !== "Telepítő" ? handleDeleteRequest : undefined} />
-          </>
-        ) : (
-          <>
-            {isTelepito ? (
-              <div>
-                <div style={{ background:"#2C4A6E", padding:"44px 16px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                  <span style={{ fontFamily:FONT_HEADING, color:"#fff", fontWeight:800, fontSize:20 }}>Feladatok</span>
-                  <button onClick={logout} style={{ border:"none", background:"rgba(255,255,255,0.1)", color:"#94A3B8", cursor:"pointer", borderRadius:8, padding:"6px 12px", fontSize:12, fontFamily:FONT }}>
-                    Kilépés
-                  </button>
-                </div>
-                <MunkalapLista data={data} onSelect={setSel} onNew={null} userRole={user.role} currentUser={user} />
-              </div>
-            ) : (
-              <>
-                <TopBar title={PAGE_TITLES[page]} user={user} driveStatus={drive} onBack={() => setShowSidebar(true)} backLabel="Főmenü" isMobile />
-                <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} onNewMunkalap={() => setUjMunkalapPage(true)} onDelete={handleDeleteRequest} />
-              </>
-            )}
-          </>
-        )}
-      </div>
+      </StoreProvider>
     );
   }
 
-  // ── ASZTALI ───────────────────────────────────────────────────
+  // ─── FIX 4: StoreProvider MINDEN nézetet befoglal ────────────
   return (
     <StoreProvider initialData={data}>
-    <div style={{ display:"flex", minHeight:"100vh", background:C.bg }}>
       <style>{gStyles}</style>
-      {deleteConfirm && <DeleteConfirmModal ml={deleteConfirm} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteConfirm(null)} />}
-      <Sidebar page={page} onNav={p => { setPage(p); setSel(null); }} user={user} onLogout={logout} allowedPages={allowedPages} />
-      <div style={{ flex:1, overflow:"auto" }}>
-        <TopBar
-          title={isMunkalapDetail ? sel.id : PAGE_TITLES[page]}
-          user={user} driveStatus={drive}
-          onBack={isMunkalapDetail ? () => setSel(null) : undefined}
-          backLabel="Munkalapok"
+      {deleteConfirm && (
+        <DeleteConfirmModal
+          ml={deleteConfirm}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteConfirm(null)}
         />
-        <PageContent page={page} sel={sel} setSel={setSel} data={data} user={user} onNewMunkalap={() => setUjMunkalapPage(true)} onDelete={handleDeleteRequest} />
-      </div>
-    </div>
+      )}
+
+      {/* ── MOBIL ─────────────────────────────────────────────── */}
+      {isMobile ? (
+        <div style={{ minHeight:"100vh", background: isMunkalapDetail ? "#2C4A6E" : C.bg }}>
+          {showSidebar && !isTelepito ? (
+            <MobileSidebarFull
+              page={page} onNav={nav} user={user}
+              onLogout={logout} allowedPages={allowedPages}
+            />
+          ) : isMunkalapDetail ? (
+            <>
+              {!(isTelepito && sel.status === "Felmérés") && (
+                <div style={{ background:"#2C4A6E", padding:"44px 16px 0", display:"flex", alignItems:"center", gap:10 }}>
+                  <button onClick={() => setSel(null)} style={{ border:"none", background:"none", color:"#94A3B8", cursor:"pointer", display:"flex", alignItems:"center", gap:6, fontSize:13, fontFamily:FONT, fontWeight:600 }}>
+                    <span style={{ fontSize:18 }}>←</span> {isTelepito ? "Feladatok" : "Munkalapok"}
+                  </button>
+                  <span style={{ fontSize:13, color:"#94A3B8", marginLeft:"auto" }}>{sel.id}</span>
+                </div>
+              )}
+              <MunkalapDetail
+                m={sel} data={data} userRole={user.role}
+                onBack={(refresh) => {
+                  setSel(null);
+                  if (refresh) {
+                    const fresh = loadLocal("munkalapok");
+                    if (fresh) setData(prev => ({ ...prev, munkalapok: fresh }));
+                  }
+                }}
+                onDelete={user.role !== "Telepítő" ? handleDeleteRequest : undefined}
+              />
+            </>
+          ) : isTelepito ? (
+            <div>
+              <div style={{ background:"#2C4A6E", padding:"44px 16px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <span style={{ fontFamily:FONT_HEADING, color:"#fff", fontWeight:800, fontSize:20 }}>Feladatok</span>
+                <button onClick={logout} style={{ border:"none", background:"rgba(255,255,255,0.1)", color:"#94A3B8", cursor:"pointer", borderRadius:8, padding:"6px 12px", fontSize:12, fontFamily:FONT }}>
+                  Kilépés
+                </button>
+              </div>
+              <MunkalapLista data={data} onSelect={setSel} onNew={null} userRole={user.role} currentUser={user} />
+            </div>
+          ) : (
+            <>
+              <TopBar title={PAGE_TITLES[page]} user={user} driveStatus={drive} onBack={() => setShowSidebar(true)} backLabel="Főmenü" isMobile />
+              <PageContent
+                page={page} sel={sel} setSel={setSel}
+                data={data} setData={setData} setPage={setPage}
+                user={user}
+                onNewMunkalap={() => setUjMunkalapPage(true)}
+                onDelete={handleDeleteRequest}
+              />
+            </>
+          )}
+        </div>
+      ) : (
+        /* ── ASZTALI ─────────────────────────────────────────── */
+        <div style={{ display:"flex", minHeight:"100vh", background:C.bg }}>
+          <Sidebar page={page} onNav={p => { setPage(p); setSel(null); }} user={user} onLogout={logout} allowedPages={allowedPages} />
+          <div style={{ flex:1, overflow:"auto" }}>
+            <TopBar
+              title={isMunkalapDetail ? sel.id : PAGE_TITLES[page]}
+              user={user} driveStatus={drive}
+              onBack={isMunkalapDetail ? () => setSel(null) : undefined}
+              backLabel="Munkalapok"
+            />
+            <PageContent
+              page={page} sel={sel} setSel={setSel}
+              data={data} setData={setData} setPage={setPage}
+              user={user}
+              onNewMunkalap={() => setUjMunkalapPage(true)}
+              onDelete={handleDeleteRequest}
+            />
+          </div>
+        </div>
+      )}
     </StoreProvider>
   );
 }
