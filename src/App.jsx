@@ -77,7 +77,7 @@ function DeleteConfirmModal({ ml, onConfirm, onCancel }) {
 }
 
 const PAGE_TITLES = {
-  dashboard:"Irányítópult", munkalapok:"Munkalapok", ugyfelek:"Ügyfelek",
+  dashboard:"Pénzügy", munkalapok:"Munkalapok", ugyfelek:"Ügyfelek",
   munkakiosztas:"Munkakiosztás", arajanlatok:"Árajánlatok", szerzodesek:"Szerződések",
   csapat:"Csapat", naptar:"Naptár", beallitasok:"Beállítások",
 };
@@ -120,7 +120,7 @@ function initData() {
 }
 
 const ALL_MOB_NAV = [
-  { id:"dashboard",      label:"Irányítópult",    icon:LayoutDashboard, desc:"Összefoglaló & statisztikák" },
+  { id:"dashboard",      label:"Pénzügy",         icon:LayoutDashboard, desc:"Pénzügyi összesítő & kártérítések" },
   { id:"projektek",      label:"Projektek",       icon:FileText,        desc:"Projekt kezelés" },
   { id:"munkakiosztas",  label:"Munkakiosztás",   icon:Hammer,          desc:"Excel import & csapat kiosztás" },
 
@@ -128,7 +128,6 @@ const ALL_MOB_NAV = [
   { id:"arajanlatok",    label:"Árajánlatok",     icon:ClipboardList,   desc:"Ajánlatok készítése" },
   { id:"szerzodesek",    label:"Szerződések",     icon:ScrollText,      desc:"Szerződések kezelése" },
   { id:"naptar",         label:"Naptár",          icon:Calendar,        desc:"Ütemezés & időpontok" },
-  { id:"karteritesek",   label:"Kártérítések",    icon:FileText,        desc:"Kártérítések kezelése" },
   { id:"munkalapok",     label:"Munkalapok",      icon:FileText,        desc:"Munkák kezelése" },
   { id:"beallitasok",    label:"Beállítások",     icon:Settings,        desc:"Felhasználók & kiosztás" },
 ];
