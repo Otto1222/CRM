@@ -4,10 +4,12 @@
 
 // Melyik oldalak láthatók az adott szerepkörnek
 export const ROLE_PAGES = {
-  "Admin": ["dashboard","projektek","munkalapok","munkakiosztas","ugyfelek","arajanlatok","szerzodesek","csapat","naptar","karteritesek","sablonok","biztmentes","beallitasok"],
-  "Projektmenedzser": ["dashboard","projektek","munkalapok","munkakiosztas","ugyfelek","arajanlatok","szerzodesek","csapat","naptar","karteritesek","beallitasok"],
-  "Iroda/Könyvelés": ["dashboard","projektek","munkalapok","ugyfelek","arajanlatok","szerzodesek","naptar","beallitasok"],
-  "Telepítő": ["munkalapok"],
+  // Admin/PM/Iroda: munkalapok a Projektek modulon belül érhető el
+  "Admin":            ["dashboard","projektek","munkakiosztas","ugyfelek","arajanlatok","szerzodesek","csapat","naptar","karteritesek","sablonok","biztmentes","beallitasok"],
+  "Projektmenedzser": ["dashboard","projektek","munkakiosztas","ugyfelek","arajanlatok","szerzodesek","csapat","naptar","karteritesek","beallitasok"],
+  "Iroda/Könyvelés":  ["dashboard","projektek","ugyfelek","arajanlatok","szerzodesek","naptar","beallitasok"],
+  // Telepítő: közvetlen munkalap lista (ő projekteket nem kezel)
+  "Telepítő":         ["munkalapok"],
 };
 
 // Jogosultság ellenőrzések
