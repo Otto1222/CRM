@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
 import { driveLoad, driveSave } from "./lib/driveApi";
@@ -244,6 +244,7 @@ export default function App() {
   }
 
   // ─── Azonnali frissítés: localStorage változáskor ────────────
+  // Stale closure ellen: setData mindig friss (React garantálja)
   useEffect(() => {
     function handleDbUpdate(e) {
       const col = e.detail?.collection || "";

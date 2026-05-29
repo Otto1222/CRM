@@ -3,9 +3,29 @@
  */
 
 const KEYS = {
-  munkalapok: "crm_db_munkalapok",
-  ugyfelek:   "crm_db_ugyfelek",
+  // EGYSÉGES kulcsok – minden modul ezeket használja direktben is
+  munkalapok: "munkalapok",
+  ugyfelek:   "ugyfelek",
 };
+
+// Régi kulcsokból migráció (egyszeri, web cache esetén)
+function migrateOldKeys() {
+  const migrations = [
+    ["crm_db_munkalapok", "munkalapok"],
+    ["crm_db_ugyfelek",   "ugyfelek"],
+  ];
+  migrations.forEach(([oldKey, newKey]) => {
+    try {
+      const old = localStorage.getItem(oldKey);
+      if (old && !localStorage.getItem(newKey)) {
+        localStorage.setItem(newKey, old);
+        localStorage.removeItem(oldKey);
+        console.info("[localDb] Migrálva:", oldKey, "→", newKey);
+      }
+    } catch {}
+  });
+}
+migrateOldKeys();
 
 export function loadLocal(key) {
   const storageKey = KEYS[key] || `crm_${key}`;

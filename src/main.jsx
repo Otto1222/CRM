@@ -3,8 +3,12 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 
+// StrictMode csak fejlesztési módban – production-ban kikapcsolva
+// (StrictMode dupla mount + event listener race condition okozta a webes frissítési hibát)
+const isDev = import.meta.env.DEV;
+
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  isDev
+    ? <React.StrictMode><App /></React.StrictMode>
+    : <App />
 )
