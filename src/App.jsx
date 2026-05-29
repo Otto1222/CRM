@@ -18,6 +18,7 @@ import AdminPanel from "./pages/AdminPanel";
 import KarteritesekTab from "./pages/KarteritesekTab";
 import SablonKezelo from "./pages/SablonKezelo";
 import BackupKezelo from "./pages/BackupKezelo";
+import FovallalkozoPage from "./modules/fovallalkozok/FovallalkozoPage.jsx";
 import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
 import { createBackup } from "./lib/backupService";
 import MunkakiosztasBeallitasok from "./pages/MunkakiosztasBeallitasok";
@@ -195,6 +196,7 @@ function PageContent({ page, sel, setSel, data, user, onNewMunkalap, onDelete })
     />
   );
   if (page === "karteritesek") return <KarteritesekTab userRole={role} currentUser={user} munkalapok={data.munkalapok} />;
+  if (page === "fovallalkozok") return <FovallalkozoPage userRole={user?.role} />;
   if (page === "sablonok")     return <SablonKezelo userRole={role} />;
   if (page === "biztmentes")   return <BackupKezelo userRole={role} />;
   if (page === "beallitasok")   return <div><AdminPanel currentUser={user} /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><JegyzokonyviBeallitasok /><div style={{ borderTop:`1px solid ${C.border}`, margin:"0 32px" }} /><MunkakiosztasBeallitasok /></div>;

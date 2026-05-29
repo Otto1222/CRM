@@ -3,6 +3,8 @@ import { X, Save } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { PROJEKT_STATUSZOK, PROJEKT_TIPUSOK } from "./projekt.schema.js";
+import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
+import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
 import { createProjekt, updateProjekt } from "./projekt.service.js";
 
 const Field = ({ label, children, half }) => (
@@ -21,7 +23,8 @@ const inp = {
 export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) {
   const isNew   = !projekt?.id;
   const users   = getUsers();
-  const csapatok = users.filter(u => u.role === "Telepítő");
+  const csapatok       = users.filter(u => u.role === "Telepítő");
+  const fovallalkozok  = getAktivFovallalkozok();
   const pmList   = users.filter(u => ["Admin","Projektmenedzser"].includes(u.role));
 
   const [form, setForm] = useState({
@@ -42,6 +45,14 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
     tervezettKezdes:    projekt?.tervezettKezdes   || "",
     tervezettBefejezes: projekt?.tervezettBefejezes|| "",
     elfogadottAjanlat:  projekt?.elfogadottAjanlat || 0,
+    // Pénzügyi konfiguráció
+    penzugy: projekt?.penzugy || {
+      fovallalkoziId: "", munkatipus: "", elszamolasiSzabalyId: "",
+      tavKm: 0, csapatLetszam: 1, munkanapok: 1,
+      felultBevitel: null, keziCsapatBer: null, keziUtikoltség: null,
+      keziAnyagkoltség: null, keziKartérités: null,
+      emelőgepKoltseg: 0, egyebKoltseg: 0,
+    },
     megjegyzes:         "",
   });
   const [saving, setSaving] = useState(false);
@@ -60,10 +71,22 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
     upd("projektvezetoNev", u?.name || "");
   }
 
+  function handleFovallalkozo(fvId) {
+    const filled = autoFillPenzugy(fvId, form.tipus, form.penzugy);
+    const sz = filled.elszamolasiSzabalyId
+      ? null
+      : findSzabaly(fvId, form.tipus);
+    setForm(p => ({ ...p, penzugy: { ...filled, elszamolasiSzabalyId: sz?.id || "" } }));
+  }
+
+  function updPenz(k, v) {
+    setForm(p => ({ ...p, penzugy: { ...p.penzugy, [k]: v === "" ? null : (isNaN(Number(v)) ? v : Number(v)) } }));
+  }
+
   async function handleSave() {
     if (!form.nev.trim()) { setHiba("A projekt neve kötelező!"); return; }
     setSaving(true);
-    const data = { ...form, elfogadottAjanlat: Number(form.elfogadottAjanlat) || 0 };
+    const data = { ...form, elfogadottAjanlat: Number(form.elfogadottAjanlat) || 0, penzugy: form.penzugy };
     delete data.megjegyzes;
     let saved;
     if (isNew) {
@@ -163,6 +186,37 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
             </Field>
             <Field label="Tervezett befejezés" half>
               <input type="date" value={form.tervezettBefejezes} onChange={e=>upd("tervezettBefejezes",e.target.value)} style={inp}/>
+            </Field>
+
+
+            {/* Pénzügyi konfiguráció szekció */}
+            <div style={{ gridColumn:"span 2", borderTop:"1px solid #E2E8F0", paddingTop:14 }}>
+              <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:10 }}>💰 Pénzügyi konfiguráció</p>
+            </div>
+
+            <Field label="Fővállalkozó" half>
+              <select value={form.penzugy.fovallalkoziId} onChange={e=>handleFovallalkozo(e.target.value)} style={inp}>
+                <option value="">— Válassz fővállalkozót —</option>
+                {fovallalkozok.map(f=><option key={f.id} value={f.id}>{f.nev}</option>)}
+              </select>
+              {form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize:10, color:"#059669", marginTop:3 }}>✅ Elszámolási szabály automatikusan betöltve</p>}
+              {form.penzugy.fovallalkoziId && !form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize:10, color:"#D97706", marginTop:3 }}>⚠️ Nincs aktív szabály ehhez a munkatípushoz</p>}
+            </Field>
+
+            <Field label="Távolság (km, oda)" half>
+              <input type="number" value={form.penzugy.tavKm||""} onChange={e=>updPenz("tavKm",e.target.value)} placeholder="0" style={inp}/>
+            </Field>
+            <Field label="Csapatlétszám (fő)" half>
+              <input type="number" value={form.penzugy.csapatLetszam||1} onChange={e=>updPenz("csapatLetszam",e.target.value)} placeholder="1" style={inp}/>
+            </Field>
+            <Field label="Munkanapok száma" half>
+              <input type="number" value={form.penzugy.munkanapok||1} onChange={e=>updPenz("munkanapok",e.target.value)} placeholder="1" style={inp}/>
+            </Field>
+            <Field label="Emelőgép költség (Ft)" half>
+              <input type="number" value={form.penzugy.emelőgepKoltseg||""} onChange={e=>updPenz("emelőgepKoltseg",e.target.value)} placeholder="0" style={inp}/>
+            </Field>
+            <Field label="Egyéb költség (Ft)" half>
+              <input type="number" value={form.penzugy.egyebKoltseg||""} onChange={e=>updPenz("egyebKoltseg",e.target.value)} placeholder="0" style={inp}/>
             </Field>
 
             <Field label="Elfogadott ajánlat (Ft)" half>
