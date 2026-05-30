@@ -229,7 +229,7 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
         menny: db,
         egyseg: a.egyseg||a.unit||"db",
         needSerial,
-        // db-szám szerint külön sorozatszám tömbök
+        isManual: false,  // eredeti anyag – nem törölhető
         sorozatszamok: needSerial ? Array.from({length:db},()=>"") : null,
       };
     });
@@ -250,6 +250,7 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
       id:`a_${Date.now()}`,
       nev:ujNev.trim(), menny:db, egyseg:ujEgyseg,
       needSerial,
+      isManual: true,   // kézzel hozzáadott – törölhető
       sorozatszamok: needSerial ? Array.from({length:db},()=>"") : null,
     }]);
     setUjNev(""); setUjMenny(1);
@@ -287,9 +288,12 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
             {a.needSerial&&<Hash size={14} color={C.accent} style={{flexShrink:0}}/>}
             <span style={{ flex:1, fontSize:14, fontWeight:600, color:C.text }}>{a.nev}</span>
             <span style={{ fontSize:13, color:C.muted, whiteSpace:"nowrap" }}>{a.menny} {a.egyseg}</span>
-            <button onClick={()=>setAnyagok(p=>p.filter(x=>x.id!==a.id))} style={{ border:"none",background:"none",cursor:"pointer",color:C.danger,flexShrink:0 }}>
-              <Trash2 size={14}/>
-            </button>
+            {/* Csak a kézzel hozzáadott tételeket lehet törölni */}
+            {a.isManual && (
+              <button onClick={()=>setAnyagok(p=>p.filter(x=>x.id!==a.id))} style={{ border:"none",background:"none",cursor:"pointer",color:C.danger,flexShrink:0 }}>
+                <Trash2 size={14}/>
+              </button>
+            )}
           </div>
           {/* Db-szám szerint külön sorozatszám mezők */}
           {a.needSerial && a.sorozatszamok?.map((sn,idx)=>(
@@ -336,7 +340,13 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   const clientCim = m.clientCim||client?.address||"";
   const clientTel = m.clientTel||client?.phone||"";
 
-  const [lezart,      setLezart]      = useState(m.lezarva||m.status==="Befejezett"||m.status==="Ellenőrzés alatt");
+  const [lezart,      setLezart]      = useState(
+    m.lezarva ||
+    m.status==="Befejezett" ||
+    m.status==="Ellenőrzés alatt" ||
+    m.status==="Lezárva" ||
+    m.status==="Számlázva"
+  );
   const [megkezdve,   setMegkezdve]   = useState(m.megkezdve||false);
   const [activeTab,   setActiveTab]   = useState(0);
   const [figy,        setFigy]        = useState(false);
@@ -513,7 +523,9 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       </div>
       <div style={{ padding:24,textAlign:"center" }}>
         <Lock size={48} color={C.muted} style={{ opacity:.3,display:"block",margin:"0 auto 16px" }}/>
-        <p style={{ fontWeight:700,fontSize:18,color:C.text,marginBottom:8 }}>Munka lezárva – Ellenőrzés alatt</p>
+        <p style={{ fontWeight:700,fontSize:18,color:C.text,marginBottom:8 }}>
+          {m.status==="Lezárva"||m.status==="Számlázva" ? `Munka ${m.status}` : "Munka lezárva – Ellenőrzés alatt"}
+        </p>
         <p style={{ fontSize:14,color:C.muted,marginBottom:8 }}>Befejezve: {m.befejezesIdopont?new Date(m.befejezesIdopont).toLocaleString("hu-HU"):"—"}</p>
         {m.megjegyzes&&<div style={{ background:"#F8FAFC",border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 16px",margin:"0 auto",maxWidth:400,textAlign:"left" }}><p style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Megjegyzés:</p><p style={{ fontSize:14,color:C.text }}>{m.megjegyzes}</p></div>}
         <p style={{ fontSize:13,color:C.muted,marginTop:16 }}>Módosítás csak Admin / Projektmenedzser fiókból lehetséges.</p>
@@ -638,11 +650,11 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       <MeroSzakasz title="Hurokellenállás">{["L1","L2","L3"].map(l=><MeroSor key={l} label={l} value={vbf.hurokellenallas[l]} onCommit={v=>updVbf("hurokellenallas",l,v)} unit="MΩ" piros={figy}/>)}</MeroSzakasz>
       {/* Közelebb hozott mértékegységek */}
       <MeroSzakasz title="Smart meter & AKKU">
-        <EgyMero label="Smart meter darabszáma" value={vbf.smartMeter} onCommit={v=>updVbf("smartMeter",null,v)} unit="db" piros={figy}/>
-        <EgyMero label="AKKU darabszáma"        value={vbf.akku}       onCommit={v=>updVbf("akku",null,v)}       unit="db" piros={figy}/>
+        <MeroSor label="SM"   value={vbf.smartMeter} onCommit={v=>updVbf("smartMeter",null,v)} unit="db" piros={figy}/>
+        <MeroSor label="AKKU" value={vbf.akku}       onCommit={v=>updVbf("akku",null,v)}       unit="db" piros={figy}/>
       </MeroSzakasz>
       <MeroSzakasz title="Betáplált DC teljesítmény">
-        <EgyMero label="Betáplált DC" value={vbf.betapaltDC} onCommit={v=>updVbf("betapaltDC",null,v)} unit="Wp" piros={figy}/>
+        <MeroSor label="DC"   value={vbf.betapaltDC} onCommit={v=>updVbf("betapaltDC",null,v)} unit="Wp" piros={figy}/>
       </MeroSzakasz>
       <MeroSzakasz title="Panel pontos adatok">
         <div style={{ marginBottom:12 }}>
@@ -656,10 +668,10 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
         <MeroSor label="Telj." value={vbf.panelTelj} onCommit={v=>updVbf("panelTelj",null,v)} unit="Wp" piros={figy}/>
       </MeroSzakasz>
       <MeroSzakasz title="Inverter pontos adatok">
-        <EgyMero label="Névleges teljesítmény" value={vbf.inverterNevleges} onCommit={v=>updVbf("inverterNevleges",null,v)} unit="kVA" piros={figy}/>
+        <MeroSor label="kVA" value={vbf.inverterNevleges} onCommit={v=>updVbf("inverterNevleges",null,v)} unit="kVA" piros={figy}/>
       </MeroSzakasz>
       <MeroSzakasz title="Tűzeseti adatok">
-        <EgyMero label="Megszakító értéke" value={vbf.tuzMegszakito} onCommit={v=>updVbf("tuzMegszakito",null,v)} unit="A" piros={figy}/>
+        <MeroSor label="A"   value={vbf.tuzMegszakito}   onCommit={v=>updVbf("tuzMegszakito",null,v)}   unit="A"   piros={figy}/>
       </MeroSzakasz>
       <button onClick={handleVbfMentes} style={{ width:"100%",padding:"14px",borderRadius:12,border:"none",background:C.accent,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT,marginTop:8,marginBottom:32 }}>
         <Save size={18}/>VBF mentése
