@@ -112,20 +112,21 @@ function MeroSor({ label, value, onCommit, unit, piros }) {
 }
 
 function EgyMero({ label, value, onCommit, unit, piros }) {
+  const [local, setLocal] = useState(value ?? "");
+  useEffect(() => { setLocal(value ?? ""); }, [value]);
   return (
     <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-      <span style={{ flex:1, fontSize:13, color:C.textSub }}>{label}</span>
-      <div style={{ display:"flex", alignItems:"center", gap:4, width:160 }}>
+      <span style={{ fontSize:13, color:C.textSub, marginRight:8, whiteSpace:"nowrap" }}>{label}</span>
+      <div style={{ display:"flex", alignItems:"center", gap:4, marginLeft:"auto" }}>
         <input
           inputMode="decimal"
-          value={value ?? ""}
-          onChange={e => {}}
-          onBlur={e => { const v = e.target.value==="0"?"":e.target.value; onCommit(v); }}
-          onInput={e => { e.target.value = e.target.value.replace(/[^0-9.,]/g,""); }}
+          value={local}
+          onChange={e => setLocal(e.target.value.replace(/[^0-9.,]/g,""))}
+          onBlur={() => { const v = local==="0"?"":local; onCommit(v); }}
           placeholder="—"
-          style={{ flex:1, padding:"8px 8px", border:`1.5px solid ${piros&&!value?"#EF4444":C.border}`, borderRadius:8, fontSize:15, fontFamily:FONT, color:C.text, outline:"none", background:piros&&!value?"#FEF2F2":"#F8FAFC", minWidth:0 }}
+          style={{ width:90, padding:"8px 8px", border:`1.5px solid ${piros&&!local?"#EF4444":C.border}`, borderRadius:8, fontSize:15, fontFamily:FONT, color:C.text, outline:"none", background:piros&&!local?"#FEF2F2":"#F8FAFC", textAlign:"right" }}
         />
-        <span style={{ fontSize:12, color:"#475569", fontWeight:600, flexShrink:0, whiteSpace:"nowrap" }}>{unit}</span>
+        <span style={{ fontSize:13, color:"#374151", fontWeight:700, whiteSpace:"nowrap", minWidth:28 }}>{unit}</span>
       </div>
     </div>
   );
