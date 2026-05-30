@@ -7,40 +7,53 @@ import { exportToExcel, exportToPDF } from "../../lib/exportService.js";
 import ProjektTable from "./ProjektTable.jsx";
 import ProjektDetail from "./ProjektDetail.jsx";
 import ProjektForm from "./ProjektForm.jsx";
+
 export default function ProjektekPage({ data, currentUser, onNavigateMunkalap }) {
   const munkalapok = data?.munkalapok || [];
   const userRole = currentUser?.role;
+
   const [projektek, setProjektek] = useState(() => loadProjektek());
   const [sel, setSel] = useState(null);
   const [ujOpen, setUjOpen] = useState(false);
   const [q, setQ] = useState("");
   const [tabFilter, setTabFilter] = useState("Összes");
+
   useEffect(() => {
     function refresh(e) {
       if (!e.detail?.collection || e.detail.collection === "projektek" || e.detail.collection === "all") {
-        setProjektek(loadProjektek());
+        const freshList = loadProjektek();
+        setProjektek(freshList);
+
         if (sel) {
-          const fresh = loadProjektek().find(p => p.id === sel.id);
+          const fresh = freshList.find(p => p.id === sel.id);
           if (fresh) setSel(fresh);
         }
       }
     }
+
     window.addEventListener("crm-db-updated", refresh);
     return () => window.removeEventListener("crm-db-updated", refresh);
   }, [sel]);
+
   const SZUROK = ["Összes", ...PROJEKT_STATUSZOK.map(s => s.id)];
+
   const filtered = projektek.filter(p => {
     const q2 = q.toLowerCase();
+
     const matchQ =
       !q ||
       p.nev?.toLowerCase().includes(q2) ||
       p.projektkod?.toLowerCase().includes(q2) ||
       p.clientNev?.toLowerCase().includes(q2);
+
     const matchT = tabFilter === "Összes" || p.status === tabFilter;
+
     return matchQ && matchT;
   });
+
   const aktiv = projektek.filter(p => !["Lezárt", "Elutasított"].includes(p.status)).length;
   const kivFolyamat = projektek.filter(p => p.status === "Kivitelezés alatt").length;
+
   if (sel) {
     return (
       <ProjektDetail
@@ -52,6 +65,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap })
       />
     );
   }
+
   return (
     <div style={{ padding: "24px 28px", fontFamily: FONT }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
@@ -63,6 +77,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap })
             {projektek.length} projekt · {aktiv} aktív · {kivFolyamat} kivitelezés alatt
           </p>
         </div>
+
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {["Admin", "Projektmenedzser"].includes(userRole) && (
             <>
@@ -85,6 +100,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap })
               >
                 <Download size={13} /> XLS
               </button>
+
               <button
                 onClick={() => exportToPDF(filtered, [], "Projektek összesítő")}
                 style={{
@@ -106,6 +122,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap })
               </button>
             </>
           )}
+
           <button
             onClick={() => setUjOpen(true)}
             style={{
@@ -127,6 +144,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap })
           </button>
         </div>
       </div>
+
       <div style={{ position: "relative", marginBottom: 12 }}>
         <Search
           size={15}
@@ -150,6 +168,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap })
           }}
         />
       </div>
+
       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 16 }}>
         {SZUROK.map(s => (
           <button
@@ -172,12 +191,14 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap })
           </button>
         ))}
       </div>
+
       <ProjektTable
         projektek={filtered}
         munkalapok={munkalapok}
         onSelect={setSel}
         userRole={userRole}
       />
+
       {ujOpen && (
         <ProjektForm
           currentUser={currentUser}
