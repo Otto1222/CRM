@@ -73,10 +73,10 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap })
         <div style={{ display:"flex", gap:8, alignItems:"center" }}>
           {["Admin","Projektmenedzser"].includes(userRole) && (
             <>
-              <button onClick={()=>exportToExcel(munkalapok,[],{fajlnev:"projektek"})} style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px", background:"#F1F5F9", color:"#475569", border:"none", borderRadius:8, cursor:"pointer", fontWeight:600, fontSize:12, fontFamily:FONT }}>
+              <button onClick={()=>exportToExcel(filtered,[],{fajlnev:"projektek"})}> style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px", background:"#F1F5F9", color:"#475569", border:"none", borderRadius:8, cursor:"pointer", fontWeight:600, fontSize:12, fontFamily:FONT }}>
                 <Download size={13}/> XLS
               </button>
-              <button onClick={()=>exportToPDF(munkalapok,[],"Projektek összesítő")} style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px", background:"#F1F5F9", color:"#475569", border:"none", borderRadius:8, cursor:"pointer", fontWeight:600, fontSize:12, fontFamily:FONT }}>
+               <button onClick={()=>exportToPDF(filtered,[],"Projektek összesítő")}> style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px", background:"#F1F5F9", color:"#475569", border:"none", borderRadius:8, cursor:"pointer", fontWeight:600, fontSize:12, fontFamily:FONT }}>
                 <Download size={13}/> PDF
               </button>
             </>
