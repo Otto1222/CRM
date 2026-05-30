@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
-import { driveLoad, driveSave } from "./lib/driveApi";
+import { driveLoad, driveSave, drivePing, driveAvailable } from "./lib/driveApi";
 import { loadLocal, saveLocal, addItem, removeItem } from "./lib/localDb";
 import { StoreProvider } from "./lib/store.jsx";
 import { syncCsapatokWithUsers } from "./lib/munkakiosztasSettings";
 import { getUsers } from "./lib/crmUsers";
-import { drivePing, driveAvailable } from "./lib/driveApi";
 import { getAllowedPages, getHomePage, canCreateMunkalap } from "./lib/roles";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
@@ -22,7 +21,6 @@ import BackupKezelo from "./pages/BackupKezelo";
 import FovallalkozoPage from "./modules/fovallalkozok/FovallalkozoPage.jsx";
 import MunkatipusokPage from "./modules/munkatipusok/MunkatipusokPage.jsx";
 import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
-import { createBackup } from "./lib/backupService";
 import MunkakiosztasBeallitasok from "./pages/MunkakiosztasBeallitasok";
 import JegyzokonyviBeallitasok from "./pages/JegyzokonyviBeallitasok";
 import Munkakiosztas from "./pages/Munkakiosztas";
@@ -75,28 +73,22 @@ function useIsMobile() {
   return mob;
 }
 
+// ─── Fázis 0: initData() kizárólag loadLocal()-t használ ────────────────
+// Direkt localStorage.getItem() hívások eltávolítva. Minden adat
+// a localDb.js KEYS mappáján keresztül érhető el, egységes kulcsnévvel.
+// A "crm_napelem_users" kivétel marad: azt a crmUsers.getUsers() kezeli.
 function initData() {
-  const localMl    = loadLocal("munkalapok");
-  const localUk    = loadLocal("ugyfelek");
-  const localUsers = (() => { try { const s=localStorage.getItem("crm_napelem_users"); return s?JSON.parse(s):null; } catch{return null;} })();
-  const localBeall = (() => { try { const s=localStorage.getItem("beallitasok"); return s?JSON.parse(s):{}; } catch{return {};} })();
-  const localKart  = (() => { try { const s=localStorage.getItem("karteritesek"); return s?JSON.parse(s):[]; } catch{return [];} })();
-  const localSabl  = (() => { try { const s=localStorage.getItem("sablonok"); return s?JSON.parse(s):[]; } catch{return [];} })();
-  const localFv    = (() => { try { const s=localStorage.getItem("fovallalkozok"); return s?JSON.parse(s):null; } catch{return null;} })();
-  const localMt    = (() => { try { const s=localStorage.getItem("munkatipusok"); return s?JSON.parse(s):null; } catch{return null;} })();
-  const localSz    = (() => { try { const s=localStorage.getItem("elszamolasi_szabalyok"); return s?JSON.parse(s):[]; } catch{return [];} })();
-  const localPr    = (() => { try { const s=localStorage.getItem("projektek"); return s?JSON.parse(s):[]; } catch{return [];} })();
   return {
-    munkalapok:            localMl ?? SAMPLE_DATA.munkalapok,
-    ugyfelek:              localUk ?? SAMPLE_DATA.ugyfelek,
-    users:                 localUsers,
-    beallitasok:           localBeall,
-    karteritesek:          localKart,
-    sablonok:              localSabl,
-    fovallalkozok:         localFv || [],
-    munkatipusok:          localMt  || [],
-    elszamolasi_szabalyok: localSz,
-    projektek:             localPr,
+    munkalapok:            loadLocal("munkalapok")            ?? SAMPLE_DATA.munkalapok,
+    ugyfelek:              loadLocal("ugyfelek")              ?? SAMPLE_DATA.ugyfelek,
+    users:                 getUsers(),
+    beallitasok:           loadLocal("beallitasok")           ?? {},
+    karteritesek:          loadLocal("karteritesek")          ?? [],
+    sablonok:              loadLocal("sablonok")              ?? [],
+    fovallalkozok:         loadLocal("fovallalkozok")         ?? [],
+    munkatipusok:          loadLocal("munkatipusok")          ?? [],
+    elszamolasi_szabalyok: loadLocal("elszamolasi_szabalyok") ?? [],
+    projektek:             loadLocal("projektek")             ?? [],
   };
 }
 
@@ -216,26 +208,49 @@ export default function App() {
     if (isMobile) setShowSidebar(false);
   }
 
+  // ─── EGYETLEN adatfrissítési pont: mindig loadLocal() = elsődleges forrás ─
+  // Fázis 0: direkt localStorage.getItem() hívások lecserélve loadLocal()-ra.
+  // A store.jsx StoreProvider is hallgatja ezt az eventet, de az App data state
+  // az elsődleges forrás amit a PageContent prop-on kap – a StoreProvider
+  // másodlagos (Fázis 3-ban egységesítjük).
   useEffect(() => {
     function handleDbUpdate(e) {
       const col = e.detail?.collection || "";
       if (col==="munkalapok"||col==="all") {
-        const f=loadLocal("munkalapok");
-        if(f){
-          setData(p=>({...p,munkalapok:f}));
-          // Frissítjük a sel-t is a legfrissebb adattal (státusz változás esetén)
-          setSel(p=>{ if(!p) return p; const fresh=f.find(m=>m.id===p.id); return fresh||p; });
+        const f = loadLocal("munkalapok");
+        if (f) {
+          setData(p => ({ ...p, munkalapok: f }));
+          setSel(p => { if (!p) return p; return f.find(m => m.id===p.id) || p; });
         }
       }
-      if (col==="ugyfelek"||col==="all")   { const f=loadLocal("ugyfelek"); if(f) setData(p=>({...p,ugyfelek:f})); }
-      if (col==="users"||col==="all")      { try{ const f=getUsers(); if(f){setData(p=>({...p,users:f}));syncCsapatokWithUsers(f);} }catch{} }
-      if (col==="beallitasok"||col==="all") { try{setData(p=>({...p,beallitasok:JSON.parse(localStorage.getItem("beallitasok")||"{}")}));}catch{} }
-      if (col==="karteritesek"||col==="all"){ try{setData(p=>({...p,karteritesek:JSON.parse(localStorage.getItem("karteritesek")||"[]")}));}catch{} }
-      if (col==="sablonok"||col==="all")    { try{setData(p=>({...p,sablonok:JSON.parse(localStorage.getItem("sablonok")||"[]")}));}catch{} }
-      if (col==="fovallalkozok"||col==="all"){ try{setData(p=>({...p,fovallalkozok:JSON.parse(localStorage.getItem("fovallalkozok")||"[]")}));}catch{} }
-      if (col==="munkatipusok"||col==="all") { try{setData(p=>({...p,munkatipusok:JSON.parse(localStorage.getItem("munkatipusok")||"[]")}));}catch{} }
-      if (col==="elszamolasi_szabalyok"||col==="all"){ try{setData(p=>({...p,elszamolasi_szabalyok:JSON.parse(localStorage.getItem("elszamolasi_szabalyok")||"[]")}));}catch{} }
-      if (col==="projektek"||col==="all")   { try{setData(p=>({...p,projektek:JSON.parse(localStorage.getItem("projektek")||"[]")}));}catch{} }
+      if (col==="ugyfelek"||col==="all") {
+        const f = loadLocal("ugyfelek"); if (f) setData(p => ({ ...p, ugyfelek: f }));
+      }
+      if (col==="users"||col==="all") {
+        try { const f=getUsers(); if(f){setData(p=>({...p,users:f}));syncCsapatokWithUsers(f);} } catch {}
+      }
+      // Fázis 0: ezek loadLocal-on mennek át, nem raw localStorage ─────────
+      if (col==="beallitasok"||col==="all") {
+        const f = loadLocal("beallitasok"); if (f) setData(p => ({ ...p, beallitasok: f }));
+      }
+      if (col==="karteritesek"||col==="all") {
+        const f = loadLocal("karteritesek"); if (f) setData(p => ({ ...p, karteritesek: f }));
+      }
+      if (col==="sablonok"||col==="all") {
+        const f = loadLocal("sablonok"); if (f) setData(p => ({ ...p, sablonok: f }));
+      }
+      if (col==="fovallalkozok"||col==="all") {
+        const f = loadLocal("fovallalkozok"); if (f) setData(p => ({ ...p, fovallalkozok: f }));
+      }
+      if (col==="munkatipusok"||col==="all") {
+        const f = loadLocal("munkatipusok"); if (f) setData(p => ({ ...p, munkatipusok: f }));
+      }
+      if (col==="elszamolasi_szabalyok"||col==="all") {
+        const f = loadLocal("elszamolasi_szabalyok"); if (f) setData(p => ({ ...p, elszamolasi_szabalyok: f }));
+      }
+      if (col==="projektek"||col==="all") {
+        const f = loadLocal("projektek"); if (f) setData(p => ({ ...p, projektek: f }));
+      }
     }
     window.addEventListener("crm-db-updated", handleDbUpdate);
     return () => window.removeEventListener("crm-db-updated", handleDbUpdate);
@@ -282,6 +297,7 @@ export default function App() {
   const isTelepito = user.role==="Telepítő";
 
   if (ujMunkalapPage) return (
+    {/* StoreProvider: másodlagos store – App data state az elsődleges forrás. Fázis 3-ban egységesítjük. */}
     <StoreProvider initialData={data}>
       <div style={{ minHeight:"100vh", background:C.bg }}>
         <style>{gStyles}</style>
@@ -291,6 +307,9 @@ export default function App() {
   );
 
   return (
+    {/* StoreProvider: másodlagos store – az App data state az elsődleges forrás.
+        Fázis 3-ban egységesítjük. initialData csak az első render-hez kell. */}
+    {/* StoreProvider: másodlagos store – App data state az elsődleges forrás. Fázis 3-ban egységesítjük. */}
     <StoreProvider initialData={data}>
       <style>{gStyles}</style>
       {deleteConfirm && <DeleteConfirmModal ml={deleteConfirm} onConfirm={handleDeleteConfirm} onCancel={()=>setDeleteConfirm(null)}/>}
