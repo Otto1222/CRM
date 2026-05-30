@@ -115,8 +115,17 @@ function EgyMero({ label, value, onCommit, unit, piros }) {
   return (
     <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
       <span style={{ flex:1, fontSize:13, color:C.textSub }}>{label}</span>
-      <div style={{ width:180, display:"flex" }}>
-        <VbfNumInput value={value} onCommit={onCommit} unit={unit} piros={piros}/>
+      <div style={{ display:"flex", alignItems:"center", gap:4, width:160 }}>
+        <input
+          inputMode="decimal"
+          value={value ?? ""}
+          onChange={e => {}}
+          onBlur={e => { const v = e.target.value==="0"?"":e.target.value; onCommit(v); }}
+          onInput={e => { e.target.value = e.target.value.replace(/[^0-9.,]/g,""); }}
+          placeholder="—"
+          style={{ flex:1, padding:"8px 8px", border:`1.5px solid ${piros&&!value?"#EF4444":C.border}`, borderRadius:8, fontSize:15, fontFamily:FONT, color:C.text, outline:"none", background:piros&&!value?"#FEF2F2":"#F8FAFC", minWidth:0 }}
+        />
+        <span style={{ fontSize:12, color:"#475569", fontWeight:600, flexShrink:0, whiteSpace:"nowrap" }}>{unit}</span>
       </div>
     </div>
   );
@@ -392,8 +401,8 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     }
 
     // 3. Megjegyzés min. 20 karakter
-    if (!megjegyzes||megjegyzes.trim().length<20) {
-      alert("⚠️ Lezárás sikertelen!\n\nA megjegyzés mező kötelező és legalább 20 karakter.\nÍrd le a munkavégzés összefoglalóját az Ellenőrzés fülön.");
+    if (!megjegyzes||megjegyzes.trim().length===0) {
+      alert("⚠️ Lezárás sikertelen!\n\nA megjegyzés mező kötelező.\nÍrd le a munkavégzés összefoglalóját az Ellenőrzés fülön.");
       setActiveTab(megkezdve?6:2);
       return;
     }
@@ -675,75 +684,13 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   );
 
   // ─── ELLENŐRZÉS FÜL – megjegyzés is itt van ───────────────
-  const EllenorzesTab=()=>{
-    const vbfOk = !checkVbfHianyos();
-    const osszesFoto = Object.values(fotok).reduce((s,a)=>s+(a.length||0),0);
-    const megjegyzesFoto = megjegyzes.trim().length>=20;
-    const hianyosKat = FOTO_KAT.filter(k=>(fotok[k.id]||[]).length===0);
-    const mindenKatOk = hianyosKat.every(k=>fotoHianyOkok[k.id]);
-    const lezarhatoE = vbfOk && osszesFoto>0 && megjegyzesFoto && (mindenKatOk||hianyosKat.length===0);
-
-    return (
-      <div style={{ padding:"16px",background:"#F1F5F9",paddingBottom:80 }}>
-
-        {/* Megjegyzés mező – itt van, nem az Infó fülön */}
-        <div style={{ background:"#fff",border:`1.5px solid ${!megjegyzesFoto?"#FCA5A5":C.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
-          <p style={{ fontSize:14,fontWeight:700,color:C.text,marginBottom:4 }}>
-            📝 Megjegyzés / munkavégzés összefoglalója
-            <span style={{ color:"#DC2626",marginLeft:6,fontSize:12 }}>*kötelező</span>
-          </p>
-          <p style={{ fontSize:12,color:C.muted,marginBottom:10 }}>Írd le a telepítés menetét, észrevételeket, problémákat. (min. 20 karakter)</p>
-          <textarea
-            value={megjegyzes}
-            onChange={e=>setMegjegyzes(e.target.value)}
-            onBlur={()=>{
-              if (megjegyzes.trim().length>=20) {
-                updateItem("munkalapok",m.id,{megjegyzes:megjegyzes.trim()});
-                window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
-              }
-            }}
-            placeholder="Pl. A telepítés rendben megtörtént. Az inverter a garázs falán lett elhelyezve. Az ügyfél tájékoztatva az alkalmazásról..."
-            rows={5}
-            style={{ width:"100%",padding:"10px 12px",border:`1.5px solid ${!megjegyzesFoto?"#EF4444":C.border}`,borderRadius:9,fontSize:14,fontFamily:FONT,color:C.text,outline:"none",background:"#F8FAFC",resize:"vertical",boxSizing:"border-box" }}
-          />
-          <div style={{ display:"flex",justifyContent:"space-between",marginTop:4 }}>
-            <span style={{ fontSize:11,color:megjegyzesFoto?C.success:"#DC2626" }}>
-              {megjegyzesFoto ? "✓ Megfelelő hosszú" : `Még ${20-megjegyzes.trim().length} karakter szükséges`}
-            </span>
-            <span style={{ fontSize:11,color:C.muted }}>{megjegyzes.trim().length} karakter</span>
-          </div>
-        </div>
-
-        {/* Ellenőrzési lista */}
-        <div style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
-          <p style={{ fontSize:15,fontWeight:700,color:C.text,marginBottom:12 }}>✅ Munka ellenőrzése</p>
-          {[
-            {label:"VBF Jegyzőkönyv",                     ok:vbfOk,          info:"A VBF fülön töltsd ki"},
-            {label:`Fotók (${osszesFoto} db)`,             ok:osszesFoto>0,   info:"Min. 1 fotó szükséges"},
-            {label:"Megjegyzés megadva",                   ok:megjegyzesFoto, info:"Min. 20 karakter"},
-            {label:"Fotó nélküli kategóriák indokolva",   ok:mindenKatOk||hianyosKat.length===0, info:`${hianyosKat.filter(k=>!fotoHianyOkok[k.id]).length} kategória indoklás hiányzik`},
-          ].map(item=>(
-            <div key={item.label} style={{ display:"flex",alignItems:"flex-start",gap:10,padding:"10px 0",borderBottom:`1px solid ${C.border}` }}>
-              {item.ok?<CheckCircle2 size={20} color={C.success} style={{flexShrink:0,marginTop:2}}/>:<AlertTriangle size={20} color="#D97706" style={{flexShrink:0,marginTop:2}}/>}
-              <div>
-                <p style={{ fontSize:14,color:item.ok?C.success:"#D97706",fontWeight:item.ok?600:500,margin:0 }}>{item.label}</p>
-                {!item.ok&&<p style={{ fontSize:11,color:"#94A3B8",margin:"2px 0 0" }}>{item.info}</p>}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <button onClick={handleBefejezesKezdete} disabled={!lezarhatoE}
-          style={{ width:"100%",padding:"15px",borderRadius:12,border:"none",
-            background:lezarhatoE?"#22C55E":"#CBD5E1",color:"#fff",fontWeight:700,fontSize:16,
-            cursor:lezarhatoE?"pointer":"not-allowed",fontFamily:FONT,
-            display:"flex",alignItems:"center",justifyContent:"center",gap:8 }}>
-          {lezarhatoE?"✅ Munka befejezése és lezárása":"🔒 Hiányos dokumentáció"}
-        </button>
-        {!lezarhatoE&&<p style={{ fontSize:12,color:"#DC2626",textAlign:"center",marginTop:8,fontWeight:600 }}>Piros jelölésű feltételek teljesítése szükséges.</p>}
-      </div>
-    );
-  };
+  // ── Ellenőrzés tab számítások (textarea a fő return-ben, ne legyen belső komponens!) ──
+  const ell_vbfOk = !checkVbfHianyos();
+  const ell_osszesFoto = Object.values(fotok).reduce((s,a)=>s+(a.length||0),0);
+  const ell_hianyosKat = FOTO_KAT.filter(k=>(fotok[k.id]||[]).length===0);
+  const ell_mindenKatOk = ell_hianyosKat.every(k=>fotoHianyOkok[k.id]);
+  const ell_megjegyzesMegvan = megjegyzes.trim().length > 0;
+  const lezarhatoE = ell_vbfOk && ell_osszesFoto>0 && ell_megjegyzesMegvan && (ell_mindenKatOk||ell_hianyosKat.length===0);
 
   return (
     <div style={{ minHeight:"100vh",background:"#F1F5F9",fontFamily:FONT }}>
@@ -755,7 +702,58 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       {megkezdve&&activeTab===3&&<FelhasznaltAnyagokTab munkalapId={m.id} meglevoAnyagok={m.anyagok||[]} onSave={()=>{}}/>}
       {megkezdve&&activeTab===4&&<VbfTab/>}
       {megkezdve&&activeTab===5&&<FotokTab/>}
-      {megkezdve&&activeTab===6&&<EllenorzesTab/>}
+      {megkezdve&&activeTab===6&&(
+        <div style={{ padding:"16px",background:"#F1F5F9",paddingBottom:80 }}>
+          {/* ── Megjegyzés – NEM belső komponensben, fókusz nem vész el ── */}
+          <div style={{ background:"#fff",border:`1.5px solid ${!ell_megjegyzesMegvan?"#FCA5A5":C.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
+            <p style={{ fontSize:14,fontWeight:700,color:C.text,marginBottom:4 }}>
+              📝 Megjegyzés / munkavégzés összefoglalója
+              <span style={{ color:"#DC2626",marginLeft:6,fontSize:12 }}>*kötelező</span>
+            </p>
+            <p style={{ fontSize:12,color:C.muted,marginBottom:10 }}>Írd le a telepítés menetét, észrevételeket, problémákat.</p>
+            <textarea
+              value={megjegyzes}
+              onChange={e=>setMegjegyzes(e.target.value)}
+              onBlur={()=>{
+                if (megjegyzes.trim().length>0) {
+                  updateItem("munkalapok",m.id,{megjegyzes:megjegyzes.trim()});
+                  window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
+                }
+              }}
+              placeholder="Pl. A telepítés rendben megtörtént. Az inverter a garázs falán lett elhelyezve..."
+              rows={5}
+              style={{ width:"100%",padding:"10px 12px",border:`1.5px solid ${!ell_megjegyzesMegvan?"#EF4444":C.border}`,borderRadius:9,fontSize:14,fontFamily:FONT,color:C.text,outline:"none",background:"#F8FAFC",resize:"vertical",boxSizing:"border-box" }}
+            />
+            {ell_megjegyzesMegvan && <span style={{ fontSize:11,color:C.success }}>✓ Megjegyzés megadva</span>}
+          </div>
+          {/* ── Ellenőrzési lista ── */}
+          <div style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
+            <p style={{ fontSize:15,fontWeight:700,color:C.text,marginBottom:12 }}>✅ Munka ellenőrzése</p>
+            {[
+              {label:"VBF Jegyzőkönyv",ok:ell_vbfOk,info:"A VBF fülön töltsd ki"},
+              {label:`Fotók (${ell_osszesFoto} db)`,ok:ell_osszesFoto>0,info:"Min. 1 fotó szükséges"},
+              {label:"Megjegyzés megadva",ok:ell_megjegyzesMegvan,info:"Legalább egy karakter"},
+              {label:"Fotó nélküli kategóriák indokolva",ok:ell_mindenKatOk||ell_hianyosKat.length===0,info:`${ell_hianyosKat.filter(k=>!fotoHianyOkok[k.id]).length} kategória indoklás hiányzik`},
+            ].map(item=>(
+              <div key={item.label} style={{ display:"flex",alignItems:"flex-start",gap:10,padding:"10px 0",borderBottom:`1px solid ${C.border}` }}>
+                {item.ok?<CheckCircle2 size={20} color={C.success} style={{flexShrink:0,marginTop:2}}/>:<AlertTriangle size={20} color="#D97706" style={{flexShrink:0,marginTop:2}}/>}
+                <div>
+                  <p style={{ fontSize:14,color:item.ok?C.success:"#D97706",fontWeight:item.ok?600:500,margin:0 }}>{item.label}</p>
+                  {!item.ok&&<p style={{ fontSize:11,color:"#94A3B8",margin:"2px 0 0" }}>{item.info}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button onClick={handleBefejezesKezdete} disabled={!lezarhatoE}
+            style={{ width:"100%",padding:"15px",borderRadius:12,border:"none",
+              background:lezarhatoE?"#22C55E":"#CBD5E1",color:"#fff",fontWeight:700,fontSize:16,
+              cursor:lezarhatoE?"pointer":"not-allowed",fontFamily:FONT,
+              display:"flex",alignItems:"center",justifyContent:"center",gap:8 }}>
+            {lezarhatoE?"✅ Munka befejezése és lezárása":"🔒 Hiányos dokumentáció"}
+          </button>
+          {!lezarhatoE&&<p style={{ fontSize:12,color:"#DC2626",textAlign:"center",marginTop:8,fontWeight:600 }}>Piros jelölésű feltételek teljesítése szükséges.</p>}
+        </div>
+      )}
       {showAlairas&&<AlairasModal m={m} userRole="Telepítő" onClose={()=>setShowAlairas(false)} onSave={handleBefejezes}/>}
     </div>
   );
