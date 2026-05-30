@@ -296,8 +296,8 @@ export default function App() {
   const isMunkalapDetail = page==="munkalapok" && sel;
   const isTelepito = user.role==="Telepítő";
 
+  // StoreProvider: másodlagos store – App data state az elsődleges forrás. Fázis 3-ban egységesítjük.
   if (ujMunkalapPage) return (
-    {/* StoreProvider: másodlagos store – App data state az elsődleges forrás. Fázis 3-ban egységesítjük. */}
     <StoreProvider initialData={data}>
       <div style={{ minHeight:"100vh", background:C.bg }}>
         <style>{gStyles}</style>
@@ -306,10 +306,8 @@ export default function App() {
     </StoreProvider>
   );
 
+  // StoreProvider: másodlagos store – App data state az elsődleges forrás. Fázis 3-ban egységesítjük.
   return (
-    {/* StoreProvider: másodlagos store – az App data state az elsődleges forrás.
-        Fázis 3-ban egységesítjük. initialData csak az első render-hez kell. */}
-    {/* StoreProvider: másodlagos store – App data state az elsődleges forrás. Fázis 3-ban egységesítjük. */}
     <StoreProvider initialData={data}>
       <style>{gStyles}</style>
       {deleteConfirm && <DeleteConfirmModal ml={deleteConfirm} onConfirm={handleDeleteConfirm} onCancel={()=>setDeleteConfirm(null)}/>}
