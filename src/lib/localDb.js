@@ -1,14 +1,33 @@
 /**
  * localDb.js – Helyi adatbázis localStorage-ban
+ * BroadcastChannel-lel cross-tab szinkronizáció
  */
 
 const KEYS = {
-  // EGYSÉGES kulcsok – minden modul ezeket használja direktben is
   munkalapok: "munkalapok",
   ugyfelek:   "ugyfelek",
 };
 
-// Régi kulcsokból migráció (egyszeri, web cache esetén)
+// ─── Cross-tab szinkronizáció BroadcastChannel-lel ───────────
+// Ha egy tab módosít, az összes többi tab kap értesítést
+let _bc = null;
+try {
+  _bc = new BroadcastChannel("crm-db-sync");
+  _bc.onmessage = (e) => {
+    // Fogadott üzenet más tab-ból → dispatch helyi event
+    if (e.data?.collection) {
+      window.dispatchEvent(new CustomEvent("crm-db-updated", {
+        detail: { ...e.data, fromBroadcast: true }
+      }));
+    }
+  };
+} catch {}
+
+function broadcastChange(detail) {
+  try { _bc?.postMessage(detail); } catch {}
+}
+
+// ─── Régi kulcsok migrációja ──────────────────────────────────
 function migrateOldKeys() {
   const migrations = [
     ["crm_db_munkalapok", "munkalapok"],
@@ -20,7 +39,6 @@ function migrateOldKeys() {
       if (old && !localStorage.getItem(newKey)) {
         localStorage.setItem(newKey, old);
         localStorage.removeItem(oldKey);
-        console.info("[localDb] Migrálva:", oldKey, "→", newKey);
       }
     } catch {}
   });
@@ -50,7 +68,9 @@ export function addItem(collection, item) {
     ? current.map((i, j) => j === idx ? { ...i, ...item } : i)
     : [item, ...current];
   saveLocal(collection, next);
-  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection, action: "add", id: item.id } }));
+  const detail = { collection, action: "add", id: item.id };
+  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail }));
+  broadcastChange(detail);
   return next;
 }
 
@@ -58,7 +78,9 @@ export function removeItem(collection, id) {
   const current = loadLocal(collection) || [];
   const next = current.filter(i => i.id !== id);
   saveLocal(collection, next);
-  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection, action: "remove", id } }));
+  const detail = { collection, action: "remove", id };
+  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail }));
+  broadcastChange(detail);
   return next;
 }
 
@@ -66,7 +88,10 @@ export function updateItem(collection, id, updates) {
   const current = loadLocal(collection) || [];
   const next = current.map(i => i.id === id ? { ...i, ...updates } : i);
   saveLocal(collection, next);
-  // Értesíti az App-ot hogy frissítse a React state-t
-  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection, action: "update", id } }));
+  const detail = { collection, action: "update", id };
+  // Helyi tab
+  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail }));
+  // Többi tab (cross-tab szinkron)
+  broadcastChange(detail);
   return next;
 }
