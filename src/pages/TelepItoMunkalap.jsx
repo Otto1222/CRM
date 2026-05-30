@@ -340,13 +340,19 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   const clientCim = m.clientCim||client?.address||"";
   const clientTel = m.clientTel||client?.phone||"";
 
-  const [lezart,      setLezart]      = useState(
-    m.lezarva ||
-    m.status==="Befejezett" ||
-    m.status==="Ellenőrzés alatt" ||
-    m.status==="Lezárva" ||
-    m.status==="Számlázva"
-  );
+  const isLezartStatus = (ml) =>
+    ml.lezarva ||
+    ml.status==="Befejezett" ||
+    ml.status==="Ellenőrzés alatt" ||
+    ml.status==="Lezárva" ||
+    ml.status==="Számlázva";
+
+  const [lezart, setLezart] = useState(() => isLezartStatus(m));
+
+  // Ha az m prop kívülről frissül (pl. Admin megváltoztatja), azonnal lezárjuk
+  useEffect(() => {
+    if (isLezartStatus(m)) setLezart(true);
+  }, [m.lezarva, m.status]);
   const [megkezdve,   setMegkezdve]   = useState(m.megkezdve||false);
   const [activeTab,   setActiveTab]   = useState(0);
   const [figy,        setFigy]        = useState(false);
