@@ -1,4 +1,4 @@
-
+/**
  * localDb.js – Helyi adatbázis localStorage-ban
  * BroadcastChannel-lel cross-tab szinkronizáció
  */
