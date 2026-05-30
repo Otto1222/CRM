@@ -3,9 +3,20 @@
  * BroadcastChannel-lel cross-tab szinkronizáció
  */
 
+// ─── Fázis 0: összes kollekció explicit kulcsneve ────────────
+// Ha itt szerepel a kulcs, loadLocal/saveLocal pontosan ezt használja.
+// Ha NEM szerepel, a fallback `crm_${key}` – ami eltérő lenne!
+// A meglévő adatok kompatibilitása megőrzött: a kulcsnevek nem változnak.
 const KEYS = {
-  munkalapok: "munkalapok",
-  ugyfelek:   "ugyfelek",
+  munkalapok:            "munkalapok",
+  ugyfelek:              "ugyfelek",
+  beallitasok:           "beallitasok",
+  karteritesek:          "karteritesek",
+  sablonok:              "sablonok",
+  fovallalkozok:         "fovallalkozok",
+  munkatipusok:          "munkatipusok",
+  elszamolasi_szabalyok: "elszamolasi_szabalyok",
+  projektek:             "projektek",
 };
 
 // ─── Cross-tab szinkronizáció BroadcastChannel-lel ───────────
@@ -29,9 +40,17 @@ function broadcastChange(detail) {
 
 // ─── Régi kulcsok migrációja ──────────────────────────────────
 function migrateOldKeys() {
+  // Fázis 0: régi "crm_" prefixes kulcsok migrációja az egységes kulcsokra
   const migrations = [
-    ["crm_db_munkalapok", "munkalapok"],
-    ["crm_db_ugyfelek",   "ugyfelek"],
+    ["crm_db_munkalapok",         "munkalapok"],
+    ["crm_db_ugyfelek",           "ugyfelek"],
+    ["crm_beallitasok",           "beallitasok"],
+    ["crm_karteritesek",          "karteritesek"],
+    ["crm_sablonok",              "sablonok"],
+    ["crm_fovallalkozok",         "fovallalkozok"],
+    ["crm_munkatipusok",          "munkatipusok"],
+    ["crm_elszamolasi_szabalyok", "elszamolasi_szabalyok"],
+    ["crm_projektek",             "projektek"],
   ];
   migrations.forEach(([oldKey, newKey]) => {
     try {
