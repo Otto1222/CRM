@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
 import { driveLoad, driveSave } from "./lib/driveApi";
+import { loadLocal, saveLocal } from "./lib/localDb";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
@@ -23,13 +24,41 @@ const PAGE_TITLES = {
   beallitasok: "Beállítások",
 };
 
+function loadInitialData() {
+  return {
+    ...SAMPLE_DATA,
+    munkalapok: loadLocal("munkalapok") || SAMPLE_DATA.munkalapok || [],
+    ugyfelek: loadLocal("ugyfelek") || SAMPLE_DATA.ugyfelek || [],
+    projektek: loadLocal("projektek") || [],
+  };
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [page, setPage] = useState("dashboard");
   const [sel, setSel] = useState(null);
-  const [data, setData] = useState(SAMPLE_DATA);
+  const [data, setData] = useState(loadInitialData);
   const [drive, setDrive] = useState("idle");
   const [showNew, setShowNew] = useState(false);
+
+  useEffect(() => {
+    function reloadFromLocal() {
+      setData(prev => ({
+        ...prev,
+        munkalapok: loadLocal("munkalapok") || prev.munkalapok || [],
+        ugyfelek: loadLocal("ugyfelek") || prev.ugyfelek || [],
+        projektek: loadLocal("projektek") || prev.projektek || [],
+      }));
+    }
+
+    window.addEventListener("crm-db-updated", reloadFromLocal);
+    window.addEventListener("storage", reloadFromLocal);
+
+    return () => {
+      window.removeEventListener("crm-db-updated", reloadFromLocal);
+      window.removeEventListener("storage", reloadFromLocal);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -37,37 +66,82 @@ export default function App() {
     (async () => {
       setDrive("saving");
 
-      const [ml, uk] = await Promise.all([
-        driveLoad("munkalapok"),
-        driveLoad("ugyfelek"),
-      ]);
+      try {
+        const [ml, uk] = await Promise.all([
+          driveLoad("munkalapok"),
+          driveLoad("ugyfelek"),
+        ]);
 
-      if (ml || uk) {
-        setData(prev => ({
-          ...prev,
-          munkalapok: ml?.munkalapok || prev.munkalapok,
-          ugyfelek: uk?.ugyfelek || prev.ugyfelek,
-        }));
+        setData(prev => {
+          const localMunkalapok = loadLocal("munkalapok");
+          const localUgyfelek = loadLocal("ugyfelek");
+          const localProjektek = loadLocal("projektek");
+
+          const driveMunkalapok =
+            Array.isArray(ml?.munkalapok) && ml.munkalapok.length > 0
+              ? ml.munkalapok
+              : null;
+
+          const driveUgyfelek =
+            Array.isArray(uk?.ugyfelek) && uk.ugyfelek.length > 0
+              ? uk.ugyfelek
+              : null;
+
+          return {
+            ...prev,
+            munkalapok: localMunkalapok || driveMunkalapok || prev.munkalapok || [],
+            ugyfelek: localUgyfelek || driveUgyfelek || prev.ugyfelek || [],
+            projektek: localProjektek || prev.projektek || [],
+          };
+        });
+
+        setDrive("ok");
+      } catch (e) {
+        console.warn("[App Drive load]", e);
+        setDrive("error");
       }
 
-      setDrive("ok");
       setTimeout(() => setDrive("idle"), 2500);
     })();
   }, [user]);
 
   async function saveCollection(collection, items) {
+    saveLocal(collection, items);
+
     setDrive("saving");
-    const ok = await driveSave(collection, { [collection]: items });
-    setDrive(ok ? "ok" : "error");
+
+    try {
+      const res = await driveSave(collection, { [collection]: items });
+      setDrive(res?.ok ? "ok" : "error");
+    } catch (e) {
+      console.warn("[App Drive save]", e);
+      setDrive("error");
+    }
+
+    window.dispatchEvent(
+      new CustomEvent("crm-db-updated", {
+        detail: { collection, action: "save" },
+      })
+    );
+
     setTimeout(() => setDrive("idle"), 2500);
   }
 
   async function handleNewMunkalap(formData) {
     const today = new Date().toISOString().slice(0, 10);
-    const newItem = { ...formData, createdAt: today, updatedAt: today };
-    const newList = [...data.munkalapok, newItem];
+
+    const newItem = {
+      ...formData,
+      createdAt: formData.createdAt || today,
+      updatedAt: today,
+    };
+
+    const current = loadLocal("munkalapok") || data.munkalapok || [];
+    const newList = [...current, newItem];
 
     setData(prev => ({ ...prev, munkalapok: newList }));
+    saveLocal("munkalapok", newList);
+
     await saveCollection("munkalapok", newList);
 
     setShowNew(false);
@@ -84,7 +158,6 @@ export default function App() {
     setUser(null);
     setSel(null);
     setPage("dashboard");
-    setData(SAMPLE_DATA);
   }
 
   if (!user) return <Login onLogin={setUser} />;
@@ -97,19 +170,32 @@ export default function App() {
         {page === "munkalapok" && sel ? (
           <>
             <TopBar
-              title={`${sel.id} – ${sel.title || sel.projektMegnevezes || ""}`}
+              title={`${sel.dokumentumszam || sel.ediSorszam || sel.ugyszam || sel.id} – ${
+                sel.title || sel.projektMegnevezes || sel.feladat || ""
+              }`}
               user={user}
               driveStatus={drive}
               onBack={() => setSel(null)}
               backLabel="Munkalapok"
             />
-            <MunkalapDetail m={sel} data={data} />
+            <MunkalapDetail
+              m={sel}
+              data={data}
+              userRole={user?.role}
+              onBack={() => setSel(null)}
+              onRefresh={() => {
+                setData(loadInitialData());
+                const fresh = (loadLocal("munkalapok") || []).find(x => x.id === sel.id);
+                if (fresh) setSel(fresh);
+              }}
+            />
           </>
         ) : (
           <>
             <TopBar title={PAGE_TITLES[page]} user={user} driveStatus={drive} />
 
             {page === "dashboard" && <Dashboard data={data} user={user} />}
+
             {page === "munkalapok" && (
               <MunkalapLista
                 data={data}
@@ -119,11 +205,14 @@ export default function App() {
                 currentUser={user}
               />
             )}
+
             {page === "ugyfelek" && <Ugyfelek data={data} />}
+
             {page === "arajanlatok" && <ComingSoon title="Árajánlatok" />}
             {page === "szerzodések" && <ComingSoon title="Szerződések" />}
             {page === "csapat" && <ComingSoon title="Csapat kezelése" />}
             {page === "naptar" && <ComingSoon title="Naptár" />}
+
             {page === "beallitasok" && <BeallitasokPage currentUser={user} />}
           </>
         )}
