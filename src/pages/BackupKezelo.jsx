@@ -42,7 +42,10 @@ export default function BackupKezelo({ userRole }) {
   }
 
   function handleExport(backup) {
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type:"application/json" });
+    const blob = new Blob(
+  ["\uFEFF" + JSON.stringify(backup, null, 2)],
+  { type: "application/json;charset=utf-8" }
+);
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `crm_backup_${backup.id}.json`;
