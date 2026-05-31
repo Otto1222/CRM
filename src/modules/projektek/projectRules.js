@@ -14,6 +14,16 @@ export const PROJECT_STATUSES_NOT_VISIBLE_TO_INSTALLER = [
   "Elutasított",
 ];
 
+export const WORKORDER_STATUSES_VISIBLE_TO_INSTALLER = [
+  "Kiosztásra vár",
+  "Felmérésre vár",
+  "Kivitelezésre vár",
+  "Bővítés",
+  "Hibajavítás",
+  "Szerviz",
+  "Folyamatban",
+];
+
 export function isInstallerVisibleProjectStatus(status) {
   return PROJECT_STATUSES_VISIBLE_TO_INSTALLER.includes(status);
 }
@@ -21,15 +31,7 @@ export function isInstallerVisibleProjectStatus(status) {
 export function isInstallerVisibleWorkorder(workorder, currentUser) {
   if (!workorder || !currentUser) return false;
 
-  const statusOk = [
-    "Kiosztásra vár",
-    "Felmérésre vár",
-    "Kivitelezésre vár",
-    "Bővítés",
-    "Hibajavítás",
-    "Szerviz",
-    "Folyamatban",
-  ].includes(workorder.status);
+  const statusOk = WORKORDER_STATUSES_VISIBLE_TO_INSTALLER.includes(workorder.status);
 
   const assignedOk =
     workorder.assigneeId === currentUser.id ||
@@ -65,6 +67,19 @@ export function getRequiredProjectFields(projectStatus) {
   ];
 }
 
+function todayYMD() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+export function isPastDate(dateValue) {
+  if (!dateValue) return false;
+  return String(dateValue).slice(0, 10) < todayYMD();
+}
+
 export function validateProjectBeforeSave(form) {
   const required = getRequiredProjectFields(form.status);
   const missing = [];
@@ -77,12 +92,53 @@ export function validateProjectBeforeSave(form) {
     }
   }
 
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      missing,
+      message: `Kötelező mezők hiányoznak: ${missing.join(", ")}`,
+    };
+  }
+
+  const hasInstallerAssignment =
+    !!form.csapatId ||
+    !!form.csapatNev ||
+    requiresInstallerAssignment(form.status);
+
+  if (hasInstallerAssignment && isPastDate(form.tervezettKezdes)) {
+    return {
+      ok: false,
+      missing: ["Tervezett kezdés"],
+      message: "A kivitelező csapatnak kiosztott projekt tervezett kezdése nem lehet mai napnál régebbi.",
+    };
+  }
+
   return {
-    ok: missing.length === 0,
-    missing,
-    message: missing.length
-      ? `Kötelező mezők hiányoznak: ${missing.join(", ")}`
-      : "",
+    ok: true,
+    missing: [],
+    message: "",
+  };
+}
+
+export function validateWorkorderBeforeSave(workorder) {
+  const assigned =
+    !!workorder.assigneeId ||
+    !!workorder.assigneeNev ||
+    !!workorder.csapatId ||
+    !!workorder.csapatNev;
+
+  const dateValue = workorder.datum || workorder.date || workorder.tervezettKezdes;
+
+  if (assigned && isPastDate(dateValue)) {
+    return {
+      ok: false,
+      message: "A csapatnak kiosztott munkalap dátuma nem lehet mai napnál régebbi.",
+    };
+  }
+
+  return {
+    ok: true,
+    message: "",
   };
 }
 
