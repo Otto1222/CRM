@@ -3,6 +3,7 @@ import { ArrowLeft, Pencil, Printer } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getStatusConfig } from "./projekt.schema.js";
 import { exportToPDF } from "../../lib/exportService.js";
+import { formatProjectType } from "../../lib/projectTypeFormatter.js";
 import ProjektForm from "./ProjektForm.jsx";
 import TabAttekintes from "./tabs/TabAttekintes.jsx";
 import TabAjanlatok from "./tabs/TabAjanlatok.jsx";
@@ -14,6 +15,7 @@ import TabSzamlazas from "./tabs/TabSzamlazas.jsx";
 import TabKommunikacio from "./tabs/TabKommunikacio.jsx";
 import TabNaplo from "./tabs/TabNaplo.jsx";
 import TabRiport from "./tabs/TabRiport.jsx";
+
 const TABS = [
   { id: "attekintes", label: "Áttekintés", icon: "📊" },
   { id: "ajanlatok", label: "Ajánlatok", icon: "📋" },
@@ -26,28 +28,37 @@ const TABS = [
   { id: "naplo", label: "Napló", icon: "📝" },
   { id: "riport", label: "Riport / PDF", icon: "🖨️" },
 ];
+
 export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateMunkalap, currentUser }) {
   const [tab, setTab] = useState("attekintes");
   const [editOpen, setEditOpen] = useState(false);
   const [lokalProjekt, setLokalProjekt] = useState(projekt);
+
   useEffect(() => {
     setLokalProjekt(projekt);
   }, [projekt]);
+
   if (!lokalProjekt) {
     return null;
   }
+
   const stCfg = getStatusConfig(lokalProjekt.status);
+  const formattedTipus = formatProjectType(lokalProjekt.tipus);
+
   function handleSaved(updated) {
     setLokalProjekt(updated);
   }
+
   function handlePrint() {
     const mls = (munkalapok || []).filter(
       m => m.projektId === lokalProjekt.id || lokalProjekt.munkalapIds?.includes(m.id)
     );
     exportToPDF(mls, `${lokalProjekt.projektkod} – ${lokalProjekt.nev}`);
   }
+
   const tabContent = () => {
     const props = { projekt: lokalProjekt, munkalapok, currentUser };
+
     switch (tab) {
       case "attekintes":
         return <TabAttekintes {...props} />;
@@ -73,6 +84,7 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
         return null;
     }
   };
+
   return (
     <div style={{ padding: "24px 28px", fontFamily: FONT, maxWidth: 1100 }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
@@ -93,16 +105,19 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
         >
           <ArrowLeft size={18} /> Vissza
         </button>
+
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#64748B" }}>
               {lokalProjekt.projektkod}
             </span>
+
             {lokalProjekt.kulsoAzonosito && (
               <span style={{ fontSize: 11, color: "#94A3B8" }}>
                 / {lokalProjekt.kulsoAzonosito}
               </span>
             )}
+
             <span
               style={{
                 background: stCfg.szin,
@@ -116,6 +131,7 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
               {lokalProjekt.status}
             </span>
           </div>
+
           <h1
             style={{
               fontFamily: FONT_HEADING,
@@ -127,10 +143,12 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
           >
             {lokalProjekt.nev}
           </h1>
+
           <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
-            {lokalProjekt.clientNev} · {lokalProjekt.csapatNev || "—"} · {lokalProjekt.tipus}
+            {lokalProjekt.clientNev} · {lokalProjekt.csapatNev || "—"} · {formattedTipus}
           </p>
         </div>
+
         <div style={{ display: "flex", gap: 8 }}>
           <button
             onClick={handlePrint}
@@ -151,6 +169,7 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
           >
             <Printer size={14} /> PDF
           </button>
+
           <button
             onClick={() => setEditOpen(true)}
             style={{
@@ -172,6 +191,7 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
           </button>
         </div>
       </div>
+
       <div style={{ display: "flex", gap: 2, borderBottom: "2px solid #E2E8F0", marginBottom: 0, overflowX: "auto" }}>
         {TABS.map(t => (
           <button
@@ -195,9 +215,11 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
           </button>
         ))}
       </div>
+
       <div style={{ paddingTop: 4 }}>
         {tabContent()}
       </div>
+
       {editOpen && (
         <ProjektForm
           projekt={lokalProjekt}
