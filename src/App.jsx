@@ -12,7 +12,7 @@
 //      {page === "beallitasok" && <ComingSoon title="Beállítások" />}
 //
 //    LESZ:
-//      {page === "beallitasok" && <Beallitasok user={user} />}
+//     {page === "beallitasok" && <BeallitasokPage currentUser={user} />}
 //
 // Más változtatás NEM szükséges.
 // A ComingSoon import maradhat (más oldalakhoz még kell).
@@ -31,8 +31,8 @@ import Dashboard from "./pages/Dashboard";
 import { MunkalapLista, MunkalapDetail } from "./pages/Munkalapok";
 import Ugyfelek from "./pages/Ugyfelek";
 import ComingSoon from "./pages/ComingSoon";
-import MunkalapFormModal from "./pages/MunkalapFormModal";
-import Beallitasok from "./pages/Beallitasok";   // ← ÚJ
+import BeallitasokPage from "./pages/BeallitasokPage";
+import UjMunkalap from "./pages/UjMunkalap";   // ← ÚJ
 
 const PAGE_TITLES = {
   dashboard:   "Irányítópult",
@@ -121,11 +121,11 @@ export default function App() {
       </div>
 
       {showNew && (
-        <MunkalapFormModal
-          data={data}
-          onSave={handleNewMunkalap}
-          onClose={() => setShowNew(false)}
-        />
+        <UjMunkalap
+  data={data}
+  onSave={handleNewMunkalap}
+  onClose={() => setShowNew(false)}
+/>
       )}
     </div>
   );
