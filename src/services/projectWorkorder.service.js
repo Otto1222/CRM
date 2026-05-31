@@ -1,5 +1,8 @@
 import { updateProjekt } from "../modules/projektek/projekt.service.js";
-import { createWorkorder, getWorkordersByProjectId } from "./workorder.service.js";
+import {
+  createWorkorder,
+  getWorkordersByProjectId,
+} from "./workorder.service.js";
 
 export function createWorkorderFromProject(projekt, options = {}) {
   if (!projekt?.id) {
@@ -13,25 +16,45 @@ export function createWorkorderFromProject(projekt, options = {}) {
     projektId: projekt.id,
     projektKod: projekt.projektkod,
     munkalapSzam: `${projekt.projektkod}/${sorszam}`,
+
     tipus: options.tipus || "Felmérés",
     status: options.status || "Kiosztásra vár",
     datum: options.datum || projekt.tervezettKezdes || "",
+
     clientId: projekt.clientId || null,
     clientNev: projekt.clientNev || "",
     clientCim: projekt.clientCim || "",
     clientTel: projekt.clientTel || "",
     clientEmail: projekt.clientEmail || "",
+    kapcsolattarto: projekt.kapcsolattarto || "",
     telepitesiCim: projekt.telepitesiCim || projekt.clientCim || "",
+
     assigneeId: projekt.csapatId || "",
     assigneeNev: projekt.csapatNev || "",
     csapatId: projekt.csapatId || "",
     csapatNev: projekt.csapatNev || "",
-    megjegyzes: options.megjegyzes || `Automatikusan létrehozva a(z) ${projekt.projektkod} projekthez.`,
+
+    projektNev: projekt.nev || "",
+    kulsoAzonosito: projekt.kulsoAzonosito || "",
+
+    megjegyzes:
+      options.megjegyzes ||
+      `Automatikusan létrehozva a(z) ${projekt.projektkod} projekthez.`,
   });
 
-  updateProjekt(projekt.id, {
-    munkalapIds: [...(projekt.munkalapIds || []), workorder.id],
-  }, options.user || "");
+  const currentIds = Array.isArray(projekt.munkalapIds)
+    ? projekt.munkalapIds
+    : [];
+
+  if (!currentIds.includes(workorder.id)) {
+    updateProjekt(
+      projekt.id,
+      {
+        munkalapIds: [...currentIds, workorder.id],
+      },
+      options.user || ""
+    );
+  }
 
   return workorder;
 }
