@@ -2,6 +2,8 @@ export const WORKORDER_STATUSES_VISIBLE_TO_INSTALLER = [
   "Felmérés",
   "Kiosztásra vár",
   "Kivitelezésre vár",
+  "Megkezdésre Vár",
+  "Ütemezett",
   "Kivitelezés",
   "Folyamatban",
   "Bővítés",
@@ -20,15 +22,33 @@ export const WORKORDER_STATUSES_HIDDEN_FROM_INSTALLER = [
   "Elutasított",
 ];
 
+function norm(v) {
+  return String(v || "")
+    .trim()
+    .toLowerCase();
+}
+
 export function isWorkorderAssignedToUser(workorder, currentUser) {
   if (!workorder || !currentUser) return false;
 
-  return (
-    workorder.assigneeNev === currentUser.name ||
-    workorder.csapatNev === currentUser.name ||
-    workorder.assigneeId === currentUser.id ||
-    workorder.csapatId === currentUser.id
-  );
+  const userId = norm(currentUser.id);
+  const userName = norm(currentUser.name);
+
+  const assigneeId = norm(workorder.assigneeId);
+  const csapatId = norm(workorder.csapatId);
+
+  const assigneeNev = norm(workorder.assigneeNev);
+  const csapatNev = norm(workorder.csapatNev);
+
+  if (userId && (assigneeId === userId || csapatId === userId)) {
+    return true;
+  }
+
+  if (userName && (assigneeNev === userName || csapatNev === userName)) {
+    return true;
+  }
+
+  return false;
 }
 
 export function isInstallerVisibleWorkorder(workorder, currentUser) {
@@ -38,9 +58,11 @@ export function isInstallerVisibleWorkorder(workorder, currentUser) {
     return false;
   }
 
-  if (WORKORDER_STATUSES_HIDDEN_FROM_INSTALLER.includes(workorder.status)) {
+  const status = String(workorder.status || "").trim();
+
+  if (WORKORDER_STATUSES_HIDDEN_FROM_INSTALLER.includes(status)) {
     return false;
   }
 
-  return WORKORDER_STATUSES_VISIBLE_TO_INSTALLER.includes(workorder.status);
+  return WORKORDER_STATUSES_VISIBLE_TO_INSTALLER.includes(status);
 }
