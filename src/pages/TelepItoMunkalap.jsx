@@ -21,60 +21,73 @@ function requiresSerial(nev) {
 
 // ─── Fotó kategóriák ──────────────────────────────────────────
 const FOTO_KAT = [
-  { id:"ac_box",          nev:"AC box (fedéllel és fedél nélkül)",  leiras:"3 fotó: Megkötött állapotban fedél nélkül, Fedéllel és nyitott ajtóval, Fedéllel csukott ajtóval." },
-  { id:"akkumulator",     nev:"Akkumulátor",                        leiras:"2 fotó: Elhelyezéséről, Bekötéséről" },
-  { id:"akku_adattabla",  nev:"Akkumulátor adattábla",              leiras:"1 fotó: Olvasható adattábla+S/N" },
-  { id:"csatl_pont",      nev:"Csatlakozási/rákötési pont",         leiras:"2 fotó: Megkötött állapotban fedél nélkül, fedéllel" },
-  { id:"dc_box",          nev:"DC box (fedéllel és fedél nélkül)",  leiras:"3 fotó: Megkötött állapotban fedél nélkül, Fedéllel és nyitott ajtóval, Fedéllel csukott ajtóval." },
-  { id:"eph_kotes",       nev:"EPH kötés",                          leiras:"Min. 1 fotó: Tartószerkezeti rákötés" },
-  { id:"egyeb_dok",       nev:"Egyéb dokumentáció",                 leiras:"Nyilatkozatok, fővállalkozói dokumentumok" },
-  { id:"elrendezes",      nev:"Elrendezés+stringek",                leiras:"1 fotó: rajzolt elrendezés, stringek, QR-kódos elrendezés" },
-  { id:"figyelm_tabla",   nev:"Figyelmeztető tábla",                leiras:"1 Fotó: Napelemes rendszer figyelmeztető tábláról" },
-  { id:"fusterzekelő",    nev:"Füstérzékelő",                       leiras:"Egy fotó felhelyezett állapotban." },
-  { id:"inverter",        nev:"Inverter",                           leiras:"2 fotó: Szemből - bekötésekkel, védelmi berendezésekkel" },
-  { id:"inv_adattabla",   nev:"Inverter adattábla",                 leiras:"1 fotó: Olvasható adattábla" },
-  { id:"inv_beallitas",   nev:"Inverter beállítások",               leiras:"Több fotó: Visszwatt, Smart mérő, akkumulátor, működési mód" },
-  { id:"inv_mukodes",     nev:"Inverter működéséről",               leiras:"1 fotó: Rendszer élő termeléséről" },
-  { id:"kabel_nyomvonal", nev:"Kábel nyomvonal (AC/DC)",            leiras:"Kábelhossz függvényeként több fotó." },
-  { id:"matricak",        nev:"Matricák, feliratok",                 leiras:"min. 3 fotó: AC box, DC box, Csatlakozási pont" },
-  { id:"meres_ellenorzes",nev:"Mérés ellenőrzése",                  leiras:"Fogyasztásmérés ellenőrzése." },
-  { id:"merohelyrol",     nev:"Mérőhelyről",                        leiras:"3 fotó: Teljesítményről, Mérőről, Teljes mérőhely" },
-  { id:"napelemek",       nev:"Napelemek",                          leiras:"Min. 2 fotó: 2 irányból. Minden panel számolható legyen!" },
-  { id:"panel_sn",        nev:"Napelem SN számok",                   leiras:"Összes napelem szériaszáma olvashatóan." },
-  { id:"optimalizalo",    nev:"Optimalizáló",                        leiras:"min. 1 fotó: Tigo/Huawei - tartószerkezetre rögzítve" },
-  { id:"plant_letrehozas",nev:"Plant létrehozás",                   leiras:"1 fotó: Online állapotban a rendszer monitoringon." },
-  { id:"palyazati_tabla", nev:"Pályázati tábla",                    leiras:"3 fotó: közelről, 1-2 méterről, utca másik feléről" },
-  { id:"smart_mero",      nev:"Smart mérő/mérés",                   leiras:"2 fotó: Mérés kialakítása, kommunikáció" },
-  { id:"tartoszerkezet",  nev:"Tartószerkezet",                     leiras:"Min. 2 fotó: 2 irányból." },
-  { id:"teto_kivezetes",  nev:"Tető kivezetés",                     leiras:"1 fotó: Kábelkivezetés a tetőre" },
-  { id:"tuz_levalaszto",  nev:"Tűzeseti leválasztó",                leiras:"1 fotó: Megkötött tűzeseti leválasztó." },
-  { id:"wifi_stick",      nev:"Wifi Stick",                         leiras:"1 fotó: Olvasható adatokkal" },
-  { id:"wifi_beallitas",  nev:"Wifi beállítás",                     leiras:"1. fotó: Sikeres wifi beállításról" },
+  { id:"ac_box", nev:"AC box (fedéllel és fedél nélkül)", leiras:"3 fotó: Megkötött állapotban fedél nélkül, Fedéllel és nyitott ajtóval, Fedéllel csukott ajtóval." },
+  { id:"akkumulator", nev:"Akkumulátor", leiras:"2 fotó: Elhelyezéséről, Bekötéséről" },
+  { id:"akku_adattabla", nev:"Akkumulátor adattábla", leiras:"1 fotó: Olvasható adattábla+S/N" },
+  { id:"csatl_pont", nev:"Csatlakozási/rákötési pont", leiras:"2 fotó: Megkötött állapotban fedél nélkül, fedéllel" },
+  { id:"dc_box", nev:"DC box (fedéllel és fedél nélkül)", leiras:"3 fotó: Megkötött állapotban fedél nélkül, Fedéllel és nyitott ajtóval, Fedéllel csukott ajtóval." },
+  { id:"eph_kotes", nev:"EPH kötés", leiras:"Min. 1 fotó: Tartószerkezeti rákötés" },
+  { id:"egyeb_dok", nev:"Egyéb dokumentáció", leiras:"Nyilatkozatok, fővállalkozói dokumentumok" },
+  { id:"elrendezes", nev:"Elrendezés+stringek", leiras:"1 fotó: rajzolt elrendezés, stringek, QR-kódos elrendezés" },
+  { id:"figyelm_tabla", nev:"Figyelmeztető tábla", leiras:"1 Fotó: Napelemes rendszer figyelmeztető tábláról" },
+  { id:"fusterzekelő", nev:"Füstérzékelő", leiras:"Egy fotó felhelyezett állapotban." },
+  { id:"inverter", nev:"Inverter", leiras:"2 fotó: Szemből - bekötésekkel, védelmi berendezésekkel" },
+  { id:"inv_adattabla", nev:"Inverter adattábla", leiras:"1 fotó: Olvasható adattábla" },
+  { id:"inv_beallitas", nev:"Inverter beállítások", leiras:"Több fotó: Visszwatt, Smart mérő, akkumulátor, működési mód" },
+  { id:"inv_mukodes", nev:"Inverter működéséről", leiras:"1 fotó: Rendszer élő termeléséről" },
+  { id:"kabel_nyomvonal", nev:"Kábel nyomvonal (AC/DC)", leiras:"Kábelhossz függvényeként több fotó." },
+  { id:"matricak", nev:"Matricák, feliratok", leiras:"min. 3 fotó: AC box, DC box, Csatlakozási pont" },
+  { id:"meres_ellenorzes", nev:"Mérés ellenőrzése", leiras:"Fogyasztásmérés ellenőrzése." },
+  { id:"merohelyrol", nev:"Mérőhelyről", leiras:"3 fotó: Teljesítményről, Mérőről, Teljes mérőhely" },
+  { id:"napelemek", nev:"Napelemek", leiras:"Min. 2 fotó: 2 irányból. Minden panel számolható legyen!" },
+  { id:"panel_sn", nev:"Napelem SN számok", leiras:"Összes napelem szériaszáma olvashatóan." },
+  { id:"optimalizalo", nev:"Optimalizáló", leiras:"min. 1 fotó: Tigo/Huawei - tartószerkezetre rögzítve" },
+  { id:"plant_letrehozas", nev:"Plant létrehozás", leiras:"1 fotó: Online állapotban a rendszer monitoringon." },
+  { id:"palyazati_tabla", nev:"Pályázati tábla", leiras:"3 fotó: közelről, 1-2 méterről, utca másik feléről" },
+  { id:"smart_mero", nev:"Smart mérő/mérés", leiras:"2 fotó: Mérés kialakítása, kommunikáció" },
+  { id:"tartoszerkezet", nev:"Tartószerkezet", leiras:"Min. 2 fotó: 2 irányból." },
+  { id:"teto_kivezetes", nev:"Tető kivezetés", leiras:"1 fotó: Kábelkivezetés a tetőre" },
+  { id:"tuz_levalaszto", nev:"Tűzeseti leválasztó", leiras:"1 fotó: Megkötött tűzeseti leválasztó." },
+  { id:"wifi_stick", nev:"Wifi Stick", leiras:"1 fotó: Olvasható adatokkal" },
+  { id:"wifi_beallitas", nev:"Wifi beállítás", leiras:"1. fotó: Sikeres wifi beállításról" },
 ];
 
 const FOTO_HIANY_OKOK_LIST = ["Nincs ilyen eszköz","Nem releváns a munkatípushoz","Nem látható"];
 
-// ─── VBF template ─────────────────────────────────────────────
 const VBF_TEMPLATE = {
-  acFeszultseg:    { L1:"", L2:"", L3:"" },
+  acFeszultseg: { L1:"", L2:"", L3:"" },
   kismegsInverter: { L1:"", L2:"", L3:"" },
-  kismegsMero:     { L1:"", L2:"", L3:"" },
-  panelszam:       { ST1:"", ST2:"", ST3:"", ST4:"", ST5:"", ST6:"" },
-  dcFeszultseg:    { ST1:"", ST2:"", ST3:"", ST4:"", ST5:"", ST6:"" },
+  kismegsMero: { L1:"", L2:"", L3:"" },
+  panelszam: { ST1:"", ST2:"", ST3:"", ST4:"", ST5:"", ST6:"" },
+  dcFeszultseg: { ST1:"", ST2:"", ST3:"", ST4:"", ST5:"", ST6:"" },
   hurokellenallas: { L1:"", L2:"", L3:"" },
   smartMeter:"", akku:"", betapaltDC:"",
   panelTipus:"", panelVoc:"", panelVmp:"", panelImp:"", panelIsc:"", panelTelj:"",
   inverterNevleges:"", tuzMegszakito:"",
 };
 
-// ─── VBF: csak számot fogad, 0 → törlés ──────────────────────
+function getMunkalapAzonosito(m) {
+  return (
+    m?.dokumentumszam ||
+    m?.munkalapSzam ||
+    m?.munkalapszam ||
+    m?.workorderNumber ||
+    m?.ediSorszam ||
+    m?.ugyszam ||
+    m?.id ||
+    "Munkalap"
+  );
+}
+
 function VbfNumInput({ value, onCommit, unit, piros }) {
   const [local, setLocal] = useState(value ?? "");
   useEffect(() => { setLocal(value ?? ""); }, [value]);
+
   function handleBlur() {
     const v = local === "0" ? "" : local;
     onCommit(v);
   }
+
   return (
     <div style={{ display:"flex", alignItems:"center", gap:4, flex:1 }}>
       <input
@@ -90,12 +103,14 @@ function VbfNumInput({ value, onCommit, unit, piros }) {
   );
 }
 
-// ─── Panel típusa: szöveg ─────────────────────────────────────
 function VbfTextInput({ value, onCommit, piros }) {
   const [local, setLocal] = useState(value ?? "");
   useEffect(() => { setLocal(value ?? ""); }, [value]);
   return (
-    <input value={local} onChange={e=>setLocal(e.target.value)} onBlur={()=>onCommit(local)}
+    <input
+      value={local}
+      onChange={e=>setLocal(e.target.value)}
+      onBlur={()=>onCommit(local)}
       placeholder="pl. Risen Energy 425W"
       style={{ width:"100%", padding:"8px 10px", border:`1.5px solid ${piros&&!local?"#EF4444":C.border}`, borderRadius:8, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:piros&&!local?"#FEF2F2":"#F8FAFC" }}
     />
@@ -111,27 +126,6 @@ function MeroSor({ label, value, onCommit, unit, piros }) {
   );
 }
 
-function EgyMero({ label, value, onCommit, unit, piros }) {
-  const [local, setLocal] = useState(value ?? "");
-  useEffect(() => { setLocal(value ?? ""); }, [value]);
-  return (
-    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-      <span style={{ fontSize:13, color:C.textSub, marginRight:8, whiteSpace:"nowrap" }}>{label}</span>
-      <div style={{ display:"flex", alignItems:"center", gap:4, marginLeft:"auto" }}>
-        <input
-          inputMode="decimal"
-          value={local}
-          onChange={e => setLocal(e.target.value.replace(/[^0-9.,]/g,""))}
-          onBlur={() => { const v = local==="0"?"":local; onCommit(v); }}
-          placeholder="—"
-          style={{ width:90, padding:"8px 8px", border:`1.5px solid ${piros&&!local?"#EF4444":C.border}`, borderRadius:8, fontSize:15, fontFamily:FONT, color:C.text, outline:"none", background:piros&&!local?"#FEF2F2":"#F8FAFC", textAlign:"right" }}
-        />
-        <span style={{ fontSize:13, color:"#374151", fontWeight:700, whiteSpace:"nowrap", minWidth:28 }}>{unit}</span>
-      </div>
-    </div>
-  );
-}
-
 function MeroSzakasz({ title, children }) {
   return (
     <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", marginBottom:14 }}>
@@ -141,7 +135,6 @@ function MeroSzakasz({ title, children }) {
   );
 }
 
-// ─── Fotó kártya – magyarázat választóval ────────────────────
 function FotoKartya({ kat, photos, onChange, hianyOk, onHianyOkChange }) {
   const ref = useRef();
   const nincsKep = photos.length === 0;
@@ -170,9 +163,9 @@ function FotoKartya({ kat, photos, onChange, hianyOk, onHianyOkChange }) {
           <Camera size={22} color="#D97706"/>
         </button>
       </div>
+
       <input ref={ref} type="file" multiple accept="image/*,.pdf" style={{ display:"none" }} onChange={e=>handleFiles(e.target.files)}/>
 
-      {/* Feltöltött fotók */}
       {photos.length > 0 && (
         <div style={{ display:"flex", gap:8, marginTop:10, flexWrap:"wrap" }}>
           <span style={{ fontSize:12, color:C.success, fontWeight:600, alignSelf:"center" }}>✓ {photos.length} db feltöltve</span>
@@ -189,7 +182,6 @@ function FotoKartya({ kat, photos, onChange, hianyOk, onHianyOkChange }) {
         </div>
       )}
 
-      {/* Kötelező magyarázat ha nincs fotó */}
       {nincsKep && (
         <div style={{ marginTop:10 }}>
           <p style={{ fontSize:11, fontWeight:700, color: hianyOk?"#059669":"#DC2626", marginBottom:6, textTransform:"uppercase", letterSpacing:.6 }}>
@@ -197,12 +189,21 @@ function FotoKartya({ kat, photos, onChange, hianyOk, onHianyOkChange }) {
           </p>
           <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
             {FOTO_HIANY_OKOK_LIST.map(ok => (
-              <button key={ok} onClick={()=>onHianyOkChange(hianyOk===ok ? null : ok)}
-                style={{ padding:"6px 12px", borderRadius:20, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT,
+              <button
+                key={ok}
+                onClick={()=>onHianyOkChange(hianyOk===ok ? null : ok)}
+                style={{
+                  padding:"6px 12px",
+                  borderRadius:20,
+                  fontSize:12,
+                  fontWeight:600,
+                  cursor:"pointer",
+                  fontFamily:FONT,
                   background: hianyOk===ok ? "#DCFCE7" : "#F8FAFC",
-                  color:      hianyOk===ok ? "#059669"  : "#64748B",
-                  border:    `1.5px solid ${hianyOk===ok ? "#86EFAC" : "#E2E8F0"}`,
-                }}>
+                  color: hianyOk===ok ? "#059669" : "#64748B",
+                  border: `1.5px solid ${hianyOk===ok ? "#86EFAC" : "#E2E8F0"}`,
+                }}
+              >
                 {ok}
               </button>
             ))}
@@ -213,15 +214,13 @@ function FotoKartya({ kat, photos, onChange, hianyOk, onHianyOkChange }) {
   );
 }
 
-// ═══ FELHASZNÁLT ANYAGOK – db-szám szerint sorozatszámok ═════
 function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
-  // Minden db-hez külön sorozatszám mező
   function initAnyagok() {
     const saved = loadLocal(`felh_anyagok_${munkalapId}`);
     if (saved) return saved;
     return (meglevoAnyagok||[]).map(a => {
       const nev = a.nev||a.name||"";
-      const db  = parseInt(a.menny||a.qty||1) || 1;
+      const db = parseInt(a.menny||a.qty||1) || 1;
       const needSerial = requiresSerial(nev);
       return {
         id: `a_${Date.now()}_${Math.random().toString(36).slice(2)}`,
@@ -229,18 +228,18 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
         menny: db,
         egyseg: a.egyseg||a.unit||"db",
         needSerial,
-        isManual: false,  // eredeti anyag – nem törölhető
+        isManual: false,
         sorozatszamok: needSerial ? Array.from({length:db},()=>"") : null,
       };
     });
   }
 
   const [anyagok, setAnyagok] = useState(initAnyagok);
-  const [ujNev,    setUjNev]    = useState("");
-  const [ujMenny,  setUjMenny]  = useState(1);
+  const [ujNev, setUjNev] = useState("");
+  const [ujMenny, setUjMenny] = useState(1);
   const [ujEgyseg, setUjEgyseg] = useState("db");
-  const [mentve,   setMentve]   = useState(false);
-  const [hiba,     setHiba]     = useState("");
+  const [mentve, setMentve] = useState(false);
+  const [hiba, setHiba] = useState("");
 
   function add() {
     if (!ujNev.trim()) return;
@@ -248,12 +247,15 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
     const needSerial = requiresSerial(ujNev);
     setAnyagok(p=>[...p, {
       id:`a_${Date.now()}`,
-      nev:ujNev.trim(), menny:db, egyseg:ujEgyseg,
+      nev:ujNev.trim(),
+      menny:db,
+      egyseg:ujEgyseg,
       needSerial,
-      isManual: true,   // kézzel hozzáadott – törölhető
+      isManual: true,
       sorozatszamok: needSerial ? Array.from({length:db},()=>"") : null,
     }]);
-    setUjNev(""); setUjMenny(1);
+    setUjNev("");
+    setUjMenny(1);
   }
 
   function updSerial(aid, idx, val) {
@@ -280,6 +282,7 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
       <p style={{ fontSize:13, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
         Kék keretes tételeknél minden darabhoz külön sorozatszám szükséges.
       </p>
+
       {hiba&&<div style={{ background:"#FEF2F2",border:`1px solid #FECACA`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.danger }}>⚠️ {hiba}</div>}
 
       {anyagok.map(a=>(
@@ -288,14 +291,13 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
             {a.needSerial&&<Hash size={14} color={C.accent} style={{flexShrink:0}}/>}
             <span style={{ flex:1, fontSize:14, fontWeight:600, color:C.text }}>{a.nev}</span>
             <span style={{ fontSize:13, color:C.muted, whiteSpace:"nowrap" }}>{a.menny} {a.egyseg}</span>
-            {/* Csak a kézzel hozzáadott tételeket lehet törölni */}
             {a.isManual && (
               <button onClick={()=>setAnyagok(p=>p.filter(x=>x.id!==a.id))} style={{ border:"none",background:"none",cursor:"pointer",color:C.danger,flexShrink:0 }}>
                 <Trash2 size={14}/>
               </button>
             )}
           </div>
-          {/* Db-szám szerint külön sorozatszám mezők */}
+
           {a.needSerial && a.sorozatszamok?.map((sn,idx)=>(
             <div key={idx} style={{ marginBottom:6 }}>
               <label style={{ fontSize:11, color:C.accent, fontWeight:700, textTransform:"uppercase", letterSpacing:.8 }}>
@@ -314,9 +316,13 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
 
       <div style={{ border:`1.5px dashed ${C.border}`,borderRadius:12,padding:14,background:"#fff",marginBottom:16 }}>
         <p style={{ fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:.8,marginBottom:10 }}>Új tétel</p>
-        <input value={ujNev} onChange={e=>setUjNev(e.target.value)} onKeyDown={e=>e.key==="Enter"&&add()}
+        <input
+          value={ujNev}
+          onChange={e=>setUjNev(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&add()}
           placeholder="Anyag / eszköz neve…"
-          style={{ width:"100%",padding:"10px 12px",border:`1.5px solid ${C.border}`,borderRadius:9,fontSize:14,fontFamily:FONT,outline:"none",marginBottom:8 }}/>
+          style={{ width:"100%",padding:"10px 12px",border:`1.5px solid ${C.border}`,borderRadius:9,fontSize:14,fontFamily:FONT,outline:"none",marginBottom:8 }}
+        />
         {requiresSerial(ujNev)&&<p style={{ fontSize:12,color:C.accent,marginBottom:8,fontWeight:600 }}>⚠️ Sorozatszámot igényel ({ujMenny} db → {ujMenny} mező)</p>}
         <div style={{ display:"flex",gap:8 }}>
           <input type="number" value={ujMenny} onChange={e=>setUjMenny(parseInt(e.target.value)||1)}
@@ -326,6 +332,7 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
           <button onClick={add} style={{ flex:1,padding:"10px",background:C.accent,color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:700,fontFamily:FONT }}>+ Hozzáad</button>
         </div>
       </div>
+
       <button onClick={save} style={{ width:"100%",padding:"14px",borderRadius:12,border:"none",background:C.success,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT }}>
         <Save size={18}/>{mentve?"Mentve ✓":"Anyagok mentése"}
       </button>
@@ -333,12 +340,12 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
   );
 }
 
-// ═══ FŐ KOMPONENS ════════════════════════════════════════════
 export default function TelepItoMunkalap({ m, data, onBack }) {
-  const client    = data.ugyfelek?.find(u=>u.id===m.clientId);
+  const client = data.ugyfelek?.find(u=>u.id===m.clientId);
   const clientNev = m.clientNev||client?.name||"";
   const clientCim = m.clientCim||client?.address||"";
   const clientTel = m.clientTel||client?.phone||"";
+  const munkalapAzonosito = getMunkalapAzonosito(m);
 
   const isLezartStatus = (ml) =>
     ml.lezarva ||
@@ -349,35 +356,31 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
 
   const [lezart, setLezart] = useState(() => isLezartStatus(m));
 
-  // Ha az m prop kívülről frissül (pl. Admin megváltoztatja), azonnal lezárjuk
   useEffect(() => {
     if (isLezartStatus(m)) setLezart(true);
   }, [m.lezarva, m.status]);
-  const [megkezdve,   setMegkezdve]   = useState(m.megkezdve||false);
-  const [activeTab,   setActiveTab]   = useState(0);
-  const [figy,        setFigy]        = useState(false);
-  const [showAlairas, setShowAlairas] = useState(false);
-  const [progress,    setProgress]    = useState(null);
-  const [progressMsg, setProgressMsg] = useState("");
 
-  // Megjegyzés (Ellenőrzés fülön)
+  const [megkezdve, setMegkezdve] = useState(m.megkezdve||false);
+  const [activeTab, setActiveTab] = useState(0);
+  const [figy, setFigy] = useState(false);
+  const [showAlairas, setShowAlairas] = useState(false);
+  const [progress, setProgress] = useState(null);
+  const [progressMsg, setProgressMsg] = useState("");
   const [megjegyzes, setMegjegyzes] = useState(m.megjegyzes||"");
 
-  const [vbf,  setVbf]  = useState(()=>loadLocal(`vbf_${m.id}`)||VBF_TEMPLATE);
-  const [fotok,setFotok]= useState(()=>loadLocal(`fotok_${m.id}`)||Object.fromEntries(FOTO_KAT.map(k=>[k.id,[]])));
+  const [vbf, setVbf] = useState(()=>loadLocal(`vbf_${m.id}`)||VBF_TEMPLATE);
+  const [fotok,setFotok] = useState(()=>loadLocal(`fotok_${m.id}`)||Object.fromEntries(FOTO_KAT.map(k=>[k.id,[]])));
   const [fotoHianyOkok, setFotoHianyOkok] = useState(()=>{
     const saved = loadLocal(`foto_hiany_${m.id}`);
     return saved || {};
   });
 
-  // Fotók auto-mentése
   useEffect(()=>{
     const toSave = Object.fromEntries(Object.entries(fotok).map(([k,v])=>[k,v.map(f=>({name:f.name,size:f.size,type:f.type,originalName:f.originalName}))]));
     saveLocal(`fotok_${m.id}`,toSave);
     window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:`fotok_${m.id}`}}));
   },[fotok,m.id]);
 
-  // Hiány okok auto-mentése
   useEffect(()=>{ saveLocal(`foto_hiany_${m.id}`,fotoHianyOkok); },[fotoHianyOkok,m.id]);
 
   function updVbf(section, field, val) {
@@ -400,31 +403,27 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     setActiveTab(3);
   }
 
-  // ─── LEZÁRÁS VALIDÁCIÓ ─────────────────────────────────────
   function handleBefejezesKezdete() {
-    // 1. VBF
     if (checkVbfHianyos()) {
       setFigy(true);
       alert("⚠️ Lezárás sikertelen!\n\nA VBF Jegyzőkönyv nincs teljesen kitöltve.\nHagyd üresen a nem releváns mezőket – azok nem blokkolják a lezárást.");
       return;
     }
+
     setFigy(false);
 
-    // 2. Min. 1 fotó
     const osszesFoto = Object.values(fotok).reduce((s,a)=>s+(a.length||0),0);
     if (osszesFoto===0) {
       alert("⚠️ Lezárás sikertelen!\n\nNincs feltöltve egyetlen fotó sem.\nTölts fel legalább 1 fotót.");
       return;
     }
 
-    // 3. Megjegyzés min. 20 karakter
     if (!megjegyzes||megjegyzes.trim().length===0) {
       alert("⚠️ Lezárás sikertelen!\n\nA megjegyzés mező kötelező.\nÍrd le a munkavégzés összefoglalóját az Ellenőrzés fülön.");
       setActiveTab(megkezdve?6:2);
       return;
     }
 
-    // 4. Minden fotó nélküli kategóriánál indoklás
     const hianyosKat = FOTO_KAT.filter(k=>(fotok[k.id]||[]).length===0);
     const missing = hianyosKat.filter(k=>!fotoHianyOkok[k.id]);
     if (missing.length>0) {
@@ -438,23 +437,26 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
 
   async function handleBefejezes(alairasData) {
     setShowAlairas(false);
+
     if (alairasData) {
       updateItem("munkalapok",m.id,{alairas:{dataUrl:alairasData.alairasDataUrl,datum:alairasData.alairasDatum,szoveg:alairasData.szoveg}});
     }
 
     const steps=[
-      {msg:"Adatok ellenőrzése…",      pct:10},
-      {msg:"VBF mentése…",             pct:25},
-      {msg:"Megjegyzés mentése…",      pct:35},
-      {msg:"Anyagok mentése…",         pct:45},
-      {msg:"Fotók előkészítése…",      pct:55},
+      {msg:"Adatok ellenőrzése…", pct:10},
+      {msg:"VBF mentése…", pct:25},
+      {msg:"Megjegyzés mentése…", pct:35},
+      {msg:"Anyagok mentése…", pct:45},
+      {msg:"Fotók előkészítése…", pct:55},
       {msg:"Drive mappa létrehozása…", pct:65},
-      {msg:"Fotók feltöltése…",        pct:80},
-      {msg:"Munkalap lezárása…",       pct:92},
-      {msg:"Kész!",                    pct:100},
+      {msg:"Fotók feltöltése…", pct:80},
+      {msg:"Munkalap lezárása…", pct:92},
+      {msg:"Kész!", pct:100},
     ];
+
     for (const step of steps) {
-      setProgress(step.pct); setProgressMsg(step.msg);
+      setProgress(step.pct);
+      setProgressMsg(step.msg);
       await new Promise(r=>setTimeout(r,400));
       if (step.pct===80) await uploadFotokToDrive();
     }
@@ -467,14 +469,16 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       lezarva:true,
       megjegyzes:megjegyzes.trim(),
     };
+
     updateItem("munkalapok",m.id,updates);
 
     try {
       const osszesMl = loadLocal("munkalapok")||[];
       await driveSave("munkalapok",{munkalapok:osszesMl});
-    } catch(e){console.warn("[Drive sync]",e);}
+    } catch(e) {
+      console.warn("[Drive sync]",e);
+    }
 
-    // ─── AZONNALI FRISSÍTÉS MINDEN FELÜLETEN ───────────────
     window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok",action:"update",id:m.id}}));
 
     setLezart(true);
@@ -487,30 +491,57 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   async function uploadFotokToDrive() {
     const scriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
     if (!scriptUrl) return;
+
     try {
       await fetch(scriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"createMunkalapFolder",munkalapId:m.id})});
       const osszesFoto=Object.entries(fotok).flatMap(([,photos])=>photos.filter(p=>p.fileObj||p.file||(p.url?.startsWith("blob:"))));
       let n=0;
+
       for (const foto of osszesFoto) {
         try {
           let b64="";
           const src=foto.fileObj||foto.file;
-          if(src){b64=await new Promise(res=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(",")[1]);r.onerror=()=>res("");r.readAsDataURL(src);});}
-          else if(foto.url?.startsWith("blob:")){try{const resp=await fetch(foto.url);const blob=await resp.blob();b64=await new Promise(res=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(",")[1]);r.onerror=()=>res("");r.readAsDataURL(blob);});}catch{}}
+
+          if(src){
+            b64=await new Promise(res=>{
+              const r=new FileReader();
+              r.onload=e=>res(e.target.result.split(",")[1]);
+              r.onerror=()=>res("");
+              r.readAsDataURL(src);
+            });
+          } else if(foto.url?.startsWith("blob:")){
+            try {
+              const resp=await fetch(foto.url);
+              const blob=await resp.blob();
+              b64=await new Promise(res=>{
+                const r=new FileReader();
+                r.onload=e=>res(e.target.result.split(",")[1]);
+                r.onerror=()=>res("");
+                r.readAsDataURL(blob);
+              });
+            } catch {}
+          }
+
           if(!b64) continue;
+
           await fetch(scriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"saveFoto",munkalapId:m.id,fotoNev:foto.name,fotoBase64:b64,mimeType:foto.type||"image/jpeg"})});
-          n++;setProgressMsg(`Fotók feltöltése… (${n}/${osszesFoto.length})`);
-        }catch{}
+          n++;
+          setProgressMsg(`Fotók feltöltése… (${n}/${osszesFoto.length})`);
+        } catch {}
       }
+
       await fetch(scriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"saveJson",fileName:`vbf_${m.id}.json`,content:vbf})});
-    }catch(e){console.warn("[Drive upload]",e);}
+    } catch(e) {
+      console.warn("[Drive upload]",e);
+    }
   }
 
   async function handleVbfMentes() {
     saveLocal(`vbf_${m.id}`,vbf);
     updateItem("munkalapok",m.id,{vbf});
     window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
-    setProgress(100); setProgressMsg("VBF mentve ✓");
+    setProgress(100);
+    setProgressMsg("VBF mentve ✓");
     await new Promise(r=>setTimeout(r,1200));
     setProgress(null);
   }
@@ -523,7 +554,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
         <button onClick={onBack} style={{ border:"none",background:"none",color:"#94A3B8",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:13,fontFamily:FONT,fontWeight:600 }}>
           <ArrowLeft size={18}/> Feladatok
         </button>
-        <p style={{ fontWeight:800,fontSize:16,color:"#fff",marginTop:8 }}>{m.id}</p>
+        <p style={{ fontWeight:800,fontSize:16,color:"#fff",marginTop:8 }}>{munkalapAzonosito}</p>
         <p style={{ fontWeight:700,fontSize:15,color:"#fff" }}>{clientNev}</p>
         <p style={{ fontSize:12,color:"#94A3B8" }}>{clientCim}</p>
       </div>
@@ -556,7 +587,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   );
 
   const TABS_BEFORE=[{icon:"📄"},{icon:"📦"},{icon:"📋"}];
-  const TABS_AFTER =[{icon:"📄"},{icon:"📦"},{icon:"📋"},{icon:"⚙️"},{icon:"📐"},{icon:"📷"},{icon:"✅"}];
+  const TABS_AFTER=[{icon:"📄"},{icon:"📦"},{icon:"📋"},{icon:"⚙️"},{icon:"📐"},{icon:"📷"},{icon:"✅"}];
   const TABS = megkezdve?TABS_AFTER:TABS_BEFORE;
 
   const Header=()=>(
@@ -565,7 +596,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
         <button onClick={onBack} style={{ border:"none",background:"none",color:"#94A3B8",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:13,fontFamily:FONT,fontWeight:600 }}>
           <ArrowLeft size={18}/> Feladatok
         </button>
-        <span style={{ fontWeight:800,fontSize:14,color:"#fff",flex:1 }}>{m.id}</span>
+        <span style={{ fontWeight:800,fontSize:14,color:"#fff",flex:1 }}>{munkalapAzonosito}</span>
         {m.cimke&&<span style={{ background:m.cimkeSzin||C.accent,color:"#fff",borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700 }}>{m.cimke}</span>}
       </div>
       <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px 14px" }}>
@@ -654,30 +685,29 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       <MeroSzakasz title="Panelszám">{["ST1","ST2","ST3","ST4","ST5","ST6"].map(s=><MeroSor key={s} label={s} value={vbf.panelszam[s]} onCommit={v=>updVbf("panelszam",s,v)} unit="db" piros={figy}/>)}</MeroSzakasz>
       <MeroSzakasz title="DC feszültség">{["ST1","ST2","ST3","ST4","ST5","ST6"].map(s=><MeroSor key={s} label={s} value={vbf.dcFeszultseg[s]} onCommit={v=>updVbf("dcFeszultseg",s,v)} unit="V" piros={figy}/>)}</MeroSzakasz>
       <MeroSzakasz title="Hurokellenállás">{["L1","L2","L3"].map(l=><MeroSor key={l} label={l} value={vbf.hurokellenallas[l]} onCommit={v=>updVbf("hurokellenallas",l,v)} unit="MΩ" piros={figy}/>)}</MeroSzakasz>
-      {/* Közelebb hozott mértékegységek */}
       <MeroSzakasz title="Smart meter & AKKU">
-        <MeroSor label="SM"   value={vbf.smartMeter} onCommit={v=>updVbf("smartMeter",null,v)} unit="db" piros={figy}/>
-        <MeroSor label="AKKU" value={vbf.akku}       onCommit={v=>updVbf("akku",null,v)}       unit="db" piros={figy}/>
+        <MeroSor label="SM" value={vbf.smartMeter} onCommit={v=>updVbf("smartMeter",null,v)} unit="db" piros={figy}/>
+        <MeroSor label="AKKU" value={vbf.akku} onCommit={v=>updVbf("akku",null,v)} unit="db" piros={figy}/>
       </MeroSzakasz>
       <MeroSzakasz title="Betáplált DC teljesítmény">
-        <MeroSor label="DC"   value={vbf.betapaltDC} onCommit={v=>updVbf("betapaltDC",null,v)} unit="Wp" piros={figy}/>
+        <MeroSor label="DC" value={vbf.betapaltDC} onCommit={v=>updVbf("betapaltDC",null,v)} unit="Wp" piros={figy}/>
       </MeroSzakasz>
       <MeroSzakasz title="Panel pontos adatok">
         <div style={{ marginBottom:12 }}>
           <p style={{ fontSize:13,color:C.muted,marginBottom:6 }}>Napelem Típusa <span style={{ fontSize:11,color:"#2563EB" }}>(szöveg)</span></p>
           <VbfTextInput value={vbf.panelTipus} onCommit={v=>updVbf("panelTipus",null,v)} piros={figy}/>
         </div>
-        <MeroSor label="Voc"   value={vbf.panelVoc}  onCommit={v=>updVbf("panelVoc",null,v)}  unit="V"  piros={figy}/>
-        <MeroSor label="Vmp"   value={vbf.panelVmp}  onCommit={v=>updVbf("panelVmp",null,v)}  unit="V"  piros={figy}/>
-        <MeroSor label="Imp"   value={vbf.panelImp}  onCommit={v=>updVbf("panelImp",null,v)}  unit="A"  piros={figy}/>
-        <MeroSor label="Isc"   value={vbf.panelIsc}  onCommit={v=>updVbf("panelIsc",null,v)}  unit="A"  piros={figy}/>
+        <MeroSor label="Voc" value={vbf.panelVoc} onCommit={v=>updVbf("panelVoc",null,v)} unit="V" piros={figy}/>
+        <MeroSor label="Vmp" value={vbf.panelVmp} onCommit={v=>updVbf("panelVmp",null,v)} unit="V" piros={figy}/>
+        <MeroSor label="Imp" value={vbf.panelImp} onCommit={v=>updVbf("panelImp",null,v)} unit="A" piros={figy}/>
+        <MeroSor label="Isc" value={vbf.panelIsc} onCommit={v=>updVbf("panelIsc",null,v)} unit="A" piros={figy}/>
         <MeroSor label="Telj." value={vbf.panelTelj} onCommit={v=>updVbf("panelTelj",null,v)} unit="Wp" piros={figy}/>
       </MeroSzakasz>
       <MeroSzakasz title="Inverter pontos adatok">
         <MeroSor label="kVA" value={vbf.inverterNevleges} onCommit={v=>updVbf("inverterNevleges",null,v)} unit="kVA" piros={figy}/>
       </MeroSzakasz>
       <MeroSzakasz title="Tűzeseti adatok">
-        <MeroSor label="A"   value={vbf.tuzMegszakito}   onCommit={v=>updVbf("tuzMegszakito",null,v)}   unit="A"   piros={figy}/>
+        <MeroSor label="A" value={vbf.tuzMegszakito} onCommit={v=>updVbf("tuzMegszakito",null,v)} unit="A" piros={figy}/>
       </MeroSzakasz>
       <button onClick={handleVbfMentes} style={{ width:"100%",padding:"14px",borderRadius:12,border:"none",background:C.accent,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT,marginTop:8,marginBottom:32 }}>
         <Save size={18}/>VBF mentése
@@ -692,7 +722,8 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       </p>
       {FOTO_KAT.map(kat=>(
         <FotoKartya
-          key={kat.id} kat={kat}
+          key={kat.id}
+          kat={kat}
           photos={fotok[kat.id]||[]}
           onChange={v=>setFotok(p=>({...p,[kat.id]:v}))}
           hianyOk={fotoHianyOkok[kat.id]||null}
@@ -702,8 +733,6 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     </div>
   );
 
-  // ─── ELLENŐRZÉS FÜL – megjegyzés is itt van ───────────────
-  // ── Ellenőrzés tab számítások (textarea a fő return-ben, ne legyen belső komponens!) ──
   const ell_vbfOk = !checkVbfHianyos();
   const ell_osszesFoto = Object.values(fotok).reduce((s,a)=>s+(a.length||0),0);
   const ell_hianyosKat = FOTO_KAT.filter(k=>(fotok[k.id]||[]).length===0);
@@ -723,7 +752,6 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       {megkezdve&&activeTab===5&&<FotokTab/>}
       {megkezdve&&activeTab===6&&(
         <div style={{ padding:"16px",background:"#F1F5F9",paddingBottom:80 }}>
-          {/* ── Megjegyzés – NEM belső komponensben, fókusz nem vész el ── */}
           <div style={{ background:"#fff",border:`1.5px solid ${!ell_megjegyzesMegvan?"#FCA5A5":C.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
             <p style={{ fontSize:14,fontWeight:700,color:C.text,marginBottom:4 }}>
               📝 Megjegyzés / munkavégzés összefoglalója
@@ -745,7 +773,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
             />
             {ell_megjegyzesMegvan && <span style={{ fontSize:11,color:C.success }}>✓ Megjegyzés megadva</span>}
           </div>
-          {/* ── Ellenőrzési lista ── */}
+
           <div style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
             <p style={{ fontSize:15,fontWeight:700,color:C.text,marginBottom:12 }}>✅ Munka ellenőrzése</p>
             {[
@@ -763,16 +791,34 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
               </div>
             ))}
           </div>
-          <button onClick={handleBefejezesKezdete} disabled={!lezarhatoE}
-            style={{ width:"100%",padding:"15px",borderRadius:12,border:"none",
-              background:lezarhatoE?"#22C55E":"#CBD5E1",color:"#fff",fontWeight:700,fontSize:16,
-              cursor:lezarhatoE?"pointer":"not-allowed",fontFamily:FONT,
-              display:"flex",alignItems:"center",justifyContent:"center",gap:8 }}>
+
+          <button
+            onClick={handleBefejezesKezdete}
+            disabled={!lezarhatoE}
+            style={{
+              width:"100%",
+              padding:"15px",
+              borderRadius:12,
+              border:"none",
+              background:lezarhatoE?"#22C55E":"#CBD5E1",
+              color:"#fff",
+              fontWeight:700,
+              fontSize:16,
+              cursor:lezarhatoE?"pointer":"not-allowed",
+              fontFamily:FONT,
+              display:"flex",
+              alignItems:"center",
+              justifyContent:"center",
+              gap:8
+            }}
+          >
             {lezarhatoE?"✅ Munka befejezése és lezárása":"🔒 Hiányos dokumentáció"}
           </button>
+
           {!lezarhatoE&&<p style={{ fontSize:12,color:"#DC2626",textAlign:"center",marginTop:8,fontWeight:600 }}>Piros jelölésű feltételek teljesítése szükséges.</p>}
         </div>
       )}
+
       {showAlairas&&<AlairasModal m={m} userRole="Telepítő" onClose={()=>setShowAlairas(false)} onSave={handleBefejezes}/>}
     </div>
   );
