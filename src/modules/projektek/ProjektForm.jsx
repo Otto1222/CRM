@@ -79,7 +79,13 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
     setForm(p => ({ ...p, tipus: mtId, penzugy: { ...filled, munkatipus: mtId, elszamolasiSzabalyId: sz?.id || "" } }));
   }
   function updPenz(k, v) {
-    setForm(p => ({ ...p, penzugy: { ...p.penzugy, [k]: v === "" ? null : (isNaN(Number(v)) ? v : Number(v)) } }));
+    setForm(p => ({
+      ...p,
+      penzugy: {
+        ...p.penzugy,
+        [k]: v === "" ? null : (isNaN(Number(v)) ? v : Number(v)),
+      },
+    }));
   }
   async function handleSave() {
     if (!form.nev.trim()) {
@@ -109,15 +115,11 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
     onClose?.();
   }
   return (
-    <div
-      style={{ position:"fixed", inset:0, zIndex:2000, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"flex-start", justifyContent:"center", padding:"20px 16px", overflowY:"auto" }}
-      onClick={e => e.target === e.currentTarget && onClose?.()}
-    >
+    <div style={{ position:"fixed", inset:0, zIndex:2000, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"flex-start", justifyContent:"center", padding:"20px 16px", overflowY:"auto" }}
+      onClick={e => e.target===e.currentTarget && onClose?.()}>
       <div style={{ background:"#fff", borderRadius:16, width:"100%", maxWidth:680, boxShadow:"0 24px 60px rgba(0,0,0,.25)", fontFamily:FONT }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"18px 24px", borderBottom:"1px solid #E2E8F0" }}>
-          <h2 style={{ fontFamily:FONT_HEADING, fontSize:18, fontWeight:800, margin:0 }}>
-            {isNew ? "Új projekt" : "Projekt szerkesztése"}
-          </h2>
+          <h2 style={{ fontFamily:FONT_HEADING, fontSize:18, fontWeight:800, margin:0 }}>{isNew ? "Új projekt" : "Projekt szerkesztése"}</h2>
           <button onClick={onClose} style={{ border:"none", background:"none", cursor:"pointer", color:"#94A3B8" }}>
             <X size={22}/>
           </button>
