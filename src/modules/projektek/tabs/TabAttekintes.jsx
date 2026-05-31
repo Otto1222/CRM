@@ -2,6 +2,7 @@ import { C, FONT } from "../../../lib/constants.js";
 import { calcProjektPenzugy } from "../../../lib/costEngine.js";
 import { ft } from "../../../lib/helpers.js";
 import { getStatusConfig } from "../projekt.schema.js";
+import { formatProjectType } from "../../../lib/projectTypeFormatter.js";
 
 function Row({ label, value, bold }) {
   if (!value) return null;
@@ -21,13 +22,12 @@ export default function TabAttekintes({ projekt, munkalapok }) {
 
   return (
     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, padding:"20px 0" }}>
-      {/* Bal */}
       <div>
         <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:12 }}>Projekt adatok</p>
         <div style={{ background:"#fff", borderRadius:12, padding:"14px 16px", border:"1px solid #E2E8F0" }}>
           <Row label="Projektkód"       value={projekt.projektkod} bold/>
           <Row label="Külső azonosító"  value={projekt.kulsoAzonosito}/>
-          <Row label="Típus"            value={projekt.tipus}/>
+          <Row label="Típus"            value={formatProjectType(projekt.tipus)}/>
           <Row label="Ügyfél neve"      value={projekt.clientNev}/>
           <Row label="Kapcsolattartó"   value={projekt.kapcsolattarto}/>
           <Row label="Telefonszám"      value={projekt.clientTel}/>
@@ -39,15 +39,12 @@ export default function TabAttekintes({ projekt, munkalapok }) {
         </div>
       </div>
 
-      {/* Jobb */}
       <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-        {/* Státusz */}
         <div style={{ background: stCfg.bg, border:`1.5px solid ${stCfg.szin}40`, borderRadius:12, padding:"14px 16px" }}>
           <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:8 }}>Státusz</p>
           <span style={{ background: stCfg.szin, color:"#fff", borderRadius:20, padding:"4px 14px", fontSize:13, fontWeight:700 }}>{projekt.status}</span>
         </div>
 
-        {/* Ütemezés */}
         <div style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:12, padding:"14px 16px" }}>
           <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:8 }}>Ütemezés</p>
           <Row label="Terv. kezdés"     value={projekt.tervezettKezdes}/>
@@ -57,7 +54,6 @@ export default function TabAttekintes({ projekt, munkalapok }) {
           <Row label="Ledolgozott óra"  value={projekt.elvegzettMunkaora ? projekt.elvegzettMunkaora + " óra" : null}/>
         </div>
 
-        {/* Pénzügy */}
         <div style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:12, padding:"14px 16px" }}>
           <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:8 }}>Pénzügy</p>
           {[
@@ -70,7 +66,6 @@ export default function TabAttekintes({ projekt, munkalapok }) {
           {penz.bevetal === 0 && <p style={{ fontSize:12, color:"#94A3B8", fontStyle:"italic" }}>Még nincs számlázott bevétel</p>}
         </div>
 
-        {/* Munkalapok összefoglaló */}
         <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE", borderRadius:12, padding:"14px 16px" }}>
           <p style={{ fontSize:11, fontWeight:700, color:"#1D4ED8", textTransform:"uppercase", letterSpacing:.7, marginBottom:8 }}>Munkalapok</p>
           <Row label="Összesen"   value={mls.length + " db"}/>
