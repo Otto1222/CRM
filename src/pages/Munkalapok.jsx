@@ -23,6 +23,7 @@ import { getUsers } from "../lib/crmUsers";
 import { loadLocal, updateItem } from "../lib/localDb";
 import { ft, totals, generateId } from "../lib/helpers";
 import { canSeePrice, canCreateMunkalap } from "../lib/roles";
+import { isInstallerVisibleWorkorder } from "../lib/workflowRules";
 import Card from "../components/Card";
 import StatusBadge from "../components/StatusBadge";
 import Avatar from "../components/Avatar";
@@ -149,17 +150,23 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
     });
 
   const filtered = data.munkalapok.filter(m => {
-    // Telepítőnek csak a nevéhez rendelt munkák, "Befejezett Felmérés" ne látsszon
     if (userRole === "Telepítő" && currentUser) {
-      if (m.status === "Befejezett Felmérés") return false;
-      const match = m.assigneeNev === currentUser.name ||
-                    m.csapatNev   === currentUser.name ||
-                    m.assigneeId  === currentUser.id;
-      if (!match) return false;
+      if (!isInstallerVisibleWorkorder(m, currentUser)) return false;
     }
+
     const clientNev = m.clientNev || data.ugyfelek?.find(u => u.id === m.clientId)?.name || "";
+
+    const azonosito = [
+      m.id,
+      m.munkalapSzam,
+      m.dokumentumszam,
+      m.ediSorszam,
+      m.projektKod,
+      m.projektkod,
+    ].filter(Boolean).join(" ").toLowerCase();
+
     return (tab === "Összes" || m.status === tab) &&
-      (m.id.toLowerCase().includes(q.toLowerCase()) ||
+      (azonosito.includes(q.toLowerCase()) ||
        clientNev.toLowerCase().includes(q.toLowerCase()));
   }).map(m => {
     const pid = m.projektId || m.ugyszam?.split("/")[0]?.trim() || m.id;
