@@ -13,10 +13,12 @@ import Ugyfelek from "./pages/Ugyfelek";
 import ComingSoon from "./pages/ComingSoon";
 import BeallitasokPage from "./pages/BeallitasokPage";
 import UjMunkalap from "./pages/UjMunkalap";
+import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
 
 const PAGE_TITLES = {
   dashboard: "Irányítópult",
   munkalapok: "Munkalapok",
+  projektek: "Projektek",
   ugyfelek: "Ügyfelek",
   arajanlatok: "Árajánlatok",
   szerzodések: "Szerződések",
@@ -261,6 +263,17 @@ export default function App() {
                 onNew={() => setShowNew(true)}
                 userRole={user?.role}
                 currentUser={user}
+              />
+            )}
+
+            {page === "projektek" && (
+              <ProjektekPage
+                data={data}
+                currentUser={user}
+                onNavigateMunkalap={(m) => {
+                  setPage("munkalapok");
+                  setSel(m);
+                }}
               />
             )}
 
