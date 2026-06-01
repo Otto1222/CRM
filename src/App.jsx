@@ -14,6 +14,7 @@ import ComingSoon from "./pages/ComingSoon";
 import BeallitasokPage from "./pages/BeallitasokPage";
 import UjMunkalap from "./pages/UjMunkalap";
 import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
+import CsapatokPage from "./modules/csapatok/CsapatokPage.jsx";
 
 const PAGE_TITLES = {
   dashboard: "Pénzügy",
@@ -281,7 +282,7 @@ export default function App() {
 
             {page === "arajanlatok" && <ComingSoon title="Árajánlatok" />}
             {page === "szerzodések" && <ComingSoon title="Szerződések" />}
-            {page === "csapat" && <ComingSoon title="Csapat kezelése" />}
+            {page === "csapat" && <CsapatokPage currentUser={user} />}
             {page === "naptar" && <ComingSoon title="Naptár" />}
 
             {page === "beallitasok" && (

@@ -5,6 +5,7 @@ import { getUsers } from "../../lib/crmUsers.js";
 import { loadLocal } from "../../lib/localDb.js";
 import { PROJEKT_STATUSZOK } from "./projekt.schema.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
+import { getAktivCsapatok } from "../csapatok/csapat.service.js";
 import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
 import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
 import { createProjekt, updateProjekt } from "./projekt.service.js";
@@ -46,7 +47,7 @@ const inp = {
 export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) {
   const isNew = !projekt?.id;
   const users = getUsers();
-  const csapatok = users.filter(u => u.role === "Telepítő");
+  const csapatok = getAktivCsapatok();
   const fovallalkozok = getAktivFovallalkozok();
   const munkatipusok = getAktivMunkatipusok();
   const pmList = users.filter(u => ["Admin", "Projektmenedzser"].includes(u.role));
@@ -116,11 +117,11 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
     if (hiba) setHiba("");
   }
   function handleCsapat(e) {
-    const u = users.find(x => x.id === e.target.value);
+    const cs = csapatok.find(x => x.id === e.target.value);
     setForm(p => ({
       ...p,
-      csapatId: u?.id || "",
-      csapatNev: u?.name || "",
+      csapatId: cs?.id || "",
+      csapatNev: cs?.nev || "",
     }));
     if (hiba) setHiba("");
   }
@@ -367,13 +368,16 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
             </Field>
             <Field label="Kivitelező csapat" half>
               <select value={form.csapatId} onChange={handleCsapat} style={inp}>
-                <option value="">— Válassz —</option>
-                {csapatok.map(u => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
+                <option value="">— Válassz csapatot —</option>
+                {csapatok.map(cs => (
+                  <option key={cs.id} value={cs.id}>
+                    {cs.nev}{cs.telephely ? ` (${cs.telephely})` : ""}
                   </option>
                 ))}
               </select>
+              {csapatok.length === 0 && (
+                <p style={{ fontSize: 10, color: "#D97706", marginTop: 3 }}>⚠️ Még nincs létrehozva csapat — előbb add hozzá a Csapat menüben</p>
+              )}
             </Field>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>

@@ -1,5 +1,5 @@
 # PROJECT_STATUS.md – CRM Napelem ERP
-_Utolsó frissítés: 2026-06-01 (v2) – Projektek státuszok + műszaki mezők + ügyfél dropdown_
+_Utolsó frissítés: 2026-06-01 (v3) – Csapatok CRUD modul kész_
 
 ## Fejlesztési sorrend és jelenlegi állapot
 
@@ -9,7 +9,7 @@ _Utolsó frissítés: 2026-06-01 (v2) – Projektek státuszok + műszaki mezők
 | 2 | Dashboard Shell | ✅ KÉSZ (alap) | Pénzügyi összesítő munkalapok alapján; projekt-centrikus átírás később |
 | 3 | Ügyfelek | ✅ KÉSZ | Teljes CRUD: add/edit/delete, státusz, megjegyzés, projekt szám |
 | 4 | Projektek | ✅ KÉSZ | CRUD, 14 státusz (terv szerint), műszaki mezők, ügyfél dropdown |
-| 5 | Csapatok | ❌ HIÁNYOS – KÖVETKEZŐ | Csak ComingSoon; munkakiosztásAlgo.js van, de nincs csapat CRUD |
+| 5 | Csapatok | ✅ KÉSZ | Teljes CRUD: név, telephely, tagok, kapacitás, szín, hétvége toggle |
 | 6 | Munkalapok | ✅ NAGYRÉSZT KÉSZ | CRUD, felmérés, telepítő nézet, VBF, fotók megvannak |
 | 7 | Telepítő App (PWA) | ⚠️ RÉSZLEGES | FelmeresTelepito, TelepItoMunkalap megvan; nincs PWA manifest/SW |
 | 8 | Google Drive | ⚠️ RÉSZLEGES | driveApi + Apps Script webhook megvan; nincs auto projekt-mappa |
@@ -48,10 +48,13 @@ _Utolsó frissítés: 2026-06-01 (v2) – Projektek státuszok + műszaki mezők
 - Ügyfél kiválasztás: dropdown listából (clientId kapcsolat), adatok auto-betöltése; manuális szöveg is marad fallbackként
 - localStorage["projektek"]
 
-### ❌ 5. Csapatok
-- ComingSoon placeholder
-- munkakiosztasAlgo.js: Excel-alapú auto-kiosztás megvan
-- Hiányzik: csapat CRUD (név, székhely, tagok, kapacitás)
+### ✅ 5. Csapatok
+- Teljes CRUD: CsapatokPage, CsapatForm modal, törlés megerősítéssel
+- Mezők: csapat neve, indulási telephely, csapattagok (multi-select), kapacitás (db/nap), szín, hétvégén is dolgozik
+- Csapattag kártyák expandálható tag-listával
+- ProjektForm csapat dropdown frissítve: valós csapat-entitásokat mutat (nem user-listát)
+- localStorage["csapatok"]
+- munkakiosztasAlgo.js: külső algoritmus megvan
 
 ### ✅ 6. Munkalapok
 - Teljes CRUD, lista, detail nézet
