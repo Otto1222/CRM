@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
-import { driveLoad, driveSave } from "./lib/driveApi";
+import { driveSave } from "./lib/driveApi";
 import { loadLocal, saveLocal } from "./lib/localDb";
+import { syncAllFromDrive, syncAllToDrive } from "./lib/dataSync.service";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
@@ -27,9 +28,18 @@ const PAGE_TITLES = {
 function loadInitialData() {
   return {
     ...SAMPLE_DATA,
+    projektek: loadLocal("projektek") || SAMPLE_DATA.projektek || [],
     munkalapok: loadLocal("munkalapok") || SAMPLE_DATA.munkalapok || [],
     ugyfelek: loadLocal("ugyfelek") || SAMPLE_DATA.ugyfelek || [],
-    projektek: loadLocal("projektek") || [],
+    beallitasok: loadLocal("beallitasok") || SAMPLE_DATA.beallitasok || {},
+    munkatipusok: loadLocal("munkatipusok") || SAMPLE_DATA.munkatipusok || [],
+    fovallalkozok: loadLocal("fovallalkozok") || SAMPLE_DATA.fovallalkozok || [],
+    elszamolasi_szabalyok:
+      loadLocal("elszamolasi_szabalyok") ||
+      SAMPLE_DATA.elszamolasi_szabalyok ||
+      [],
+    karteritesek: loadLocal("karteritesek") || SAMPLE_DATA.karteritesek || [],
+    sablonok: loadLocal("sablonok") || SAMPLE_DATA.sablonok || [],
   };
 }
 
@@ -45,9 +55,18 @@ export default function App() {
     function reloadFromLocal() {
       setData(prev => ({
         ...prev,
+        projektek: loadLocal("projektek") || prev.projektek || [],
         munkalapok: loadLocal("munkalapok") || prev.munkalapok || [],
         ugyfelek: loadLocal("ugyfelek") || prev.ugyfelek || [],
-        projektek: loadLocal("projektek") || prev.projektek || [],
+        beallitasok: loadLocal("beallitasok") || prev.beallitasok || {},
+        munkatipusok: loadLocal("munkatipusok") || prev.munkatipusok || [],
+        fovallalkozok: loadLocal("fovallalkozok") || prev.fovallalkozok || [],
+        elszamolasi_szabalyok:
+          loadLocal("elszamolasi_szabalyok") ||
+          prev.elszamolasi_szabalyok ||
+          [],
+        karteritesek: loadLocal("karteritesek") || prev.karteritesek || [],
+        sablonok: loadLocal("sablonok") || prev.sablonok || [],
       }));
     }
 
@@ -67,37 +86,60 @@ export default function App() {
       setDrive("saving");
 
       try {
-        const [ml, uk] = await Promise.all([
-          driveLoad("munkalapok"),
-          driveLoad("ugyfelek"),
-        ]);
+        const synced = await syncAllFromDrive();
 
-        setData(prev => {
-          const localMunkalapok = loadLocal("munkalapok");
-          const localUgyfelek = loadLocal("ugyfelek");
-          const localProjektek = loadLocal("projektek");
-
-          const driveMunkalapok =
-            Array.isArray(ml?.munkalapok) && ml.munkalapok.length > 0
-              ? ml.munkalapok
-              : null;
-
-          const driveUgyfelek =
-            Array.isArray(uk?.ugyfelek) && uk.ugyfelek.length > 0
-              ? uk.ugyfelek
-              : null;
-
-          return {
-            ...prev,
-            munkalapok: localMunkalapok || driveMunkalapok || prev.munkalapok || [],
-            ugyfelek: localUgyfelek || driveUgyfelek || prev.ugyfelek || [],
-            projektek: localProjektek || prev.projektek || [],
-          };
-        });
+        setData(prev => ({
+          ...prev,
+          projektek:
+            synced.projektek ||
+            loadLocal("projektek") ||
+            prev.projektek ||
+            [],
+          munkalapok:
+            synced.munkalapok ||
+            loadLocal("munkalapok") ||
+            prev.munkalapok ||
+            [],
+          ugyfelek:
+            synced.ugyfelek ||
+            loadLocal("ugyfelek") ||
+            prev.ugyfelek ||
+            [],
+          beallitasok:
+            synced.beallitasok ||
+            loadLocal("beallitasok") ||
+            prev.beallitasok ||
+            {},
+          munkatipusok:
+            synced.munkatipusok ||
+            loadLocal("munkatipusok") ||
+            prev.munkatipusok ||
+            [],
+          fovallalkozok:
+            synced.fovallalkozok ||
+            loadLocal("fovallalkozok") ||
+            prev.fovallalkozok ||
+            [],
+          elszamolasi_szabalyok:
+            synced.elszamolasi_szabalyok ||
+            loadLocal("elszamolasi_szabalyok") ||
+            prev.elszamolasi_szabalyok ||
+            [],
+          karteritesek:
+            synced.karteritesek ||
+            loadLocal("karteritesek") ||
+            prev.karteritesek ||
+            [],
+          sablonok:
+            synced.sablonok ||
+            loadLocal("sablonok") ||
+            prev.sablonok ||
+            [],
+        }));
 
         setDrive("ok");
       } catch (e) {
-        console.warn("[App Drive load]", e);
+        console.warn("[App syncAllFromDrive]", e);
         setDrive("error");
       }
 
@@ -123,6 +165,20 @@ export default function App() {
         detail: { collection, action: "save" },
       })
     );
+
+    setTimeout(() => setDrive("idle"), 2500);
+  }
+
+  async function handleSyncAllToDrive() {
+    setDrive("saving");
+
+    try {
+      await syncAllToDrive();
+      setDrive("ok");
+    } catch (e) {
+      console.warn("[App syncAllToDrive]", e);
+      setDrive("error");
+    }
 
     setTimeout(() => setDrive("idle"), 2500);
   }
@@ -185,7 +241,9 @@ export default function App() {
               onBack={() => setSel(null)}
               onRefresh={() => {
                 setData(loadInitialData());
-                const fresh = (loadLocal("munkalapok") || []).find(x => x.id === sel.id);
+                const fresh = (loadLocal("munkalapok") || []).find(
+                  x => x.id === sel.id
+                );
                 if (fresh) setSel(fresh);
               }}
             />
@@ -213,7 +271,28 @@ export default function App() {
             {page === "csapat" && <ComingSoon title="Csapat kezelése" />}
             {page === "naptar" && <ComingSoon title="Naptár" />}
 
-            {page === "beallitasok" && <BeallitasokPage currentUser={user} />}
+            {page === "beallitasok" && (
+              <>
+                <div style={{ padding: "16px 24px 0" }}>
+                  <button
+                    type="button"
+                    onClick={handleSyncAllToDrive}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      border: "1px solid #ddd",
+                      background: "#fff",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Drive teljes mentés
+                  </button>
+                </div>
+
+                <BeallitasokPage currentUser={user} />
+              </>
+            )}
           </>
         )}
       </div>
