@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Search, Download } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { PROJEKT_STATUSZOK } from "./projekt.schema.js";
@@ -18,22 +18,23 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap })
   const [q, setQ] = useState("");
   const [tabFilter, setTabFilter] = useState("Összes");
 
+  const selRef = useRef(sel);
+  useEffect(() => { selRef.current = sel; }, [sel]);
+
   useEffect(() => {
     function refresh(e) {
-      if (!e.detail?.collection || e.detail.collection === "projektek" || e.detail.collection === "all") {
+      if (!e.detail?.collection || e.detail.collection === "projektek" || e.detail.collection === "munkalapok" || e.detail.collection === "all") {
         const freshList = loadProjektek();
         setProjektek(freshList);
-
-        if (sel) {
-          const fresh = freshList.find(p => p.id === sel.id);
+        if (selRef.current) {
+          const fresh = freshList.find(p => p.id === selRef.current.id);
           if (fresh) setSel(fresh);
         }
       }
     }
-
     window.addEventListener("crm-db-updated", refresh);
     return () => window.removeEventListener("crm-db-updated", refresh);
-  }, [sel]);
+  }, []);
 
   const SZUROK = ["Összes", ...PROJEKT_STATUSZOK.map(s => s.id)];
 
@@ -51,7 +52,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap })
     return matchQ && matchT;
   });
 
-  const aktiv = projektek.filter(p => !["Lezárt", "Elutasított"].includes(p.status)).length;
+  const aktiv = projektek.filter(p => !["Lezárva", "Elbukott Projekt"].includes(p.status)).length;
   const kivFolyamat = projektek.filter(p => p.status === "Kivitelezés alatt").length;
 
   if (sel) {

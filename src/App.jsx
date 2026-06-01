@@ -16,7 +16,7 @@ import UjMunkalap from "./pages/UjMunkalap";
 import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
 
 const PAGE_TITLES = {
-  dashboard: "Irányítópult",
+  dashboard: "Pénzügy",
   munkalapok: "Munkalapok",
   projektek: "Projektek",
   ugyfelek: "Ügyfelek",
@@ -254,7 +254,7 @@ export default function App() {
           <>
             <TopBar title={PAGE_TITLES[page]} user={user} driveStatus={drive} />
 
-            {page === "dashboard" && <Dashboard data={data} user={user} />}
+            {page === "dashboard" && <Dashboard user={user} />}
 
             {page === "munkalapok" && (
               <MunkalapLista

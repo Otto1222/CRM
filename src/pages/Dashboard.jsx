@@ -4,6 +4,7 @@ import { C, FONT, FONT_HEADING, STATUS_CFG } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import { loadKarteritesek, addKarterites, updateKarterites } from "../lib/karterites";
 import { canSeePrice } from "../lib/roles";
+import { loadLocal } from "../lib/localDb";
 
 // ─── Egyszerű stat kártya (NEM tartalmaz kártérítés kódot) ───
 function StatCard({ label, value, sub, color, bg, icon: Icon }) {
@@ -159,20 +160,27 @@ function KarteritesekSzekció({ karteritesek, isAdmin, user, onRefresh }) {
 }
 
 // ─── Fő Dashboard komponens ───────────────────────────────────
-export default function Dashboard({ data, user }) {
+export default function Dashboard({ user }) {
   const [sortField, setSortField]     = useState("date");
   const [sortDir, setSortDir]         = useState("desc");
   const [filterStatus, setFilterStatus] = useState("Összes");
+  const [munkalapok, setMunkalapok]   = useState(() => loadLocal("munkalapok") || []);
   const [karteritesek, setKarteritesek] = useState(() => loadKarteritesek());
 
-  const munkalapok = data?.munkalapok || [];
-  const isAdmin    = canSeePrice(user?.role);
+  const isAdmin = canSeePrice(user?.role);
 
-  // Reaktív frissítés
+  // Reaktív frissítés — saját localStorage olvasás, azonnali
   useEffect(() => {
-    function refresh() { setKarteritesek(loadKarteritesek()); }
+    function refresh() {
+      setMunkalapok(loadLocal("munkalapok") || []);
+      setKarteritesek(loadKarteritesek());
+    }
     window.addEventListener("crm-db-updated", refresh);
-    return () => window.removeEventListener("crm-db-updated", refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener("crm-db-updated", refresh);
+      window.removeEventListener("storage", refresh);
+    };
   }, []);
 
   const stats = useMemo(() => {

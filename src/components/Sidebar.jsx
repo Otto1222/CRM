@@ -6,7 +6,7 @@ import { C, FONT, FONT_HEADING } from "../lib/constants";
 import Avatar from "./Avatar";
 
 const NAV = [
-  { id: "dashboard",      label: "Irányítópult",   icon: LayoutDashboard },
+  { id: "dashboard",      label: "Pénzügy",         icon: LayoutDashboard },
   { id: "projektek",      label: "Projektek",       icon: Building2 },
   { id: "munkakiosztas",  label: "Munkakiosztás",   icon: Hammer },
   { id: "ugyfelek",       label: "Ügyfelek",        icon: Users },
