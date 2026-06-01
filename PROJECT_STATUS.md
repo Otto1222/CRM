@@ -1,5 +1,5 @@
 # PROJECT_STATUS.md – CRM Napelem ERP
-_Utolsó frissítés: 2026-06-01_
+_Utolsó frissítés: 2026-06-01 (v2) – Projektek státuszok + műszaki mezők + ügyfél dropdown_
 
 ## Fejlesztési sorrend és jelenlegi állapot
 
@@ -8,8 +8,8 @@ _Utolsó frissítés: 2026-06-01_
 | 1 | Auth | ✅ KÉSZ | Kattintásos bejelentkezés, szerepkör-alapú láthatóság |
 | 2 | Dashboard Shell | ✅ KÉSZ (alap) | Pénzügyi összesítő munkalapok alapján; projekt-centrikus átírás később |
 | 3 | Ügyfelek | ✅ KÉSZ | Teljes CRUD: add/edit/delete, státusz, megjegyzés, projekt szám |
-| 4 | Projektek | ⚠️ NAGYRÉSZT KÉSZ | CRUD megvan, státuszok nem egyeznek tervvel, hiányos mezők |
-| 5 | Csapatok | ❌ HIÁNYOS | Csak ComingSoon; munkakiosztásAlgo.js van, de nincs csapat CRUD |
+| 4 | Projektek | ✅ KÉSZ | CRUD, 14 státusz (terv szerint), műszaki mezők, ügyfél dropdown |
+| 5 | Csapatok | ❌ HIÁNYOS – KÖVETKEZŐ | Csak ComingSoon; munkakiosztásAlgo.js van, de nincs csapat CRUD |
 | 6 | Munkalapok | ✅ NAGYRÉSZT KÉSZ | CRUD, felmérés, telepítő nézet, VBF, fotók megvannak |
 | 7 | Telepítő App (PWA) | ⚠️ RÉSZLEGES | FelmeresTelepito, TelepItoMunkalap megvan; nincs PWA manifest/SW |
 | 8 | Google Drive | ⚠️ RÉSZLEGES | driveApi + Apps Script webhook megvan; nincs auto projekt-mappa |
@@ -41,18 +41,12 @@ _Utolsó frissítés: 2026-06-01_
 - Projekt szám kijelzés
 - localStorage["ugyfelek"]
 
-### ⚠️ 4. Projektek – KÖVETKEZŐ FEJLESZTÉSI KÖR
+### ✅ 4. Projektek
 - CRUD megvan (ProjektForm, ProjektekPage, ProjektDetail, 10 tab)
-- Hiányos mezők a terv szerint:
-  - napelem darabszám
-  - inverter darabszám
-  - akkumulátor (van/nincs, típus)
-  - okosmérő (van/nincs)
-  - elektromos autótöltő (van/nincs)
-- Státusz eltérések a terv vs kód között:
-  - Hiányzik: "Elbukott Projekt", "Elkészült", "Ellenőrzésre vár", "Hiánypótlás", "Ellenőrizve, minden rendben", "Kifizetve"
-  - Eltér: "Fizetve" → terv: "Kifizetve"; "Lezárt" → terv: "Lezárva"
-- Ügyfél kiválasztás: szabad szöveg (clientNev), nem ID-alapú kapcsolat
+- Státuszok (14 db, terv szerint): Felmérésre vár, Felmérve, Ajánlat kiküldve, Elbukott Projekt, Elfogadva, Kivitelezésre vár, Kivitelezés alatt, Elkészült, Ellenőrzésre vár, Hiánypótlás, Ellenőrizve minden rendben, Leszámlázva, Kifizetve, Lezárva
+- Műszaki mezők: napelem db, inverter db, akkumulátor (toggle), okosmérő (toggle), elektromos autótöltő (toggle)
+- Ügyfél kiválasztás: dropdown listából (clientId kapcsolat), adatok auto-betöltése; manuális szöveg is marad fallbackként
+- localStorage["projektek"]
 
 ### ❌ 5. Csapatok
 - ComingSoon placeholder

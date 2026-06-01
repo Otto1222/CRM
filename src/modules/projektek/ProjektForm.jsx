@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Save } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
+import { loadLocal } from "../../lib/localDb.js";
 import { PROJEKT_STATUSZOK } from "./projekt.schema.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
@@ -49,17 +50,24 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
   const fovallalkozok = getAktivFovallalkozok();
   const munkatipusok = getAktivMunkatipusok();
   const pmList = users.filter(u => ["Admin", "Projektmenedzser"].includes(u.role));
+  const ugyfelek = loadLocal("ugyfelek") || [];
   const [form, setForm] = useState({
     nev: projekt?.nev || "",
     kulsoAzonosito: projekt?.kulsoAzonosito || "",
     tipus: projekt?.tipus || "Napelem telepítés",
     status: projekt?.status || "Felmérésre vár",
+    clientId: projekt?.clientId || "",
     clientNev: projekt?.clientNev || "",
     clientCim: projekt?.clientCim || "",
     clientTel: projekt?.clientTel || "",
     clientEmail: projekt?.clientEmail || "",
     kapcsolattarto: projekt?.kapcsolattarto || "",
     telepitesiCim: projekt?.telepitesiCim || "",
+    napelemDb: projekt?.napelemDb || 0,
+    inverterDb: projekt?.inverterDb || 0,
+    akkumulator: projekt?.akkumulator || false,
+    okosmerő: projekt?.okosmerő || false,
+    autoTolto: projekt?.autoTolto || false,
     projektvezetoId: projekt?.projektvezetoId || "",
     projektvezetoNev: projekt?.projektvezetoNev || "",
     csapatId: projekt?.csapatId || "",
@@ -89,6 +97,22 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
   const [hiba, setHiba] = useState("");
   function upd(k, v) {
     setForm(p => ({ ...p, [k]: v }));
+    if (hiba) setHiba("");
+  }
+  function handleUgyfél(e) {
+    const u = ugyfelek.find(x => x.id === e.target.value);
+    if (!u) {
+      setForm(p => ({ ...p, clientId: "", clientNev: "", clientCim: "", clientTel: "", clientEmail: "" }));
+      return;
+    }
+    setForm(p => ({
+      ...p,
+      clientId: u.id,
+      clientNev: u.name || "",
+      clientCim: u.address || "",
+      clientTel: u.phone || "",
+      clientEmail: u.email || "",
+    }));
     if (hiba) setHiba("");
   }
   function handleCsapat(e) {
@@ -299,6 +323,15 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
                 Ügyfél adatok
               </p>
             </div>
+            <Field label="Ügyfél kiválasztása (opcionális)">
+              <select value={form.clientId} onChange={handleUgyfél} style={inp}>
+                <option value="">— Válassz a listából —</option>
+                {ugyfelek.map(u => (
+                  <option key={u.id} value={u.id}>{u.name}{u.address ? ` – ${u.address}` : ""}</option>
+                ))}
+              </select>
+              {form.clientId && <p style={{ fontSize: 10, color: "#059669", marginTop: 3 }}>✅ Adatok automatikusan betöltve</p>}
+            </Field>
             <Field label="Ügyfél neve *" half>
               <input value={form.clientNev} onChange={e => upd("clientNev", e.target.value)} placeholder="Kovács János" style={inp} />
             </Field>
@@ -342,6 +375,40 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
                 ))}
               </select>
             </Field>
+            <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
+                Műszaki adatok
+              </p>
+            </div>
+            <Field label="Napelem darabszám" half>
+              <input type="number" min="0" value={form.napelemDb} onChange={e => upd("napelemDb", Number(e.target.value))} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Inverter darabszám" half>
+              <input type="number" min="0" value={form.inverterDb} onChange={e => upd("inverterDb", Number(e.target.value))} placeholder="0" style={inp} />
+            </Field>
+            <div style={{ gridColumn: "span 2", display: "flex", gap: 16, flexWrap: "wrap" }}>
+              {[
+                { key: "akkumulator", label: "Akkumulátor" },
+                { key: "okosmerő",    label: "Okosmérő" },
+                { key: "autoTolto",   label: "Elektromos autótöltő" },
+              ].map(({ key, label }) => (
+                <label key={key} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14, fontWeight: 500, color: "#334155", userSelect: "none" }}>
+                  <div
+                    onClick={() => upd(key, !form[key])}
+                    style={{
+                      width: 44, height: 24, borderRadius: 12, position: "relative", cursor: "pointer",
+                      background: form[key] ? "#2563EB" : "#CBD5E1", transition: "background .2s",
+                    }}
+                  >
+                    <div style={{
+                      position: "absolute", top: 3, left: form[key] ? 23 : 3, width: 18, height: 18,
+                      borderRadius: "50%", background: "#fff", transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)",
+                    }} />
+                  </div>
+                  {label}: <span style={{ color: form[key] ? "#059669" : "#94A3B8", fontWeight: 700 }}>{form[key] ? "Van" : "Nincs"}</span>
+                </label>
+              ))}
+            </div>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Ütemezés

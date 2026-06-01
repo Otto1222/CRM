@@ -6,19 +6,20 @@
 export const PROJEKT_SCHEMA_VERSION = "1.0";
 
 export const PROJEKT_STATUSZOK = [
-  { id: "Felmérésre vár",        szin: "#0EA5E9", bg: "#F0F9FF" },
-  { id: "Felmérve",              szin: "#6366F1", bg: "#EEF2FF" },
-  { id: "Ajánlat készítés alatt",szin: "#8B5CF6", bg: "#F5F3FF" },
-  { id: "Ajánlat kiküldve",      szin: "#D97706", bg: "#FFFBEB" },
-  { id: "Elfogadva",             szin: "#059669", bg: "#ECFDF5" },
-  { id: "Elutasított",           szin: "#DC2626", bg: "#FEF2F2" },
-  { id: "Kivitelezésre vár",     szin: "#EA580C", bg: "#FFF7ED" },
-  { id: "Kivitelezés alatt",     szin: "#2563EB", bg: "#EFF6FF" },
-  { id: "Készre jelentve",       szin: "#0891B2", bg: "#ECFEFF" },
-  { id: "Számlázásra vár",       szin: "#B45309", bg: "#FFFBEB" },
-  { id: "Leszámlázva",           szin: "#15803D", bg: "#F0FDF4" },
-  { id: "Fizetve",               szin: "#166534", bg: "#DCFCE7" },
-  { id: "Lezárt",                szin: "#475569", bg: "#F8FAFC" },
+  { id: "Felmérésre vár",            szin: "#0EA5E9", bg: "#F0F9FF" },
+  { id: "Felmérve",                  szin: "#6366F1", bg: "#EEF2FF" },
+  { id: "Ajánlat kiküldve",          szin: "#D97706", bg: "#FFFBEB" },
+  { id: "Elbukott Projekt",          szin: "#DC2626", bg: "#FEF2F2" },
+  { id: "Elfogadva",                 szin: "#059669", bg: "#ECFDF5" },
+  { id: "Kivitelezésre vár",         szin: "#EA580C", bg: "#FFF7ED" },
+  { id: "Kivitelezés alatt",         szin: "#2563EB", bg: "#EFF6FF" },
+  { id: "Elkészült",                 szin: "#0891B2", bg: "#ECFEFF" },
+  { id: "Ellenőrzésre vár",          szin: "#8B5CF6", bg: "#F5F3FF" },
+  { id: "Hiánypótlás",               szin: "#B45309", bg: "#FFFBEB" },
+  { id: "Ellenőrizve minden rendben",szin: "#0369A1", bg: "#F0F9FF" },
+  { id: "Leszámlázva",               szin: "#15803D", bg: "#F0FDF4" },
+  { id: "Kifizetve",                 szin: "#166534", bg: "#DCFCE7" },
+  { id: "Lezárva",                   szin: "#475569", bg: "#F8FAFC" },
 ];
 
 export const PROJEKT_TIPUSOK = [
@@ -48,6 +49,12 @@ export const PROJEKT_SCHEMA = {
   // Projekt adatok
   tipus:               "Napelem telepítés",
   status:              "Felmérésre vár",
+  // Műszaki adatok
+  napelemDb:           0,
+  inverterDb:          0,
+  akkumulator:         false,
+  okosmerő:            false,
+  autoTolto:           false,
   // Csapat
   projektvezetoId:     "",
   projektvezetoNev:    "",
