@@ -3,13 +3,17 @@
  * 
  * Ha VITE_APPS_SCRIPT_URL be van állítva → Apps Script webhook
  * Fallback: localStorage csak (offline mód)
+ *
+ * Drive struktúra (CRM gyökér: 1-MuCrK__dMkoep19f8cJFBpgJQAkwu-5)
+ *   01_Adatbazis  → JSON adatfájlok (DB_FOLDER)
+ *   04_Fotok      → fotók, projekt mappák (MUNKA_FOLDER)
  */
 
 const SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL || "";
 
-// Drive mappa ID-k (CRM/CRM_db)
-export const DRIVE_DB_FOLDER_ID    = "1BDxc7MjKidp82A52dAeAArBWeNnqGVxJ";
-export const DRIVE_MUNKA_FOLDER_ID = "1gbns44t8w_h9eHjUODC41jjnwtTi2bpO";
+// Drive mappa ID-k – új CRM struktúra
+export const DRIVE_DB_FOLDER_ID    = "1jkRh98v5pm73Dyhmn3FioFkznBaxWwsW";  // 01_Adatbazis
+export const DRIVE_MUNKA_FOLDER_ID = "1ccvd4iUnB-jEyrSGJBZs_fSOScL_aQPx";  // 04_Fotok
 
 // ─── Alap POST hívás ──────────────────────────────────────────
 async function post(body) {
