@@ -6,6 +6,7 @@
 
 import { loadElszamolasiKontextus, generateBeveteliTetelek, sumBeveteliTetelek } from "./settlementRule.service.js";
 import { loadKarteritesek } from "../lib/karterites.js";
+import { calcKmElszamolas } from "./travelCalculation.service.js";
 
 const TETELEK_KEY = (id) => `munkalap_tetelek_${id}`;
 const dispatch = (col) =>
@@ -65,9 +66,24 @@ export function calcEsmentProjektPenzugy(projekt) {
   }
   if (keziCsapatBer !== null && keziCsapatBer !== undefined) csapatBer = Number(keziCsapatBer);
 
-  // Útiköltség a bevételi tételekből jön (km_elszamolas tétel)
+  // Útiköltség: bevételi tételekből (ha van km_elszamolas tétel a munkatípusban)
+  // Ha nincs ilyen tétel, fallback: közvetlenül az elszámolási szabályból számítjuk
   const kmTetel = beveteliTetelek.find(t => t.tetelTipusId === "km_elszamolas");
   let utikoltség = kmTetel?.hasznalandoNetto || 0;
+
+  if (!utikoltség && ctx.szabaly && (tavKm || 0) > 0) {
+    const kmTipus = ctx.szabaly.utikoltsegTipus || "nincs";
+    if (kmTipus !== "nincs") {
+      const ftKm   = ctx.szabaly.utikoltsegFtKm || ctx.fv?.alapUtikoltsegFtKm || 80;
+      const kuszob = ctx.szabaly.kmKuszob   || 0;
+      const fix    = ctx.szabaly.kmFixOsszeg || 0;
+      const fallback = calcKmElszamolas({
+        kmTipus, kmEgyirany: tavKm || 0, ftKm, kuszobKm: kuszob, fixOsszeg: fix, keziOsszeg: null,
+      });
+      utikoltség = fallback.netto;
+    }
+  }
+
   if (keziUtikoltség !== null && keziUtikoltség !== undefined) utikoltség = Number(keziUtikoltség);
 
   // Anyagköltség

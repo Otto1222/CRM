@@ -14,7 +14,6 @@ const NAV = [
   { id: "arajanlatok", label: "Árajánlatok",  icon: ClipboardList },
   { id: "szerzodesek", label: "Szerződések",  icon: ScrollText },
   { id: "szamlak",     label: "Számlák",      icon: Receipt },
-  { id: "csapat",      label: "Csapat",       icon: UserCheck },
   { id: "naptar",      label: "Naptár",       icon: Calendar },
   { id: "riportok",    label: "Riportok",     icon: BarChart3 },
 ];
