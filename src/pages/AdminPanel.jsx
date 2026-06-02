@@ -322,8 +322,8 @@ export default function AdminPanel({ currentUser }) {
           ))}
           <div style={{ padding: "16px 0 8px" }}>
             <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.7 }}>
-              💡 <b>Fontos:</b> A változtatások ezen az eszközön (böngészőn) azonnal érvényesek.
-              Ha más eszközön is érvényesíteni akarod, szólj a fejlesztőnek — a kód frissítése után mindenhol működik.
+              💡 <b>Drive szinkron:</b> A változtatások azonnal érvényesek, és a következő Drive mentéskor (<b>Beállítások → Drive teljes mentés</b>) szinkronizálódnak minden eszközre.
+              A jelszavak titkosítva (SHA-256) kerülnek mentésre — plain text soha nem kerül Drive-ra.
             </p>
           </div>
         </Card>

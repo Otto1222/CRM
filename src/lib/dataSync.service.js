@@ -11,6 +11,8 @@ export const SYNC_COLLECTIONS = [
   "elszamolasi_szabalyok",
   "karteritesek",
   "sablonok",
+  "csapatok",
+  "crm_napelem_users",
 ];
 
 function emptyValue(collection) {

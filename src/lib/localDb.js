@@ -17,6 +17,8 @@ const KEYS = {
   munkatipusok:          "munkatipusok",
   elszamolasi_szabalyok: "elszamolasi_szabalyok",
   projektek:             "projektek",
+  csapatok:              "csapatok",
+  crm_napelem_users:     "crm_napelem_users",
 };
 
 // ─── Cross-tab szinkronizáció BroadcastChannel-lel ───────────
