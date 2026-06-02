@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AlertTriangle, RefreshCw, Pencil, Check, X } from "lucide-react";
 import { C, FONT } from "../../../lib/constants.js";
 import { ft } from "../../../lib/helpers.js";
@@ -83,11 +83,39 @@ function TetelSor({ tetel, projektId, onRefresh, currentUser }) {
 }
 
 export default function TabKoltsegek({ projekt, munkalapok, currentUser }) {
-  const [v, setV] = useState(0); // force refresh counter
+  const [v, setV] = useState(0);
   const refresh   = () => setV(n => n+1);
 
+  // Tiszta kalkuláció – nem mentget, nem dispatch-el eseményt
   const kalk = calcEsmentProjektPenzugy(projekt);
-  const tetelek = loadTetelek(projekt.id);
+
+  // Tételek persistálása useEffect-ben (dispatch nélkül – megelőzi a végtelen loopot)
+  // Kézi felülírásokat megőrzi, csak az auto-értékeket frissíti
+  useEffect(() => {
+    const TETELEK_KEY = `munkalap_tetelek_${projekt.id}`;
+    const current = loadTetelek(projekt.id);
+    const merged = kalk.beveteliTetelek.map(autoT => {
+      const existing = current.find(e => e.tetelTipusId === autoT.tetelTipusId);
+      if (existing?.felulirva) return { ...existing, autoNetto: autoT.autoNetto };
+      return autoT;
+    });
+    localStorage.setItem(TETELEK_KEY, JSON.stringify(merged));
+    // NEM hívunk dispatch-t – az okozná a végtelen újrarenderelést
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projekt.id, projekt.penzugy?.fovallalkoziId, projekt.penzugy?.munkatipus,
+      projekt.penzugy?.darabszam, projekt.penzugy?.tavKm, projekt.penzugy?.csapatLetszam]);
+
+  // Tételek megjelenítéshez: tárolt (kézi override-okkal) VAGY friss auto-kalkulált
+  const tetelek = (() => {
+    const saved = loadTetelek(projekt.id);
+    if (saved.length === 0) return kalk.beveteliTetelek;
+    return kalk.beveteliTetelek.map(autoT => {
+      const savedT = saved.find(s => s.tetelTipusId === autoT.tetelTipusId);
+      if (savedT?.felulirva) return { ...savedT, autoNetto: autoT.autoNetto };
+      return autoT;
+    });
+  })();
+
   const fvNev   = kalk.fovallalkoNev;
   const mtipus  = getMunkatipus(projekt?.penzugy?.munkatipus);
   const penzugy = projekt?.penzugy || {};

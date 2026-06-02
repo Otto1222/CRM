@@ -2,7 +2,7 @@ import { useState } from "react";
 import { X, Save } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
-import { loadLocal } from "../../lib/localDb.js";
+import { loadLocal, saveLocal } from "../../lib/localDb.js";
 import { PROJEKT_STATUSZOK } from "./projekt.schema.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { getAktivCsapatok } from "../csapatok/csapat.service.js";

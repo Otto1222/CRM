@@ -42,7 +42,8 @@ export function calcEsmentProjektPenzugy(projekt) {
     kmEgyirany: tavKm || 0,
     keziTetelek: penzugy.keziTetelek || {},
   });
-  saveTetelek(projekt.id, beveteliTetelek);
+  // saveTetelek NEM hívható renderelés közben – az event dispatch végtelen loop-ot okoz.
+  // A TabKoltsegek useEffect-ben menti el a tételeket.
 
   const autoBevitel = sumBeveteliTetelek(beveteliTetelek);
   const nettoBevitel = (felultBevitel !== null && felultBevitel !== undefined)
