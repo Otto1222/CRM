@@ -129,15 +129,16 @@ export default function SzamlaForm({ szamla, onClose, onSaved, currentUser }) {
 
   return (
     <div
-      onClick={e => e.target === e.currentTarget && onClose?.()}
       style={{
         position: "fixed", inset: 0, zIndex: 2000,
-        background: "rgba(0,0,0,.55)", display: "flex",
+        display: "flex",
         alignItems: "flex-start", justifyContent: "center",
         padding: "20px 16px", overflowY: "auto",
       }}
     >
+      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", zIndex: 0 }} onClick={onClose} />
       <div style={{
+        position: "relative", zIndex: 1,
         background: "#fff", borderRadius: 16, width: "100%", maxWidth: 640,
         boxShadow: "0 20px 60px rgba(0,0,0,.25)", fontFamily: FONT,
       }}>

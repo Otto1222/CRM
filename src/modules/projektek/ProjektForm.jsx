@@ -215,17 +215,22 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
         position: "fixed",
         inset: 0,
         zIndex: 2000,
-        background: "rgba(0,0,0,.6)",
         display: "flex",
         alignItems: "flex-start",
         justifyContent: "center",
         padding: "20px 16px",
         overflowY: "auto",
       }}
-      onClick={e => e.target === e.currentTarget && onClose?.()}
     >
+      {/* Backdrop: testvér elem, nem szülő – így a modal belsejéből drag-select nem zárja be */}
+      <div
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 0 }}
+        onClick={onClose}
+      />
       <div
         style={{
+          position: "relative",
+          zIndex: 1,
           background: "#fff",
           borderRadius: 16,
           width: "100%",
@@ -254,6 +259,7 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
             {isNew ? "Új projekt" : "Projekt szerkesztése"}
           </h2>
           <button
+            type="button"
             onClick={onClose}
             style={{
               border: "none",
@@ -468,10 +474,10 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
           </div>
         </div>
         <div style={{ padding: "14px 24px", borderTop: "1px solid #E2E8F0", display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #E2E8F0", background: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
+          <button type="button" onClick={onClose} style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #E2E8F0", background: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
             Mégse
           </button>
-          <button onClick={handleSave} disabled={saving} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 22px", background: saving ? "#94A3B8" : "#2563EB", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
+          <button type="button" onClick={handleSave} disabled={saving} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 22px", background: saving ? "#94A3B8" : "#2563EB", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
             <Save size={15} />
             {saving ? "Mentés…" : isNew ? "Projekt létrehozása" : "Mentés"}
           </button>

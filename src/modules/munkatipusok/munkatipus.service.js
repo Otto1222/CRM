@@ -11,8 +11,11 @@ const dispatch = (col) =>
 export function loadMunkatipusok() {
   try {
     const stored = localStorage.getItem(KEY);
-    if (stored) return JSON.parse(stored);
-    // Első betöltés: alapértelmezetteket tároljuk
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Drive szinkron [] -t írhat be, ha a Drive-on még nincs adat → ilyenkor töltjük az alapokat
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
     localStorage.setItem(KEY, JSON.stringify(DEFAULT_MUNKATIPUSOK));
     return DEFAULT_MUNKATIPUSOK;
   } catch { return DEFAULT_MUNKATIPUSOK; }
