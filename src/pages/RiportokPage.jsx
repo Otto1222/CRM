@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { BarChart3, TrendingUp, Sun, ChevronDown, ChevronRight, Users } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { loadLocal } from "../lib/localDb";
@@ -317,9 +317,21 @@ export default function RiportokPage() {
   const [expandedFv, setExpandedFv] = useState(null);
   const [expandedCs, setExpandedCs] = useState(null);
 
-  const projektek    = loadLocal("projektek")    || [];
-  const fovallalkozok = loadFovallalkozok();
-  const csapatok     = loadCsapatok();
+  const [projektek,     setProjektek]     = useState(() => loadLocal("projektek")    || []);
+  const [fovallalkozok, setFovallalkozok] = useState(() => loadFovallalkozok());
+  const [csapatok,      setCsapatok]      = useState(() => loadCsapatok());
+
+  // Reaktív frissítés: ha más modulban változik valami, a riport is frissüljön
+  useEffect(() => {
+    function refresh(e) {
+      const col = e?.detail?.collection;
+      if (!col || col === "projektek")      setProjektek(loadLocal("projektek") || []);
+      if (!col || col === "fovallalkozok")  setFovallalkozok(loadFovallalkozok());
+      if (!col || col === "csapatok")       setCsapatok(loadCsapatok());
+    }
+    window.addEventListener("crm-db-updated", refresh);
+    return () => window.removeEventListener("crm-db-updated", refresh);
+  }, []);
 
   // Év-alapú szűrés (createdAt vagy tervezettKezdes első 4 karaktere)
   const szurtProjektek = useMemo(() => {

@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, ClipboardList,
-  ScrollText, UserCheck, Calendar, Settings, LogOut, Sun, Building2, Receipt, FileText, BarChart3,
+  ScrollText, UserCheck, Calendar, Settings, LogOut, Sun, Building2, Receipt, FileText, BarChart3, BookOpen,
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getAllowedPages } from "../lib/roles.js";
@@ -42,6 +42,26 @@ export default function Sidebar({ page, onNav, user, onLogout }) {
             </button>
           );
         })}
+        {/* Oktató anyagok – Telepítő számára */}
+        {user?.role === "Telepítő" && (
+          <>
+            <div style={{ borderTop: `1px solid ${C.sidebarBorder}`, margin: "10px 0" }} />
+            <button
+              onClick={() => {
+                try {
+                  const b = JSON.parse(localStorage.getItem("beallitasok") || "{}");
+                  const url = b?.oktatoAnyagokUrl;
+                  if (url) window.open(url, "_blank", "noopener");
+                  else alert("Az oktató anyagok mappája még nincs beállítva.\nKérj meg egy Adminisztrátort, hogy állítsa be a Beállítások menüben.");
+                } catch { alert("Hiba az URL betöltésekor."); }
+              }}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "9px 12px", borderRadius: 9, border: "none", borderLeft: "3px solid transparent", background: "transparent", color: "#67E8F9", cursor: "pointer", fontSize: 14, fontFamily: FONT, fontWeight: 600 }}
+            >
+              <BookOpen size={17} strokeWidth={1.7} />Oktató anyagok
+            </button>
+          </>
+        )}
+
         {showSettings && (
           <>
             <div style={{ borderTop: `1px solid ${C.sidebarBorder}`, margin: "10px 0" }} />

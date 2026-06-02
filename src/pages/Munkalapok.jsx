@@ -628,10 +628,9 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
             <p style={{ fontSize:13, fontWeight:700, color:"#92400E", margin:"0 0 10px" }}>⚠️ Ellenőrzésre vár – PM átvétel szükséges</p>
             <div style={{ display:"flex", gap:8 }}>
               <button onClick={() => {
-                const { updateItem } = require ? null : null;
                 updateItem("munkalapok", m.id, { status:"Lezárva", statusSzin:"#059669" });
-                  window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
-                  if(onRefresh) onRefresh();
+                window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
+                if(onRefresh) onRefresh();
               }} style={{ flex:1, padding:"10px", background:"#059669", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 ✅ Lezárva (munkát átvettem)
               </button>
@@ -682,18 +681,22 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
               {["Felmérés","Befejezett Felmérés","Kivitelezés","Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=>{
                 const cfg=STATUS_CFG[s]||{bg:"#F1F5F9",text:C.muted,dot:C.muted};
-                return <button key={s} style={{ padding:"8px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
+                return <button key={s} onClick={()=>{updateItem("munkalapok",m.id,{status:s,statusSzin:cfg.dot});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}} style={{ padding:"8px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
               })}
             </div>
           </div>
           {/* Műveletek */}
           <div style={{ padding:"0 16px 16px" }}>
             <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, marginBottom:10 }}>Műveletek</p>
-            {[{icon:"✏️",label:"Szerkesztés"},{icon:"📄",label:"PDF export"},{icon:"👁",label:"Előnézet"}].map(a=>(
-              <button key={a.label} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#fff", color:C.text, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT }}>
-                {a.icon} {a.label}
-              </button>
-            ))}
+            <button onClick={()=>setShowUjrakiosztas(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#EFF6FF", color:C.accent, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
+              ✏️ Szerkesztés / Újrakiosztás
+            </button>
+            <button onClick={()=>printMunkalap(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#fff", color:C.text, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT }}>
+              📄 PDF export / Nyomtatás
+            </button>
+            <button onClick={()=>printMunkalap(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#fff", color:C.text, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT }}>
+              👁 Előnézet
+            </button>
             <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#FEF2F2", color:C.danger, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
               🗑️ Munkalap törlése
             </button>

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import {
-  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2,
+  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink,
 } from "lucide-react";
-import { saveLocal } from "../lib/localDb";
+import { loadLocal, saveLocal } from "../lib/localDb";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AdminPanel from "./AdminPanel";
 import JegyzokonyviBeallitasok from "./JegyzokonyviBeallitasok";
@@ -69,6 +69,14 @@ const MENU_ITEMS = [
     color: "#475569",
     bg: "#F8FAFC",
   },
+  {
+    id: "oktatoanyagok",
+    label: "Oktató anyagok (Drive link)",
+    desc: "Telepítők számára elérhető Google Drive mappa URL-je",
+    icon: BookOpen,
+    color: "#0891B2",
+    bg: "#ECFEFF",
+  },
 ];
 
 export default function BeallitasokPage({ currentUser }) {
@@ -115,6 +123,14 @@ export default function BeallitasokPage({ currentUser }) {
         <div style={{ padding: "0 0" }}>
           <BackupKezelo userRole={role} />
         </div>
+      </div>
+    );
+  }
+  if (aktiv === "oktatoanyagok") {
+    return (
+      <div>
+        <BackBtn onClick={() => setAktiv(null)} label="Oktató anyagok Drive link" />
+        <OktatoAnyagokBeallitas />
       </div>
     );
   }
@@ -261,6 +277,70 @@ function AdatTorlesPanel() {
           >
             Törlés
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Oktató anyagok Drive link beállítás ─────────────────────
+function OktatoAnyagokBeallitas() {
+  const beall = loadLocal("beallitasok") || {};
+  const [url, setUrl] = useState(beall.oktatoAnyagokUrl || "");
+  const [mentve, setMentve] = useState(false);
+
+  function handleMent() {
+    const current = loadLocal("beallitasok") || {};
+    saveLocal("beallitasok", { ...current, oktatoAnyagokUrl: url.trim() });
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "beallitasok" } }));
+    setMentve(true);
+    setTimeout(() => setMentve(false), 2500);
+  }
+
+  return (
+    <div style={{ padding: "28px", fontFamily: FONT, maxWidth: 600 }}>
+      <div style={{ background: "#ECFEFF", border: "1.5px solid #67E8F9", borderRadius: 12, padding: "14px 18px", marginBottom: 24 }}>
+        <p style={{ fontWeight: 700, fontSize: 14, color: "#0E7490", margin: "0 0 4px" }}>
+          📚 Hogyan működik?
+        </p>
+        <p style={{ fontSize: 13, color: "#0E7490", margin: 0, lineHeight: 1.6 }}>
+          Adj meg egy Google Drive mappa megosztási linkjét. A Telepítők az oldalsávban lévő
+          <strong> "Oktató anyagok"</strong> gombra kattintva automatikusan megnyílik ez a mappa.
+          Az anyagokat (útmutatók, sémák, szabályok) te töltöd fel a mappába.
+        </p>
+      </div>
+
+      <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.7 }}>
+        Google Drive mappa URL
+      </label>
+      <input
+        value={url}
+        onChange={e => setUrl(e.target.value)}
+        placeholder="https://drive.google.com/drive/folders/..."
+        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none", background: "#FAFAFA", marginBottom: 12 }}
+      />
+
+      {url && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#0891B2", marginBottom: 16, textDecoration: "none", fontWeight: 600 }}
+        >
+          <ExternalLink size={13} /> Megnyitás tesztként (új fülön)
+        </a>
+      )}
+
+      <button
+        onClick={handleMent}
+        style={{ padding: "10px 24px", background: mentve ? "#059669" : "#0891B2", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}
+      >
+        {mentve ? "✓ Mentve!" : "Mentés"}
+      </button>
+
+      {beall.oktatoAnyagokUrl && (
+        <div style={{ marginTop: 20, padding: "10px 14px", background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 9, fontSize: 12, color: "#166534" }}>
+          ✓ Jelenleg beállított URL: <span style={{ fontFamily: "monospace", wordBreak: "break-all" }}>{beall.oktatoAnyagokUrl}</span>
         </div>
       )}
     </div>
