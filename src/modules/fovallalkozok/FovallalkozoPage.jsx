@@ -11,6 +11,7 @@ import {
 } from "./fovallalkozo.schema.js";
 import { BEVETELI_TETEL_TIPUSOK } from "../munkatipusok/munkatipus.schema.js";
 import { PROJEKT_TIPUSOK } from "../projektek/projekt.schema.js";
+import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
 
 const inp = { width:"100%", boxSizing:"border-box", padding:"8px 11px", border:"1.5px solid #E2E8F0", borderRadius:8, fontSize:13, fontFamily:"inherit", outline:"none" };
 const FL = ({ label, children, half }) => (
@@ -23,6 +24,7 @@ const FL = ({ label, children, half }) => (
 // ─── Elszámolási szabály form ─────────────────────────────────
 function SzabalyForm({ szabaly, fovallalkoziId, onSave, onClose }) {
   const isNew = !szabaly?.id;
+  const munkatipusok = getAktivMunkatipusok();
   const [f, setF] = useState({
     fovallalkoziId,
     munkatipus:          szabaly?.munkatipus          || "",
@@ -53,7 +55,9 @@ function SzabalyForm({ szabaly, fovallalkoziId, onSave, onClose }) {
           <FL label="Munkatípus (üres = általános)">
             <select value={f.munkatipus} onChange={e=>u("munkatipus",e.target.value)} style={inp}>
               <option value="">— Minden munkatípusra —</option>
-              {PROJEKT_TIPUSOK.map(t=><option key={t}>{t}</option>)}
+              {munkatipusok.map(t=><option key={t.id} value={t.id}>{t.nev}</option>)}
+              {/* Fallback ha nincs munkatípus */}
+              {munkatipusok.length === 0 && PROJEKT_TIPUSOK.map(t=><option key={t}>{t}</option>)}
             </select>
           </FL>
           <FL label="Aktív" half><label style={{ display:"flex", alignItems:"center", gap:8, paddingTop:8, cursor:"pointer" }}>

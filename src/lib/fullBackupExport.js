@@ -89,6 +89,8 @@ export function exportFullLocalBackup() {
       felhasznaltAnyagok[key] = val;
     } else if (key.startsWith("karterites")) {
       karteritesek[key] = val;
+    } else if (key.startsWith("projekt_pillanatkep_")) {
+      otherLocalStorage[key] = val;  // pillanatkép – exportálandó
     } else {
       // Minden egyéb kulcs – a már feldolgozottakat kihagyjuk
       const knownKeys = [

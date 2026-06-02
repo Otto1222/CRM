@@ -5,8 +5,8 @@ const COUNTER_KEY = "edi_sorszam_counter";
 const PREFIX = "E.D.I.";
 
 /**
- * Következő EDI sorszám lekérése (auto increment)
- * Pl: "E.D.I. 001", "E.D.I. 002", ...
+ * Következő EDI sorszám – 2 jegyű: E.D.I. 01, E.D.I. 02, ...
+ * Ha eléri 99-t, folytatja 3 jeggyel: E.D.I. 100
  */
 export function nextEdiSorszam() {
   const counter = (loadLocal(COUNTER_KEY) || 0) + 1;
@@ -15,22 +15,19 @@ export function nextEdiSorszam() {
 }
 
 export function formatEdi(n) {
-  return `${PREFIX} ${String(n).padStart(3, "0")}`;
+  const pad = n < 100 ? String(n).padStart(2, "0") : String(n);
+  return `${PREFIX} ${pad}`;
 }
 
 /**
- * Teljes dokumentumszám: EDI sorszám + fővállalkozói azonosító ha van
- * Pl: "E.D.I. 001 / FŐV-2026-145"
+ * Teljes dokumentumszám: EDI sorszám + fővállalkozói projektkód
+ * Spec: "E.D.I. 01 / T003700"
  */
 export function fullDokumentumszam(ediSorszam, fovallalkoiAzonosito) {
   if (!fovallalkoiAzonosito?.trim()) return ediSorszam;
   return `${ediSorszam} / ${fovallalkoiAzonosito.trim()}`;
 }
 
-/**
- * Hányadik munkalap az adott projekthez (helyszín látogatás számozás)
- * Ha pl. T003700 projekthez 3 munkalap van, ez a 3. → "3. munkalap"
- */
 export function projektMunkalapSorszam(munkalapok, projektId) {
   if (!projektId) return 1;
   const sajat = munkalapok
@@ -39,9 +36,6 @@ export function projektMunkalapSorszam(munkalapok, projektId) {
   return sajat.length + 1;
 }
 
-/**
- * Péelda: az adott munkalapnak hányadik az eredeti projekt nevéhez
- */
 export function getHelyszinSorszam(munkalapok, m) {
   if (!m.projektId) return null;
   const sajat = munkalapok

@@ -93,6 +93,19 @@ export function updateProjekt(id, updates, user = "") {
   };
   list[idx] = updated;
   saveProjektek(list);
+
+  // Spec 12. pont: lezárásnál automatikus pillanatkép
+  const lezaroStatuszok = ["Lezárva", "Leszámlázva", "Kifizetve"];
+  if (updates.status && lezaroStatuszok.includes(updates.status) && !lezaroStatuszok.includes(old.status)) {
+    try {
+      import("../../lib/elszamolasPillanatkep.js").then(({ createPillanatkep }) => {
+        const munkalapok = JSON.parse(localStorage.getItem("munkalapok") || "[]")
+          .filter(m => m.projektId === id || (updated.munkalapIds || []).includes(m.id));
+        createPillanatkep(updated, munkalapok);
+      });
+    } catch {}
+  }
+
   return updated;
 }
 // ─── Törlés ───────────────────────────────────────────────────

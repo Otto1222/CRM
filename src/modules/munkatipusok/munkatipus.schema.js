@@ -23,16 +23,24 @@ export const KM_TIPUSOK = [
 
 // Bevételi tétel típusok (a munkalapon jelennek meg)
 export const BEVETELI_TETEL_TIPUSOK = [
-  { id: "napelem_telepites",   label: "Napelem telepítési díj" },
-  { id: "rendszerbovites",     label: "Rendszerbővítési díj" },
-  { id: "inverter_csere",      label: "Inverter csere díj" },
-  { id: "akku_telepites",      label: "Akkumulátor telepítési díj" },
-  { id: "akku_csere",          label: "Akkumulátor csere díj" },
-  { id: "okosmerot_telepites", label: "Okosmérő telepítési díj" },
-  { id: "autotolto_telepites", label: "Autótöltő telepítési díj" },
-  { id: "villanyszerelo",      label: "Villanyszerelői díj" },
-  { id: "km_elszamolas",       label: "Kilométer elszámolás" },
-  { id: "egyeb_bevetel",       label: "Egyéb bevétel" },
+  { id: "napelem_telepites",      label: "Napelem telepítési díj" },
+  { id: "rendszerbovites",        label: "Rendszerbővítési díj" },
+  { id: "inverter_csere",         label: "Inverter csere díj" },
+  { id: "inverter_telepites",     label: "Inverter telepítési díj" },
+  { id: "akku_telepites",         label: "Akkumulátor telepítési díj" },
+  { id: "akku_csere",             label: "Akkumulátor csere díj" },
+  { id: "okosmerot_telepites",    label: "Okosmérő telepítési díj" },
+  { id: "okosmerot_csere",        label: "Okosmérő csere díj" },
+  { id: "okosmerot_javitas",      label: "Okosmérő javítási díj" },
+  { id: "autotolto_telepites",    label: "EV töltő telepítési díj" },
+  { id: "csatlakozo_korszerusites", label: "Csatlakozási pont korszerűsítés" },
+  { id: "villanyszerelo",         label: "Villanyszerelői díj" },
+  { id: "garancialis_munka",      label: "Garanciális munka díj" },
+  { id: "karbantartas",           label: "Karbantartási díj" },
+  { id: "felmeres_dij",           label: "Felmérési díj" },
+  { id: "hibaelaritas_dij",       label: "Hibaelhárítási díj" },
+  { id: "km_elszamolas",          label: "Kilométer elszámolás" },
+  { id: "egyeb_bevetel",          label: "Egyéb bevétel" },
 ];
 
 // Költségtétel típusok
