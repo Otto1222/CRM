@@ -8,7 +8,7 @@ import ProjektTable from "./ProjektTable.jsx";
 import ProjektDetail from "./ProjektDetail.jsx";
 import ProjektForm from "./ProjektForm.jsx";
 
-export default function ProjektekPage({ data, currentUser, onNavigateMunkalap }) {
+export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, onNewMunkalapForProjekt }) {
   const munkalapok = data?.munkalapok || [];
   const userRole = currentUser?.role;
 
@@ -63,6 +63,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap })
         currentUser={currentUser}
         onBack={() => setSel(null)}
         onNavigateMunkalap={onNavigateMunkalap}
+        onNewMunkalapForProjekt={onNewMunkalapForProjekt}
       />
     );
   }

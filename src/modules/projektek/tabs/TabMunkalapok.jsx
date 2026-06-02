@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Plus, ExternalLink } from "lucide-react";
-import { FONT } from "../../../lib/constants.js";
+import { Plus, ExternalLink, FilePlus } from "lucide-react";
+import { C, FONT } from "../../../lib/constants.js";
 import { linkMunkalap, unlinkMunkalap } from "../projekt.service.js";
 
-export default function TabMunkalapok({ projekt, munkalapok, onNavigate }) {
+export default function TabMunkalapok({ projekt, munkalapok, onNavigate, onNewMunkalap }) {
   const linked = (munkalapok || []).filter(
     (m) =>
       m.projektId === projekt.id ||
@@ -32,6 +32,8 @@ export default function TabMunkalapok({ projekt, munkalapok, onNavigate }) {
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 14,
+          flexWrap: "wrap",
+          gap: 8,
         }}
       >
         <p
@@ -44,26 +46,50 @@ export default function TabMunkalapok({ projekt, munkalapok, onNavigate }) {
           Kapcsolódó munkalapok ({linked.length} db)
         </p>
 
-        <button
-          onClick={() => setShowLink((s) => !s)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "7px 14px",
-            background: "#2563EB",
-            color: "#fff",
-            border: "none",
-            borderRadius: 9,
-            cursor: "pointer",
-            fontWeight: 600,
-            fontSize: 13,
-            fontFamily: FONT,
-          }}
-        >
-          <Plus size={14} />
-          Munkalap hozzárendelése
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {onNewMunkalap && (
+            <button
+              onClick={onNewMunkalap}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "7px 14px",
+                background: "#059669",
+                color: "#fff",
+                border: "none",
+                borderRadius: 9,
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 13,
+                fontFamily: FONT,
+              }}
+            >
+              <FilePlus size={14} />
+              Új munkalap
+            </button>
+          )}
+          <button
+            onClick={() => setShowLink((s) => !s)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 14px",
+              background: showLink ? "#F1F5F9" : "#fff",
+              color: "#2563EB",
+              border: "1.5px solid #2563EB",
+              borderRadius: 9,
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: 13,
+              fontFamily: FONT,
+            }}
+          >
+            <Plus size={14} />
+            Meglévő hozzárendelése
+          </button>
+        </div>
       </div>
 
       {showLink && unlinked.length > 0 && (

@@ -1,16 +1,16 @@
 # PROJECT_STATUS.md – CRM Napelem ERP
-_Utolsó frissítés: 2026-06-01 (v3) – Csapatok CRUD modul kész_
+_Utolsó frissítés: 2026-06-02 (v4) – Munkalapok KÉSZ, profi login form, Drive szinkron_
 
 ## Fejlesztési sorrend és jelenlegi állapot
 
 | # | Modul | Állapot | Megjegyzés |
 |---|---|---|---|
-| 1 | Auth | ✅ KÉSZ | Kattintásos bejelentkezés, szerepkör-alapú láthatóság |
+| 1 | Auth | ✅ KÉSZ | Username + jelszó form (SHA-256), Drive szinkron, AdminPanel |
 | 2 | Dashboard Shell | ✅ KÉSZ (alap) | Pénzügyi összesítő munkalapok alapján; projekt-centrikus átírás később |
 | 3 | Ügyfelek | ✅ KÉSZ | Teljes CRUD: add/edit/delete, státusz, megjegyzés, projekt szám |
 | 4 | Projektek | ✅ KÉSZ | CRUD, 14 státusz (terv szerint), műszaki mezők, ügyfél dropdown |
 | 5 | Csapatok | ✅ KÉSZ | Teljes CRUD: név, telephely, tagok, kapacitás, szín, hétvége toggle |
-| 6 | Munkalapok | ✅ NAGYRÉSZT KÉSZ | CRUD, felmérés, telepítő nézet, VBF, fotók megvannak |
+| 6 | Munkalapok | ✅ KÉSZ | CRUD, felmérés, VBF, fotók, projektből létrehozás (pre-fill), onClose fix |
 | 7 | Telepítő App (PWA) | ⚠️ RÉSZLEGES | FelmeresTelepito, TelepItoMunkalap megvan; nincs PWA manifest/SW |
 | 8 | Google Drive | ⚠️ RÉSZLEGES | driveApi + Apps Script webhook megvan; nincs auto projekt-mappa |
 | 9 | Fővállalkozók | ✅ KÉSZ | Teljes CRUD, elszámolási szabályok |

@@ -53,6 +53,7 @@ export default function App() {
   const [data, setData] = useState(loadInitialData);
   const [drive, setDrive] = useState("idle");
   const [showNew, setShowNew] = useState(false);
+  const [ujMunkalapInit, setUjMunkalapInit] = useState(null);
 
   useEffect(() => {
     function reloadFromLocal() {
@@ -275,6 +276,18 @@ export default function App() {
                   setPage("munkalapok");
                   setSel(m);
                 }}
+                onNewMunkalapForProjekt={(projekt) => {
+                  setUjMunkalapInit({
+                    projektId:  projekt.id,
+                    projektNev: projekt.nev,
+                    projektkod: projekt.projektkod,
+                    clientNev:  projekt.clientNev  || "",
+                    clientCim:  projekt.clientCim  || "",
+                    clientTel:  projekt.clientTel  || "",
+                    clientEmail:projekt.clientEmail || "",
+                  });
+                  setShowNew(true);
+                }}
               />
             )}
 
@@ -315,7 +328,8 @@ export default function App() {
         <UjMunkalap
           data={data}
           onSave={handleNewMunkalap}
-          onClose={() => setShowNew(false)}
+          onClose={() => { setShowNew(false); setUjMunkalapInit(null); }}
+          initialData={ujMunkalapInit}
         />
       )}
     </div>

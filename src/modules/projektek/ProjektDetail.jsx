@@ -29,7 +29,7 @@ const TABS = [
   { id: "riport", label: "Riport / PDF", icon: "🖨️" },
 ];
 
-export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateMunkalap, currentUser }) {
+export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateMunkalap, currentUser, onNewMunkalapForProjekt }) {
   const [tab, setTab] = useState("attekintes");
   const [editOpen, setEditOpen] = useState(false);
   const [lokalProjekt, setLokalProjekt] = useState(projekt);
@@ -65,7 +65,7 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
       case "ajanlatok":
         return <TabAjanlatok {...props} />;
       case "munkalapok":
-        return <TabMunkalapok {...props} onNavigate={onNavigateMunkalap} />;
+        return <TabMunkalapok {...props} onNavigate={onNavigateMunkalap} onNewMunkalap={onNewMunkalapForProjekt ? () => onNewMunkalapForProjekt(lokalProjekt) : undefined} />;
       case "koltsegek":
         return <TabKoltsegek {...props} />;
       case "dokumentumok":

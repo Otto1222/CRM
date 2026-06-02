@@ -187,7 +187,8 @@ function FajlFeltoltes({ files, onChange }) {
 // ═══════════════════════════════════════════════════════════════
 // FŐ KOMPONENS
 // ═══════════════════════════════════════════════════════════════
-export default function UjMunkalap({ data, onBack, onSave }) {
+export default function UjMunkalap({ data, onBack, onSave, onClose, initialData }) {
+  const handleClose = onClose || onBack;
   const eszkozKat   = getEszkozKat();
   const settings    = getSettings();
   // ── Csapatok a munkakiosztás beállításokból ──
@@ -199,11 +200,18 @@ export default function UjMunkalap({ data, onBack, onSave }) {
 
   const [alap, setAlap] = useState({
     ugyszam:"", cimke:"Junior Vital", cimkeSzin:"#2563EB",
-    projektMegnevezes:"", feladat:"", status:"Megkezdésre Vár",
+    projektMegnevezes: initialData?.projektNev || initialData?.projektkod || "",
+    projektId: initialData?.projektId || "",
+    feladat:"", status:"Megkezdésre Vár",
     csapatId:"", csapatNev:"", date:"", ertekesito:"",
     ar:0, munkaeroDij:0, kiszallasiDij:0, egyebKolts:0,
   });
-  const [ugyfEl, setUgyfel]   = useState({ nev:"", cim:"", tel:"", email:"" });
+  const [ugyfEl, setUgyfel]   = useState({
+    nev:   initialData?.clientNev   || "",
+    cim:   initialData?.clientCim   || "",
+    tel:   initialData?.clientTel   || "",
+    email: initialData?.clientEmail || "",
+  });
   const [eszkozok, setEszkozok] = useState(
     Object.fromEntries(eszkozKat.map(k=>[k.id,[]]))
   );
@@ -273,6 +281,8 @@ export default function UjMunkalap({ data, onBack, onSave }) {
       // Csapat – a Telepítő szűrés erre támaszkodik
       assigneeId:        alap.csapatId,
       assigneeNev:       csapat?.nev || alap.csapatNev,
+      // Projekt kapcsolat
+      projektId:         alap.projektId || null,
       // Ügyfél szabad szövegként tárolva
       clientId:          null,
       clientNev:         ugyfEl.nev,
@@ -307,7 +317,7 @@ export default function UjMunkalap({ data, onBack, onSave }) {
       {/* TopBar */}
       <div style={{ background:"#fff", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:20 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, padding:"14px 16px" }}>
-          <button onClick={onBack} style={{ border:"none", background:"none", cursor:"pointer", color:C.accent, display:"flex", alignItems:"center", gap:6, fontSize:14, fontWeight:600, fontFamily:FONT }}>
+          <button onClick={handleClose} style={{ border:"none", background:"none", cursor:"pointer", color:C.accent, display:"flex", alignItems:"center", gap:6, fontSize:14, fontWeight:600, fontFamily:FONT }}>
             <ArrowLeft size={20}/> Vissza
           </button>
           <span style={{ flex:1, fontFamily:FONT_HEADING, fontWeight:800, fontSize:18, color:C.text }}>Új munkalap</span>
@@ -335,6 +345,12 @@ export default function UjMunkalap({ data, onBack, onSave }) {
         {/* ══ ALAPADATOK ══ */}
         {activeSec==="alap"&&(
           <div>
+            {alap.projektId && (
+              <div style={{ background:"#EFF6FF", border:"1.5px solid #BFDBFE", borderRadius:10, padding:"10px 14px", marginBottom:14, fontSize:13, color:"#1D4ED8", fontWeight:600, display:"flex", alignItems:"center", gap:8 }}>
+                🏗️ Projekt: <strong>{alap.projektMegnevezes || alap.projektId}</strong>
+                <span style={{ fontWeight:400, color:"#3B82F6", marginLeft:4 }}>– az ügyfél adatok előre kitöltve</span>
+              </div>
+            )}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
               <div>
                 <Field label="Munkaszám / Ügyszám" value={alap.ugyszam} onChange={v=>updAlap("ugyszam",v)} placeholder="T003700" required/>
