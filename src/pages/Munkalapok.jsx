@@ -679,9 +679,27 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
             )}
             <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, marginBottom:10 }}>Státusz módosítása</p>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {["Felmérés","Befejezett Felmérés","Kivitelezés","Megkezdésre Vár","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=>{
+              {/* Spec 5. pont teljes státusz lista */}
+              {["Létrehozva","Kiosztva csapatnak","Folyamatban","Helyszínen lezárva","Ellenőrzés alatt","Jóváhagyva","Számlázásra kész","Lezárva","Felmérés","Befejezett Felmérés","Meghiúsult"].map(s=>{
                 const cfg=STATUS_CFG[s]||{bg:"#F1F5F9",text:C.muted,dot:C.muted};
-                return <button key={s} onClick={()=>{updateItem("munkalapok",m.id,{status:s,statusSzin:cfg.dot});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}} style={{ padding:"8px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
+                // Admin-only státuszok: Jóváhagyva, Számlázásra kész, Lezárva
+                const adminOnly = ["Jóváhagyva","Számlázásra kész","Lezárva"].includes(s);
+                const isAdmin = ["Admin","Projektmenedzser","Iroda/Könyvelés"].includes(userRole);
+                if (adminOnly && !isAdmin) return null;
+                return <button key={s} onClick={()=>{
+                  import("../services/workorder.service.js").then(({updateWorkorder}) => {
+                    updateWorkorder(m.id, {status:s, statusSzin:cfg.dot});
+                    window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
+                    // Projekt auto-szinkron
+                    if (m.projektId) {
+                      import("../modules/projektek/projektWorkflow.js").then(({syncProjektFromWorkorders}) => {
+                        syncProjektFromWorkorders(m.projektId);
+                        window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));
+                      });
+                    }
+                    if(onRefresh)onRefresh();
+                  });
+                }} style={{ padding:"8px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
               })}
             </div>
           </div>

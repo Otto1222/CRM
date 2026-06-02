@@ -191,18 +191,24 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
   const handleClose = onClose || onBack;
   const eszkozKat   = getEszkozKat();
   const settings    = getSettings();
-  // ── Csapatok a munkakiosztás beállításokból ──
   const csapatok    = settings.csapatok || [];
+
+  // Projektlista a projekt-választóhoz
+  const projektek = (() => {
+    try { return JSON.parse(localStorage.getItem("projektek") || "[]"); } catch { return []; }
+  })();
 
   const [saving, setSaving]   = useState(false);
   const [errors, setErrors]   = useState({});
   const [activeSec, setActive] = useState("alap");
+  const [projektQ, setProjektQ] = useState("");
 
   const [alap, setAlap] = useState({
     ugyszam:"", cimke:"Junior Vital", cimkeSzin:"#2563EB",
     projektMegnevezes: initialData?.projektNev || initialData?.projektkod || "",
     projektId: initialData?.projektId || "",
-    feladat:"", status:"Megkezdésre Vár",
+    munkalapTipus: initialData?.tipus || "Első kivitelezés",
+    feladat:"", status:"Kiosztásra vár",
     csapatId:"", csapatNev:"", date:"", ertekesito:"",
     ar:0, munkaeroDij:0, kiszallasiDij:0, egyebKolts:0,
   });
@@ -282,6 +288,8 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
       assigneeNev:       csapat?.nev || alap.csapatNev,
       // Projekt kapcsolat
       projektId:         alap.projektId || null,
+      projektKod:        alap.projektId ? (projektek.find(p=>p.id===alap.projektId)?.projektkod || "") : "",
+      tipus:             alap.munkalapTipus || "Első kivitelezés",
       // Ügyfél szabad szövegként tárolva
       clientId:          null,
       clientNev:         ugyfEl.nev,
@@ -344,10 +352,60 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
         {/* ══ ALAPADATOK ══ */}
         {activeSec==="alap"&&(
           <div>
-            {alap.projektId && (
-              <div style={{ background:"#EFF6FF", border:"1.5px solid #BFDBFE", borderRadius:10, padding:"10px 14px", marginBottom:14, fontSize:13, color:"#1D4ED8", fontWeight:600, display:"flex", alignItems:"center", gap:8 }}>
-                🏗️ Projekt: <strong>{alap.projektMegnevezes || alap.projektId}</strong>
-                <span style={{ fontWeight:400, color:"#3B82F6", marginLeft:4 }}>– az ügyfél adatok előre kitöltve</span>
+            {/* ── PROJEKT KIVÁLASZTÁS ── */}
+            {!alap.projektId ? (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>
+                  🏗️ Projekt kiválasztása <span style={{ color:C.danger }}>*</span>
+                </label>
+                <input
+                  value={projektQ}
+                  onChange={e => setProjektQ(e.target.value)}
+                  placeholder="Keresés projektkód, név, ügyfél alapján…"
+                  style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${C.accent}`, borderRadius:9, fontSize:13, fontFamily:FONT, outline:"none", marginBottom:6 }}
+                />
+                {projektek.length === 0 ? (
+                  <p style={{ fontSize:12, color:C.warning, padding:"8px 12px", background:"#FFFBEB", borderRadius:8 }}>
+                    ⚠️ Még nincs projekt. Hozz létre egy projektet először a <b>Projektek</b> menüben!
+                  </p>
+                ) : (
+                  <div style={{ maxHeight:200, overflowY:"auto", border:`1px solid ${C.border}`, borderRadius:9, background:"#fff" }}>
+                    {projektek
+                      .filter(p => {
+                        const q = projektQ.toLowerCase();
+                        return !q || p.projektkod?.toLowerCase().includes(q) || p.nev?.toLowerCase().includes(q) || p.clientNev?.toLowerCase().includes(q);
+                      })
+                      .slice(0, 15)
+                      .map(p => (
+                        <div key={p.id} onClick={() => {
+                          updAlap("projektId", p.id);
+                          updAlap("projektMegnevezes", p.nev || p.projektkod);
+                          setProjektQ("");
+                          // Auto-kitöltés projektből
+                          setUgyfel({ nev: p.clientNev||"", cim: p.telepitesiCim||p.clientCim||"", tel: p.clientTel||"", email: p.clientEmail||"" });
+                          if (p.csapatId) updAlap("csapatId", p.csapatId);
+                          if (p.tervezettKezdes) updAlap("date", p.tervezettKezdes);
+                        }} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", cursor:"pointer", borderBottom:`1px solid ${C.border}`, fontSize:13 }}
+                          onMouseEnter={e => e.currentTarget.style.background="#F8FAFC"}
+                          onMouseLeave={e => e.currentTarget.style.background=""}
+                        >
+                          <div>
+                            <span style={{ fontWeight:700, color:C.accent }}>{p.projektkod}</span>
+                            <span style={{ color:C.text, marginLeft:8 }}>{p.nev}</span>
+                          </div>
+                          <span style={{ fontSize:11, color:C.muted }}>{p.clientNev}</span>
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ background:"#EFF6FF", border:"1.5px solid #BFDBFE", borderRadius:10, padding:"10px 14px", marginBottom:14, fontSize:13, color:"#1D4ED8", fontWeight:600, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
+                <span>🏗️ Projekt: <strong>{alap.projektMegnevezes || alap.projektId}</strong>
+                  <span style={{ fontWeight:400, color:"#3B82F6", marginLeft:4 }}>– adatok előre kitöltve</span>
+                </span>
+                <button onClick={() => { updAlap("projektId",""); updAlap("projektMegnevezes",""); }} style={{ background:"none", border:"none", cursor:"pointer", color:"#94A3B8", fontSize:18, lineHeight:1 }}>×</button>
               </div>
             )}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
@@ -404,11 +462,17 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
             </div>
 
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div style={{ marginBottom:14 }}>
+                <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Munkalap típusa</label>
+                <select value={alap.munkalapTipus || "Első kivitelezés"} onChange={e=>updAlap("munkalapTipus",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
+                  {MUNKALAP_TIPUSOK.map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
               <Field label="Cimke (pl. Junior Vital)" value={alap.cimke} onChange={v=>updAlap("cimke",v)} placeholder="Junior Vital, Saját Önerős…"/>
               <div style={{ marginBottom:14 }}>
                 <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Státusz</label>
                 <select value={alap.status} onChange={e=>updAlap("status",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
-                  {WORKFLOW_STATUSES.map(s=><option key={s}>{s}</option>)}
+                  {WORKFLOW_STATUSES.slice(0,8).map(s=><option key={s}>{s}</option>)}
                 </select>
                 {alap.status === "Felmérés" && (
                   <div style={{ marginTop:8, padding:"8px 12px", background:"#E0F2FE", borderRadius:8, fontSize:12, color:"#0369A1", display:"flex", alignItems:"flex-start", gap:7, lineHeight:1.5 }}>

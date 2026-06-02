@@ -38,8 +38,9 @@ export const PROJEKT_SCHEMA = {
   projektkod:          "",          // auto: PRJ-2026-001
   kulsoAzonosito:      "",          // fővállalkozói szám
   nev:                 "",
-  // Ügyfél
+  // Ügyfél és megbízó
   clientId:            null,
+  megbizoCeg:          "",          // Megbízó cég neve (spec 1. pont)
   clientNev:           "",
   clientCim:           "",
   clientTel:           "",

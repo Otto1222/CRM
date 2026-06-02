@@ -27,9 +27,28 @@ export function getWorkordersByProjectId(projectId) {
   return loadWorkorders().filter(w => w.projektId === projectId);
 }
 
-export function nextWorkorderNumber(projectKod) {
-  const existing = loadWorkorders().filter(w => w.projektKod === projectKod);
-  return `${projectKod}/${String(existing.length + 1).padStart(3, "0")}`;
+// Típus rövidítés a munkalapszámhoz (spec 4. pont: T03680/FELMÉRÉS/001)
+const TIPUS_ROVID = {
+  "Felmérés":         "FELM",
+  "Első kivitelezés": "TELEP",
+  "Javítás":          "JAV",
+  "Befejezés":        "BEF",
+  "Garanciális munka":"GAR",
+  "Hibajavítás":      "HIBA",
+  "Pótmunkavégzés":   "POT",
+  "Karbantartás":     "KARB",
+  "Egyéb":            "EGYEB",
+  "Kivitelezés":      "TELEP",
+  "Szerviz":          "SZERV",
+};
+
+export function nextWorkorderNumber(projectKod, tipus = "") {
+  const rovid = TIPUS_ROVID[tipus] || tipus.toUpperCase().slice(0, 5) || "ML";
+  const prefix = `${projectKod}/${rovid}`;
+  const existing = loadWorkorders().filter(w =>
+    w.munkalapSzam?.startsWith(prefix) || w.projektKod === projectKod
+  );
+  return `${prefix}/${String(existing.length + 1).padStart(3, "0")}`;
 }
 
 function normalizeWorkorder(data = {}) {
@@ -39,7 +58,7 @@ function normalizeWorkorder(data = {}) {
     id: data.id || `ml_${Date.now()}`,
     projektId: data.projektId || "",
     projektKod: data.projektKod || "",
-    munkalapSzam: data.munkalapSzam || nextWorkorderNumber(data.projektKod || "ML"),
+    munkalapSzam: data.munkalapSzam || nextWorkorderNumber(data.projektKod || "ML", data.tipus || data.munkalapTipus || ""),
 
     tipus: data.tipus || data.munkalapTipus || "Felmérés",
     munkalapTipus: data.munkalapTipus || data.tipus || "Felmérés",

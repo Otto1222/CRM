@@ -62,6 +62,7 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
     status: projekt?.status || "Felmérésre vár",
     clientId: projekt?.clientId || "",
     clientNev: projekt?.clientNev || "",
+    megbizoCeg: projekt?.megbizoCeg || "",
     clientCim: projekt?.clientCim || "",
     clientTel: projekt?.clientTel || "",
     clientEmail: projekt?.clientEmail || "",
@@ -403,6 +404,9 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
             </Field>
             <Field label="Ügyfél neve *" half>
               <input value={form.clientNev} onChange={e => upd("clientNev", e.target.value)} placeholder="Kovács János" style={inp} />
+            </Field>
+            <Field label="Megbízó cég neve" half>
+              <input value={form.megbizoCeg || ""} onChange={e => upd("megbizoCeg", e.target.value)} placeholder="pl. Green-Home Kft." style={inp} />
             </Field>
             <Field label="Kapcsolattartó" half>
               <input value={form.kapcsolattarto} onChange={e => upd("kapcsolattarto", e.target.value)} placeholder="Kapcsolattartó neve" style={inp} />
