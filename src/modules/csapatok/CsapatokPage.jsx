@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, Users, MapPin, X, Save, ChevronDown } from "lucid
 import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { loadCsapatok, createCsapat, updateCsapat, deleteCsapat } from "./csapat.service.js";
+import AddressSearch from "../../components/AddressSearch.jsx";
 
 const SZINEK = [
   "#2563EB", "#059669", "#9333EA", "#EA580C",
@@ -124,7 +125,13 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
 
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>Indulási telephely *</label>
-            <input value={form.telephely} onChange={e => upd("telephely", e.target.value)} placeholder="pl. Budapest, Pest megye" style={inp} />
+            <AddressSearch
+              value={form.telephely}
+              onChange={v => upd("telephely", v)}
+              onSelect={r => upd("telephely", r.display_name.split(",").slice(0,3).join(",").trim())}
+              placeholder="pl. Szeged, Kossuth Lajos sugárút 5."
+              style={inp}
+            />
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px" }}>

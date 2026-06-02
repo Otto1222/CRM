@@ -10,6 +10,7 @@ import KarteritesekTab from "./KarteritesekTab";
 import { karteritesOsszesMunkalaphoz } from "../lib/karterites";
 import { getHelyszinSorszam } from "../lib/dokumentumszam";
 import { exportToExcel as exportExcel, exportToPDF as exportPDF, exportToCSV } from "../lib/exportService";
+import { printMunkalap } from "../lib/reportService";
 import { Download } from "lucide-react";
 import {
   Search, Plus, ChevronRight, FileText, Phone, MapPin,
@@ -819,7 +820,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
                 <span style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase" }}>Munkaszám</span>
                 {m.cimke&&<CimkeBadge label={m.cimke} color={m.cimkeSzin||C.accent}/>}
               </div>
-              <h2 style={{ fontFamily:FONT_HEADING, fontSize:24, fontWeight:800, color:C.text, margin:"4px 0" }}>{m.id}</h2>
+              <h2 style={{ fontFamily:FONT_HEADING, fontSize:24, fontWeight:800, color:C.text, margin:"4px 0" }}>{m.dokumentumszam || m.munkalapSzam || m.ediSorszam || m.id}</h2>
               <p style={{ fontSize:15, color:C.text, fontWeight:600 }}>{m.projektMegnevezes||m.feladat||m.description}</p>
             </div>
             <StatusBadge s={m.status||"Ütemezett"}/>
@@ -944,11 +945,12 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           <button onClick={() => setShowUjrakiosztas(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"#EFF6FF", color:C.accent, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
             <Pencil size={15}/>Újrakiosztás / Szerkesztés
           </button>
-          {[{icon:FileText,label:"PDF export"},{icon:Eye,label:"Előnézet"}].map(a=>(
-            <button key={a.label} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"transparent", color:C.textSub, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT }}>
-              <a.icon size={15}/>{a.label}
-            </button>
-          ))}
+          <button onClick={() => printMunkalap(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"transparent", color:C.textSub, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT }}>
+            <FileText size={15}/>PDF export / Nyomtatás
+          </button>
+          <button onClick={() => printMunkalap(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"transparent", color:C.textSub, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT }}>
+            <Eye size={15}/>Előnézet
+          </button>
           <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"#FEF2F2", color:C.danger, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
             <Trash2 size={15}/>Munkalap törlése
           </button>

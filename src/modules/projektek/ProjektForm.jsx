@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Save } from "lucide-react";
+import { X, Save, Navigation } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { loadLocal, saveLocal } from "../../lib/localDb.js";
@@ -16,6 +16,8 @@ import {
   shouldCreateInitialWorkorder,
   getInitialWorkorderTypeByProjectStatus,
 } from "./projectRules.js";
+import AddressSearch from "../../components/AddressSearch.jsx";
+import { calcRoundTripKm } from "../../lib/geoService.js";
 const Field = ({ label, children, half }) => (
   <div style={{ gridColumn: half ? "span 1" : "span 2" }}>
     <label
@@ -97,6 +99,25 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
   });
   const [saving, setSaving] = useState(false);
   const [hiba, setHiba] = useState("");
+  const [kmCalc, setKmCalc] = useState(false);
+
+  async function handleKmAutoCalc() {
+    const cim = form.telepitesiCim || form.clientCim;
+    const cs   = csapatok.find(c => c.id === form.csapatId);
+    if (!cim || !cs?.telephely) {
+      setHiba("A km auto-számításhoz szükséges: telepítési cím ÉS kivitelező csapat (indulási telephely).");
+      return;
+    }
+    setKmCalc(true);
+    const res = await calcRoundTripKm(cs.telephely, cim);
+    setKmCalc(false);
+    if (!res) {
+      setHiba("Km kiszámítás sikertelen – ellenőrizd a cím helyesírást.");
+      return;
+    }
+    updPenz("tavKm", res.oda);
+    setHiba("");
+  }
   function upd(k, v) {
     setForm(p => ({ ...p, [k]: v }));
     if (hiba) setHiba("");
@@ -393,10 +414,25 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
               <input value={form.clientEmail} onChange={e => upd("clientEmail", e.target.value)} placeholder="email@example.com" style={inp} />
             </Field>
             <Field label="Ügyfél lakcíme">
-              <input value={form.clientCim} onChange={e => upd("clientCim", e.target.value)} placeholder="Város, utca, hsz." style={inp} />
+              <AddressSearch
+                value={form.clientCim}
+                onChange={v => upd("clientCim", v)}
+                onSelect={r => {
+                  upd("clientCim", r.display_name.split(",").slice(0,3).join(",").trim());
+                  if (!form.telepitesiCim) upd("telepitesiCim", r.display_name.split(",").slice(0,3).join(",").trim());
+                }}
+                placeholder="Város, utca, hsz. – gépelj a kereséshez"
+                style={inp}
+              />
             </Field>
             <Field label="Telepítési cím">
-              <input value={form.telepitesiCim} onChange={e => upd("telepitesiCim", e.target.value)} placeholder="Ha eltér a lakcímtől" style={inp} />
+              <AddressSearch
+                value={form.telepitesiCim}
+                onChange={v => upd("telepitesiCim", v)}
+                onSelect={r => upd("telepitesiCim", r.display_name.split(",").slice(0,3).join(",").trim())}
+                placeholder="Ha eltér a lakcímtől"
+                style={inp}
+              />
             </Field>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
@@ -432,7 +468,11 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
               </p>
             </div>
             <Field label="Napelem darabszám" half>
-              <input type="number" min="0" value={form.napelemDb} onChange={e => upd("napelemDb", Number(e.target.value))} placeholder="0" style={inp} />
+              <input type="number" min="0" value={form.napelemDb} onChange={e => {
+                const n = Number(e.target.value);
+                setForm(p => ({ ...p, napelemDb: n, penzugy: { ...p.penzugy, darabszam: n } }));
+                if (hiba) setHiba("");
+              }} placeholder="0" style={inp} />
             </Field>
             <Field label="Inverter darabszám" half>
               <input type="number" min="0" value={form.inverterDb} onChange={e => upd("inverterDb", Number(e.target.value))} placeholder="0" style={inp} />
@@ -488,11 +528,20 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
               {form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: "#059669", marginTop: 3 }}>✅ Elszámolási szabály automatikusan betöltve</p>}
               {form.penzugy.fovallalkoziId && !form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: "#D97706", marginTop: 3 }}>⚠️ Nincs aktív szabály ehhez a munkatípushoz</p>}
             </Field>
-            <Field label="Darabszám (pl. panel db)" half>
-              <input type="number" value={form.penzugy.darabszam || 1} onChange={e => updPenz("darabszam", e.target.value)} placeholder="1" style={inp} />
+            <Field label="Elszámolási db (auto: panel db)" half>
+              <input type="number" value={form.penzugy.darabszam || form.napelemDb || 1} onChange={e => updPenz("darabszam", e.target.value)} placeholder="1" style={inp} />
+              <p style={{ fontSize: 10, color: "#64748B", marginTop: 3 }}>Szinkronizálva a Műszaki adatok panel db-vel</p>
             </Field>
             <Field label="Távolság (km, oda)" half>
-              <input type="number" value={form.penzugy.tavKm || ""} onChange={e => updPenz("tavKm", e.target.value)} placeholder="0" style={inp} />
+              <div style={{ display: "flex", gap: 6 }}>
+                <input type="number" value={form.penzugy.tavKm || ""} onChange={e => updPenz("tavKm", e.target.value)} placeholder="0" style={{ ...inp, flex: 1 }} />
+                <button type="button" onClick={handleKmAutoCalc} disabled={kmCalc}
+                  title="Automatikus km-számítás a csapat telephely → telepítési cím alapján (OSRM)"
+                  style={{ padding: "0 10px", background: kmCalc ? "#94A3B8" : "#2563EB", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, fontFamily: FONT }}>
+                  <Navigation size={13}/>{kmCalc ? "…" : "Auto"}
+                </button>
+              </div>
+              <p style={{ fontSize: 10, color: "#64748B", marginTop: 3 }}>Oda km – az elszámolás oda-vissza számolja</p>
             </Field>
             <Field label="Csapatlétszám (fő)" half>
               <input type="number" value={form.penzugy.csapatLetszam || 1} onChange={e => updPenz("csapatLetszam", e.target.value)} placeholder="1" style={inp} />

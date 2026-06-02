@@ -5,6 +5,7 @@ import { driveSave, driveAvailable } from "./lib/driveApi";
 import { getHomePage } from "./lib/roles";
 import { loadLocal, saveLocal } from "./lib/localDb";
 import { syncAllFromDrive, syncAllToDrive } from "./lib/dataSync.service";
+import { deleteWorkorder } from "./services/workorder.service";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
@@ -225,6 +226,12 @@ export default function App() {
     setSel(newItem);
   }
 
+  function handleDeleteMunkalap(m) {
+    if (!window.confirm(`Biztosan törlöd ezt a munkalapot?\n${m.dokumentumszam || m.munkalapSzam || m.id}`)) return;
+    deleteWorkorder(m.id);
+    setSel(null);
+  }
+
   function nav(p) {
     setPage(p);
     setSel(null);
@@ -264,6 +271,7 @@ export default function App() {
               data={data}
               userRole={user?.role}
               onBack={() => setSel(null)}
+              onDelete={handleDeleteMunkalap}
               onRefresh={() => {
                 setData(loadInitialData());
                 const fresh = (loadLocal("munkalapok") || []).find(
