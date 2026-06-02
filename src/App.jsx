@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
-import { driveSave } from "./lib/driveApi";
+import { driveSave, driveAvailable } from "./lib/driveApi";
+import { getHomePage } from "./lib/roles";
 import { loadLocal, saveLocal } from "./lib/localDb";
 import { syncAllFromDrive, syncAllToDrive } from "./lib/dataSync.service";
 import Login from "./pages/Login";
@@ -102,7 +103,7 @@ export default function App() {
     if (!user) return;
 
     (async () => {
-      setDrive("saving");
+      if (driveAvailable()) setDrive("saving");
 
       try {
         const synced = await syncAllFromDrive();
@@ -156,27 +157,29 @@ export default function App() {
             [],
         }));
 
-        setDrive("ok");
+        if (driveAvailable()) setDrive("ok");
       } catch (e) {
         console.warn("[App syncAllFromDrive]", e);
-        setDrive("error");
+        if (driveAvailable()) setDrive("error");
       }
 
-      setTimeout(() => setDrive("idle"), 2500);
+      if (driveAvailable()) setTimeout(() => setDrive("idle"), 2500);
     })();
   }, [user]);
 
   async function saveCollection(collection, items) {
     saveLocal(collection, items);
 
-    setDrive("saving");
-
-    try {
-      const res = await driveSave(collection, { [collection]: items });
-      setDrive(res?.ok ? "ok" : "error");
-    } catch (e) {
-      console.warn("[App Drive save]", e);
-      setDrive("error");
+    if (driveAvailable()) {
+      setDrive("saving");
+      try {
+        const res = await driveSave(collection, { [collection]: items });
+        setDrive(res?.ok ? "ok" : "error");
+      } catch (e) {
+        console.warn("[App Drive save]", e);
+        setDrive("error");
+      }
+      setTimeout(() => setDrive("idle"), 2500);
     }
 
     window.dispatchEvent(
@@ -184,8 +187,6 @@ export default function App() {
         detail: { collection, action: "save" },
       })
     );
-
-    setTimeout(() => setDrive("idle"), 2500);
   }
 
   async function handleSyncAllToDrive() {
@@ -235,7 +236,12 @@ export default function App() {
     setPage("dashboard");
   }
 
-  if (!user) return <Login onLogin={setUser} />;
+  function handleLogin(u) {
+    setUser(u);
+    setPage(getHomePage(u?.role));
+  }
+
+  if (!user) return <Login onLogin={handleLogin} />;
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: C.bg }}>
@@ -273,6 +279,7 @@ export default function App() {
 
             {page === "dashboard" && <Dashboard user={user} />}
 
+            {/* "munkalapok" – külön nav item + Telepítő főoldal */}
             {page === "munkalapok" && (
               <MunkalapLista
                 data={data}

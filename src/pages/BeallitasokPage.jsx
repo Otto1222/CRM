@@ -1,7 +1,8 @@
 import { useState } from "react";
 import {
-  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield
+  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2,
 } from "lucide-react";
+import { saveLocal } from "../lib/localDb";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AdminPanel from "./AdminPanel";
 import JegyzokonyviBeallitasok from "./JegyzokonyviBeallitasok";
@@ -197,6 +198,71 @@ export default function BeallitasokPage({ currentUser }) {
           );
         })}
       </div>
+
+      {role === "Admin" && <AdatTorlesPanel />}
+    </div>
+  );
+}
+
+// ─── Admin: Operatív adatok törlése ──────────────────────────
+function AdatTorlesPanel() {
+  const [confirm, setConfirm] = useState("");
+  const [done, setDone]       = useState(false);
+
+  const TORLENDO = [
+    { key: "ugyfelek",    label: "Ügyfelek",   ertek: [] },
+    { key: "munkalapok",  label: "Munkalapok", ertek: [] },
+    { key: "projektek",   label: "Projektek",  ertek: [] },
+    { key: "szamlak",     label: "Számlák",    ertek: [] },
+    { key: "karteritesek",label: "Kártérítések",ertek:[] },
+  ];
+
+  function handleTorles() {
+    if (confirm !== "TÖRLÉS") return;
+    TORLENDO.forEach(({ key, ertek }) => saveLocal(key, ertek));
+    // Projekt sorszám számláló reset
+    localStorage.removeItem("edi_projekt_sorszam_counter");
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "all" } }));
+    setDone(true);
+    setConfirm("");
+  }
+
+  return (
+    <div style={{ marginTop: 32, padding: "20px 24px", border: "2px solid #FECACA", borderRadius: 14, background: "#FFF5F5" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+        <Trash2 size={20} color="#DC2626" />
+        <span style={{ fontWeight: 800, fontSize: 15, color: "#DC2626" }}>Operatív adatok törlése</span>
+      </div>
+      <p style={{ fontSize: 13, color: "#7F1D1D", marginBottom: 12, lineHeight: 1.6 }}>
+        Ez a funkció törli az összes ügyfelet, munkalapot, projektet, számlát és kártérítést a böngészőből.
+        A beállítások, felhasználók, fővállalkozók és munkatípusok <strong>megmaradnak</strong>.<br />
+        A Drive-on tárolt adatokat ez nem törli — ott manuálisan kell.
+      </p>
+      <p style={{ fontSize: 12, color: "#64748B", marginBottom: 8 }}>
+        Törlendő: {TORLENDO.map(t => t.label).join(", ")}
+      </p>
+      {done ? (
+        <div style={{ background: "#ECFDF5", border: "1px solid #6EE7B7", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#065F46", fontWeight: 700 }}>
+          ✅ Adatok törölve. Frissítsd az oldalt (F5) a teljes hatáshoz.
+        </div>
+      ) : (
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <input
+            value={confirm}
+            onChange={e => setConfirm(e.target.value)}
+            placeholder='Írd be: TÖRLÉS'
+            style={{ padding: "8px 12px", border: "1.5px solid #FECACA", borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", width: 200 }}
+          />
+          <button
+            type="button"
+            onClick={handleTorles}
+            disabled={confirm !== "TÖRLÉS"}
+            style={{ padding: "8px 18px", background: confirm === "TÖRLÉS" ? "#DC2626" : "#FCA5A5", color: "#fff", border: "none", borderRadius: 8, cursor: confirm === "TÖRLÉS" ? "pointer" : "default", fontWeight: 700, fontSize: 13 }}
+          >
+            Törlés
+          </button>
+        </div>
+      )}
     </div>
   );
 }
