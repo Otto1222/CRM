@@ -7,6 +7,7 @@
 import { loadElszamolasiKontextus, generateBeveteliTetelek, sumBeveteliTetelek } from "./settlementRule.service.js";
 import { loadKarteritesek } from "../lib/karterites.js";
 import { calcKmElszamolas } from "./travelCalculation.service.js";
+import { getCsapat, calcCsapatAlvallalkozoiBer, calcCsapatKmBer } from "../modules/csapatok/csapat.service.js";
 
 const TETELEK_KEY = (id) => `munkalap_tetelek_${id}`;
 const dispatch = (col) =>
@@ -66,6 +67,29 @@ export function calcEsmentProjektPenzugy(projekt) {
   }
   if (keziCsapatBer !== null && keziCsapatBer !== undefined) csapatBer = Number(keziCsapatBer);
 
+  // Alvállalkozói bér (csapat saját elszámolása)
+  let alvallalkozoiBer = 0;
+  let alvallalkozoiBerMj = "";
+  let alvallalkozoiKmBer = 0;
+  const csapatId = penzugy.csapatId || projekt.csapatId;
+  if (csapatId) {
+    const csapat = getCsapat(csapatId);
+    if (csapat?.elszamolasAktiv) {
+      const berResult = calcCsapatAlvallalkozoiBer(csapat, {
+        nettoBevitel,
+        munkanapok:    Number(munkanapok) || 1,
+        csapatLetszam: Number(csapatLetszam) || 1,
+        darabszam:     Number(penzugy.darabszam) || 1,
+      });
+      alvallalkozoiBer = berResult.osszeg;
+      alvallalkozoiBerMj = berResult.megjegyzes;
+      if (csapat.kmElszamolasAktiv) {
+        const kmResult = calcCsapatKmBer(csapat, Number(tavKm) || 0);
+        alvallalkozoiKmBer = kmResult.osszeg;
+      }
+    }
+  }
+
   // Útiköltség: bevételi tételekből (ha van km_elszamolas tétel a munkatípusban)
   // Ha nincs ilyen tétel, fallback: közvetlenül az elszámolási szabályból számítjuk
   const kmTetel = beveteliTetelek.find(t => t.tetelTipusId === "km_elszamolas");
@@ -96,7 +120,7 @@ export function calcEsmentProjektPenzugy(projekt) {
     .reduce((s, k) => s + (k.osszeg || 0), 0);
   if (keziKartérités !== null && keziKartérités !== undefined) kartérités = Number(keziKartérités);
 
-  const osszesKolts = csapatBer + utikoltség + anyagkoltség + Number(emelőgepKoltseg || 0) + kartérités + Number(egyebKoltseg || 0);
+  const osszesKolts = csapatBer + alvallalkozoiBer + alvallalkozoiKmBer + utikoltség + anyagkoltség + Number(emelőgepKoltseg || 0) + kartérités + Number(egyebKoltseg || 0);
   const haszon = nettoBevitel - osszesKolts;
   const haszonPct = nettoBevitel > 0 ? Math.round((haszon / nettoBevitel) * 100) : null;
 
@@ -118,6 +142,10 @@ export function calcEsmentProjektPenzugy(projekt) {
     csapatBer, utikoltség, anyagkoltség,
     emelőgepKoltseg: Number(emelőgepKoltseg || 0),
     kartérités, egyebKoltseg: Number(egyebKoltseg || 0),
+    // Alvállalkozói
+    alvallalkozoiBer,
+    alvallalkozoiBerMj,
+    alvallalkozoiKmBer,
     osszesKolts,
     // Eredmény
     haszon, haszonPct,

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Users, MapPin, X, Save, ChevronDown } from "lucide-react";
-import { FONT, FONT_HEADING } from "../../lib/constants.js";
+import { Plus, Pencil, Trash2, Users, MapPin, X, Save, ChevronDown, DollarSign } from "lucide-react";
+import { FONT, FONT_HEADING, C } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { loadCsapatok, createCsapat, updateCsapat, deleteCsapat } from "./csapat.service.js";
+import { CSAPAT_ELSZAMOLAS_TIPUSOK } from "./csapat.schema.js";
 import AddressSearch from "../../components/AddressSearch.jsx";
 
 const SZINEK = [
@@ -65,6 +66,15 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
     tagNevek: csapat?.tagNevek || [],
     kapacitas: csapat?.kapacitas ?? 2,
     hetvegen: csapat?.hetvegen || false,
+    // Alvállalkozói elszámolás
+    elszamolasAktiv:   csapat?.elszamolasAktiv   || false,
+    elszamolasInfo:    csapat?.elszamolasInfo    || "",
+    dijTipus:          csapat?.dijTipus          || "fix",
+    dijOsszeg:         csapat?.dijOsszeg         || 0,
+    dijEgysegAr:       csapat?.dijEgysegAr       || 0,
+    kmElszamolasAktiv: csapat?.kmElszamolasAktiv || false,
+    kmDijFtKm:         csapat?.kmDijFtKm         || 0,
+    kmKuszobKm:        csapat?.kmKuszobKm        || 0,
   });
   const [hiba, setHiba] = useState("");
 
@@ -194,6 +204,91 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
               )}
             </div>
           </div>
+
+          {/* ── Alvállalkozói elszámolás szekció ── */}
+          <div style={{ borderTop: "2px solid #E2E8F0", paddingTop: 16, marginTop: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <DollarSign size={16} color={form.elszamolasAktiv ? "#059669" : "#94A3B8"} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7 }}>
+                  Alvállalkozói elszámolás
+                </span>
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <div onClick={() => upd("elszamolasAktiv", !form.elszamolasAktiv)}
+                  style={{ width: 40, height: 22, borderRadius: 11, position: "relative", cursor: "pointer",
+                    background: form.elszamolasAktiv ? "#059669" : "#CBD5E1", transition: "background .2s", flexShrink: 0 }}>
+                  <div style={{ position: "absolute", top: 2, left: form.elszamolasAktiv ? 20 : 2, width: 18, height: 18,
+                    borderRadius: "50%", background: "#fff", transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
+                </div>
+                <span style={{ fontSize: 13, color: "#334155", fontWeight: 500 }}>
+                  {form.elszamolasAktiv ? "Aktív" : "Kikapcsolva"}
+                </span>
+              </label>
+            </div>
+
+            {form.elszamolasAktiv && (
+              <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>Elszámolás típusa</label>
+                    <select value={form.dijTipus} onChange={e => upd("dijTipus", e.target.value)}
+                      style={{ ...inp, background: "#fff" }}>
+                      {CSAPAT_ELSZAMOLAS_TIPUSOK.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>
+                      {form.dijTipus === "%" ? "Mérték (%)" : form.dijTipus === "darab" ? "Egységár (Ft/db)" : "Összeg (Ft)"}
+                    </label>
+                    <input type="number" min="0"
+                      value={form.dijTipus === "darab" ? form.dijEgysegAr : form.dijOsszeg}
+                      onChange={e => upd(form.dijTipus === "darab" ? "dijEgysegAr" : "dijOsszeg", Number(e.target.value))}
+                      style={{ ...inp, background: "#fff" }} />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>Megjegyzés (pl. megállapodás alapja)</label>
+                  <input value={form.elszamolasInfo} onChange={e => upd("elszamolasInfo", e.target.value)}
+                    placeholder="pl. Szóbeli megállapodás, 2026.01.01-től érvényes"
+                    style={{ ...inp, background: "#fff" }} />
+                </div>
+
+                {/* Km elszámolás alvállalkozói oldal */}
+                <div style={{ borderTop: "1px solid #BBF7D0", paddingTop: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#166534" }}>🚗 Km elszámolás (alvállalkozói oldal)</span>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                      <div onClick={() => upd("kmElszamolasAktiv", !form.kmElszamolasAktiv)}
+                        style={{ width: 34, height: 18, borderRadius: 9, position: "relative", cursor: "pointer",
+                          background: form.kmElszamolasAktiv ? "#059669" : "#CBD5E1", transition: "background .2s" }}>
+                        <div style={{ position: "absolute", top: 1, left: form.kmElszamolasAktiv ? 17 : 1, width: 16, height: 16,
+                          borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
+                      </div>
+                      <span style={{ fontSize: 12, color: "#334155" }}>{form.kmElszamolasAktiv ? "Aktív" : "Nincs"}</span>
+                    </label>
+                  </div>
+                  {form.kmElszamolasAktiv && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <div>
+                        <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Ft/km díj</label>
+                        <input type="number" min="0" value={form.kmDijFtKm}
+                          onChange={e => upd("kmDijFtKm", Number(e.target.value))}
+                          placeholder="pl. 150" style={{ ...inp, background: "#fff" }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Küszöb (km) – ez alatt 0 Ft</label>
+                        <input type="number" min="0" value={form.kmKuszobKm}
+                          onChange={e => upd("kmKuszobKm", Number(e.target.value))}
+                          placeholder="pl. 50" style={{ ...inp, background: "#fff" }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div style={{ padding: "14px 24px", borderTop: "1px solid #E2E8F0", display: "flex", gap: 10, justifyContent: "flex-end" }}>
@@ -233,6 +328,11 @@ function CsapatKartya({ csapat, onEdit, onDelete }) {
               </span>
               {csapat.hetvegen && (
                 <span style={{ fontSize: 11, fontWeight: 700, background: "#EFF6FF", color: "#2563EB", borderRadius: 20, padding: "2px 8px" }}>Hétvégén is</span>
+              )}
+              {csapat.elszamolasAktiv && (
+                <span style={{ fontSize: 11, fontWeight: 700, background: "#ECFDF5", color: "#059669", borderRadius: 20, padding: "2px 8px" }}>
+                  💰 Alvállalkozói díj
+                </span>
               )}
             </div>
           </div>
