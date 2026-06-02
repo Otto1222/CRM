@@ -33,6 +33,7 @@ export const KARTÉRÍTÉS_MODJAI = [
 export const FOVALLALKOZO_SCHEMA = {
   id:                    "",
   nev:                   "",
+  rovidites:             "",   // max 4 karakter – pl. "GH", "WS" (Telepítő elől rejtett)
   aktiv:                 true,
   alapUtikoltsegFtKm:    80,    // Ft/km alap
   alapSzamlazasiTipus:   "fix",

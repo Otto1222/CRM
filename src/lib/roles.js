@@ -24,3 +24,8 @@ export function getHomePage(role) {
 export function getAllowedPages(role) {
   return ROLE_PAGES[role] || ["munkalapok"];
 }
+
+// Fővállalkozó neve / rövidítése / ügyfél-forrás kizárólag nem-Telepítő számára látható
+export function canSeeFovallalkozo(role) {
+  return role !== "Telepítő";
+}

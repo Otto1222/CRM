@@ -313,7 +313,7 @@ export default function App() {
               />
             )}
 
-            {page === "ugyfelek" && <Ugyfelek data={data} />}
+            {page === "ugyfelek" && <Ugyfelek data={data} currentUser={user} />}
 
             {page === "arajanlatok" && <ComingSoon title="Árajánlatok" />}
             {page === "szerzodések" && <ComingSoon title="Szerződések" />}

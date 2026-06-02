@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, Pencil, Trash2, X, Save, User, Phone, Mail, MapPin, FolderOpen } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, X, Save, User, Phone, Mail, MapPin, FolderOpen, Download } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { loadLocal, saveLocal } from "../lib/localDb";
+import { canSeeFovallalkozo } from "../lib/roles";
 
 // ─── Státusz konfig ───────────────────────────────────────────
 const STATUSZ_CFG = {
@@ -186,13 +187,15 @@ function TorlesModal({ ugyfel, onCancel, onConfirm }) {
 }
 
 // ─── Fő komponens ────────────────────────────────────────────
-export default function Ugyfelek({ data }) {
+export default function Ugyfelek({ data, currentUser }) {
   const [ugyfelek, setUgyfelek] = useState(() => loadLocal("ugyfelek") || data?.ugyfelek || []);
   const [q, setQ]               = useState("");
   const [statuszFilter, setStatuszFilter] = useState("Összes");
+  const [forrasFilter, setForrasFilter]   = useState("Összes");
   const [formOpen, setFormOpen]           = useState(false);
   const [editItem, setEditItem]           = useState(null);
   const [torlesItem, setTorlesItem]       = useState(null);
+  const canPartner = canSeeFovallalkozo(currentUser?.role);
 
   const projektek = data?.projektek || [];
 
@@ -235,6 +238,11 @@ export default function Ugyfelek({ data }) {
 
   const SZUROK = ["Összes", ...STATUSZOK];
 
+  // Fővállalkozó forrás szűrő értékek (csak nem-Saját egyediek)
+  const allForrasok = canPartner
+    ? ["Összes", "Saját", ...new Set(ugyfelek.filter(u => u.forrás && u.forrás !== "Saját").map(u => u.forrás))]
+    : [];
+
   const filtered = ugyfelek.filter(c => {
     const q2 = q.toLowerCase();
     const matchQ = !q ||
@@ -243,8 +251,23 @@ export default function Ugyfelek({ data }) {
       (c.phone   || "").toLowerCase().includes(q2) ||
       (c.address || "").toLowerCase().includes(q2);
     const matchS = statuszFilter === "Összes" || (c.status || "Aktív") === statuszFilter;
-    return matchQ && matchS;
+    const matchF = !canPartner || forrasFilter === "Összes" || (c.forrás || "Saját") === forrasFilter;
+    return matchQ && matchS && matchF;
   });
+
+  function exportCsv() {
+    const headers = ["Név","Típus","Telefon","E-mail","Cím","Státusz","Forrás","Fővállalkozó"];
+    const rows = filtered.map(u => [
+      u.name||"", u.type||"Magánszemély", u.phone||"", u.email||"",
+      u.address||"", u.status||"Aktív", u.forrás||"Saját", u.fovallalkozoNev||""
+    ]);
+    const csv = [headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href=url; a.download=`ugyfelek_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div style={{ padding: "24px 28px", fontFamily: FONT }}>
@@ -258,12 +281,20 @@ export default function Ugyfelek({ data }) {
             {ugyfelek.length} ügyfél · {ugyfelek.filter(c => (c.status || "Aktív") === "Aktív").length} aktív
           </p>
         </div>
-        <button
-          onClick={handleNew}
-          style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}
-        >
-          <Plus size={15} /> Új ügyfél
-        </button>
+        <div style={{ display:"flex", gap:8 }}>
+          {canPartner && (
+            <button type="button" onClick={exportCsv} style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 16px", background:"#F1F5F9", color:"#475569", border:"1.5px solid #E2E8F0", borderRadius:10, cursor:"pointer", fontWeight:600, fontSize:13, fontFamily:FONT }}>
+              <Download size={14}/> CSV export
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleNew}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}
+          >
+            <Plus size={15} /> Új ügyfél
+          </button>
+        </div>
       </div>
 
       {/* Szűrők + keresés */}
@@ -277,16 +308,34 @@ export default function Ugyfelek({ data }) {
             style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px 9px 34px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 13, fontFamily: FONT, outline: "none", background: "#fff" }}
           />
         </div>
-        <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ display: "flex", gap: 6, flexWrap:"wrap" }}>
           {SZUROK.map(s => (
             <button
               key={s}
+              type="button"
               onClick={() => setStatuszFilter(s)}
               style={{ padding: "6px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: FONT, fontWeight: 600, fontSize: 12, whiteSpace: "nowrap", background: statuszFilter === s ? "#2563EB" : "#F1F5F9", color: statuszFilter === s ? "#fff" : "#64748B" }}
             >
               {s}
             </button>
           ))}
+          {canPartner && allForrasok.length > 2 && (
+            <>
+              <span style={{ color:"#CBD5E1", alignSelf:"center" }}>|</span>
+              {allForrasok.map(f => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setForrasFilter(f)}
+                  style={{ padding:"6px 14px", borderRadius:20, border:"none", cursor:"pointer", fontFamily:FONT, fontWeight:600, fontSize:12, whiteSpace:"nowrap",
+                    background: forrasFilter===f ? (f==="Saját"?"#059669":"#2563EB") : "#F1F5F9",
+                    color: forrasFilter===f ? "#fff" : "#64748B" }}
+                >
+                  {f==="Összes"?"Mind (forrás)":f==="Saját"?"Saját":`[${f}]`}
+                </button>
+              ))}
+            </>
+          )}
         </div>
       </div>
 
@@ -296,7 +345,7 @@ export default function Ugyfelek({ data }) {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr style={{ background: "#F8FAFC", borderBottom: "2px solid #E2E8F0" }}>
-                {["Ügyfél", "Típus", "Telefon", "E-mail", "Cím", "Státusz", "Projektek", ""].map(h => (
+                {["Ügyfél", ...(canPartner?["Forrás"]:[]), "Típus", "Telefon", "E-mail", "Cím", "Státusz", "Projektek", ""].map(h => (
                   <th key={h} style={{ padding: "11px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -332,6 +381,20 @@ export default function Ugyfelek({ data }) {
                         </div>
                       </div>
                     </td>
+                    {/* Forrás (csak nem-Telepítő) */}
+                    {canPartner && (
+                      <td style={{ padding:"14px 16px" }}>
+                        {c.forrás ? (
+                          <span style={{
+                            background: c.forrás==="Saját"?"#ECFDF5":"#EFF6FF",
+                            color: c.forrás==="Saját"?"#059669":"#2563EB",
+                            borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:700, whiteSpace:"nowrap"
+                          }}>
+                            {c.forrás==="Saját"?"Saját":`[${c.forrás}]`}
+                          </span>
+                        ) : <span style={{ color:"#CBD5E1", fontSize:12 }}>—</span>}
+                      </td>
+                    )}
                     {/* Típus */}
                     <td style={{ padding: "14px 16px" }}>
                       <span style={{ background: c.type === "Vállalkozás" ? "#FEF9C3" : "#F1F5F9", color: c.type === "Vállalkozás" ? "#854D0E" : "#475569", borderRadius: 6, padding: "3px 9px", fontSize: 11, fontWeight: 600 }}>

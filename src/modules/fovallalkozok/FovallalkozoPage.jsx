@@ -159,7 +159,7 @@ function FvSor({ fv, onUpdate, onDelete }) {
   const [editFv, setEditFv] = useState(false);
   const [ujSz, setUjSz]     = useState(false);
   const [szerkSz, setSzerkSz] = useState(null);
-  const [fvForm, setFvForm] = useState({ nev:fv.nev, alapUtikoltsegFtKm:fv.alapUtikoltsegFtKm||80, megjegyzes:fv.megjegyzes||"" });
+  const [fvForm, setFvForm] = useState({ nev:fv.nev, rovidites:fv.rovidites||"", alapUtikoltsegFtKm:fv.alapUtikoltsegFtKm||80, megjegyzes:fv.megjegyzes||"" });
   const [szabalyok, setSzabalyok] = useState(() => getSzabalyokByFovallalkozo(fv.id));
 
   function refresh() { setSzabalyok(getSzabalyokByFovallalkozo(fv.id)); }
@@ -178,6 +178,7 @@ function FvSor({ fv, onUpdate, onDelete }) {
         <div style={{ flex:1 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <span style={{ fontWeight:700, fontSize:15 }}>{fv.nev}</span>
+            {fv.rovidites && <span style={{ fontSize:11, background:"#EFF6FF", color:"#2563EB", padding:"2px 9px", borderRadius:20, fontWeight:700 }}>[{fv.rovidites}]</span>}
             <span style={{ fontSize:11, background:fv.aktiv?"#DCFCE7":"#F1F5F9", color:fv.aktiv?"#166534":"#94A3B8", padding:"2px 9px", borderRadius:20, fontWeight:600 }}>{fv.aktiv?"Aktív":"Inaktív"}</span>
             <span style={{ fontSize:12, color:"#64748B" }}>Alap: {fv.alapUtikoltsegFtKm||80} Ft/km · {szabalyok.length} szabály</span>
           </div>
@@ -193,16 +194,18 @@ function FvSor({ fv, onUpdate, onDelete }) {
 
       {/* Szerkesztés form */}
       {editFv && (
-        <div style={{ borderTop:"1px solid #F1F5F9", padding:"14px 18px", background:"#F8FAFC", display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:10 }}>
+        <div style={{ borderTop:"1px solid #F1F5F9", padding:"14px 18px", background:"#F8FAFC", display:"grid", gridTemplateColumns:"2fr 0.7fr 1fr 2fr", gap:10 }}>
           <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Név</label>
             <input value={fvForm.nev} onChange={e=>setFvForm(p=>({...p,nev:e.target.value}))} style={inp}/></div>
+          <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Rövidítés (max 4)</label>
+            <input value={fvForm.rovidites||""} onChange={e=>setFvForm(p=>({...p,rovidites:e.target.value.toUpperCase().slice(0,4)}))} placeholder="pl. GH" maxLength={4} style={inp}/></div>
           <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Alap Ft/km</label>
             <input type="number" value={fvForm.alapUtikoltsegFtKm} onChange={e=>setFvForm(p=>({...p,alapUtikoltsegFtKm:Number(e.target.value)}))} style={inp}/></div>
           <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Megjegyzés</label>
             <input value={fvForm.megjegyzes} onChange={e=>setFvForm(p=>({...p,megjegyzes:e.target.value}))} style={inp}/></div>
-          <div style={{ gridColumn:"span 3", display:"flex", gap:8, justifyContent:"flex-end" }}>
-            <button onClick={()=>setEditFv(false)} style={{ padding:"7px 14px", border:"1.5px solid #E2E8F0", borderRadius:8, background:"#fff", cursor:"pointer", fontFamily:FONT }}>Mégse</button>
-            <button onClick={()=>{onUpdate(fv.id,fvForm);setEditFv(false);}} style={{ padding:"7px 14px", background:"#059669", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontWeight:700, fontFamily:FONT }}>Mentés</button>
+          <div style={{ gridColumn:"span 4", display:"flex", gap:8, justifyContent:"flex-end" }}>
+            <button type="button" onClick={()=>setEditFv(false)} style={{ padding:"7px 14px", border:"1.5px solid #E2E8F0", borderRadius:8, background:"#fff", cursor:"pointer", fontFamily:FONT }}>Mégse</button>
+            <button type="button" onClick={()=>{onUpdate(fv.id,fvForm);setEditFv(false);}} style={{ padding:"7px 14px", background:"#059669", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontWeight:700, fontFamily:FONT }}>Mentés</button>
           </div>
         </div>
       )}
@@ -262,7 +265,7 @@ function FvSor({ fv, onUpdate, onDelete }) {
 export default function FovallalkozoPage({ userRole }) {
   const [fvk,    setFvk]    = useState(() => loadFovallalkozok());
   const [ujOpen, setUjOpen] = useState(false);
-  const [ujForm, setUjForm] = useState({ nev:"", alapUtikoltsegFtKm:80, megjegyzes:"" });
+  const [ujForm, setUjForm] = useState({ nev:"", rovidites:"", alapUtikoltsegFtKm:80, megjegyzes:"" });
 
   useEffect(()=>{
     const fn = e => { if(["fovallalkozok","elszamolasi_szabalyok"].includes(e.detail?.collection)) setFvk(loadFovallalkozok()); };
@@ -275,7 +278,7 @@ export default function FovallalkozoPage({ userRole }) {
     createFovallalkozo(ujForm);
     setFvk(loadFovallalkozok());
     setUjOpen(false);
-    setUjForm({ nev:"", alapUtikoltsegFtKm:80, megjegyzes:"" });
+    setUjForm({ nev:"", rovidites:"", alapUtikoltsegFtKm:80, megjegyzes:"" });
   }
 
   const isAdmin = ["Admin","Projektmenedzser"].includes(userRole);
@@ -311,17 +314,19 @@ export default function FovallalkozoPage({ userRole }) {
       {ujOpen && (
         <div style={{ background:"#F0F9FF", border:"2px solid #93C5FD", borderRadius:12, padding:"18px", marginTop:12 }}>
           <p style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>Új fővállalkozó adatai</p>
-          <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 2fr", gap:10, marginBottom:12 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"2fr 0.7fr 1fr 2fr", gap:10, marginBottom:12 }}>
             <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Név *</label>
-              <input value={ujForm.nev} onChange={e=>setUjForm(p=>({...p,nev:e.target.value}))} placeholder="pl. JuniorVital Kft." style={inp}/></div>
+              <input value={ujForm.nev} onChange={e=>setUjForm(p=>({...p,nev:e.target.value}))} placeholder="pl. Green-Home Kft." style={inp}/></div>
+            <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Rövidítés (max 4)</label>
+              <input value={ujForm.rovidites||""} onChange={e=>setUjForm(p=>({...p,rovidites:e.target.value.toUpperCase().slice(0,4)}))} placeholder="pl. GH" maxLength={4} style={inp}/></div>
             <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Alap Ft/km</label>
               <input type="number" value={ujForm.alapUtikoltsegFtKm} onChange={e=>setUjForm(p=>({...p,alapUtikoltsegFtKm:Number(e.target.value)}))} style={inp}/></div>
             <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Megjegyzés</label>
               <input value={ujForm.megjegyzes} onChange={e=>setUjForm(p=>({...p,megjegyzes:e.target.value}))} style={inp}/></div>
           </div>
           <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
-            <button onClick={()=>setUjOpen(false)} style={{ padding:"8px 16px", border:"1.5px solid #E2E8F0", borderRadius:8, background:"#fff", cursor:"pointer", fontFamily:FONT }}>Mégse</button>
-            <button onClick={handleCreate} disabled={!ujForm.nev.trim()} style={{ padding:"8px 18px", background:ujForm.nev.trim()?"#2563EB":"#CBD5E1", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontWeight:700, fontFamily:FONT }}>Létrehozás</button>
+            <button type="button" onClick={()=>setUjOpen(false)} style={{ padding:"8px 16px", border:"1.5px solid #E2E8F0", borderRadius:8, background:"#fff", cursor:"pointer", fontFamily:FONT }}>Mégse</button>
+            <button type="button" onClick={handleCreate} disabled={!ujForm.nev.trim()} style={{ padding:"8px 18px", background:ujForm.nev.trim()?"#2563EB":"#CBD5E1", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontWeight:700, fontFamily:FONT }}>Létrehozás</button>
           </div>
         </div>
       )}

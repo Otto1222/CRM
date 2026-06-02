@@ -197,6 +197,44 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
         }
         // Fire-and-forget: Drive mappa létrehozás (no-cors, nem blokkolja a mentést)
         driveCreateProjektFolder(saved).catch(() => {});
+
+        // Auto-ügyfél: ha van ügyfélnév de nincs kiválasztva létező ügyfél → létrehozzuk
+        if (!data.clientId && data.clientNev?.trim()) {
+          const fv = fovallalkozok.find(f => f.id === (data.penzugy?.fovallalkoziId || ""));
+          const forras = fv?.rovidites || (fv ? (fv.nev||"").slice(0,4).toUpperCase() : "Saját");
+          const newU = {
+            id: `ugy_${Date.now()}`,
+            name: data.clientNev,
+            phone: data.clientTel || "",
+            email: data.clientEmail || "",
+            address: data.clientCim || "",
+            type: "Magánszemély",
+            status: "Aktív",
+            forrás: forras,
+            fovallalkozoId: fv?.id || "",
+            fovallalkozoNev: fv?.nev || "",
+            fovallalkozoRovid: fv?.rovidites || "",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          const uList = loadLocal("ugyfelek") || [];
+          saveLocal("ugyfelek", [...uList, newU]);
+          updateProjekt(saved.id, { clientId: newU.id }, "");
+          window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "ugyfelek" } }));
+        } else if (data.clientId && data.penzugy?.fovallalkoziId) {
+          // Meglévő ügyfélnél forrás beállítása ha még nincs
+          const fv = fovallalkozok.find(f => f.id === data.penzugy.fovallalkoziId);
+          const uList = loadLocal("ugyfelek") || [];
+          const ugy = uList.find(u => u.id === data.clientId);
+          if (ugy && !ugy.forrás) {
+            const forras = fv?.rovidites || (fv ? (fv.nev||"").slice(0,4).toUpperCase() : "Saját");
+            saveLocal("ugyfelek", uList.map(u => u.id === data.clientId ? {
+              ...u, forrás: forras, fovallalkozoId: fv?.id||"", fovallalkozoNev: fv?.nev||"",
+              fovallalkozoRovid: fv?.rovidites||"", updatedAt: new Date().toISOString()
+            } : u));
+            window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "ugyfelek" } }));
+          }
+        }
       } else {
         saved = updateProjekt(projekt.id, data, currentUser?.name || "");
       }
