@@ -2,7 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": null,
-  "installCommand": "echo skip",
+  "installCommand": "npm install",
   "headers": [
     {
       "source": "/index.html",
