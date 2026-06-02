@@ -15,8 +15,9 @@
 // ═══════════════════════════════════════════════════════════════════
 
 // ─── Konfiguráció ─────────────────────────────────────────────────
-var DB_FOLDER_ID    = "1BDxc7MjKidp82A52dAeAArBWeNnqGVxJ";  // CRM_db (JSON szinkron)
-var MUNKA_FOLDER_ID = "1gbns44t8w_h9eHjUODC41jjnwtTi2bpO";  // CRM_munka (fotók, projekt mappák)
+// Drive struktúra gyökér: 1-MuCrK__dMkoep19f8cJFBpgJQAkwu-5 (CRM)
+var DB_FOLDER_ID    = "1jkRh98v5pm73Dyhmn3FioFkznBaxWwsW";  // 01_Adatbazis (JSON szinkron)
+var MUNKA_FOLDER_ID = "1ccvd4iUnB-jEyrSGJBZs_fSOScL_aQPx";  // 04_Fotok (fotók, projekt mappák)
 
 // ─── HTTP entry point-ok ──────────────────────────────────────────
 function doGet(e) {
