@@ -15,6 +15,7 @@ import BeallitasokPage from "./pages/BeallitasokPage";
 import UjMunkalap from "./pages/UjMunkalap";
 import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
 import CsapatokPage from "./modules/csapatok/CsapatokPage.jsx";
+import SzamlakPage from "./modules/szamlak/SzamlakPage.jsx";
 import PwaInstallBanner from "./components/PwaInstallBanner.jsx";
 
 const PAGE_TITLES = {
@@ -24,6 +25,7 @@ const PAGE_TITLES = {
   ugyfelek: "Ügyfelek",
   arajanlatok: "Árajánlatok",
   szerzodések: "Szerződések",
+  szamlak: "Számlák",
   csapat: "Csapat",
   naptar: "Naptár",
   beallitasok: "Beállítások",
@@ -308,6 +310,7 @@ export default function App() {
 
             {page === "arajanlatok" && <ComingSoon title="Árajánlatok" />}
             {page === "szerzodések" && <ComingSoon title="Szerződések" />}
+            {page === "szamlak" && <SzamlakPage currentUser={user} />}
             {page === "csapat" && <CsapatokPage currentUser={user} />}
             {page === "naptar" && <ComingSoon title="Naptár" />}
 

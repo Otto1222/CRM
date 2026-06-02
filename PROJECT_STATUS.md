@@ -1,5 +1,5 @@
 # PROJECT_STATUS.md – CRM Napelem ERP
-_Utolsó frissítés: 2026-06-02 (v6) – Google Drive auto projekt-mappa KÉSZ_
+_Utolsó frissítés: 2026-06-02 (v7) – Számlák modul KÉSZ: PEASE API stub, PDF sablon, lista_
 
 ## Fejlesztési sorrend és jelenlegi állapot
 
@@ -16,7 +16,7 @@ _Utolsó frissítés: 2026-06-02 (v6) – Google Drive auto projekt-mappa KÉSZ_
 | 9 | Fővállalkozók | ✅ KÉSZ | Teljes CRUD, elszámolási szabályok |
 | 10 | Elszámolási motor | ✅ KÉSZ | costEngine, settlementRule, per-fővállalkozó szabályok |
 | 11 | Költség modul | ✅ NAGYRÉSZT KÉSZ | TabKoltsegek ProjektDetailban, kártérítés kezelés |
-| 12 | Számlák | ❌ HIÁNYOS | ComingSoon |
+| 12 | Számlák | ✅ KÉSZ | Kimenő+bejövő lista, PEASE API stub, PDF sablon (szabad szerkesztés), riport |
 | 13 | Riportok | ⚠️ RÉSZLEGES | Dashboard pénzügyi összesítő, TabRiport megvan; nincs dedikált oldal |
 
 ---
@@ -98,9 +98,15 @@ _Utolsó frissítés: 2026-06-02 (v6) – Google Drive auto projekt-mappa KÉSZ_
 - Kártérítés kezelés (elfogad/elutasít/függőben)
 - Profit számítás: bevétel − (csapatbér + útiköltség + anyag + kártérítés + egyéb)
 
-### ❌ 12. Számlák
-- Nem implementált (ComingSoon)
-- Tervezett: bejövő/kimenő számlák, fizetési határidő, állapot
+### ✅ 12. Számlák
+- `szamla.schema.js`: kimeno/bejovo típus, státuszok, isKesedelmes()
+- `szamla.service.js`: CRUD, getSzamlaOsszesito(), szurSzamlak(), auto késedelmes jelzés
+- `pease.api.js`: PEASE API stub (VITE_PEASE_API_URL + VITE_PEASE_API_KEY env) – peaseLekeresSzamlak, peaseSzamlaImport, peaseSzamlaTocrm konverzió
+- `SzamlaPdfSablon.jsx`: ⭐ szabadon szerkeszthető – printSzamla() + printSzamlaRiport() (browser print)
+- `SzamlaForm.jsx`: kimenő/bejövő, projekt+ügyfél+fővállalkozó kapcsolat, ÁFA auto-számítás
+- `SzamlakPage.jsx`: összesítő kártyák, szűrők, PEASE szinkron+import preview, PDF riport
+- Sidebar: Számlák menüpont (Receipt ikon)
+- localDb + dataSync: szamlak kollekció Drive-ra szinkronizálva
 
 ### ⚠️ 13. Riportok
 - Dashboard: havi bevétel összesítő munkalapokból

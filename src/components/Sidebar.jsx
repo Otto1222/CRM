@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, ClipboardList,
-  ScrollText, UserCheck, Calendar, Settings, LogOut, Sun, Hammer, Building2,
+  ScrollText, UserCheck, Calendar, Settings, LogOut, Sun, Hammer, Building2, Receipt,
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import Avatar from "./Avatar";
@@ -12,6 +12,7 @@ const NAV = [
   { id: "ugyfelek",       label: "Ügyfelek",        icon: Users },
   { id: "arajanlatok",    label: "Árajánlatok",     icon: ClipboardList },
   { id: "szerzodesek",    label: "Szerződések",     icon: ScrollText },
+  { id: "szamlak",        label: "Számlák",         icon: Receipt },
   { id: "csapat",         label: "Csapat",          icon: UserCheck },
   { id: "naptar",         label: "Naptár",          icon: Calendar },
 ];
