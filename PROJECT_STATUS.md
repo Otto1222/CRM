@@ -1,5 +1,5 @@
 # PROJECT_STATUS.md – CRM Napelem ERP
-_Utolsó frissítés: 2026-06-02 (v5) – Telepítő App PWA KÉSZ: manifest, SW, offline mód, install banner_
+_Utolsó frissítés: 2026-06-02 (v6) – Google Drive auto projekt-mappa KÉSZ_
 
 ## Fejlesztési sorrend és jelenlegi állapot
 
@@ -12,7 +12,7 @@ _Utolsó frissítés: 2026-06-02 (v5) – Telepítő App PWA KÉSZ: manifest, SW
 | 5 | Csapatok | ✅ KÉSZ | Teljes CRUD: név, telephely, tagok, kapacitás, szín, hétvége toggle |
 | 6 | Munkalapok | ✅ KÉSZ | CRUD, felmérés, VBF, fotók, projektből létrehozás (pre-fill), onClose fix |
 | 7 | Telepítő App (PWA) | ✅ KÉSZ | PWA manifest, SW (cache-first assets, network-first egyéb), offline mód, install banner |
-| 8 | Google Drive | ⚠️ RÉSZLEGES | driveApi + Apps Script webhook megvan; nincs auto projekt-mappa |
+| 8 | Google Drive | ✅ KÉSZ | driveApi + Apps Script webhook + auto per-projekt mappa (4 almappa) |
 | 9 | Fővállalkozók | ✅ KÉSZ | Teljes CRUD, elszámolási szabályok |
 | 10 | Elszámolási motor | ✅ KÉSZ | costEngine, settlementRule, per-fővállalkozó szabályok |
 | 11 | Költség modul | ✅ NAGYRÉSZT KÉSZ | TabKoltsegek ProjektDetailban, kártérítés kezelés |
@@ -73,11 +73,14 @@ _Utolsó frissítés: 2026-06-02 (v5) – Telepítő App PWA KÉSZ: manifest, SW
 - `App.jsx`: offline jelző (vörös sáv), PwaInstallBanner
 - Offline működés: localStorage → minden adat offline elérhető; Drive szinkron offline szünetel (jelzett)
 
-### ⚠️ 8. Google Drive
-- driveApi.js + VITE_APPS_SCRIPT_URL webhook
+### ✅ 8. Google Drive
+- driveApi.js + VITE_APPS_SCRIPT_URL webhook (no-cors)
 - JSON szinkron: syncAllFromDrive, syncAllToDrive
 - Fotó feltöltés: base64 → Apps Script → Drive
-- Hiányzik: automatikus per-projekt mappa létrehozás
+- Auto per-projekt mappa: Projektek/{projektkod} – {clientNev}/ + 4 almappa
+- `appsscript/Code.gs`: teljes Apps Script (ping, saveJson, loadJson, saveFoto, createMunkalapFolder, createProjektFolder)
+- `TabDokumentumok.jsx`: Drive mappa megnyitása, mappastruktúra, újralétrehozás gomb
+- Munkalap fotók projekten belül: 02_Kivitelezés/{munkalapId}/
 
 ### ✅ 9. Fővállalkozók
 - FovallalkozoPage: teljes CRUD

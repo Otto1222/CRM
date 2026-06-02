@@ -10,6 +10,7 @@ import { autoFillPenzugy } from "../../services/financialCalculation.service.js"
 import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
 import { createProjekt, updateProjekt } from "./projekt.service.js";
 import { createInitialWorkorderForProject } from "../../services/projectWorkorder.service.js";
+import { driveCreateProjektFolder } from "../../lib/driveApi.js";
 import {
   validateProjectBeforeSave,
   shouldCreateInitialWorkorder,
@@ -185,7 +186,7 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
       delete data.megjegyzes;
       let saved;
       if (isNew) {
-        saved = createProjekt(data, currentUser?.name || "");
+        saved = createProjekt({ ...data, driveProjektMappa: "kérve" }, currentUser?.name || "");
         if (shouldCreateInitialWorkorder(saved.status)) {
           const tipus = getInitialWorkorderTypeByProjectStatus(saved.status);
           createInitialWorkorderForProject(saved, {
@@ -194,6 +195,8 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
             user: currentUser?.name || "",
           });
         }
+        // Fire-and-forget: Drive mappa létrehozás (no-cors, nem blokkolja a mentést)
+        driveCreateProjektFolder(saved).catch(() => {});
       } else {
         saved = updateProjekt(projekt.id, data, currentUser?.name || "");
       }

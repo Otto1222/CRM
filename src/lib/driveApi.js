@@ -60,8 +60,27 @@ export async function driveVbfSave(munkalapId, vbfData) {
   return post({ action: "saveJson", fileName: `vbf_${munkalapId}.json`, content: vbfData });
 }
 
-export async function driveCreateMunkalapFolder(munkalapId) {
-  return post({ action: "createMunkalapFolder", munkalapId });
+export async function driveCreateMunkalapFolder(munkalapId, projektkod = "") {
+  return post({ action: "createMunkalapFolder", munkalapId, projektkod });
+}
+
+export async function driveCreateProjektFolder(projekt) {
+  return post({
+    action:     "createProjektFolder",
+    projektkod: projekt.projektkod,
+    clientNev:  projekt.clientNev || "",
+    projektId:  projekt.id,
+  });
+}
+
+// Google Drive kereső URL a projekt mappájához (projektkod alapján)
+export function getDriveProjektSearchUrl(projektkod) {
+  return `https://drive.google.com/drive/search?q=${encodeURIComponent('"' + projektkod + '"')}`;
+}
+
+// A CRM_munka gyökérmappa direkt linkje
+export function getDriveMunkaFolderUrl() {
+  return `https://drive.google.com/drive/folders/${DRIVE_MUNKA_FOLDER_ID}`;
 }
 
 export async function driveUploadFoto(munkalapId, file) {

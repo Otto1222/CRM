@@ -74,6 +74,8 @@ export const PROJEKT_SCHEMA = {
   // Kommunikáció, napló
   megjegyzesek:        [],   // [{ id, datum, user, szoveg }]
   esemenynaplo:        [],   // [{ id, datum, user, esemeny, reszletek }]
+  // Drive integráció
+  driveProjektMappa:   "",   // "" | "kérve" | "kész"
   // Meta
   createdAt:           "",
   updatedAt:           "",
