@@ -231,9 +231,8 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
   function validate() {
     const e={};
     if(!alap.ugyszam) e.ugyszam="Kötelező!";
-    if(!alap.date)    e.date="Kötelező!";
     if(!ugyfEl.nev)   e.ugyfel="Kötelező!";
-    if(!alap.csapatId) e.csapat="Kötelező!";
+    // Csapat és dátum opcionális – nem blokkolja a mentést
     setErrors(e);
     return Object.keys(e).length===0;
   }

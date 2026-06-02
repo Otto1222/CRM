@@ -17,16 +17,18 @@ import { getUsers } from "./crmUsers";
 
 // ─── Az összes adat-kollekció, amit a store kezel ─────────────
 const COLLECTIONS = {
-  munkalapok:  () => loadLocal("munkalapok")  || [],
-  ugyfelek:    () => loadLocal("ugyfelek")    || [],
-  users:       () => getUsers(),                        // felhasználók
-  beallitasok: () => { try { return JSON.parse(localStorage.getItem("beallitasok")||"{}"); } catch { return {}; } },
-  karteritesek:() => { try { return JSON.parse(localStorage.getItem("karteritesek")||"[]"); } catch { return []; } },
-  sablonok:    () => { try { return JSON.parse(localStorage.getItem("sablonok")||"[]");     } catch { return []; } },
+  munkalapok:   () => loadLocal("munkalapok")  || [],
+  ugyfelek:     () => loadLocal("ugyfelek")    || [],
   projektek:    () => { try { return JSON.parse(localStorage.getItem("projektek")||"[]");       } catch { return []; } },
-  fovallalkozok:() => { try { return JSON.parse(localStorage.getItem("fovallalkozok")||"[]"); } catch { return []; } },
-  munkatipusok: () => { try { return JSON.parse(localStorage.getItem("munkatipusok")||"[]");  } catch { return []; } },
+  szamlak:      () => { try { return JSON.parse(localStorage.getItem("szamlak")||"[]");         } catch { return []; } },
+  csapatok:     () => { try { return JSON.parse(localStorage.getItem("csapatok")||"[]");        } catch { return []; } },
+  fovallalkozok:() => { try { return JSON.parse(localStorage.getItem("fovallalkozok")||"[]");   } catch { return []; } },
+  munkatipusok: () => { try { return JSON.parse(localStorage.getItem("munkatipusok")||"[]");    } catch { return []; } },
   elszamolasi_szabalyok: () => { try { return JSON.parse(localStorage.getItem("elszamolasi_szabalyok")||"[]"); } catch { return []; } },
+  karteritesek: () => { try { return JSON.parse(localStorage.getItem("karteritesek")||"[]");   } catch { return []; } },
+  sablonok:     () => { try { return JSON.parse(localStorage.getItem("sablonok")||"[]");        } catch { return []; } },
+  beallitasok:  () => { try { return JSON.parse(localStorage.getItem("beallitasok")||"{}");     } catch { return {}; } },
+  users:        () => getUsers(),
 };
 
 /** Teljes store betöltése localStorage-ból */

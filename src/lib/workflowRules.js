@@ -1,3 +1,8 @@
+/**
+ * workflowRules.js – Telepítői láthatóság szabályok
+ * Ez az egyetlen forrás – a projectRules.js-ben lévő duplikátum csak kompatibilitási alias.
+ */
+
 export const WORKORDER_STATUSES_VISIBLE_TO_INSTALLER = [
   "Felmérés",
   "Kiosztásra vár",
@@ -23,9 +28,7 @@ export const WORKORDER_STATUSES_HIDDEN_FROM_INSTALLER = [
 ];
 
 function norm(v) {
-  return String(v || "")
-    .trim()
-    .toLowerCase();
+  return String(v || "").trim().toLowerCase();
 }
 
 export function isWorkorderAssignedToUser(workorder, currentUser) {
@@ -39,30 +42,16 @@ export function isWorkorderAssignedToUser(workorder, currentUser) {
   const assigneeNev = norm(workorder.assigneeNev);
   const csapatNev   = norm(workorder.csapatNev);
 
-  // Közvetlen ID egyezés
-  if (userId && (assigneeId === userId || csapatId === userId)) return true;
-
-  // Közvetlen névegyezés
+  // Közvetlen egyezés
+  if (userId && (assigneeId === userId || csapatId === userId))     return true;
   if (userName && (assigneeNev === userName || csapatNev === userName)) return true;
 
-  // Csapat tagság ellenőrzése: a csapat tagok tömbjében benne van-e a user ID-ja vagy neve?
-  // Ez a legfontosabb eset: csapatId="cs_XXX" ≠ userId="u2", de csapat.tagok=["u2"]
-  if (csapatId) {
+  // Csapat tagság: csapatId alatt megkeresi a csapatot, ellenőrzi a tagok tömböt
+  const csapatIdToCheck = csapatId || assigneeId;
+  if (csapatIdToCheck) {
     try {
       const csapatok = JSON.parse(localStorage.getItem("csapatok") || "[]");
-      const csapat = csapatok.find(c => norm(c.id) === csapatId);
-      if (csapat) {
-        if (userId   && (csapat.tagok    || []).some(tid => norm(tid) === userId))   return true;
-        if (userName && (csapat.tagNevek || []).some(tn  => norm(tn)  === userName)) return true;
-      }
-    } catch { /* localStorage read failure */ }
-  }
-
-  // Assignee csapat-tagság is ellenőrzés (assigneeId is lehet csapatId)
-  if (assigneeId && assigneeId !== csapatId) {
-    try {
-      const csapatok = JSON.parse(localStorage.getItem("csapatok") || "[]");
-      const csapat = csapatok.find(c => norm(c.id) === assigneeId);
+      const csapat   = csapatok.find(c => norm(c.id) === csapatIdToCheck);
       if (csapat) {
         if (userId   && (csapat.tagok    || []).some(tid => norm(tid) === userId))   return true;
         if (userName && (csapat.tagNevek || []).some(tn  => norm(tn)  === userName)) return true;
@@ -75,16 +64,8 @@ export function isWorkorderAssignedToUser(workorder, currentUser) {
 
 export function isInstallerVisibleWorkorder(workorder, currentUser) {
   if (!workorder || !currentUser) return false;
-
-  if (!isWorkorderAssignedToUser(workorder, currentUser)) {
-    return false;
-  }
-
+  if (!isWorkorderAssignedToUser(workorder, currentUser)) return false;
   const status = String(workorder.status || "").trim();
-
-  if (WORKORDER_STATUSES_HIDDEN_FROM_INSTALLER.includes(status)) {
-    return false;
-  }
-
-  return WORKORDER_STATUSES_VISIBLE_TO_INSTALLER.includes(status);
+  if (WORKORDER_STATUSES_HIDDEN_FROM_INSTALLER.includes(status)) return false;
+  return true; // ha hozzá van rendelve és nincs elrejtve, látja
 }

@@ -69,7 +69,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
   }
 
   return (
-    <div style={{ padding: "24px 28px", fontFamily: FONT }}>
+    <div style={{ padding: "16px max(16px, min(28px, 3vw))", fontFamily: FONT }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
           <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: "#0F172A", margin: "0 0 4px" }}>

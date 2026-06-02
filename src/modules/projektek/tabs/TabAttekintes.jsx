@@ -21,7 +21,7 @@ export default function TabAttekintes({ projekt, munkalapok }) {
   const aktiv   = mls.filter(m=>!["Lezárva","Számlázva","Ellenőrzés alatt"].includes(m.status)).length;
 
   return (
-    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, padding:"20px 0" }}>
+    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:16, padding:"20px 0" }}>
       <div>
         <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:12 }}>Projekt adatok</p>
         <div style={{ background:"#fff", borderRadius:12, padding:"14px 16px", border:"1px solid #E2E8F0" }}>

@@ -86,7 +86,7 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
   };
 
   return (
-    <div style={{ padding: "24px 28px", fontFamily: FONT, maxWidth: 1100 }}>
+    <div style={{ padding: "16px max(16px, min(28px, 3vw))", fontFamily: FONT, maxWidth: 1100 }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
         <button
           onClick={onBack}

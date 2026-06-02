@@ -2,16 +2,53 @@
 <html lang="hu">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/assets/favicon-Bk1-Z9jj.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#1E3A5F" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+
+    <!-- iOS PWA support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="CRM Napelem" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+
+    <!-- Cache control (fejlesztői frissítés miatt) -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
+
     <title>CRM Napelem</title>
-    <script type="module" crossorigin src="/assets/index-BRjSb1sj.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Wso6amtE.css">
+    <script type="module" crossorigin src="/assets/index-kXe7oJrr.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C-88rHf7.css">
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Service Worker regisztráció -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(reg => {
+              console.log('[SW] Regisztrálva:', reg.scope);
+              // Friss SW azonnal aktiválódjon
+              reg.addEventListener('updatefound', () => {
+                const newSW = reg.installing;
+                if (newSW) {
+                  newSW.addEventListener('statechange', () => {
+                    if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                      console.log('[SW] Frissítés elérhető – oldal újratöltéskor aktiválódik');
+                    }
+                  });
+                }
+              });
+            })
+            .catch(err => console.warn('[SW] Regisztráció sikertelen:', err));
+        });
+      }
+    </script>
   </body>
 </html>

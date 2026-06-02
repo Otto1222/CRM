@@ -25,3 +25,21 @@ input, select, textarea { font-family: 'DM Sans', sans-serif; }
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* ─── Mobil alapok ─────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Belső padding csökkentése minden fő lap-konténernél */
+  [data-page-container] {
+    padding: 16px !important;
+  }
+  /* Táblázatok vízszintes görgetés */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Flex wrap mobilon */
+  .mobile-wrap {
+    flex-wrap: wrap !important;
+  }
+}
