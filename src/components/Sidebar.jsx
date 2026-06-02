@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, ClipboardList,
-  ScrollText, UserCheck, Calendar, Settings, LogOut, Sun, Building2, Receipt, FileText,
+  ScrollText, UserCheck, Calendar, Settings, LogOut, Sun, Building2, Receipt, FileText, BarChart3,
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getAllowedPages } from "../lib/roles.js";
@@ -16,6 +16,7 @@ const NAV = [
   { id: "szamlak",     label: "Számlák",      icon: Receipt },
   { id: "csapat",      label: "Csapat",       icon: UserCheck },
   { id: "naptar",      label: "Naptár",       icon: Calendar },
+  { id: "riportok",    label: "Riportok",     icon: BarChart3 },
 ];
 
 export default function Sidebar({ page, onNav, user, onLogout }) {

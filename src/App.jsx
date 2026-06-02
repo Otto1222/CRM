@@ -19,6 +19,7 @@ import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
 import CsapatokPage from "./modules/csapatok/CsapatokPage.jsx";
 import SzamlakPage from "./modules/szamlak/SzamlakPage.jsx";
 import PwaInstallBanner from "./components/PwaInstallBanner.jsx";
+import RiportokPage from "./pages/RiportokPage.jsx";
 
 const PAGE_TITLES = {
   dashboard: "Pénzügy",
@@ -30,6 +31,7 @@ const PAGE_TITLES = {
   szamlak: "Számlák",
   csapat: "Csapat",
   naptar: "Naptár",
+  riportok:    "Riportok",
   beallitasok: "Beállítások",
 };
 
@@ -328,6 +330,8 @@ export default function App() {
             {page === "szamlak" && <SzamlakPage currentUser={user} />}
             {page === "csapat" && <CsapatokPage currentUser={user} />}
             {page === "naptar" && <ComingSoon title="Naptár" />}
+
+            {page === "riportok" && <RiportokPage currentUser={user} />}
 
             {page === "beallitasok" && (
               <>
