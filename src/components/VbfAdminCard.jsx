@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { C, FONT } from "../lib/constants";
 import { loadLocal } from "../lib/localDb";
-import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Download } from "lucide-react";
+import { generateVbfDocx, hasSablon } from "../lib/vbfDocxService";
 
 const VBF_LABELS = {
   acFeszultseg:    { label:"AC feszültség",              unit:"V",    keys:["L1","L2","L3"] },
@@ -26,17 +27,40 @@ const VBF_SINGLE = [
   { key:"tuzMegszakito",    label:"Tűzeseti megszakító",      unit:"A"   },
 ];
 
-export default function VbfAdminCard({ munkalapId }) {
+/**
+ * VbfAdminCard
+ * Props:
+ *   munkalapId  – kötelező, a munkalap ID-ja
+ *   munkalap    – opcionális teljes munkalap objektum (VBF letöltéshez kell)
+ *   projekt     – opcionális projekt objektum (projektkód, ügyfél adatok)
+ */
+export default function VbfAdminCard({ munkalapId, munkalap: munkalapProp, projekt: projektProp }) {
   const [vbf, setVbf] = useState(() => loadLocal(`vbf_${munkalapId}`));
+  const [letoltes, setLetoltes] = useState(false);
 
   // Frissítés ha az adatbázis változik (pl. Telepítő menti)
   useEffect(() => {
     function refresh() { setVbf(loadLocal(`vbf_${munkalapId}`)); }
     window.addEventListener("crm-db-updated", refresh);
-    // Kezdeti betöltés
     refresh();
     return () => window.removeEventListener("crm-db-updated", refresh);
   }, [munkalapId]);
+
+  async function handleLetoltes() {
+    setLetoltes(true);
+    // Munkalap: prop vagy localStorage-ból
+    const ml = munkalapProp
+      || (loadLocal("munkalapok") || []).find(m => m.id === munkalapId)
+      || { id: munkalapId };
+    // Projekt: prop vagy a munkalap projektId alapján
+    const pr = projektProp
+      || (loadLocal("projektek") || []).find(p =>
+          p.id === ml.projektId || (p.munkalapIds || []).includes(munkalapId)
+        )
+      || {};
+    await generateVbfDocx(ml, pr, vbf);
+    setLetoltes(false);
+  }
 
   if (!vbf) return (
     <div style={{ background:"#F8FAFC", border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", marginTop:16 }}>
@@ -52,14 +76,44 @@ export default function VbfAdminCard({ munkalapId }) {
 
   return (
     <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 20px", marginTop:16 }}>
+      {/* Fejléc */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14, paddingBottom:10, borderBottom:`1px solid ${C.border}` }}>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           {complete ? <CheckCircle2 size={18} color={C.success}/> : <AlertTriangle size={18} color={C.warning}/>}
           <span style={{ fontWeight:700, fontSize:14, color:C.text }}>📐 VBF Jegyzőkönyv</span>
         </div>
-        <span style={{ fontSize:13, fontWeight:700, color: complete?C.success:C.warning }}>{filled}/{total} ({pct}%)</span>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <span style={{ fontSize:13, fontWeight:700, color: complete?C.success:C.warning }}>{filled}/{total} ({pct}%)</span>
+          {/* VBF letöltés gomb – csak ha van sablon */}
+          {hasSablon() ? (
+            <button
+              onClick={handleLetoltes}
+              disabled={letoltes}
+              title="VBF Jegyzőkönyv letöltése Word (.docx) formátumban"
+              style={{
+                display:"flex", alignItems:"center", gap:6,
+                padding:"6px 14px",
+                background: letoltes ? "#E2E8F0" : "#7C3AED",
+                color:"#fff", border:"none", borderRadius:8,
+                cursor: letoltes ? "default" : "pointer",
+                fontWeight:700, fontSize:12, fontFamily:FONT,
+              }}
+            >
+              <Download size={13}/>
+              {letoltes ? "…" : "VBF .docx"}
+            </button>
+          ) : (
+            <span
+              title="Beállítások → VBF Sablon alatt töltsd fel a Word sablont"
+              style={{ fontSize:11, color:C.muted, cursor:"help", borderBottom:`1px dashed ${C.muted}` }}
+            >
+              Sablon hiányzik
+            </span>
+          )}
+        </div>
       </div>
 
+      {/* Mérési szekciók */}
       {Object.entries(VBF_LABELS).map(([section, { label, unit, keys }]) => (
         <div key={section} style={{ marginBottom:12 }}>
           <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.7, marginBottom:6 }}>{label}</p>
@@ -80,6 +134,7 @@ export default function VbfAdminCard({ munkalapId }) {
         </div>
       ))}
 
+      {/* Egyedi mezők */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5, marginTop:8 }}>
         {VBF_SINGLE.map(({ key, label, unit }) => {
           const val = vbf[key];
@@ -94,6 +149,12 @@ export default function VbfAdminCard({ munkalapId }) {
           );
         })}
       </div>
+
+      {!hasSablon() && (
+        <div style={{ marginTop:12, padding:"8px 12px", background:"#F5F3FF", border:"1px solid #DDD6FE", borderRadius:8, fontSize:12, color:"#6D28D9" }}>
+          💡 VBF letöltéshez: Beállítások → VBF Sablon → Word fájl feltöltése
+        </div>
+      )}
     </div>
   );
 }

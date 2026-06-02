@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
-  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink,
+  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink, Upload, CheckCircle2,
 } from "lucide-react";
 import { loadLocal, saveLocal } from "../lib/localDb";
+import {
+  hasSablon, saveSablon, deleteSablon, getSablonMeta,
+  readFileAsBase64, VBF_PLACEHOLDER_DOCS,
+} from "../lib/vbfDocxService";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AdminPanel from "./AdminPanel";
 import JegyzokonyviBeallitasok from "./JegyzokonyviBeallitasok";
@@ -77,6 +81,14 @@ const MENU_ITEMS = [
     color: "#0891B2",
     bg: "#ECFEFF",
   },
+  {
+    id: "vbfsablon",
+    label: "VBF Sablon (.docx)",
+    desc: "VBF Villamos Biztonsági Felülvizsgálati Jegyzőkönyv Word sablonja",
+    icon: Upload,
+    color: "#7C3AED",
+    bg: "#F5F3FF",
+  },
 ];
 
 export default function BeallitasokPage({ currentUser }) {
@@ -131,6 +143,14 @@ export default function BeallitasokPage({ currentUser }) {
       <div>
         <BackBtn onClick={() => setAktiv(null)} label="Oktató anyagok Drive link" />
         <OktatoAnyagokBeallitas />
+      </div>
+    );
+  }
+  if (aktiv === "vbfsablon") {
+    return (
+      <div>
+        <BackBtn onClick={() => setAktiv(null)} label="VBF Sablon (.docx)" />
+        <VbfSablonBeallitas />
       </div>
     );
   }
@@ -279,6 +299,149 @@ function AdatTorlesPanel() {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── VBF Sablon feltöltés ─────────────────────────────────────
+function VbfSablonBeallitas() {
+  const fileRef  = useRef();
+  const [van,  setVan]  = useState(hasSablon);
+  const [meta, setMeta] = useState(getSablonMeta);
+  const [uploading, setUploading] = useState(false);
+  const [showDocs, setShowDocs]   = useState(false);
+
+  async function handleFeltoltes(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.endsWith(".docx")) {
+      alert("Csak .docx (Word) fájl fogadható el!");
+      return;
+    }
+    setUploading(true);
+    try {
+      const b64 = await readFileAsBase64(file);
+      saveSablon(b64);
+      setVan(true);
+      setMeta(getSablonMeta());
+    } catch (err) {
+      alert("Feltöltés sikertelen: " + err.message);
+    }
+    setUploading(false);
+    e.target.value = "";
+  }
+
+  function handleTorles() {
+    if (!window.confirm("Biztosan törlöd a feltöltött VBF sablont?")) return;
+    deleteSablon();
+    setVan(false);
+    setMeta(null);
+  }
+
+  return (
+    <div style={{ padding: "28px", fontFamily: FONT, maxWidth: 720 }}>
+
+      {/* Állapot kártya */}
+      <div style={{
+        background: van ? "#F0FDF4" : "#FFFBEB",
+        border: `1.5px solid ${van ? "#86EFAC" : "#FCD34D"}`,
+        borderRadius: 12, padding: "16px 20px", marginBottom: 24,
+        display: "flex", alignItems: "center", gap: 14,
+      }}>
+        {van
+          ? <CheckCircle2 size={22} color="#059669"/>
+          : <Upload size={22} color="#D97706"/>
+        }
+        <div style={{ flex: 1 }}>
+          <p style={{ fontWeight: 700, fontSize: 14, color: van ? "#166534" : "#92400E", margin: 0 }}>
+            {van ? `✓ VBF sablon feltöltve (${meta?.kb ?? "?"} KB)` : "Nincs sablon feltöltve"}
+          </p>
+          <p style={{ fontSize: 12, color: van ? "#15803D" : "#D97706", margin: "3px 0 0" }}>
+            {van
+              ? "A PM felületen megjelenik a 'VBF letöltés (.docx)' gomb minden kitöltött munkalapnál."
+              : "Töltsd fel a Word (.docx) sablont az alábbi gombbal."}
+          </p>
+        </div>
+        {van && (
+          <button onClick={handleTorles} style={{ padding: "6px 14px", background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
+            Törlés
+          </button>
+        )}
+      </div>
+
+      {/* Feltöltés gomb */}
+      <input ref={fileRef} type="file" accept=".docx" style={{ display:"none" }} onChange={handleFeltoltes}/>
+      <button
+        onClick={() => fileRef.current?.click()}
+        disabled={uploading}
+        style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "11px 22px",
+          background: uploading ? "#E2E8F0" : "#7C3AED",
+          color: "#fff", border: "none", borderRadius: 10,
+          cursor: uploading ? "default" : "pointer",
+          fontWeight: 700, fontSize: 14, fontFamily: FONT,
+          marginBottom: 28,
+        }}
+      >
+        <Upload size={16}/>
+        {uploading ? "Feltöltés..." : van ? "Sablon cseréje" : "Word sablon (.docx) feltöltése"}
+      </button>
+
+      {/* Útmutató: hogyan kell a Word fájlt előkészíteni */}
+      <div style={{ background: "#fff", border: `1.5px solid ${C.border}`, borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
+        <button
+          onClick={() => setShowDocs(s => !s)}
+          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", background: "#F8FAFC", border: "none", cursor: "pointer", fontFamily: FONT }}
+        >
+          <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>
+            📋 Útmutató: hogyan kell a Word sablont előkészíteni?
+          </span>
+          <span style={{ fontSize: 18, color: C.muted }}>{showDocs ? "▲" : "▼"}</span>
+        </button>
+
+        {showDocs && (
+          <div style={{ padding: "18px 20px" }}>
+            <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "12px 16px", marginBottom: 16 }}>
+              <p style={{ fontWeight: 700, fontSize: 13, color: "#1D4ED8", margin: "0 0 6px" }}>Lépések:</p>
+              <ol style={{ fontSize: 13, color: "#1E40AF", margin: 0, paddingLeft: 20, lineHeight: 1.8 }}>
+                <li>Nyisd meg a Word sablont</li>
+                <li>Ahol az adatnak kell megjelennie, <strong>írd be a placeholdereket</strong> az alábbi listából: pl. <code style={{ background:"#DBEAFE", padding:"1px 5px", borderRadius:4 }}>{"{ugyfel_nev}"}</code></li>
+                <li>A kapcsos zárójeleket <strong>pontosan így írd</strong> – egy nyitó <code>{"{"}</code> és egy záró <code>{"}"}</code></li>
+                <li>Mentsd el a fájlt <strong>.docx formátumban</strong></li>
+                <li>Töltsd fel ide a fenti gombbal</li>
+              </ol>
+            </div>
+
+            {VBF_PLACEHOLDER_DOCS.map(({ csoport, mezok }) => (
+              <div key={csoport} style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>{csoport}</p>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <tbody>
+                    {mezok.map(([placeholder, leiras]) => (
+                      <tr key={placeholder} style={{ borderBottom: `1px solid ${C.border}` }}>
+                        <td style={{ padding: "7px 12px", fontFamily: "monospace", color: "#7C3AED", fontWeight: 700, whiteSpace: "nowrap", background: "#F5F3FF" }}>
+                          {placeholder}
+                        </td>
+                        <td style={{ padding: "7px 12px", color: C.textSub, fontSize: 12 }}>
+                          {leiras}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+
+            <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 10, padding: "10px 14px", marginTop: 8 }}>
+              <p style={{ fontSize: 12, color: "#92400E", margin: 0, fontWeight: 600 }}>
+                ⚠️ Fontos: Ha a Word fájlban van olyan <code>{"{placeholder}"}</code> ami nem szerepel a fenti listában, hibát kapsz generáláskor.
+                Ellenőrizd, hogy minden kapcsos zárójeles kifejezés szerepel a listában!
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

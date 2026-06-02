@@ -607,7 +607,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
               {m.alairas.dataUrl && <img src={m.alairas.dataUrl} alt="Aláírás" style={{ marginTop:8, maxWidth:"100%", maxHeight:100, background:"#fff", borderRadius:8, border:"1px solid #D1FAE5" }}/>}
             </div>
           )}
-          <VbfAdminCard munkalapId={m.id} />
+          <VbfAdminCard munkalapId={m.id} munkalap={m} />
           <div style={{ marginBottom: 12 }}>
           <button
             onClick={() => setShowFelmeresJkv(true)}
@@ -943,6 +943,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           )}
         </Card>
         <FelhasznaltAnyagokCard m={m} />
+        <VbfAdminCard munkalapId={m.id} munkalap={m} />
         <Card style={{ padding:"20px 22px", marginTop:16 }}>
           <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Műveletek</h4>
           <button onClick={() => setShowUjrakiosztas(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"#EFF6FF", color:C.accent, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
