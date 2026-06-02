@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft, Camera, Save, AlertTriangle, CheckCircle2,
-  X, FileText, Play, Phone, MapPin, Lock, Trash2, Hash
+  X, FileText, Play, Phone, MapPin, Lock, Trash2, Hash, Shield
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AlairasModal from "../components/AlairasModal";
+import LmraModal from "../components/LmraModal";
 import FelmeresTelepito from "./FelmeresTelepito";
 import FelmeresFotok from "./FelmeresFotok";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
@@ -364,6 +365,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   const [activeTab, setActiveTab] = useState(0);
   const [figy, setFigy] = useState(false);
   const [showAlairas, setShowAlairas] = useState(false);
+  const [showLmra, setShowLmra] = useState(false);
   const [progress, setProgress] = useState(null);
   const [progressMsg, setProgressMsg] = useState("");
   const [megjegyzes, setMegjegyzes] = useState(m.megjegyzes||"");
@@ -395,12 +397,30 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   }
 
   function handleMegkezdes() {
+    // LMRA szükséges-e? Ha már van mentett LMRA erre a munkalapra, átugorjuk
+    const meglevoLmra = loadLocal(`lmra_${m.id}`);
+    if (meglevoLmra) {
+      doMegkezdes();
+    } else {
+      setShowLmra(true);
+    }
+  }
+
+  function doMegkezdes() {
     const ts = new Date().toISOString();
-    const ujStatus = ["Kivitelezésre vár","Megkezdésre Vár","Ütemezett","Kiosztásra vár"].includes(m.status)?"Folyamatban":m.status;
-    updateItem("munkalapok",m.id,{megkezdve:true,megkezdesIdopont:ts,status:ujStatus,statusSzin:"#2563EB"});
-    window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
+    const ujStatus = ["Kivitelezésre vár","Megkezdésre Vár","Ütemezett","Kiosztásra vár","Létrehozva","Kiosztva csapatnak"].includes(m.status) ? "Folyamatban" : m.status;
+    updateItem("munkalapok", m.id, { megkezdve: true, megkezdesIdopont: ts, status: ujStatus, statusSzin: "#2563EB" });
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
     setMegkezdve(true);
+    setShowLmra(false);
     setActiveTab(3);
+  }
+
+  function handleLmraComplete(lmraAdat) {
+    // LMRA kész – mentjük a munkalaphoz is
+    updateItem("munkalapok", m.id, { lmra: lmraAdat });
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+    // A munka megkezdése az LmraModal "Munka megkezdése" gombjára klikk után hívódik (onClose)
   }
 
   function handleBefejezesKezdete() {
@@ -633,11 +653,24 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
         <FR label="Értékesítő" value={m.ertekesito}/>
         {m.megkezdesIdopont&&<div style={{ marginTop:12,padding:"10px 14px",background:"#EFF6FF",border:`1px solid #BFDBFE`,borderRadius:10,fontSize:13,color:C.accent }}>▶️ Megkezdve: <b>{new Date(m.megkezdesIdopont).toLocaleString("hu-HU")}</b></div>}
         {!megkezdve ? (
-          <button onClick={handleMegkezdes} style={{ width:"100%",marginTop:20,padding:"15px",borderRadius:12,border:"none",background:"#22C55E",color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT }}>
-            <Play size={20}/> Megkezdés →
-          </button>
+          <div style={{ marginTop: 20 }}>
+            <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#92400E" }}>
+              <Shield size={16} color="#D97706" />
+              <span><b>LMRA szükséges</b> – minden csapattag aláírja a kockázatbecslést a munkakezdés előtt</span>
+            </div>
+            <button onClick={handleMegkezdes} style={{ width:"100%",padding:"15px",borderRadius:12,border:"none",background:"#22C55E",color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT }}>
+              <Shield size={18}/> LMRA + Megkezdés →
+            </button>
+          </div>
         ) : (
-          <div style={{ marginTop:12,padding:"10px 14px",background:"#ECFDF5",border:`1px solid #A7F3D0`,borderRadius:10,fontSize:13,color:C.success,fontWeight:600 }}>✅ Munka folyamatban</div>
+          <div>
+            <div style={{ marginTop:12,padding:"10px 14px",background:"#ECFDF5",border:`1px solid #A7F3D0`,borderRadius:10,fontSize:13,color:C.success,fontWeight:600 }}>✅ Munka folyamatban</div>
+            {loadLocal(`lmra_${m.id}`) && (
+              <div style={{ marginTop:8,padding:"8px 12px",background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:9,fontSize:12,color:"#166534" }}>
+                🛡️ LMRA aláírva · {loadLocal(`lmra_${m.id}`)?.tagok?.join(", ")}
+              </div>
+            )}
+          </div>
         )}
       </div>
     );
@@ -820,6 +853,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       )}
 
       {showAlairas&&<AlairasModal m={m} userRole="Telepítő" onClose={()=>setShowAlairas(false)} onSave={handleBefejezes}/>}
+      {showLmra&&<LmraModal munkalap={m} onClose={() => { setShowLmra(false); doMegkezdes(); }} onComplete={handleLmraComplete} />}
     </div>
   );
 }

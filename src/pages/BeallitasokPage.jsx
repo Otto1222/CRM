@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import {
-  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink, Upload, CheckCircle2,
+  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink, Upload, CheckCircle2, Save, Check, X,
 } from "lucide-react";
 import { loadLocal, saveLocal } from "../lib/localDb";
 import {
@@ -67,6 +67,14 @@ const MENU_ITEMS = [
     bg: "#FEF2F2",
   },
   {
+    id: "lmra",
+    label: "LMRA – Kockázatbecslés",
+    desc: "Last Minute Risk Assessment kockázati pontok szerkesztése",
+    icon: Shield,
+    color: "#DC2626",
+    bg: "#FEF2F2",
+  },
+  {
     id: "mentes",
     label: "Biztonsági mentések",
     desc: "Adatok mentése, visszaállítás, export JSON",
@@ -129,6 +137,15 @@ export default function BeallitasokPage({ currentUser }) {
       </div>
     );
   }
+  if (aktiv === "lmra") {
+    return (
+      <>
+        <BackBtn onClick={() => setAktiv(null)} label="LMRA – Kockázatbecslés" />
+        <LmraBeallitasok />
+      </>
+    );
+  }
+
   if (aktiv === "mentes") {
     return (
       <div>
@@ -575,6 +592,100 @@ function BackBtn({ onClick, label }) {
       </button>
       <span style={{ color: "#CBD5E1" }}>›</span>
       <span style={{ fontSize: 13, fontWeight: 700, color: "#0F172A" }}>{label}</span>
+    </div>
+  );
+}
+
+// ─── LMRA Beállítások ────────────────────────────────────────
+const LMRA_KEY = "crm_lmra_beallitasok";
+const DEFAULT_KOCKAZATOK = [
+  { id: "k1", szoveg: "Munkaterületet felmértem, biztonságos a munkavégzéshez" },
+  { id: "k2", szoveg: "Egyéni védőfelszerelés (sisak, kesztyű, biztonsági cipő) megvan és viselem" },
+  { id: "k3", szoveg: "Elektromos veszélyeket azonosítottam, szükséges lekapcsolások megtörténtek" },
+  { id: "k4", szoveg: "Tetőn végzett munkánál esővédelem, csúszásgátló eszköz megvan" },
+  { id: "k5", szoveg: "Emelési munkáknál a teherbírás ellenőrizve, megfelelő eszköz biztosítva" },
+  { id: "k6", szoveg: "Sürgősségi elérhetőségek ismertek, mentési útvonal szabad" },
+  { id: "k7", szoveg: "A munkaterületen nincs illetéktelen személy (különösen gyermek)" },
+];
+
+function LmraBeallitasok() {
+  const [kockazatok, setKockazatok] = useState(() => {
+    try {
+      const b = JSON.parse(localStorage.getItem(LMRA_KEY) || "{}");
+      return b.kockazatok?.length ? b.kockazatok : DEFAULT_KOCKAZATOK;
+    } catch { return DEFAULT_KOCKAZATOK; }
+  });
+  const [ujSzoveg, setUjSzoveg] = useState("");
+  const [mentve, setMentve] = useState(false);
+
+  function upd(i, v) { setKockazatok(p => p.map((k, j) => j === i ? { ...k, szoveg: v } : k)); setMentve(false); }
+  function remove(i) { setKockazatok(p => p.filter((_, j) => j !== i)); setMentve(false); }
+  function add() {
+    if (!ujSzoveg.trim()) return;
+    setKockazatok(p => [...p, { id: `k_${Date.now()}`, szoveg: ujSzoveg.trim() }]);
+    setUjSzoveg("");
+    setMentve(false);
+  }
+  function save() {
+    localStorage.setItem(LMRA_KEY, JSON.stringify({ kockazatok }));
+    setMentve(true);
+    setTimeout(() => setMentve(false), 2500);
+  }
+  function reset() { setKockazatok(DEFAULT_KOCKAZATOK); setMentve(false); }
+
+  const inp = { width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: 9, fontSize: 13, fontFamily: FONT, outline: "none" };
+
+  return (
+    <div style={{ padding: "20px 24px", fontFamily: FONT, maxWidth: 640 }}>
+      <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", gap: 10, alignItems: "flex-start" }}>
+        <Shield size={18} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
+        <div>
+          <p style={{ fontWeight: 700, fontSize: 13, color: "#991B1B", margin: 0 }}>LMRA – Last Minute Risk Assessment</p>
+          <p style={{ fontSize: 12, color: "#991B1B", margin: "3px 0 0" }}>
+            Ezeket a pontokat minden csapattag elfogadja és aláírja a munka megkezdése előtt.
+            A módosítások csak az ezután indított munkákra érvényesek.
+          </p>
+        </div>
+      </div>
+
+      <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: .7, marginBottom: 10 }}>
+        Kockázati pontok ({kockazatok.length} db)
+      </p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+        {kockazatok.map((k, i) => (
+          <div key={k.id} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#94A3B8", paddingTop: 11, flexShrink: 0, width: 20, textAlign: "right" }}>{i + 1}.</span>
+            <textarea value={k.szoveg} onChange={e => upd(i, e.target.value)} rows={2}
+              style={{ ...inp, resize: "none", flex: 1 }} />
+            <button onClick={() => remove(i)}
+              style={{ padding: "9px 10px", border: "none", background: "#FEF2F2", borderRadius: 8, cursor: "pointer", color: "#DC2626", flexShrink: 0 }}>
+              <X size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        <textarea value={ujSzoveg} onChange={e => setUjSzoveg(e.target.value)} rows={2}
+          placeholder="+ Új kockázati pont szövege…"
+          style={{ ...inp, flex: 1, resize: "none", border: "1.5px dashed #CBD5E1", background: "#F8FAFC" }} />
+        <button onClick={add} disabled={!ujSzoveg.trim()}
+          style={{ padding: "10px 16px", border: "none", background: ujSzoveg.trim() ? "#2563EB" : "#E2E8F0", color: "#fff", borderRadius: 9, cursor: ujSzoveg.trim() ? "pointer" : "default", fontWeight: 700, fontFamily: FONT, alignSelf: "flex-end" }}>
+          + Add
+        </button>
+      </div>
+
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={reset}
+          style={{ padding: "10px 16px", border: "1.5px solid #E2E8F0", borderRadius: 9, background: "#fff", cursor: "pointer", fontFamily: FONT, fontSize: 13, color: "#64748B" }}>
+          Visszaállítás alapértelmezettre
+        </button>
+        <button onClick={save}
+          style={{ flex: 1, padding: "11px 20px", border: "none", borderRadius: 9, background: mentve ? "#059669" : "#2563EB", color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+          {mentve ? <><Check size={15} /> Mentve!</> : <><Save size={15} /> Mentés</>}
+        </button>
+      </div>
     </div>
   );
 }
