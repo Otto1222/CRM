@@ -62,6 +62,7 @@ export default function App() {
   const [showNew, setShowNew] = useState(false);
   const [ujMunkalapInit, setUjMunkalapInit] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const goOnline  = () => setIsOnline(true);
@@ -237,6 +238,7 @@ export default function App() {
   function nav(p) {
     setPage(p);
     setSel(null);
+    setSidebarOpen(false);
   }
 
   function logout() {
@@ -254,9 +256,9 @@ export default function App() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: C.bg }}>
-      <Sidebar page={page} onNav={nav} user={user} onLogout={logout} />
+      <Sidebar page={page} onNav={nav} user={user} onLogout={logout} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div style={{ flex: 1, overflow: "auto", animation: "fadeIn .25s ease" }}>
+      <div style={{ flex: 1, overflow: "auto", animation: "fadeIn .25s ease", minWidth: 0 }}>
         {page === "munkalapok" && sel ? (
           <>
             <TopBar
@@ -267,6 +269,7 @@ export default function App() {
               driveStatus={drive}
               onBack={() => setSel(null)}
               backLabel="Munkalapok"
+              onMenuOpen={() => setSidebarOpen(true)}
             />
             <MunkalapDetail
               m={sel}
@@ -285,7 +288,7 @@ export default function App() {
           </>
         ) : (
           <>
-            <TopBar title={PAGE_TITLES[page]} user={user} driveStatus={drive} />
+            <TopBar title={PAGE_TITLES[page]} user={user} driveStatus={drive} onMenuOpen={() => setSidebarOpen(true)} />
 
             {page === "dashboard" && <Dashboard user={user} />}
 
