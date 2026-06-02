@@ -1,11 +1,11 @@
 /**
  * authApi.js – Hitelesítési rendszer
- * Drive: Claude/CRM/db/auth_users.json  → 1hHAiB8PvRCbKagTghpKQ1N4L8Y5zlyXu
- * Log:   Claude/CRM/db/activity_log.json → 1naVQ491QbU6MuT2ErDVkjpJB0IhXIGHz
+ * Drive: CRM/01_Adatbazis/auth_users.json   → 1JvDiNSgw-u19ke6HcSYFHQWf5nhtRzCc
+ * Log:   CRM/01_Adatbazis/activity_log.json → 1mOBwQpOslyiPtRC7rrcMxtLxcSB6D3kn
  */
 
-const AUTH_FILE_ID = "1hHAiB8PvRCbKagTghpKQ1N4L8Y5zlyXu";
-const LOG_FILE_ID  = "1naVQ491QbU6MuT2ErDVkjpJB0IhXIGHz";
+const AUTH_FILE_ID = "1JvDiNSgw-u19ke6HcSYFHQWf5nhtRzCc";
+const LOG_FILE_ID  = "1mOBwQpOslyiPtRC7rrcMxtLxcSB6D3kn";
 
 export const ROLES = [
   { value: "Admin",            label: "Admin",            color: "#2563EB" },
