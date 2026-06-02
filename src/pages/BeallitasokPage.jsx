@@ -596,95 +596,89 @@ function BackBtn({ onClick, label }) {
   );
 }
 
-// ─── LMRA Beállítások ────────────────────────────────────────
-const LMRA_KEY = "crm_lmra_beallitasok";
-const DEFAULT_KOCKAZATOK = [
-  { id: "k1", szoveg: "Munkaterületet felmértem, biztonságos a munkavégzéshez" },
-  { id: "k2", szoveg: "Egyéni védőfelszerelés (sisak, kesztyű, biztonsági cipő) megvan és viselem" },
-  { id: "k3", szoveg: "Elektromos veszélyeket azonosítottam, szükséges lekapcsolások megtörténtek" },
-  { id: "k4", szoveg: "Tetőn végzett munkánál esővédelem, csúszásgátló eszköz megvan" },
-  { id: "k5", szoveg: "Emelési munkáknál a teherbírás ellenőrizve, megfelelő eszköz biztosítva" },
-  { id: "k6", szoveg: "Sürgősségi elérhetőségek ismertek, mentési útvonal szabad" },
-  { id: "k7", szoveg: "A munkaterületen nincs illetéktelen személy (különösen gyermek)" },
-];
+// ─── LMRA Beállítások – PDF sablon feltöltés ─────────────────
+import { hasPdfSablon, savePdfSablon, deletePdfSablon, getPdfSablonMeta, readFileAsBase64 as lmraReadFile, LMRA_KOCKAZATOK } from "../lib/lmraService";
 
 function LmraBeallitasok() {
-  const [kockazatok, setKockazatok] = useState(() => {
+  const fileRef = useRef();
+  const [van,     setVan]     = useState(hasPdfSablon);
+  const [meta,    setMeta]    = useState(getPdfSablonMeta);
+  const [loading, setLoading] = useState(false);
+
+  async function handleFeltoltes(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.match(/\.(pdf|docx)$/i)) {
+      alert("Csak PDF vagy DOCX fájl fogadható el!"); return;
+    }
+    setLoading(true);
     try {
-      const b = JSON.parse(localStorage.getItem(LMRA_KEY) || "{}");
-      return b.kockazatok?.length ? b.kockazatok : DEFAULT_KOCKAZATOK;
-    } catch { return DEFAULT_KOCKAZATOK; }
-  });
-  const [ujSzoveg, setUjSzoveg] = useState("");
-  const [mentve, setMentve] = useState(false);
-
-  function upd(i, v) { setKockazatok(p => p.map((k, j) => j === i ? { ...k, szoveg: v } : k)); setMentve(false); }
-  function remove(i) { setKockazatok(p => p.filter((_, j) => j !== i)); setMentve(false); }
-  function add() {
-    if (!ujSzoveg.trim()) return;
-    setKockazatok(p => [...p, { id: `k_${Date.now()}`, szoveg: ujSzoveg.trim() }]);
-    setUjSzoveg("");
-    setMentve(false);
+      const b64 = await lmraReadFile(file);
+      savePdfSablon(b64);
+      setVan(true); setMeta(getPdfSablonMeta());
+    } catch (err) { alert("Feltöltés sikertelen: " + err.message); }
+    setLoading(false); e.target.value = "";
   }
-  function save() {
-    localStorage.setItem(LMRA_KEY, JSON.stringify({ kockazatok }));
-    setMentve(true);
-    setTimeout(() => setMentve(false), 2500);
-  }
-  function reset() { setKockazatok(DEFAULT_KOCKAZATOK); setMentve(false); }
 
-  const inp = { width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: 9, fontSize: 13, fontFamily: FONT, outline: "none" };
+  function handleTorles() {
+    if (!window.confirm("Biztosan törlöd a feltöltött LMRA nyomtatványt?")) return;
+    deletePdfSablon(); setVan(false); setMeta(null);
+  }
 
   return (
     <div style={{ padding: "20px 24px", fontFamily: FONT, maxWidth: 640 }}>
-      <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", gap: 10, alignItems: "flex-start" }}>
+      {/* Info */}
+      <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", gap: 10 }}>
         <Shield size={18} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
         <div>
-          <p style={{ fontWeight: 700, fontSize: 13, color: "#991B1B", margin: 0 }}>LMRA – Last Minute Risk Assessment</p>
+          <p style={{ fontWeight: 700, fontSize: 13, color: "#991B1B", margin: 0 }}>LMRA – Munkavégzést megelőző kockázatértékelés</p>
           <p style={{ fontSize: 12, color: "#991B1B", margin: "3px 0 0" }}>
-            Ezeket a pontokat minden csapattag elfogadja és aláírja a munka megkezdése előtt.
-            A módosítások csak az ezután indított munkákra érvényesek.
+            Töltsd fel az eredeti, rögzített LMRA nyomtatványt PDF formátumban.
+            Helyszínen a telepítők megtekinthetik és mellette kitöltik a digitális verziót, majd aláírnak.
           </p>
         </div>
       </div>
 
-      <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: .7, marginBottom: 10 }}>
-        Kockázati pontok ({kockazatok.length} db)
-      </p>
+      {/* Sablon állapot */}
+      <div style={{ background: van ? "#F0FDF4" : "#FFFBEB", border: `1.5px solid ${van ? "#86EFAC" : "#FCD34D"}`, borderRadius: 12, padding: "14px 18px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+        {van ? <CheckCircle2 size={22} color="#059669" /> : <Upload size={22} color="#D97706" />}
+        <div style={{ flex: 1 }}>
+          <p style={{ fontWeight: 700, fontSize: 14, color: van ? "#166534" : "#92400E", margin: 0 }}>
+            {van ? `✓ LMRA nyomtatvány feltöltve (${meta?.kb ?? "?"} KB)` : "Nincs sablon feltöltve"}
+          </p>
+          <p style={{ fontSize: 12, color: van ? "#15803D" : "#D97706", margin: "2px 0 0" }}>
+            {van ? "Helyszínen a 'Nyomtatvány' gombra kattintva megtekinthető referenciának." : "Feltöltés nélkül is működik a digitális LMRA flow."}
+          </p>
+        </div>
+        {van && (
+          <button onClick={handleTorles} style={{ padding: "6px 14px", background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
+            Törlés
+          </button>
+        )}
+      </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
-        {kockazatok.map((k, i) => (
-          <div key={k.id} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#94A3B8", paddingTop: 11, flexShrink: 0, width: 20, textAlign: "right" }}>{i + 1}.</span>
-            <textarea value={k.szoveg} onChange={e => upd(i, e.target.value)} rows={2}
-              style={{ ...inp, resize: "none", flex: 1 }} />
-            <button onClick={() => remove(i)}
-              style={{ padding: "9px 10px", border: "none", background: "#FEF2F2", borderRadius: 8, cursor: "pointer", color: "#DC2626", flexShrink: 0 }}>
-              <X size={14} />
-            </button>
+      {/* Feltöltés gomb */}
+      <input ref={fileRef} type="file" accept=".pdf,.docx" style={{ display: "none" }} onChange={handleFeltoltes} />
+      <button onClick={() => fileRef.current?.click()} disabled={loading}
+        style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 22px", background: loading ? "#E2E8F0" : "#DC2626", color: "#fff", border: "none", borderRadius: 10, cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, marginBottom: 28 }}>
+        <Upload size={16} />
+        {loading ? "Feltöltés..." : van ? "Nyomtatvány cseréje (.pdf / .docx)" : "LMRA nyomtatvány feltöltése (.pdf / .docx)"}
+      </button>
+
+      {/* Kockázat lista tájékoztató */}
+      <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 12, padding: "14px 16px" }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: .7, margin: "0 0 10px" }}>
+          Digitális kockázati pontok ({LMRA_KOCKAZATOK.length} db) – rögzített lista
+        </p>
+        <p style={{ fontSize: 12, color: "#64748B", margin: "0 0 10px" }}>
+          Ezek a pontok az eredeti nyomtatványból kerültek be. Igen/Nem értékelést adnak róluk helyszínen.
+        </p>
+        {LMRA_KOCKAZATOK.map((k, i) => (
+          <div key={k.id} style={{ fontSize: 12, color: "#374151", padding: "4px 0", borderBottom: "1px solid #F1F5F9", display: "flex", gap: 8 }}>
+            <span style={{ color: "#94A3B8", fontWeight: 700, minWidth: 20 }}>{i + 1}.</span>
+            {k.szoveg}
           </div>
         ))}
-      </div>
-
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        <textarea value={ujSzoveg} onChange={e => setUjSzoveg(e.target.value)} rows={2}
-          placeholder="+ Új kockázati pont szövege…"
-          style={{ ...inp, flex: 1, resize: "none", border: "1.5px dashed #CBD5E1", background: "#F8FAFC" }} />
-        <button onClick={add} disabled={!ujSzoveg.trim()}
-          style={{ padding: "10px 16px", border: "none", background: ujSzoveg.trim() ? "#2563EB" : "#E2E8F0", color: "#fff", borderRadius: 9, cursor: ujSzoveg.trim() ? "pointer" : "default", fontWeight: 700, fontFamily: FONT, alignSelf: "flex-end" }}>
-          + Add
-        </button>
-      </div>
-
-      <div style={{ display: "flex", gap: 10 }}>
-        <button onClick={reset}
-          style={{ padding: "10px 16px", border: "1.5px solid #E2E8F0", borderRadius: 9, background: "#fff", cursor: "pointer", fontFamily: FONT, fontSize: 13, color: "#64748B" }}>
-          Visszaállítás alapértelmezettre
-        </button>
-        <button onClick={save}
-          style={{ flex: 1, padding: "11px 20px", border: "none", borderRadius: 9, background: mentve ? "#059669" : "#2563EB", color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
-          {mentve ? <><Check size={15} /> Mentve!</> : <><Save size={15} /> Mentés</>}
-        </button>
       </div>
     </div>
   );
