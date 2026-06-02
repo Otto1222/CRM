@@ -15,6 +15,7 @@ import BeallitasokPage from "./pages/BeallitasokPage";
 import UjMunkalap from "./pages/UjMunkalap";
 import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
 import CsapatokPage from "./modules/csapatok/CsapatokPage.jsx";
+import PwaInstallBanner from "./components/PwaInstallBanner.jsx";
 
 const PAGE_TITLES = {
   dashboard: "Pénzügy",
@@ -54,6 +55,18 @@ export default function App() {
   const [drive, setDrive] = useState("idle");
   const [showNew, setShowNew] = useState(false);
   const [ujMunkalapInit, setUjMunkalapInit] = useState(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const goOnline  = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online",  goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online",  goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
 
   useEffect(() => {
     function reloadFromLocal() {
@@ -332,6 +345,20 @@ export default function App() {
           initialData={ujMunkalapInit}
         />
       )}
+
+      {/* Offline jelző */}
+      {!isOnline && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+          background: "#B91C1C", color: "#fff",
+          padding: "8px 16px", textAlign: "center",
+          fontSize: 13, fontWeight: 700, fontFamily: "system-ui, sans-serif",
+        }}>
+          📵 Nincs internetkapcsolat – az adatok helyi mentésből töltődnek, Drive szinkron szünetel
+        </div>
+      )}
+
+      <PwaInstallBanner />
     </div>
   );
 }

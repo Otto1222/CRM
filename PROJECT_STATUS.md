@@ -1,5 +1,5 @@
 # PROJECT_STATUS.md – CRM Napelem ERP
-_Utolsó frissítés: 2026-06-02 (v4) – Munkalapok KÉSZ, profi login form, Drive szinkron_
+_Utolsó frissítés: 2026-06-02 (v5) – Telepítő App PWA KÉSZ: manifest, SW, offline mód, install banner_
 
 ## Fejlesztési sorrend és jelenlegi állapot
 
@@ -11,7 +11,7 @@ _Utolsó frissítés: 2026-06-02 (v4) – Munkalapok KÉSZ, profi login form, Dr
 | 4 | Projektek | ✅ KÉSZ | CRUD, 14 státusz (terv szerint), műszaki mezők, ügyfél dropdown |
 | 5 | Csapatok | ✅ KÉSZ | Teljes CRUD: név, telephely, tagok, kapacitás, szín, hétvége toggle |
 | 6 | Munkalapok | ✅ KÉSZ | CRUD, felmérés, VBF, fotók, projektből létrehozás (pre-fill), onClose fix |
-| 7 | Telepítő App (PWA) | ⚠️ RÉSZLEGES | FelmeresTelepito, TelepItoMunkalap megvan; nincs PWA manifest/SW |
+| 7 | Telepítő App (PWA) | ✅ KÉSZ | PWA manifest, SW (cache-first assets, network-first egyéb), offline mód, install banner |
 | 8 | Google Drive | ⚠️ RÉSZLEGES | driveApi + Apps Script webhook megvan; nincs auto projekt-mappa |
 | 9 | Fővállalkozók | ✅ KÉSZ | Teljes CRUD, elszámolási szabályok |
 | 10 | Elszámolási motor | ✅ KÉSZ | costEngine, settlementRule, per-fővállalkozó szabályok |
@@ -63,10 +63,15 @@ _Utolsó frissítés: 2026-06-02 (v4) – Munkalapok KÉSZ, profi login form, Dr
 - Aláírás rögzítés (ügyfél + telepítő)
 - Projekt kapcsolat: projektId mező, munkakiosztásban link
 
-### ⚠️ 7. Telepítő App
+### ✅ 7. Telepítő App (PWA)
 - FelmeresTelepito.jsx, TelepItoMunkalap.jsx: szerepkör alapján látható
-- Hiányzik: PWA manifest, service worker, offline mód
-- Mobil optimalizálás javítandó
+- `public/manifest.json`: app név, ikon, theme color (#1E3A5F), standalone display
+- `public/sw.js`: service worker – Vite assets cache-first (immutable), egyéb network-first + cache fallback
+- `public/icon.svg` + `icon-maskable.svg`: napelem + nap ikon
+- `index.html`: manifest link, SW regisztráció, viewport-fit=cover, apple-mobile-web-app meta
+- `PwaInstallBanner.jsx`: Android (beforeinstallprompt) + iOS (manuális instrukció) telepítési banner
+- `App.jsx`: offline jelző (vörös sáv), PwaInstallBanner
+- Offline működés: localStorage → minden adat offline elérhető; Drive szinkron offline szünetel (jelzett)
 
 ### ⚠️ 8. Google Drive
 - driveApi.js + VITE_APPS_SCRIPT_URL webhook
