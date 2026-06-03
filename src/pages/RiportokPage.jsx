@@ -343,8 +343,9 @@ export default function RiportokPage() {
   }, [projektek, evSzuro]);
 
   // Pénzügyi kalkuláció minden projektre (memoizált)
+  const URES_KALK = { nettoBevitel: 0, osszesKolts: 0, haszon: 0, csapatBer: 0, haszonPct: null };
   const projektKalkData = useMemo(() =>
-    szurtProjektek.map(p => ({ projekt: p, kalk: calcEsmentProjektPenzugy(p) })),
+    szurtProjektek.map(p => ({ projekt: p, kalk: calcEsmentProjektPenzugy(p) || URES_KALK })),
     [szurtProjektek]
   );
 
