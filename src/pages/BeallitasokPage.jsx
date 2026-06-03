@@ -9,6 +9,7 @@ import {
 } from "../lib/vbfDocxService";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AdminPanel from "./AdminPanel";
+import DriveStatusPanel from "../components/DriveStatusPanel";
 import JegyzokonyviBeallitasok from "./JegyzokonyviBeallitasok";
 import MunkakiosztasBeallitasok from "./MunkakiosztasBeallitasok";
 import FovallalkozoPage from "../modules/fovallalkozok/FovallalkozoPage";
@@ -91,6 +92,14 @@ const MENU_ITEMS = [
     bg: "#F8FAFC",
   },
   {
+    id: "drive_status",
+    label: "Drive szinkron állapot",
+    desc: "Kapcsolat teszt, kollekciónkénti szinkron napló, teljes Drive mentés",
+    icon: Shield,
+    color: "#0891B2",
+    bg: "#ECFEFF",
+  },
+  {
     id: "oktatoanyagok",
     label: "Oktató anyagok (Drive link)",
     desc: "Telepítők számára elérhető Google Drive mappa URL-je",
@@ -169,6 +178,14 @@ export default function BeallitasokPage({ currentUser }) {
         <div style={{ padding: "0 0" }}>
           <BackupKezelo userRole={role} />
         </div>
+      </div>
+    );
+  }
+  if (aktiv === "drive_status") {
+    return (
+      <div>
+        <BackBtn onClick={() => setAktiv(null)} label="Drive szinkron állapot" />
+        <DriveStatusPanel />
       </div>
     );
   }

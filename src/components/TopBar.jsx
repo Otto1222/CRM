@@ -3,8 +3,22 @@ import { C, FONT, FONT_HEADING } from "../lib/constants";
 import Avatar from "./Avatar";
 
 export default function TopBar({ title, user, driveStatus, right, onBack, backLabel, onMenuOpen }) {
-  const dsColors = { idle: C.muted, saving: C.warning, ok: C.success, error: C.danger };
-  const dsLabel  = { idle: "Drive", saving: "Mentés…", ok: "Mentve ✓", error: "Hiba ✗" };
+  const dsColors = {
+    idle:      C.muted,
+    saving:    C.warning,
+    ok:        C.success,
+    verified:  "#059669",
+    error:     C.danger,
+    local_ok:  "#D97706",
+  };
+  const dsLabel = {
+    idle:      "Drive",
+    saving:    "Mentés…",
+    ok:        "Mentve ✓",
+    verified:  "Ellenőrizve ✓",
+    error:     "Drive hiba ✗",
+    local_ok:  "Lokálisan mentve",
+  };
   const ds = driveStatus || "idle";
 
   return (

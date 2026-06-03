@@ -2,6 +2,7 @@ import { useState } from "react";
 import { RotateCcw, Trash2, Download, Shield, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getBackups, restoreBackup, deleteBackup, createBackup } from "../lib/backupService";
+import { driveSaveVerified, driveAvailable } from "../lib/driveApi";
 
 export default function BackupKezelo({ userRole }) {
   const [backups,  setBackups]  = useState(() => getBackups());
@@ -15,10 +16,33 @@ export default function BackupKezelo({ userRole }) {
   async function handleMentes() {
     setFolyamat("mentes");
     const label = `Manuális mentés – ${new Date().toLocaleString("hu-HU")}`;
-    const id = createBackup(label, { saveToDrive: true });
+
+    // 1. Helyi mentés
+    const id = createBackup(label, { saveToDrive: false });
+
+    if (!driveAvailable()) {
+      setFolyamat(null);
+      setUzenet({ ok: true, szoveg: `✅ Helyi mentés kész: ${id} (Drive nem konfigurált)` });
+      setTimeout(() => setUzenet(null), 4000);
+      refresh();
+      return;
+    }
+
+    // 2. Drive mentés + visszaolvasásos ellenőrzés
+    const backups = getBackups();
+    const verifyRes = await driveSaveVerified("crm_backups", { crm_backups: backups });
+
     setFolyamat(null);
-    setUzenet({ ok:true, szoveg:`✅ Mentés kész (Drive-ra is feltöltve): ${id}` });
-    setTimeout(()=>setUzenet(null), 4000);
+
+    if (verifyRes.verified) {
+      setUzenet({ ok: true, szoveg: `✅ Drive mentés + visszaellenőrzés sikeres (ID: ${id})` });
+    } else if (verifyRes.ok) {
+      setUzenet({ ok: true, szoveg: `⚠️ Drive-ra feltöltve, de visszaellenőrzés sikertelen: ${verifyRes.error} (ID: ${id})` });
+    } else {
+      setUzenet({ ok: false, szoveg: `A munkalap helyileg mentve (${id}), de a Google Drive mentés nem sikerült: ${verifyRes.error}. Ellenőrizd az internetkapcsolatot!` });
+    }
+
+    setTimeout(() => setUzenet(null), 7000);
     refresh();
   }
 

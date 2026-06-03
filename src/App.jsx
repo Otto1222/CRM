@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
 import { driveSave, driveAvailable } from "./lib/driveApi";
+import { hasDefaultPasswords } from "./lib/crmUsers";
 import { getHomePage } from "./lib/roles";
 import { loadLocal, saveLocal } from "./lib/localDb";
 import { syncAllFromDrive, syncAllToDrive } from "./lib/dataSync.service";
@@ -59,6 +60,7 @@ export default function App() {
   const [sel, setSel] = useState(null);
   const [data, setData] = useState(loadInitialData);
   const [drive, setDrive] = useState("idle");
+  const [defaultPwWarning, setDefaultPwWarning] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [ujMunkalapInit, setUjMunkalapInit] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -197,14 +199,14 @@ export default function App() {
     setDrive("saving");
 
     try {
-      await syncAllToDrive();
-      setDrive("ok");
+      const { allOk } = await syncAllToDrive();
+      setDrive(allOk ? "ok" : "error");
     } catch (e) {
       console.warn("[App syncAllToDrive]", e);
       setDrive("error");
     }
 
-    setTimeout(() => setDrive("idle"), 2500);
+    setTimeout(() => setDrive("idle"), 3000);
   }
 
   async function handleNewMunkalap(formData) {
@@ -250,6 +252,7 @@ export default function App() {
   function handleLogin(u) {
     setUser(u);
     setPage(getHomePage(u?.role));
+    if (u?.role === "Admin") setDefaultPwWarning(hasDefaultPasswords());
   }
 
   if (!user) return <Login onLogin={handleLogin} />;
@@ -380,6 +383,32 @@ export default function App() {
           fontSize: 13, fontWeight: 700, fontFamily: "system-ui, sans-serif",
         }}>
           📵 Nincs internetkapcsolat – az adatok helyi mentésből töltődnek, Drive szinkron szünetel
+        </div>
+      )}
+
+      {/* Alapértelmezett jelszó figyelmeztetés (Admin) */}
+      {defaultPwWarning && (
+        <div style={{
+          position: "fixed", top: isOnline ? 0 : 38, left: 0, right: 0, zIndex: 9998,
+          background: "#92400E", color: "#FEF3C7",
+          padding: "8px 16px", display: "flex", alignItems: "center", justifyContent: "space-between",
+          fontSize: 13, fontWeight: 700, fontFamily: "system-ui, sans-serif", gap: 12,
+        }}>
+          <span>⛔ Alapértelmezett jelszavak aktívak – éles indulás ELŐTT változtasd meg! (Beállítások → Felhasználók)</span>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <button
+              onClick={() => { nav("beallitasok"); }}
+              style={{ padding: "3px 12px", background: "#FEF3C7", color: "#92400E", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+            >
+              Megnyitás
+            </button>
+            <button
+              onClick={() => setDefaultPwWarning(false)}
+              style={{ padding: "3px 8px", background: "transparent", color: "#FEF3C7", border: "1px solid #FEF3C7", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 

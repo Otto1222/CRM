@@ -81,7 +81,12 @@ function saveJson(p) {
   } else {
     folder.createFile(p.fileName, json, MimeType.PLAIN_TEXT);
   }
-  return { ok: true };
+  return {
+    ok:        true,
+    action:    "saveJson",
+    fileName:  p.fileName,
+    timestamp: new Date().toISOString(),
+  };
 }
 
 // ─── JSON betöltés ────────────────────────────────────────────────
@@ -93,9 +98,9 @@ function loadJson(p) {
   if (!files.hasNext()) return { ok: false, error: "Fájl nem található: " + p.fileName };
   try {
     var content = JSON.parse(files.next().getBlob().getDataAsString());
-    return { ok: true, content: content };
+    return { ok: true, action: "loadJson", fileName: p.fileName, content: content };
   } catch(e) {
-    return { ok: false, error: "JSON parse hiba: " + e.message };
+    return { ok: false, action: "loadJson", fileName: p.fileName, error: "JSON parse hiba: " + e.message };
   }
 }
 
@@ -111,8 +116,14 @@ function saveFoto(p) {
     p.mimeType || "image/jpeg",
     p.fotoNev  || ("foto_" + Date.now() + ".jpg")
   );
-  targetFolder.createFile(blob);
-  return { ok: true };
+  var file = targetFolder.createFile(blob);
+  return {
+    ok:        true,
+    action:    "saveFoto",
+    fotoNev:   p.fotoNev,
+    folderId:  targetFolder.getId(),
+    timestamp: new Date().toISOString(),
+  };
 }
 
 // ─── Munkalap mappa létrehozás ────────────────────────────────────
@@ -121,8 +132,13 @@ function saveFoto(p) {
 // Ha nincs          → CRM_munka/Munkalapok/{munkalapId}
 function createMunkalapFolder(p) {
   if (!p.munkalapId) return { ok: false, error: "munkalapId hiányzik" };
-  getMunkalapFolder(p.munkalapId, p.projektkod || "");
-  return { ok: true };
+  var folder = getMunkalapFolder(p.munkalapId, p.projektkod || "");
+  return {
+    ok:        true,
+    action:    "createMunkalapFolder",
+    folderId:  folder.getId(),
+    timestamp: new Date().toISOString(),
+  };
 }
 
 // Belső segédfüggvény: megkeresi vagy létrehozza a munkalap mappát

@@ -83,6 +83,13 @@ export async function hashPw(pw) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+/** Ellenőrzi, hogy bármelyik user még az alapértelmezett jelszót használja-e */
+export function hasDefaultPasswords() {
+  const users        = getUsers();
+  const defaultHashes = new Set(DEFAULT_USERS.map(u => u.passwordHash));
+  return users.some(u => defaultHashes.has(u.passwordHash));
+}
+
 /** Bejelentkezés ellenőrzése – username vagy teljes névvel */
 export async function checkLogin(username, password) {
   const users = getUsers();
