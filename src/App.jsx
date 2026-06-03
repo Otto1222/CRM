@@ -22,6 +22,7 @@ import CsapatokPage from "./modules/csapatok/CsapatokPage.jsx";
 import SzamlakPage from "./modules/szamlak/SzamlakPage.jsx";
 import PwaInstallBanner from "./components/PwaInstallBanner.jsx";
 import RiportokPage from "./pages/RiportokPage.jsx";
+import NaptarPage from "./pages/NaptarPage.jsx";
 
 const PAGE_TITLES = {
   dashboard: "Pénzügy",
@@ -364,7 +365,16 @@ export default function App() {
             {page === "szerzodések" && <ComingSoon title="Szerződések" />}
             {page === "szamlak" && <SzamlakPage currentUser={user} />}
             {page === "csapat" && <CsapatokPage currentUser={user} />}
-            {page === "naptar" && <ComingSoon title="Naptár" />}
+            {page === "naptar" && (
+              <NaptarPage
+                data={data}
+                currentUser={user}
+                onNavigate={(type, ref) => {
+                  if (type === "munkalap" && ref) { setPage("munkalapok"); setSel(ref); }
+                  else if (type === "projekt")    { setPage("projektek"); }
+                }}
+              />
+            )}
 
             {page === "riportok" && <RiportokPage currentUser={user} />}
 

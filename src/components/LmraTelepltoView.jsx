@@ -20,6 +20,7 @@ import {
   getRelevantTagok, getAllAktivTagok,
   saveNewTagToTeam, getAktivTeleppCsapatok,
 } from "../lib/lmraData.service";
+import { downloadLmraPdf } from "../lib/lmraPdfMerge";
 
 // ─── Aláírás canvas ───────────────────────────────────────────
 
@@ -251,13 +252,21 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
               </span>
             ))}
           </div>
-          <button
-            onClick={onClose}
-            style={{ padding: "12px 32px", background: "#059669", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 15, fontFamily: FONT }}
-          >
-            <Check size={16} style={{ display: "inline", marginRight: 7, verticalAlign: "middle" }} />
-            Munka megkezdése →
-          </button>
+          <div style={{ display: "flex", gap: 9, flexDirection: "column" }}>
+            <button
+              onClick={() => downloadLmraPdf(rec, munkalap, currentUser?.name)}
+              style={{ padding: "11px 24px", background: "#1e3a5c", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}
+            >
+              📄 LMRA PDF letöltése
+            </button>
+            <button
+              onClick={onClose}
+              style={{ padding: "12px 32px", background: "#059669", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 15, fontFamily: FONT }}
+            >
+              <Check size={16} style={{ display: "inline", marginRight: 7, verticalAlign: "middle" }} />
+              Munka megkezdése →
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -597,12 +606,20 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
             </div>
           )}
           {step === "kesz" && (
-            <button
-              onClick={onClose}
-              style={{ width: "100%", padding: "14px", border: "none", borderRadius: 11, background: "#059669", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}
-            >
-              <Check size={17} /> Munka megkezdése →
-            </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+              <button
+                onClick={() => downloadLmraPdf(rec, munkalap, currentUser?.name)}
+                style={{ width: "100%", padding: "12px", border: "none", borderRadius: 11, background: "#1e3a5c", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}
+              >
+                📄 LMRA PDF letöltése
+              </button>
+              <button
+                onClick={onClose}
+                style={{ width: "100%", padding: "14px", border: "none", borderRadius: 11, background: "#059669", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}
+              >
+                <Check size={17} /> Munka megkezdése →
+              </button>
+            </div>
           )}
         </div>
       </div>

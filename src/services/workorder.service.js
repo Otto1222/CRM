@@ -1,5 +1,6 @@
 import { validateWorkorderBeforeSave } from "../modules/projektek/projectRules.js";
 import { driveSave } from "../lib/driveApi.js";
+import { syncMunkalapToCalendar, deleteMunkalapFromCalendar } from "./calendarSync.service.js";
 
 const KEY = "munkalapok";
 
@@ -102,6 +103,8 @@ export function createWorkorder(data) {
   }
 
   saveWorkorders([workorder, ...loadWorkorders()]);
+  // Live Google Calendar szinkron – fire-and-forget, nem blokkolja a mentést
+  syncMunkalapToCalendar(workorder).catch(() => {});
   return workorder;
 }
 
@@ -130,9 +133,14 @@ export function updateWorkorder(id, updates) {
   );
 
   saveWorkorders(next);
+  // Live Google Calendar szinkron – dátum, cím, státusz, assignee változásra
+  syncMunkalapToCalendar(updated).catch(() => {});
   return updated;
 }
 
 export function deleteWorkorder(id) {
+  const toDelete = getWorkorder(id);
   saveWorkorders(loadWorkorders().filter(w => w.id !== id));
+  // Törölt munkalap naptár eseményét is eltávolítja
+  if (toDelete) deleteMunkalapFromCalendar(toDelete).catch(() => {});
 }

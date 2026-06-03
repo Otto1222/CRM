@@ -155,4 +155,21 @@ export async function drivePing() {
   return { ok: false, error: res?.error || "Ismeretlen hiba" };
 }
 
+/**
+ * Google Calendar szinkron – egyedi esemény létrehozása / frissítése.
+ * Apps Script handler: "syncCalendarEvent" case (ld. calendarSync.service.js komment).
+ * Visszatér: { ok, eventId, action: "created"|"updated" }
+ */
+export async function driveSyncCalendarEvent(event, calendarId) {
+  return post({ action: "syncCalendarEvent", calendarId, event });
+}
+
+/**
+ * Google Calendar esemény törlése calendarEventId alapján.
+ * Apps Script handler: "deleteCalendarEvent" case (ld. calendarSync.service.js komment).
+ */
+export async function driveDeleteCalendarEvent(eventId, calendarId) {
+  return post({ action: "deleteCalendarEvent", calendarId, eventId });
+}
+
 export const driveAvailable = () => !!SCRIPT_URL;
