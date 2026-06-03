@@ -341,7 +341,7 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
   );
 }
 
-export default function TelepItoMunkalap({ m, data, onBack }) {
+export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   const client = data.ugyfelek?.find(u=>u.id===m.clientId);
   const clientNev = m.clientNev||client?.name||"";
   const clientCim = m.clientCim||client?.address||"";

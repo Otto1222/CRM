@@ -1198,11 +1198,11 @@ function LmraAdminCard({ munkalap, userRole }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-export function MunkalapDetail({ m, data, userRole, onBack, onDelete, onRefresh }) {
+export function MunkalapDetail({ m, data, userRole, currentUser, onBack, onDelete, onRefresh }) {
   const isMobile = useIsMobile();
   if (userRole === "Telepítő") {
     if (m.status === "Felmérés") return <FelmeresTelepito m={m} data={data} onBack={onBack||(()=>window.history.back())} />;
-    return <TelepItoMunkalap m={m} data={data} onBack={onBack||(()=>window.history.back())} />;
+    return <TelepItoMunkalap m={m} data={data} currentUser={currentUser} onBack={onBack||(()=>window.history.back())} />;
   }
   if (isMobile) return <AdminMobileDetail m={m} data={data} userRole={userRole} onDelete={onDelete} onRefresh={onRefresh} />;
   return <AdminDesktopDetail m={m} data={data} userRole={userRole} onDelete={onDelete} onRefresh={onRefresh} />;

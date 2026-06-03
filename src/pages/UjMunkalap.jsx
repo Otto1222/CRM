@@ -14,9 +14,15 @@ import { getAktivCsapatok } from "../modules/csapatok/csapat.service";
 function genMunkalapKod(projektId, projektkod) {
   if (!projektId || !projektkod) return "";
   try {
-    const all   = JSON.parse(localStorage.getItem("munkalapok") || "[]");
-    const count = all.filter(m => m.projektId === projektId).length;
-    return `${projektkod}/M-${String(count + 1).padStart(3, "0")}`;
+    const all      = JSON.parse(localStorage.getItem("munkalapok") || "[]");
+    const existing = new Set(all.map(m => m.ugyszam || m.dokumentumszam).filter(Boolean));
+    let seq = all.filter(m => m.projektId === projektId).length + 1;
+    let candidate = `${projektkod}/M-${String(seq).padStart(3, "0")}`;
+    while (existing.has(candidate)) {
+      seq++;
+      candidate = `${projektkod}/M-${String(seq).padStart(3, "0")}`;
+    }
+    return candidate;
   } catch { return ""; }
 }
 

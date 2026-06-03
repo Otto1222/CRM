@@ -9,6 +9,7 @@
  */
 
 import { LMRA_KOCKAZATOK } from "./lmraService.js";
+import { driveSave } from "./driveApi.js";
 
 const LMRA_REC_KEY        = id => `lmra_rec_${id}`;
 const TELEPITO_CS_KEY     = "telepito_csapatok";
@@ -48,7 +49,11 @@ export function loadLmraRec(munkalapId) {
 }
 
 export function saveLmraRec(munkalapId, rec) {
-  localStorage.setItem(LMRA_REC_KEY(munkalapId), JSON.stringify({ ...rec, updatedAt: new Date().toISOString() }));
+  const updated = { ...rec, updatedAt: new Date().toISOString() };
+  localStorage.setItem(LMRA_REC_KEY(munkalapId), JSON.stringify(updated));
+  driveSave(`lmra_${munkalapId}`, { lmra: updated })
+    .then(res => { if (!res.ok && !res.offline) console.warn("[LMRA Drive]", res.error); })
+    .catch(e => console.warn("[LMRA Drive]", e));
   dispatch("lmra");
 }
 

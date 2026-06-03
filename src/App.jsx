@@ -284,6 +284,7 @@ export default function App() {
               m={sel}
               data={data}
               userRole={user?.role}
+              currentUser={user}
               onBack={() => setSel(null)}
               onDelete={handleDeleteMunkalap}
               onRefresh={() => {
