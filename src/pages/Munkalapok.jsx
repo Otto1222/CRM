@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import UjrakiosztasModal from "./UjrakiosztasModal";
 import VbfAdminCard from "../components/VbfAdminCard";
+import { getLmraStatus, LMRA_STATUS_LABELS, LMRA_STATUS_COLORS, exportLmraPdfWindow, loadLmraRec, initOrLoadLmraRec, lockLmraForInstaller, reopenLmra } from "../lib/lmraData.service";
+import TabLmra from "../modules/projektek/tabs/TabLmra";
 import FotokAdminCard from "../components/FotokAdminCard";
 import FelmeresFotokAdminCard from "../components/FelmeresFotokAdminCard";
 import FelmeresJegyzokonyv from "./FelmeresJegyzokonyv";
@@ -961,6 +963,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           )}
         </Card>
         <FelhasznaltAnyagokCard m={m} />
+        <LmraAdminCard munkalap={m} userRole={userRole} />
         <VbfAdminCard munkalapId={m.id} munkalap={m} />
         <Card style={{ padding:"20px 22px", marginTop:16 }}>
           <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Műveletek</h4>
@@ -1057,6 +1060,74 @@ function TelepItoDetail({ m, data }) {
 
 // ═══════════════════════════════════════════════════════════════
 // FŐ EXPORT
+// ─── LMRA Admin kártya – PM-es nézetben ─────────────────────
+
+function LmraAdminCard({ munkalap, userRole }) {
+  const munkalapId = munkalap.id;
+  const [rec, setRec] = useState(() => loadLmraRec(munkalapId));
+  const [open, setOpen] = useState(false);
+  const role     = userRole;
+  const canEdit  = ["Admin","Projektmenedzser"].includes(role);
+  const canExport= ["Admin","Projektmenedzser"].includes(role);
+  const currentUser = { role, name: userRole };
+
+  useEffect(() => {
+    const handler = () => setRec(loadLmraRec(munkalapId));
+    window.addEventListener("crm-db-updated", handler);
+    return () => window.removeEventListener("crm-db-updated", handler);
+  }, [munkalapId]);
+
+  const status = rec?.status || "nincs";
+  const label  = LMRA_STATUS_LABELS[status] || status;
+  const color  = LMRA_STATUS_COLORS[status] || "#94A3B8";
+
+  return (
+    <Card style={{ padding:"16px 18px", marginTop:12 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:32, height:32, borderRadius:8, background:color+"18", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <div>
+            <p style={{ margin:0, fontWeight:700, fontSize:13, color:C.text }}>LMRA – Kockázatértékelés</p>
+            <span style={{ fontSize:11, fontWeight:700, background:color+"18", color, padding:"2px 9px", borderRadius:12 }}>{label}</span>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+          {canExport && rec && ["alairva","exportalva"].includes(status) && (
+            <button
+              onClick={() => { exportLmraPdfWindow(rec, munkalap, null, currentUser?.name); setRec(loadLmraRec(munkalapId)); }}
+              style={{ padding:"5px 12px", background:"#7C3AED", color:"#fff", border:"none", borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
+            >
+              PDF
+            </button>
+          )}
+          {canEdit && (
+            <button
+              onClick={() => setOpen(p => !p)}
+              style={{ padding:"5px 12px", background:open?C.accent:"#F8FAFC", color:open?"#fff":C.textSub, border:`1px solid ${open?C.accent:C.border}`, borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
+            >
+              {open ? "Bezárás" : "LMRA szerkesztése"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {open && canEdit && (
+        <div style={{ marginTop:14, borderTop:`1px solid ${C.border}`, paddingTop:14 }}>
+          <TabLmra
+            projekt={{ id: munkalap.projektId || null, munkalapIds: [munkalapId] }}
+            munkalapok={[munkalap]}
+            currentUser={currentUser}
+          />
+        </div>
+      )}
+    </Card>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 export function MunkalapDetail({ m, data, userRole, onBack, onDelete, onRefresh }) {
   const isMobile = useIsMobile();

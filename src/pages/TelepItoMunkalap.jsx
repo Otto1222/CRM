@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AlairasModal from "../components/AlairasModal";
-import LmraModal from "../components/LmraModal";
+import LmraTelepltoView from "../components/LmraTelepltoView";
 import FelmeresTelepito from "./FelmeresTelepito";
 import FelmeresFotok from "./FelmeresFotok";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
@@ -397,13 +397,8 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   }
 
   function handleMegkezdes() {
-    // LMRA szükséges-e? Ha már van mentett LMRA erre a munkalapra, átugorjuk
-    const meglevoLmra = loadLocal(`lmra_${m.id}`);
-    if (meglevoLmra) {
-      doMegkezdes();
-    } else {
-      setShowLmra(true);
-    }
+    // LMRA szükséges-e? Mindig megnyitjuk az LMRA nézetet (ha már lezárva, azonnal megkezdés)
+    setShowLmra(true);
   }
 
   function doMegkezdes() {
@@ -417,10 +412,9 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   }
 
   function handleLmraComplete(lmraAdat) {
-    // LMRA kész – mentjük a munkalaphoz is
-    updateItem("munkalapok", m.id, { lmra: lmraAdat });
+    // LMRA lezárva – frissítjük a munkalapot
+    updateItem("munkalapok", m.id, { lmraLezarva: true, lmraLezarvaAt: new Date().toISOString() });
     window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
-    // A munka megkezdése az LmraModal "Munka megkezdése" gombjára klikk után hívódik (onClose)
   }
 
   function handleBefejezesKezdete() {
@@ -665,11 +659,17 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
         ) : (
           <div>
             <div style={{ marginTop:12,padding:"10px 14px",background:"#ECFDF5",border:`1px solid #A7F3D0`,borderRadius:10,fontSize:13,color:C.success,fontWeight:600 }}>✅ Munka folyamatban</div>
-            {loadLocal(`lmra_${m.id}`) && (
-              <div style={{ marginTop:8,padding:"8px 12px",background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:9,fontSize:12,color:"#166534" }}>
-                🛡️ LMRA aláírva · {loadLocal(`lmra_${m.id}`)?.tagok?.join(", ")}
-              </div>
-            )}
+            {(() => {
+              const lmraRec = loadLocal(`lmra_rec_${m.id}`);
+              if (lmraRec && ["alairva","exportalva"].includes(lmraRec.status)) {
+                return (
+                  <div style={{ marginTop:8,padding:"8px 12px",background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:9,fontSize:12,color:"#166534" }}>
+                    🛡️ LMRA aláírva · {(lmraRec.resztvevok||[]).filter(r=>r.signed).map(r=>r.nev).join(", ")}
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         )}
       </div>
@@ -853,7 +853,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       )}
 
       {showAlairas&&<AlairasModal m={m} userRole="Telepítő" onClose={()=>setShowAlairas(false)} onSave={handleBefejezes}/>}
-      {showLmra&&<LmraModal munkalap={m} onClose={() => { setShowLmra(false); doMegkezdes(); }} onComplete={handleLmraComplete} />}
+      {showLmra&&<LmraTelepltoView munkalap={m} currentUser={currentUser} onClose={() => { setShowLmra(false); doMegkezdes(); }} onComplete={handleLmraComplete} />}
     </div>
   );
 }
