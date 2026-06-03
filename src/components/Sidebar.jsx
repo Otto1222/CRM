@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   LayoutDashboard, Users, ClipboardList,
-  ScrollText, Calendar, Settings, LogOut, Sun, Building2, Receipt, FileText, BarChart3, BookOpen, X,
+  ScrollText, Calendar, Settings, LogOut, Sun, Building2, Receipt, FileText, BarChart3, BookOpen, X, CalendarRange,
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getAllowedPages } from "../lib/roles.js";
@@ -16,7 +16,8 @@ const NAV = [
   { id: "szerzodesek", label: "Szerződések",  icon: ScrollText },
   { id: "szamlak",     label: "Számlák",      icon: Receipt },
   { id: "naptar",      label: "Naptár",       icon: Calendar },
-  { id: "riportok",    label: "Riportok",     icon: BarChart3 },
+  { id: "riportok",       label: "Riportok",        icon: BarChart3 },
+  { id: "munkakiosztas",  label: "Munkakiosztás",   icon: CalendarRange },
 ];
 
 // Sidebar belső tartalma (desktop + mobil overlay közös)

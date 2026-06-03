@@ -146,17 +146,17 @@ export async function registerUser({ name, username, email, password, role }) {
   const saved = await saveUsers(users);
   if (!saved) return { ok: false, error: "Drive mentési hiba, próbáld újra!" };
 
-  // Visszaigazoló email
+  // Visszaigazoló email – jelszót sosem küldünk emailben
   await sendEmail(email, "CRM Napelem – Sikeres regisztráció", `
     <div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#f8fafc;border-radius:12px">
       <h2 style="color:#2563EB;margin-bottom:8px">☀️ CRM Napelem</h2>
       <p style="margin-bottom:16px">Szia <b>${name}</b>, sikeresen regisztráltál!</p>
       <div style="background:#fff;border-radius:10px;padding:16px;border:1px solid #e2e8f0;margin-bottom:16px">
         <p style="margin:4px 0"><b>Felhasználónév:</b> ${username}</p>
-        <p style="margin:4px 0"><b>Jelszó:</b> ${password}</p>
         <p style="margin:4px 0"><b>Szerepkör:</b> ${role}</p>
         <p style="margin:4px 0"><b>E-mail:</b> ${email}</p>
       </div>
+      <p style="color:#64748b;font-size:13px">A jelszavadat az adminisztrátortól kapod meg személyesen.</p>
       <p style="color:#64748b;font-size:12px">CRM Napelem – automatikus értesítő rendszer</p>
     </div>
   `);
@@ -223,7 +223,7 @@ export async function forgotPassword(email, newPassword) {
       <p>Szia <b>${users[idx].name}</b>! A jelszavad sikeresen módosult.</p>
       <div style="background:#fff;border-radius:10px;padding:16px;border:1px solid #e2e8f0;margin:16px 0">
         <p style="margin:4px 0"><b>Felhasználónév:</b> ${users[idx].username}</p>
-        <p style="margin:4px 0"><b>Új jelszó:</b> ${newPassword}</p>
+        <p style="margin:4px 0">Az új jelszót az adminisztrátortól kapod meg személyesen.</p>
       </div>
       <p style="color:#64748b;font-size:12px">Ha nem te kérted, azonnal keresd az adminisztrátort!</p>
     </div>

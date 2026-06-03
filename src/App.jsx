@@ -22,6 +22,7 @@ import CsapatokPage from "./modules/csapatok/CsapatokPage.jsx";
 import SzamlakPage from "./modules/szamlak/SzamlakPage.jsx";
 import PwaInstallBanner from "./components/PwaInstallBanner.jsx";
 import RiportokPage from "./pages/RiportokPage.jsx";
+import Munkakiosztas from "./pages/Munkakiosztas.jsx";
 
 const PAGE_TITLES = {
   dashboard: "Pénzügy",
@@ -33,8 +34,9 @@ const PAGE_TITLES = {
   szamlak: "Számlák",
   csapat: "Csapat",
   naptar: "Naptár",
-  riportok:    "Riportok",
-  beallitasok: "Beállítások",
+  riportok:       "Riportok",
+  munkakiosztas:  "Munkakiosztás",
+  beallitasok:    "Beállítások",
 };
 
 function loadInitialData() {
@@ -55,9 +57,21 @@ function loadInitialData() {
   };
 }
 
+const SESSION_KEY = "crm_session_user";
+
+function loadSessionUser() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [page, setPage] = useState("dashboard");
+  const [user, setUser] = useState(loadSessionUser);
+  const [page, setPage] = useState(() => {
+    const u = loadSessionUser();
+    return u ? getHomePage(u.role) : "dashboard";
+  });
   const [sel, setSel] = useState(null);
   const [data, setData] = useState(loadInitialData);
   const [drive, setDrive] = useState("idle");
@@ -250,12 +264,14 @@ export default function App() {
   }
 
   function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
     setUser(null);
     setSel(null);
     setPage("dashboard");
   }
 
   function handleLogin(u) {
+    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(u)); } catch {}
     setUser(u);
     setPage(getHomePage(u?.role));
     if (u?.role === "Admin") setDefaultPwWarning(hasDefaultPasswords());
@@ -347,6 +363,8 @@ export default function App() {
             {page === "naptar" && <ComingSoon title="Naptár" />}
 
             {page === "riportok" && <RiportokPage currentUser={user} />}
+
+            {page === "munkakiosztas" && <Munkakiosztas />}
 
             {page === "beallitasok" && (
               <>

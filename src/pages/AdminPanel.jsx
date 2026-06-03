@@ -45,8 +45,7 @@ function UserRow({ user, onSave, onDelete }) {
     };
     if (newPw.trim()) {
       if (newPw.trim().length < 4) { setSaving(false); return; }
-      updates.passwordHash    = await hashPw(newPw.trim());
-      updates.defaultPassword = newPw.trim();
+      updates.passwordHash = await hashPw(newPw.trim());
     }
     await onSave(user.id, updates);
     setSaving(false);
@@ -112,17 +111,8 @@ function UserRow({ user, onSave, onDelete }) {
           <div style={{ display: "flex", alignItems: "center", gap: 6, background: C.bg, borderRadius: 8, padding: "6px 12px", fontSize: 13 }}>
             <Lock size={13} color={C.muted} />
             <span style={{ color: C.textSub }}>Jelszó:</span>
-            <b style={{ color: C.text, fontFamily: showPw ? FONT : "monospace", letterSpacing: showPw ? 0 : 2 }}>
-              {showPw ? (user.defaultPassword || "••••••••") : "••••••••"}
-            </b>
-            <button onClick={() => setShowPw(p => !p)} style={{ border: "none", background: "none", cursor: "pointer", padding: 0 }}>
-              {showPw ? <EyeOff size={13} color={C.muted} /> : <Eye size={13} color={C.muted} />}
-            </button>
-            {showPw && user.defaultPassword && (
-              <button onClick={() => copyToClipboard(user.defaultPassword)} style={{ border: "none", background: "none", cursor: "pointer", padding: 0 }}>
-                <Copy size={13} color={C.muted} />
-              </button>
-            )}
+            <b style={{ color: C.text, fontFamily: "monospace", letterSpacing: 2 }}>••••••••</b>
+            <span style={{ fontSize: 11, color: C.muted, marginLeft: 4 }}>– módosításhoz kattints Szerkesztésre</span>
           </div>
         </div>
       )}
@@ -193,12 +183,13 @@ const SZEREPKOROK = ["Telepítő","Projektmenedzser","Admin","Iroda/Könyvelés"
 const SZINEK = ["#059669","#2563EB","#9333EA","#D97706","#0891B2","#DC2626","#EA580C","#0EA5E9"];
 
 export default function AdminPanel({ currentUser }) {
-  const [users,   setUsers]   = useState(getUsers());
-  const [toast,   setToast]   = useState("");
-  const [ujModal, setUjModal] = useState(false);
-  const [ujForm,  setUjForm]  = useState({ name:"", username:"", role:"Telepítő", password:"", szin:"#059669" });
-  const [ujHiba,  setUjHiba]  = useState("");
-  const [torles,  setTorles]  = useState(null); // user obj
+  const [users,      setUsers]      = useState(getUsers());
+  const [toast,      setToast]      = useState("");
+  const [ujModal,    setUjModal]    = useState(false);
+  const [ujForm,     setUjForm]     = useState({ name:"", username:"", role:"Telepítő", password:"", szin:"#059669" });
+  const [ujHiba,     setUjHiba]     = useState("");
+  const [torles,     setTorles]     = useState(null);
+  const [ujJelszo,   setUjJelszo]   = useState(null); // { name, username, password } – csak mentés pillanatában
 
   const isAdmin = currentUser?.role === "Admin";
 
@@ -235,23 +226,26 @@ export default function AdminPanel({ currentUser }) {
     if (users.find(u => u.username.toLowerCase() === username.trim().toLowerCase())) {
       setUjHiba("Ez a bejelentkezési név már foglalt!"); return;
     }
-    const pwHash = await hashPw(password.trim());
+    const rawPw   = password.trim();
+    const pwHash  = await hashPw(rawPw);
     const initials = name.trim().split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
     const newUser = {
-      id:              "u" + Date.now(),
-      name:            name.trim(),
-      username:        username.trim().toLowerCase(),
+      id:           "u" + Date.now(),
+      name:         name.trim(),
+      username:     username.trim().toLowerCase(),
       role,
-      color:           szin,
+      color:        szin,
       initials,
-      passwordHash:    pwHash,
-      defaultPassword: password.trim(),
+      passwordHash: pwHash,
+      // defaultPassword szándékosan NEM kerül tárolásra – csak az alábbi state-ben él
     };
     const updated = [...users, newUser];
     setUsers(updated);
     saveUsersLocal(updated);
     setUjModal(false);
     setUjForm({ name:"", username:"", role:"Telepítő", password:"", szin:"#059669" });
+    // Jelszó egyszeri megmutatása – nem kerül Drive-ra / localStorage-ba
+    setUjJelszo({ name: name.trim(), username: username.trim().toLowerCase(), password: rawPw });
     setToast("Új felhasználó sikeresen hozzáadva!");
     setTimeout(() => setToast(""), 3000);
   }
@@ -275,10 +269,10 @@ export default function AdminPanel({ currentUser }) {
 
   function copyAllCredentials() {
     const text = users.map(u =>
-      `${u.name}\n  Felhasználónév: ${u.username}\n  Jelszó: ${u.defaultPassword || "(nincs megjelenítve)"}\n  Szerepkör: ${u.role}`
+      `${u.name}\n  Felhasználónév: ${u.username}\n  Szerepkör: ${u.role}`
     ).join("\n\n");
     navigator.clipboard?.writeText(text);
-    setToast("Összes adat vágólapra másolva!");
+    setToast("Felhasználói adatok vágólapra másolva!");
     setTimeout(() => setToast(""), 3000);
   }
 
@@ -452,6 +446,43 @@ export default function AdminPanel({ currentUser }) {
               <button onClick={()=>setTorles(null)} style={{ flex:1, padding:"11px", borderRadius:9, border:`1.5px solid ${C.border}`, background:"#fff", fontWeight:600, cursor:"pointer", fontFamily:FONT }}>Mégse</button>
               <button onClick={confirmTorles} style={{ flex:1, padding:"11px", borderRadius:9, border:"none", background:"#DC2626", color:"#fff", fontWeight:700, cursor:"pointer", fontFamily:FONT }}>Törlöm</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════ ÚJ JELSZÓ EGYSZERI MEGMUTATÁSA ════ */}
+      {ujJelszo && (
+        <div style={{ position:"fixed", inset:0, zIndex:2100, background:"rgba(0,0,0,.7)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+          <div style={{ background:"#fff", borderRadius:16, width:"100%", maxWidth:400, padding:"28px 24px", fontFamily:FONT, textAlign:"center" }}>
+            <div style={{ width:56, height:56, borderRadius:"50%", background:"#DCFCE7", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px" }}>
+              <ShieldCheck size={26} color="#16A34A"/>
+            </div>
+            <h3 style={{ fontSize:18, fontWeight:800, color:C.text, marginBottom:6 }}>Felhasználó létrehozva!</h3>
+            <p style={{ fontSize:13, color:C.textSub, marginBottom:16 }}>
+              Add át <b>{ujJelszo.name}</b> részére személyesen az alábbi adatokat. Ez az ablak <b>bezárás után nem mutatható újra</b>.
+            </p>
+            <div style={{ background:"#F8FAFC", border:`1.5px solid ${C.border}`, borderRadius:12, padding:"16px", marginBottom:16, textAlign:"left" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                <span style={{ fontSize:12, color:C.muted, fontWeight:600 }}>BELÉPÉSI ADATOK</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(`Felhasználónév: ${ujJelszo.username}\nJelszó: ${ujJelszo.password}`);
+                    setToast("Vágólapra másolva!"); setTimeout(()=>setToast(""),2000);
+                  }}
+                  style={{ display:"flex", alignItems:"center", gap:4, border:`1px solid ${C.border}`, background:"#fff", borderRadius:7, padding:"4px 10px", cursor:"pointer", fontSize:12, color:C.textSub, fontFamily:FONT }}
+                >
+                  <Copy size={13}/> Másolás
+                </button>
+              </div>
+              <p style={{ margin:"4px 0", fontSize:14 }}><b>Felhasználónév:</b> {ujJelszo.username}</p>
+              <p style={{ margin:"4px 0", fontSize:14 }}><b>Jelszó:</b> <span style={{ fontFamily:"monospace", fontSize:16, color:C.text, letterSpacing:1 }}>{ujJelszo.password}</span></p>
+            </div>
+            <p style={{ fontSize:11, color:"#DC2626", fontWeight:600, marginBottom:16 }}>
+              ⚠️ A jelszó NEM kerül tárolásra – bezárás után nem megjeleníthető. Ha elvész, generálj újat.
+            </p>
+            <button onClick={() => setUjJelszo(null)} style={{ width:"100%", padding:"12px", borderRadius:10, border:"none", background:C.accent, color:"#fff", fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:FONT }}>
+              Megértettem, bezárom
+            </button>
           </div>
         </div>
       )}

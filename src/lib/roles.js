@@ -4,8 +4,8 @@
 
 // arajanlatok, szerzodesek, naptar – ComingSoon stub, éles teszthez elrejtve
 export const ROLE_PAGES = {
-  "Admin":            ["dashboard","projektek","munkalapok","ugyfelek","szamlak","riportok","beallitasok"],
-  "Projektmenedzser": ["dashboard","projektek","munkalapok","ugyfelek","szamlak","riportok","beallitasok"],
+  "Admin":            ["dashboard","projektek","munkalapok","ugyfelek","szamlak","riportok","munkakiosztas","beallitasok"],
+  "Projektmenedzser": ["dashboard","projektek","munkalapok","ugyfelek","szamlak","riportok","munkakiosztas","beallitasok"],
   "Iroda/Könyvelés":  ["dashboard","projektek","munkalapok","ugyfelek","szamlak","riportok"],
   "Telepítő":         ["munkalapok"],
 };
