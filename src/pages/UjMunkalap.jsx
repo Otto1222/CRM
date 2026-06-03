@@ -4,11 +4,38 @@ import {
   ChevronDown, ChevronUp, FileText, Search
 } from "lucide-react";
 import { C, FONT, FONT_HEADING, MUNKALAP_TIPUSOK, WORKFLOW_STATUSES } from "../lib/constants";
-import { nextEdiSorszam, fullDokumentumszam } from "../lib/dokumentumszam";
+import { nextEdiSorszam } from "../lib/dokumentumszam";
 import { createBackup } from "../lib/backupService";
 import { getUsers } from "../lib/crmUsers";
 import { ft, totals } from "../lib/helpers";
-import { getSettings } from "../lib/munkakiosztasSettings";
+import { getAktivCsapatok } from "../modules/csapatok/csapat.service";
+
+// ─── Munkalap sorszám auto-generálás projektkód alapján ──────
+function genMunkalapKod(projektId, projektkod) {
+  if (!projektId || !projektkod) return "";
+  try {
+    const all   = JSON.parse(localStorage.getItem("munkalapok") || "[]");
+    const count = all.filter(m => m.projektId === projektId).length;
+    return `${projektkod}/M-${String(count + 1).padStart(3, "0")}`;
+  } catch { return ""; }
+}
+
+// ─── Fővállalkozói díj auto-számítás projekt adataiból ───────
+function calcBillingFromProject(projekt) {
+  if (!projekt?.napelemDb || !projekt?.munkatipusId) return null;
+  try {
+    const munkatipusok = JSON.parse(localStorage.getItem("munkatipusok") || "[]");
+    const mt = munkatipusok.find(m => m.id === projekt.munkatipusId);
+    if (!mt?.beveteliTetelek) return null;
+    const tetel = mt.beveteliTetelek.find(t => t.arlogikaTipus === "darab_egysegar" && Number(t.egysegAr) > 0);
+    if (!tetel) return null;
+    const ar = Math.round(projekt.napelemDb * Number(tetel.egysegAr));
+    return {
+      ar,
+      megjegyzes: `${projekt.napelemDb} db × ${Number(tetel.egysegAr).toLocaleString("hu-HU")} Ft = ${ar.toLocaleString("hu-HU")} Ft`,
+    };
+  } catch { return null; }
+}
 
 // ─── Eszköz kategóriák ────────────────────────────────────────
 const DEFAULT_ESZKOZ_KAT = [
@@ -190,8 +217,7 @@ function FajlFeltoltes({ files, onChange }) {
 export default function UjMunkalap({ data, onBack, onSave, onClose, initialData }) {
   const handleClose = onClose || onBack;
   const eszkozKat   = getEszkozKat();
-  const settings    = getSettings();
-  const csapatok    = settings.csapatok || [];
+  const csapatok    = getAktivCsapatok();
 
   // Projektlista a projekt-választóhoz
   const projektek = (() => {
@@ -202,15 +228,24 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
   const [errors, setErrors]   = useState({});
   const [activeSec, setActive] = useState("alap");
   const [projektQ, setProjektQ] = useState("");
+  const [billingInfo, setBillingInfo] = useState(null); // auto-számított bevétel jelzése
 
-  const [alap, setAlap] = useState({
-    ugyszam:"", cimke:"Junior Vital", cimkeSzin:"#2563EB",
-    projektMegnevezes: initialData?.projektNev || initialData?.projektkod || "",
-    projektId: initialData?.projektId || "",
-    munkalapTipus: initialData?.tipus || "Első kivitelezés",
-    feladat:"", status:"Kiosztásra vár",
-    csapatId:"", csapatNev:"", date:"", ertekesito:"",
-    ar:0, munkaeroDij:0, kiszallasiDij:0, egyebKolts:0,
+  const [alap, setAlap] = useState(() => {
+    const autoUgyszam = initialData?.projektId
+      ? genMunkalapKod(initialData.projektId, initialData.projektkod)
+      : "";
+    return {
+      ugyszam:   autoUgyszam,
+      cimke:     "Junior Vital",
+      cimkeSzin: "#2563EB",
+      projektMegnevezes: initialData?.projektNev || initialData?.projektkod || "",
+      projektId:         initialData?.projektId  || "",
+      munkalapTipus:     initialData?.tipus || "Első kivitelezés",
+      feladat: "", status: "Kiosztásra vár",
+      csapatId: initialData?.csapatId || "", csapatNev: "", date: initialData?.tervezettKezdes || "", ertekesito: "",
+      ar: 0, munkaeroDij: 0, kiszallasiDij: 0, egyebKolts: 0,
+      fovallalkoiAzonosito: initialData?.fovallalkoiAzonosito || "",
+    };
   });
   const [ugyfEl, setUgyfel]   = useState({
     nev:   initialData?.clientNev   || "",
@@ -247,7 +282,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
     if(!validate()) { setActive("alap"); return; }
     setSaving(true);
     createBackup("Új munkalap mentés előtt");
-    const generaltEdi = nextEdiSorszam(); // Csak 1x generálódik;
+    const generaltEdi = nextEdiSorszam(); // belső egyedi azonosító (Drive sync)
 
     const anyagok = eszkozKat.flatMap(k =>
       (eszkozok[k.id]||[]).map(it=>({ ...it, kategoria:k.label }))
@@ -282,7 +317,10 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
       munkalapTipus:     alap.munkalapTipus || "Első kivitelezés",
       fovallalkoiAzonosito: alap.fovallalkoiAzonosito || "",
       ediSorszam:        generaltEdi,
-      dokumentumszam:    fullDokumentumszam(generaltEdi, alap.fovallalkoiAzonosito),
+      // Fő azonosító: projektkód/M-001 formátum; ha van fővállalkozói szám, hozzáfűzzük
+      dokumentumszam:    alap.ugyszam
+        ? (alap.fovallalkoiAzonosito?.trim() ? `${alap.ugyszam} / ${alap.fovallalkoiAzonosito.trim()}` : alap.ugyszam)
+        : generaltEdi,
       // Csapat – a Telepítő szűrés erre támaszkodik
       assigneeId:        alap.csapatId,
       assigneeNev:       csapat?.nev || alap.csapatNev,
@@ -385,6 +423,15 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                           setUgyfel({ nev: p.clientNev||"", cim: p.telepitesiCim||p.clientCim||"", tel: p.clientTel||"", email: p.clientEmail||"" });
                           if (p.csapatId) updAlap("csapatId", p.csapatId);
                           if (p.tervezettKezdes) updAlap("date", p.tervezettKezdes);
+                          // Auto-generált munkalap sorszám: projektkód/M-001
+                          updAlap("ugyszam", genMunkalapKod(p.id, p.projektkod));
+                          // Fővállalkozói azonosító auto-kitöltés
+                          const fovAzon = p.penzugy?.fovallalkoziAzonosito || p.fovallalkoiAzonosito || "";
+                          if (fovAzon) updAlap("fovallalkoiAzonosito", fovAzon);
+                          // Fővállalkozói díj auto-számítás (napelem db × egységár)
+                          const billing = calcBillingFromProject(p);
+                          if (billing) { updAlap("ar", billing.ar); setBillingInfo(billing.megjegyzes); }
+                          else setBillingInfo(null);
                         }} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", cursor:"pointer", borderBottom:`1px solid ${C.border}`, fontSize:13 }}
                           onMouseEnter={e => e.currentTarget.style.background="#F8FAFC"}
                           onMouseLeave={e => e.currentTarget.style.background=""}
@@ -410,14 +457,29 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
             )}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
               <div>
-                <Field label="Munkaszám / Ügyszám" value={alap.ugyszam} onChange={v=>updAlap("ugyszam",v)} placeholder="T003700" required/>
-                {errors.ugyszam&&<p style={{ color:C.danger,fontSize:11,marginTop:-10,marginBottom:10 }}>{errors.ugyszam}</p>}
+                <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>
+                  Munkaszám {alap.projektId ? <span style={{ fontWeight:400, color:"#22C55E" }}>✓ auto-generált</span> : <span style={{ color:C.danger }}> *</span>}
+                </label>
+                <input
+                  value={alap.ugyszam||""}
+                  onChange={e=>updAlap("ugyszam",e.target.value)}
+                  placeholder={alap.projektId ? "E.D.I.001/M-001" : "Válassz projektet fentebb"}
+                  style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${alap.ugyszam ? "#86EFAC" : C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background: alap.ugyszam ? "#F0FDF4" : "#F8FAFC" }}
+                />
+                {errors.ugyszam&&<p style={{ color:C.danger,fontSize:11,marginTop:4 }}>{errors.ugyszam}</p>}
               </div>
               <div>
-                <Field label="Dátum" value={alap.date} onChange={v=>updAlap("date",v)} type="date" required/>
+                <Field label="Dátum" value={alap.date} onChange={v=>updAlap("date",v)} type="date"/>
                 {errors.date&&<p style={{ color:C.danger,fontSize:11,marginTop:-10,marginBottom:10 }}>{errors.date}</p>}
               </div>
             </div>
+
+            {/* Billing auto-számítás jelzés */}
+            {billingInfo && (
+              <div style={{ background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:9, padding:"8px 14px", marginBottom:12, fontSize:13, color:"#166534", fontWeight:600 }}>
+                💡 Fővállalkozói díj auto-számítva: {billingInfo}
+              </div>
+            )}
 
             {/* ÜGYFÉL – szabad szöveg + autocomplete */}
             <UgyfelField value={ugyfEl.nev} onChange={setUgyfel} ugyfelek={data.ugyfelek||[]} />
