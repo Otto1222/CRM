@@ -7,6 +7,7 @@ import { getHomePage } from "./lib/roles";
 import { loadLocal, saveLocal } from "./lib/localDb";
 import { syncAllFromDrive, syncAllToDrive } from "./lib/dataSync.service";
 import { deleteWorkorder } from "./services/workorder.service";
+import { linkMunkalap } from "./modules/projektek/projekt.service";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
@@ -225,6 +226,11 @@ export default function App() {
     saveLocal("munkalapok", newList);
 
     await saveCollection("munkalapok", newList);
+
+    // Projekt munkalapIds frissítése ha projekthez tartozik
+    if (newItem.projektId) {
+      linkMunkalap(newItem.projektId, newItem.id);
+    }
 
     setShowNew(false);
     setPage("munkalapok");

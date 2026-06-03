@@ -1,5 +1,6 @@
 import { C, FONT } from "../../../lib/constants.js";
 import { calcProjektPenzugy } from "../../../lib/costEngine.js";
+import { calcEsmentProjektPenzugy } from "../../../services/workOrderFinancial.service.js";
 import { ft } from "../../../lib/helpers.js";
 import { getStatusConfig } from "../projekt.schema.js";
 import { formatProjectType } from "../../../lib/projectTypeFormatter.js";
@@ -17,6 +18,7 @@ function Row({ label, value, bold }) {
 export default function TabAttekintes({ projekt, munkalapok }) {
   const mls     = (munkalapok||[]).filter(m => m.projektId === projekt.id || projekt.munkalapIds?.includes(m.id));
   const penz    = calcProjektPenzugy(mls);
+  const kalk    = projekt.penzugy?.fovallalkoziId ? calcEsmentProjektPenzugy(projekt) : null;
   const stCfg   = getStatusConfig(projekt.status);
   const aktiv   = mls.filter(m=>!["Lezárva","Számlázva","Ellenőrzés alatt"].includes(m.status)).length;
 
@@ -54,8 +56,31 @@ export default function TabAttekintes({ projekt, munkalapok }) {
           <Row label="Ledolgozott óra"  value={projekt.elvegzettMunkaora ? projekt.elvegzettMunkaora + " óra" : null}/>
         </div>
 
+        {/* ── Kalkulált (tervezett) pénzügy – fővállalkozói szabályból ── */}
+        {kalk && (
+          <div style={{ background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:12, padding:"14px 16px" }}>
+            <p style={{ fontSize:11, fontWeight:700, color:"#059669", textTransform:"uppercase", letterSpacing:.7, marginBottom:8 }}>
+              💰 Kalkulált (tervezett) – {kalk.fovallalkoNev}
+            </p>
+            {[
+              ["Kalkulált bevétel",  kalk.nettoBevitel > 0  ? ft(kalk.nettoBevitel)  : null, true],
+              ["Csapat bér",         kalk.csapatBer > 0     ? ft(kalk.csapatBer)     : null],
+              ["Alvállalkozói díj",  kalk.alvallalkozoiBer > 0 ? ft(kalk.alvallalkozoiBer) : null],
+              ["Összes ktg (terv.)", kalk.osszesKolts > 0   ? ft(kalk.osszesKolts)  : null],
+              ["Várható haszon",     kalk.nettoBevitel > 0  ? ft(kalk.haszon)        : null, true],
+              ["Haszonkulcs",        kalk.haszonPct !== null ? kalk.haszonPct + "%" : null],
+            ].map(([l,v,b]) => v ? <Row key={l} label={l} value={v} bold={b}/> : null)}
+            {kalk.hianyosTetelek?.length > 0 && (
+              <p style={{ fontSize:11, color:"#D97706", marginTop:6 }}>⚠️ Hiányos konfig: {kalk.hianyosTetelek.join(", ")}</p>
+            )}
+          </div>
+        )}
+
+        {/* ── Tényleges (számlázott) pénzügy ── */}
         <div style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:12, padding:"14px 16px" }}>
-          <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:8 }}>Pénzügy</p>
+          <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:8 }}>
+            📊 Tényleges (számlázott)
+          </p>
           {[
             ["Elfogadott ajánlat", projekt.elfogadottAjanlat > 0 ? ft(projekt.elfogadottAjanlat) : null, true],
             ["Bevétel (számlázott)", penz.bevetal > 0 ? ft(penz.bevetal) : null],
