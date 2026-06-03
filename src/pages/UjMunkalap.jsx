@@ -235,9 +235,10 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
       ? genMunkalapKod(initialData.projektId, initialData.projektkod)
       : "";
     return {
-      ugyszam:   autoUgyszam,
-      cimke:     "Junior Vital",
-      cimkeSzin: "#2563EB",
+      ugyszam:          autoUgyszam,
+      telepitesTipusa:  "Napelem",
+      cimke:            "Junior Vital",
+      cimkeSzin:        "#2563EB",
       projektMegnevezes: initialData?.projektNev || initialData?.projektkod || "",
       projektId:         initialData?.projektId  || "",
       munkalapTipus:     initialData?.tipus || "Első kivitelezés",
@@ -315,6 +316,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
       kiszallasiDij:     Number(alap.kiszallasiDij) || 0,
       egyebKolts:        Number(alap.egyebKolts) || 0,
       munkalapTipus:     alap.munkalapTipus || "Első kivitelezés",
+      telepitesTipusa:   alap.telepitesTipusa || "Napelem",
       fovallalkoiAzonosito: alap.fovallalkoiAzonosito || "",
       ediSorszam:        generaltEdi,
       // Fő azonosító: projektkód/M-001 formátum; ha van fővállalkozói szám, hozzáfűzzük
@@ -428,6 +430,8 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                           // Fővállalkozói azonosító auto-kitöltés
                           const fovAzon = p.penzugy?.fovallalkoziAzonosito || p.fovallalkoiAzonosito || "";
                           if (fovAzon) updAlap("fovallalkoiAzonosito", fovAzon);
+                          // Telepítés típusa auto-kitöltés projektből
+                          if (p.telepitesTipusa) updAlap("telepitesTipusa", p.telepitesTipusa);
                           // Fővállalkozói díj auto-számítás (napelem db × egységár)
                           const billing = calcBillingFromProject(p);
                           if (billing) { updAlap("ar", billing.ar); setBillingInfo(billing.megjegyzes); }
@@ -521,6 +525,23 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                 </div>
               )}
               {errors.csapat&&<p style={{ color:C.danger,fontSize:11,marginTop:8 }}>{errors.csapat}</p>}
+            </div>
+
+            {/* Telepítés típusa – meghatározza az ikont a telepítői nézeten */}
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Telepítés típusa</label>
+              <div style={{ display:"flex", gap:8 }}>
+                {[
+                  { id:"Napelem",         ikon:"☀️",  szin:"#F97316" },
+                  { id:"Elektromos töltő",ikon:"⚡",  szin:"#EAB308" },
+                  { id:"Egyéb",           ikon:"🔧", szin:"#64748B" },
+                ].map(t=>(
+                  <button key={t.id} type="button" onClick={()=>updAlap("telepitesTipusa",t.id)}
+                    style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"10px 8px", border:`2px solid ${alap.telepitesTipusa===t.id?t.szin:C.border}`, borderRadius:10, background:alap.telepitesTipusa===t.id?t.szin+"15":"#F8FAFC", cursor:"pointer", fontFamily:FONT, fontWeight:700, fontSize:13, color:alap.telepitesTipusa===t.id?t.szin:C.muted }}>
+                    <span style={{ fontSize:18 }}>{t.ikon}</span> {t.id}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>

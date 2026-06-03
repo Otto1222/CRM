@@ -291,7 +291,10 @@ export default function App() {
           </>
         ) : (
           <>
-            <TopBar title={PAGE_TITLES[page]} user={user} driveStatus={drive} onMenuOpen={() => setSidebarOpen(true)} />
+            <TopBar
+              title={user?.role === "Telepítő" && page === "munkalapok" ? "Feladatok" : PAGE_TITLES[page]}
+              user={user} driveStatus={drive} onMenuOpen={() => setSidebarOpen(true)}
+            />
 
             {page === "dashboard" && <Dashboard user={user} />}
 
