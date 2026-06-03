@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Clock, Wrench } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Clock, Wrench, Building2 } from "lucide-react";
 import { C, FONT, FONT_HEADING, STATUS_CFG } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import { loadKarteritesek, addKarterites, updateKarterites } from "../lib/karterites";
 import { canSeePrice } from "../lib/roles";
 import { loadLocal } from "../lib/localDb";
+import { calcEsmentProjektPenzugy } from "../services/workOrderFinancial.service.js";
 
 // ─── Egyszerű stat kártya (NEM tartalmaz kártérítés kódot) ───
 function StatCard({ label, value, sub, color, bg, icon: Icon }) {
@@ -165,6 +166,7 @@ export default function Dashboard({ user }) {
   const [sortDir, setSortDir]         = useState("desc");
   const [filterStatus, setFilterStatus] = useState("Összes");
   const [munkalapok, setMunkalapok]   = useState(() => loadLocal("munkalapok") || []);
+  const [projektek, setProjektek]     = useState(() => loadLocal("projektek")  || []);
   const [karteritesek, setKarteritesek] = useState(() => loadKarteritesek());
 
   const isAdmin = canSeePrice(user?.role);
@@ -173,6 +175,7 @@ export default function Dashboard({ user }) {
   useEffect(() => {
     function refresh() {
       setMunkalapok(loadLocal("munkalapok") || []);
+      setProjektek(loadLocal("projektek")   || []);
       setKarteritesek(loadKarteritesek());
     }
     window.addEventListener("crm-db-updated", refresh);
@@ -218,6 +221,38 @@ export default function Dashboard({ user }) {
         return sortDir === "asc" ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
       });
   }, [munkalapok, karteritesek, sortField, sortDir, filterStatus]);
+
+  // ─── Projekt szintű fővállalkozói elszámolás kalkuláció ─────
+  const projektBilling = useMemo(() => {
+    const konfiguralt = projektek.filter(p => p.penzugy?.fovallalkoziId);
+    if (konfiguralt.length === 0) return null;
+    const rows = konfiguralt.map(p => {
+      const kalk = calcEsmentProjektPenzugy(p);
+      return {
+        id:              p.id,
+        projektkod:      p.projektkod || p.id,
+        nev:             p.nev || p.clientNev || p.projektkod || "",
+        fovNev:          kalk.fovallalkoNev || "—",
+        nettoBevitel:    kalk.nettoBevitel,
+        csapatBer:       kalk.csapatBer,
+        alvallalkozoiBer:kalk.alvallalkozoiBer,
+        alvallalkozoiKmBer: kalk.alvallalkozoiKmBer,
+        utikoltség:      kalk.utikoltség,
+        anyagkoltség:    kalk.anyagkoltség,
+        osszesKolts:     kalk.osszesKolts,
+        haszon:          kalk.haszon,
+        haszonPct:       kalk.haszonPct,
+        nyereseg:        kalk.nyereseg,
+        hianyos:         kalk.hianyosTetelek?.length > 0,
+      };
+    });
+    return {
+      rows,
+      totalBev:   rows.reduce((s, r) => s + r.nettoBevitel, 0),
+      totalKolts: rows.reduce((s, r) => s + r.osszesKolts, 0),
+      totalHaszon:rows.reduce((s, r) => s + r.haszon, 0),
+    };
+  }, [projektek]);
 
   function toggleSort(f) {
     if (sortField === f) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -341,6 +376,100 @@ export default function Dashboard({ user }) {
           )}
         </div>
       </div>
+
+      {/* ─── Projekt szintű fővállalkozói elszámolás ─── */}
+      {isAdmin && projektBilling && (
+        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #E2E8F0", overflow:"hidden", marginTop:20 }}>
+          {/* Fejléc + összesítő */}
+          <div style={{ padding:"14px 20px", borderBottom:"1px solid #E2E8F0", background:"#F8FAFC" }}>
+            <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:14 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <Building2 size={20} color="#2563EB" />
+                <div>
+                  <p style={{ fontFamily:FONT_HEADING, fontSize:16, fontWeight:800, color:"#0F172A", margin:0 }}>Projekt szintű fővállalkozói elszámolás</p>
+                  <p style={{ fontSize:12, color:"#64748B", margin:"2px 0 0" }}>Automatikus kalkuláció – fővállalkozói elszámolási szabályok alapján</p>
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                <div style={{ background:"#ECFDF5", borderRadius:9, padding:"8px 14px", border:"1px solid #86EFAC" }}>
+                  <p style={{ fontSize:10, fontWeight:700, color:"#059669", margin:"0 0 1px", textTransform:"uppercase", letterSpacing:.5 }}>Kalkulált bevétel</p>
+                  <p style={{ fontSize:16, fontWeight:800, color:"#059669", margin:0 }}>{ft(projektBilling.totalBev)}</p>
+                </div>
+                <div style={{ background:"#FEF2F2", borderRadius:9, padding:"8px 14px", border:"1px solid #FECACA" }}>
+                  <p style={{ fontSize:10, fontWeight:700, color:"#DC2626", margin:"0 0 1px", textTransform:"uppercase", letterSpacing:.5 }}>Összes költség</p>
+                  <p style={{ fontSize:16, fontWeight:800, color:"#DC2626", margin:0 }}>{ft(projektBilling.totalKolts)}</p>
+                </div>
+                <div style={{ background: projektBilling.totalHaszon >= 0 ? "#ECFDF5" : "#FEF2F2", borderRadius:9, padding:"8px 14px", border:`1px solid ${projektBilling.totalHaszon >= 0 ? "#86EFAC" : "#FECACA"}` }}>
+                  <p style={{ fontSize:10, fontWeight:700, color: projektBilling.totalHaszon >= 0 ? "#059669" : "#DC2626", margin:"0 0 1px", textTransform:"uppercase", letterSpacing:.5 }}>Várható haszon</p>
+                  <p style={{ fontSize:16, fontWeight:800, color: projektBilling.totalHaszon >= 0 ? "#059669" : "#DC2626", margin:0 }}>
+                    {ft(projektBilling.totalHaszon)}
+                    {projektBilling.totalBev > 0 && <span style={{ fontSize:11, marginLeft:5 }}>({Math.round((projektBilling.totalHaszon / projektBilling.totalBev) * 100)}%)</span>}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Per-projekt táblázat */}
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+              <thead>
+                <tr style={{ background:"#F8FAFC", borderBottom:"2px solid #E2E8F0" }}>
+                  {["Projektkód", "Ügyfél / Projekt", "Fővállalkozó", "Kalkulált bev.", "Csapat bér", "Alváll. díj", "Km / Egyéb", "Haszon", "Haszon%"].map(h => (
+                    <th key={h} style={{ padding:"9px 14px", textAlign:"left", fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.6, whiteSpace:"nowrap" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {projektBilling.rows.map((row, i) => (
+                  <tr key={row.id} style={{ borderBottom:"1px solid #F1F5F9", background: i%2===0?"#fff":"#FAFAFA", borderLeft:`3px solid ${row.nyereseg?"#22C55E":"#EF4444"}` }}>
+                    <td style={{ padding:"10px 14px" }}>
+                      <p style={{ fontWeight:800, color:"#2563EB", margin:0 }}>{row.projektkod}</p>
+                      {row.hianyos && <span style={{ fontSize:9, background:"#FEF2F2", color:"#DC2626", padding:"1px 5px", borderRadius:4, fontWeight:700 }}>hiányos konfig</span>}
+                    </td>
+                    <td style={{ padding:"10px 14px", color:"#374151", fontSize:12 }}>{row.nev}</td>
+                    <td style={{ padding:"10px 14px", color:"#374151" }}>{row.fovNev}</td>
+                    <td style={{ padding:"10px 14px", fontWeight:700, color:"#059669" }}>{row.nettoBevitel > 0 ? ft(row.nettoBevitel) : <span style={{color:"#94A3B8"}}>—</span>}</td>
+                    <td style={{ padding:"10px 14px", color:"#DC2626" }}>{row.csapatBer > 0 ? ft(row.csapatBer) : <span style={{color:"#94A3B8"}}>—</span>}</td>
+                    <td style={{ padding:"10px 14px", color:"#9333EA" }}>{row.alvallalkozoiBer > 0 ? ft(row.alvallalkozoiBer) : <span style={{color:"#94A3B8"}}>—</span>}</td>
+                    <td style={{ padding:"10px 14px", color:"#64748B", fontSize:12 }}>
+                      {(row.utikoltség + row.alvallalkozoiKmBer + row.anyagkoltség) > 0
+                        ? ft(row.utikoltség + row.alvallalkozoiKmBer + row.anyagkoltség)
+                        : <span style={{color:"#94A3B8"}}>—</span>}
+                    </td>
+                    <td style={{ padding:"10px 14px", fontWeight:800, color: row.nyereseg ? "#059669" : "#DC2626" }}>{ft(row.haszon)}</td>
+                    <td style={{ padding:"10px 14px" }}>
+                      {row.haszonPct !== null ? (
+                        <span style={{ background: row.nyereseg ? "#ECFDF5" : "#FEF2F2", color: row.nyereseg ? "#059669" : "#DC2626", padding:"3px 9px", borderRadius:6, fontWeight:700, fontSize:12 }}>
+                          {row.haszonPct}%
+                        </span>
+                      ) : <span style={{color:"#94A3B8"}}>—</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p style={{ padding:"9px 18px", borderTop:"1px solid #E2E8F0", background:"#F8FAFC", fontSize:11, color:"#94A3B8", margin:0 }}>
+            {projektBilling.rows.length} fővállalkozói projekt · Zöld = nyereséges, piros = veszteséges
+          </p>
+        </div>
+      )}
+
+      {/* Ha még nincs fővállalkozói projekt konfigurálva */}
+      {isAdmin && !projektBilling && (
+        <div style={{ background:"#FFFBEB", border:"1.5px solid #FCD34D", borderRadius:12, padding:"14px 20px", marginTop:20, display:"flex", gap:12, alignItems:"flex-start" }}>
+          <AlertTriangle size={18} color="#D97706" style={{ flexShrink:0, marginTop:1 }} />
+          <div>
+            <p style={{ fontWeight:700, fontSize:13, color:"#92400E", margin:"0 0 3px" }}>Fővállalkozói elszámolás nincs beállítva egyetlen projektnél sem</p>
+            <p style={{ fontSize:12, color:"#92400E", margin:0, lineHeight:1.6 }}>
+              Projekt szintű kalkulált bevételhez: <strong>Beállítások → Munkatípusok</strong> (bevételi tételek, egységárak) →
+              <strong> Beállítások → Fővállalkozók</strong> (elszámolási szabályok) →
+              <strong> Projekt szerkesztése</strong> → Fővállalkozó + munkatípus kiválasztása.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ─── Kártérítések szekció ─── */}
       <KarteritesekSzekció
