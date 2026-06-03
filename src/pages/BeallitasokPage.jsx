@@ -108,14 +108,6 @@ const MENU_ITEMS = [
     bg: "#ECFEFF",
   },
   {
-    id: "vbfsablon",
-    label: "VBF Sablon (.docx)",
-    desc: "VBF Word sablon – {placeholder} mezők kitöltésével",
-    icon: Upload,
-    color: "#7C3AED",
-    bg: "#F5F3FF",
-  },
-  {
     id: "vbfpdfsablon",
     label: "VBF Sablon (.pdf)",
     desc: "VBF PDF sablon feltöltése – adatlap az eredeti nyomtatványra",
@@ -205,14 +197,6 @@ export default function BeallitasokPage({ currentUser }) {
       </div>
     );
   }
-  if (aktiv === "vbfsablon") {
-    return (
-      <div>
-        <BackBtn onClick={() => setAktiv(null)} label="VBF Sablon (.docx)" />
-        <VbfSablonBeallitas />
-      </div>
-    );
-  }
   if (aktiv === "vbfpdfsablon") {
     return (
       <div>
@@ -245,7 +229,7 @@ export default function BeallitasokPage({ currentUser }) {
   // Főmenü – kártyás elrendezés
   const lathatoMenuk = MENU_ITEMS.filter(m => {
     if (role === "Admin") return true;
-    if (role === "Projektmenedzser") return ["fovallalkozok","munkatipusok","munkakiosztas","sablonok","lmra","vbfsablon","vbfpdfsablon"].includes(m.id);
+    if (role === "Projektmenedzser") return ["fovallalkozok","munkatipusok","munkakiosztas","sablonok","lmra","vbfpdfsablon"].includes(m.id);
     return false;
   });
 
