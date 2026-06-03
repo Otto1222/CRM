@@ -84,6 +84,10 @@ export const PROJEKT_PENZUGY_SCHEMA = {
   keziAnyagkoltség:      null,
   keziKartérités:        null,
   emelőgepKoltseg:       0,
+  daruKoltseg:           0,
+  szallasKoltseg:        0,
+  bereltEszkozKoltseg:   0,
+  irodaAdminKoltseg:     0,
   egyebKoltseg:          0,
   // Állapot
   szabalyElteres:        false,

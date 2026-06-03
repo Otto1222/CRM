@@ -34,7 +34,9 @@ export function calcEsmentProjektPenzugy(projekt) {
   const penzugy = projekt?.penzugy || {};
   const { fovallalkoziId, munkatipus, tavKm, csapatLetszam, munkanapok,
           felultBevitel, keziCsapatBer, keziUtikoltség, keziAnyagkoltség,
-          keziKartérités, emelőgepKoltseg = 0, egyebKoltseg = 0 } = penzugy;
+          keziKartérités,
+          emelőgepKoltseg = 0, daruKoltseg = 0, szallasKoltseg = 0,
+          bereltEszkozKoltseg = 0, irodaAdminKoltseg = 0, egyebKoltseg = 0 } = penzugy;
 
   const ctx = loadElszamolasiKontextus(fovallalkoziId, munkatipus);
 
@@ -120,7 +122,10 @@ export function calcEsmentProjektPenzugy(projekt) {
     .reduce((s, k) => s + (k.osszeg || 0), 0);
   if (keziKartérités !== null && keziKartérités !== undefined) kartérités = Number(keziKartérités);
 
-  const osszesKolts = csapatBer + alvallalkozoiBer + alvallalkozoiKmBer + utikoltség + anyagkoltség + Number(emelőgepKoltseg || 0) + kartérités + Number(egyebKoltseg || 0);
+  const fixKoltsegek = Number(emelőgepKoltseg || 0) + Number(daruKoltseg || 0) +
+    Number(szallasKoltseg || 0) + Number(bereltEszkozKoltseg || 0) +
+    Number(irodaAdminKoltseg || 0) + Number(egyebKoltseg || 0);
+  const osszesKolts = csapatBer + alvallalkozoiBer + alvallalkozoiKmBer + utikoltség + anyagkoltség + fixKoltsegek + kartérités;
   const haszon = nettoBevitel - osszesKolts;
   const haszonPct = nettoBevitel > 0 ? Math.round((haszon / nettoBevitel) * 100) : null;
 
@@ -140,8 +145,13 @@ export function calcEsmentProjektPenzugy(projekt) {
     beveteliTetelek,
     // Költségek
     csapatBer, utikoltség, anyagkoltség,
-    emelőgepKoltseg: Number(emelőgepKoltseg || 0),
-    kartérités, egyebKoltseg: Number(egyebKoltseg || 0),
+    emelőgepKoltseg:     Number(emelőgepKoltseg     || 0),
+    daruKoltseg:         Number(daruKoltseg         || 0),
+    szallasKoltseg:      Number(szallasKoltseg      || 0),
+    bereltEszkozKoltseg: Number(bereltEszkozKoltseg || 0),
+    irodaAdminKoltseg:   Number(irodaAdminKoltseg   || 0),
+    kartérités,
+    egyebKoltseg:        Number(egyebKoltseg        || 0),
     // Alvállalkozói
     alvallalkozoiBer,
     alvallalkozoiBerMj,

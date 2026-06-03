@@ -93,8 +93,12 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
       keziUtikoltség: null,
       keziAnyagkoltség: null,
       keziKartérités: null,
-      emelőgepKoltseg: 0,
-      egyebKoltseg: 0,
+      emelőgepKoltseg:     projekt?.penzugy?.emelőgepKoltseg     || 0,
+      daruKoltseg:         projekt?.penzugy?.daruKoltseg         || 0,
+      szallasKoltseg:      projekt?.penzugy?.szallasKoltseg      || 0,
+      bereltEszkozKoltseg: projekt?.penzugy?.bereltEszkozKoltseg || 0,
+      irodaAdminKoltseg:   projekt?.penzugy?.irodaAdminKoltseg   || 0,
+      egyebKoltseg:        projekt?.penzugy?.egyebKoltseg        || 0,
     },
     megjegyzes: "",
   });
@@ -553,8 +557,20 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
             <Field label="Munkanapok száma" half>
               <input type="number" value={form.penzugy.munkanapok || 1} onChange={e => updPenz("munkanapok", e.target.value)} placeholder="1" style={inp} />
             </Field>
-            <Field label="Emelőgép költség (Ft)" half>
+            <Field label="Emelőgép (Ft)" half>
               <input type="number" value={form.penzugy.emelőgepKoltseg || ""} onChange={e => updPenz("emelőgepKoltseg", e.target.value)} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Daru / Teheremelő (Ft)" half>
+              <input type="number" value={form.penzugy.daruKoltseg || ""} onChange={e => updPenz("daruKoltseg", e.target.value)} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Szállás (Ft)" half>
+              <input type="number" value={form.penzugy.szallasKoltseg || ""} onChange={e => updPenz("szallasKoltseg", e.target.value)} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Bérelt eszközök (Ft)" half>
+              <input type="number" value={form.penzugy.bereltEszkozKoltseg || ""} onChange={e => updPenz("bereltEszkozKoltseg", e.target.value)} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Iroda / Admin (Ft)" half>
+              <input type="number" value={form.penzugy.irodaAdminKoltseg || ""} onChange={e => updPenz("irodaAdminKoltseg", e.target.value)} placeholder="0" style={inp} />
             </Field>
             <Field label="Egyéb költség (Ft)" half>
               <input type="number" value={form.penzugy.egyebKoltseg || ""} onChange={e => updPenz("egyebKoltseg", e.target.value)} placeholder="0" style={inp} />

@@ -102,9 +102,13 @@ function KombiDetailSzekció({ kalk, penzugy, csapat }) {
       csoport: "koltseg", label: "Anyagköltség", ertek: kalk.anyagkoltség, szin: "#DC2626",
       reszlet: penzugy.keziAnyagkoltség != null ? "⚠️ kézi" : null,
     } : null,
-    kalk.emelőgepKoltseg > 0 ? { csoport: "koltseg", label: "Emelőgép",      ertek: kalk.emelőgepKoltseg, szin: "#DC2626" } : null,
-    kalk.kartérités > 0      ? { csoport: "koltseg", label: "Kártérítés",     ertek: kalk.kartérités,       szin: "#DC2626" } : null,
-    kalk.egyebKoltseg > 0    ? { csoport: "koltseg", label: "Egyéb költség",  ertek: kalk.egyebKoltseg,     szin: "#DC2626" } : null,
+    kalk.emelőgepKoltseg     > 0 ? { csoport: "koltseg", label: "Emelőgép",         ertek: kalk.emelőgepKoltseg,     szin: "#DC2626" } : null,
+    kalk.daruKoltseg         > 0 ? { csoport: "koltseg", label: "Daru / Teheremelő", ertek: kalk.daruKoltseg,         szin: "#DC2626" } : null,
+    kalk.szallasKoltseg      > 0 ? { csoport: "koltseg", label: "Szállás",            ertek: kalk.szallasKoltseg,      szin: "#DC2626" } : null,
+    kalk.bereltEszkozKoltseg > 0 ? { csoport: "koltseg", label: "Bérelt eszközök",    ertek: kalk.bereltEszkozKoltseg, szin: "#DC2626" } : null,
+    kalk.irodaAdminKoltseg   > 0 ? { csoport: "koltseg", label: "Iroda / Admin",       ertek: kalk.irodaAdminKoltseg,   szin: "#DC2626" } : null,
+    kalk.kartérités          > 0 ? { csoport: "koltseg", label: "Kártérítés",          ertek: kalk.kartérités,          szin: "#DC2626" } : null,
+    kalk.egyebKoltseg        > 0 ? { csoport: "koltseg", label: "Egyéb költség",       ertek: kalk.egyebKoltseg,        szin: "#DC2626" } : null,
   ].filter(Boolean);
 
   return (
@@ -268,9 +272,13 @@ export default function TabKoltsegek({ projekt, munkalapok, currentUser }) {
               kalk.alvallalkozoiKmBer > 0 ? ["Alvállalkozói km-díj", kalk.alvallalkozoiKmBer, null, "🚗"] : null,
               ["Útiköltség",        kalk.utikoltség,        penzugy.keziUtikoltség,   null],
               ["Anyagköltség",      kalk.anyagkoltség,      penzugy.keziAnyagkoltség, null],
-              ["Emelőgép",          kalk.emelőgepKoltseg,   null,                      null],
-              ["Kártérítés",        kalk.kartérités,        penzugy.keziKartérités,   null],
-              ["Egyéb",             kalk.egyebKoltseg,      null,                      null],
+              ["Emelőgép",          kalk.emelőgepKoltseg,    null, null],
+              ["Daru / Teheremelő", kalk.daruKoltseg,        null, null],
+              ["Szállás",           kalk.szallasKoltseg,     null, null],
+              ["Bérelt eszközök",   kalk.bereltEszkozKoltseg,null, null],
+              ["Iroda / Admin",     kalk.irodaAdminKoltseg,  null, null],
+              ["Kártérítés",        kalk.kartérités,         penzugy.keziKartérités, null],
+              ["Egyéb",             kalk.egyebKoltseg,       null, null],
             ].filter(r => r && r[1] > 0).map(([l, v2, kezi, icon]) => (
               <tr key={l} style={{ borderBottom: `1px solid #F1F5F9` }}>
                 <td style={{ padding: "8px 12px", fontSize: 12, fontWeight: 600, color: "#374151" }}>
