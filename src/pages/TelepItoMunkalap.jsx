@@ -9,7 +9,7 @@ import LmraTelepltoView from "../components/LmraTelepltoView";
 import FelmeresTelepito from "./FelmeresTelepito";
 import FelmeresFotok from "./FelmeresFotok";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
-import { driveSave } from "../lib/driveApi";
+import { driveSave, driveVbfSave } from "../lib/driveApi";
 
 // ─── Sorozatszámos tételek ────────────────────────────────────
 const SERIAL_CATEGORIES = ["inverter","akkumulátor","akkumulator","okosmérő","okosmerő","okos mérő","optimalizáló","optimalizalo","napelem","panel"];
@@ -401,20 +401,29 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     setShowLmra(true);
   }
 
+  // Fire-and-forget Drive sync – nem blokkolja a UI-t
+  function syncMunkalapokToDrive() {
+    const osszesMl = loadLocal("munkalapok") || [];
+    driveSave("munkalapok", { munkalapok: osszesMl })
+      .then(res => { if (!res.ok && !res.offline) console.warn("[TelepIto Drive]", res.error); })
+      .catch(e => console.warn("[TelepIto Drive]", e));
+  }
+
   function doMegkezdes() {
     const ts = new Date().toISOString();
     const ujStatus = ["Kivitelezésre vár","Megkezdésre Vár","Ütemezett","Kiosztásra vár","Létrehozva","Kiosztva csapatnak"].includes(m.status) ? "Folyamatban" : m.status;
     updateItem("munkalapok", m.id, { megkezdve: true, megkezdesIdopont: ts, status: ujStatus, statusSzin: "#2563EB" });
     window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+    syncMunkalapokToDrive(); // státusz: Folyamatban → Drive-ra
     setMegkezdve(true);
     setShowLmra(false);
     setActiveTab(3);
   }
 
   function handleLmraComplete(lmraAdat) {
-    // LMRA lezárva – frissítjük a munkalapot
     updateItem("munkalapok", m.id, { lmraLezarva: true, lmraLezarvaAt: new Date().toISOString() });
     window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+    syncMunkalapokToDrive(); // LMRA lezárva → Drive-ra
   }
 
   function handleBefejezesKezdete() {
@@ -551,12 +560,21 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   }
 
   async function handleVbfMentes() {
-    saveLocal(`vbf_${m.id}`,vbf);
-    updateItem("munkalapok",m.id,{vbf});
-    window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
+    saveLocal(`vbf_${m.id}`, vbf);
+    updateItem("munkalapok", m.id, { vbf });
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+    setProgress(30);
+    setProgressMsg("VBF mentése Drive-ra…");
+    // VBF külön fájlba Drive-ra + teljes munkalapok lista szinkron
+    try {
+      await driveVbfSave(m.id, vbf);
+      syncMunkalapokToDrive();
+    } catch(e) {
+      console.warn("[VBF Drive sync]", e);
+    }
     setProgress(100);
     setProgressMsg("VBF mentve ✓");
-    await new Promise(r=>setTimeout(r,1200));
+    await new Promise(r => setTimeout(r, 1200));
     setProgress(null);
   }
 
@@ -796,8 +814,9 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
               onChange={e=>setMegjegyzes(e.target.value)}
               onBlur={()=>{
                 if (megjegyzes.trim().length>0) {
-                  updateItem("munkalapok",m.id,{megjegyzes:megjegyzes.trim()});
-                  window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
+                  updateItem("munkalapok", m.id, { megjegyzes: megjegyzes.trim() });
+                  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+                  syncMunkalapokToDrive();
                 }
               }}
               placeholder="Pl. A telepítés rendben megtörtént. Az inverter a garázs falán lett elhelyezve..."
