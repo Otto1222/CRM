@@ -4,6 +4,7 @@
  */
 import { PROJEKT_SCHEMA } from "./projekt.schema.js";
 import { createBackup } from "../../lib/backupService.js";
+import { driveSave } from "../../lib/driveApi.js";
 const KEY = "projektek";
 const COUNTER_KEY = "edi_projekt_sorszam_counter";
 // ─── Alap CRUD ────────────────────────────────────────────────
@@ -17,6 +18,7 @@ export function loadProjektek() {
 export function saveProjektek(list) {
   localStorage.setItem(KEY, JSON.stringify(list));
   dispatch("projektek");
+  driveSave("projektek", { projektek: list }).catch(() => {});
 }
 export function getProjekt(id) {
   return loadProjektek().find(p => p.id === id) || null;
@@ -25,6 +27,7 @@ export function getProjekt(id) {
 export function nextProjektkod() {
   const n = parseInt(localStorage.getItem(COUNTER_KEY) || "0", 10) + 1;
   localStorage.setItem(COUNTER_KEY, String(n));
+  driveSave("edi_projekt_sorszam_counter", { edi_projekt_sorszam_counter: n }).catch(() => {});
   return `E.D.I.${String(n).padStart(3, "0")}`;
 }
 export function formatProjektAzonosito(projektkod, kulsoAzonosito = "") {

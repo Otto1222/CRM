@@ -4,12 +4,8 @@
  * Felhasználók tárolása: localStorage["crm_napelem_users"] (Drive szinkron)
  * Jelszavak: SHA-256 hash – soha nem kerül plain text Drive-ra
  *
- * Alapértelmezett jelszavak (első induláskor, amíg Admin nem változtatja):
- *   E.D.I. Solutions   → Napelem123
- *   Kutasi László      → Telepito123
- *   Csapat2            → Telepito123
- *   Projektmenedzser   → Projekt123
- *   Iroda/Könyvelés    → Iroda123
+ * Alapértelmezett jelszavak az Admin felületen keresztül változtathatók meg.
+ * (Az alapértelmezett jelszavakat NE tárold forráskódban – éles indulás előtt módosítsd!)
  */
 
 import { loadLocal, saveLocal } from "./localDb";
@@ -25,7 +21,6 @@ export const DEFAULT_USERS = [
     color: "#2563EB",
     initials: "ED",
     passwordHash: "324f4c9d63f8ca13bd3f4cc8d44c7580103ca17b0591eb8346f965047e435528",
-    defaultPassword: "Napelem123",
   },
   {
     id: "u2",
@@ -35,7 +30,6 @@ export const DEFAULT_USERS = [
     color: "#059669",
     initials: "KL",
     passwordHash: "f2a8773390397ff1007b9291dd9211e086761c819d060e0a765a1a41f54c1301",
-    defaultPassword: "Telepito123",
   },
   {
     id: "u3",
@@ -45,7 +39,6 @@ export const DEFAULT_USERS = [
     color: "#9333EA",
     initials: "C2",
     passwordHash: "f2a8773390397ff1007b9291dd9211e086761c819d060e0a765a1a41f54c1301",
-    defaultPassword: "Telepito123",
   },
   {
     id: "u4",
@@ -55,7 +48,6 @@ export const DEFAULT_USERS = [
     color: "#D97706",
     initials: "PM",
     passwordHash: "a75190db4985fc14bb80dfe456c2fdaa807be9b7a19c1f83e039fc7acbfbf36f",
-    defaultPassword: "Projekt123",
   },
   {
     id: "u5",
@@ -65,7 +57,6 @@ export const DEFAULT_USERS = [
     color: "#0891B2",
     initials: "IK",
     passwordHash: "803743b09a544cf12b3c4b5d97452be87ad8b680aca801c6aab80ebac531f9ac",
-    defaultPassword: "Iroda123",
   },
 ];
 

@@ -1,4 +1,5 @@
 import { validateWorkorderBeforeSave } from "../modules/projektek/projectRules.js";
+import { driveSave } from "../lib/driveApi.js";
 
 const KEY = "munkalapok";
 
@@ -17,6 +18,7 @@ export function loadWorkorders() {
 export function saveWorkorders(list) {
   localStorage.setItem(KEY, JSON.stringify(list));
   dispatch("munkalapok");
+  driveSave("munkalapok", { munkalapok: list }).catch(() => {});
 }
 
 export function getWorkorder(id) {

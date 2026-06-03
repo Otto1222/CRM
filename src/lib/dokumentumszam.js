@@ -1,5 +1,6 @@
 // ─── EDI Dokumentumszám generálás ──────────────────────────────
 import { loadLocal, saveLocal } from "./localDb";
+import { driveSave } from "./driveApi";
 
 const COUNTER_KEY = "edi_sorszam_counter";
 const PREFIX = "E.D.I.";
@@ -11,6 +12,7 @@ const PREFIX = "E.D.I.";
 export function nextEdiSorszam() {
   const counter = (loadLocal(COUNTER_KEY) || 0) + 1;
   saveLocal(COUNTER_KEY, counter);
+  driveSave("edi_sorszam_counter", { edi_sorszam_counter: counter }).catch(() => {});
   return formatEdi(counter);
 }
 

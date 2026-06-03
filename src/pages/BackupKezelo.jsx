@@ -15,9 +15,9 @@ export default function BackupKezelo({ userRole }) {
   async function handleMentes() {
     setFolyamat("mentes");
     const label = `Manuális mentés – ${new Date().toLocaleString("hu-HU")}`;
-    const id = createBackup(label);
+    const id = createBackup(label, { saveToDrive: true });
     setFolyamat(null);
-    setUzenet({ ok:true, szoveg:`✅ Mentés kész: ${id}` });
+    setUzenet({ ok:true, szoveg:`✅ Mentés kész (Drive-ra is feltöltve): ${id}` });
     setTimeout(()=>setUzenet(null), 4000);
     refresh();
   }

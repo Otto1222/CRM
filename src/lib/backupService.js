@@ -4,6 +4,8 @@
  * Teljes CRM localStorage snapshot, parse-olt JSON adatokkal.
  */
 
+import { driveSave } from "./driveApi.js";
+
 const BACKUP_KEY = "crm_backups";
 const MAX_BACKUPS = 10;
 
@@ -114,7 +116,7 @@ function collectLocalStorageSnapshot() {
 }
 
 /** Teljes alkalmazás állapot snapshot */
-export function createBackup(label = "") {
+export function createBackup(label = "", { saveToDrive = false } = {}) {
   try {
     const snapshot = {
       id: `bk_${Date.now()}`,
@@ -133,6 +135,11 @@ export function createBackup(label = "") {
     }
 
     localStorage.setItem(BACKUP_KEY, JSON.stringify(backups));
+
+    // Drive mentés csak manuális híváskor (auto-backup nem küldi – quota kímélés)
+    if (saveToDrive) {
+      driveSave("crm_backups", { crm_backups: backups }).catch(() => {});
+    }
 
     console.info(`[Backup] ✅ Mentés készült: ${snapshot.id} (${label})`);
     return snapshot.id;

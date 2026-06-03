@@ -17,7 +17,9 @@ export const SYNC_COLLECTIONS = [
 ];
 
 function emptyValue(collection) {
-  return collection === "beallitasok" ? {} : [];
+  if (collection === "beallitasok") return {};
+  if (collection === "edi_sorszam_counter" || collection === "edi_projekt_sorszam_counter") return 0;
+  return [];
 }
 
 function unwrap(collection, payload) {
@@ -80,6 +82,43 @@ export async function syncAllFromDrive() {
 
   for (const collection of SYNC_COLLECTIONS) {
     result[collection] = await loadCollection(collection);
+  }
+
+  // Pillanatkepek visszaállítása Drive-ból (egyedi localStorage kulcsokra)
+  try {
+    const drivePayload = await driveLoad("pillanatkepek");
+    const pillanatkepek = unwrap("pillanatkepek", drivePayload);
+    if (Array.isArray(pillanatkepek) && pillanatkepek.length > 0) {
+      pillanatkepek.forEach(p => {
+        if (p.projektId) saveLocal(`projekt_pillanatkep_${p.projektId}`, p);
+      });
+      result.pillanatkepek = pillanatkepek;
+    }
+  } catch {}
+
+  // Counter öngyógyítás: ha localStorage törlődött, a valós adatokból állítja helyre
+  // Ezzel megelőzhető a duplikált projektkód / EDI sorszám
+  const projektek = result.projektek || [];
+  if (projektek.length > 0) {
+    const maxProjN = projektek.reduce((m, p) => {
+      const match = p.projektkod?.match(/E\.D\.I\.(\d+)/);
+      return match ? Math.max(m, parseInt(match[1], 10)) : m;
+    }, 0);
+    const localProjN = parseInt(localStorage.getItem("edi_projekt_sorszam_counter") || "0", 10);
+    if (maxProjN > localProjN) localStorage.setItem("edi_projekt_sorszam_counter", String(maxProjN));
+  }
+
+  const munkalapok = result.munkalapok || [];
+  if (munkalapok.length > 0) {
+    const maxEdiN = munkalapok.reduce((m, ml) => {
+      const s = ml.ediSorszam || ml.dokumentumszam || "";
+      const match = s.match(/E\.D\.I\.\s*(\d+)/);
+      return match ? Math.max(m, parseInt(match[1], 10)) : m;
+    }, 0);
+    if (maxEdiN > 0) {
+      const localEdiN = parseInt(localStorage.getItem("edi_sorszam_counter") || "0", 10);
+      if (maxEdiN > localEdiN) saveLocal("edi_sorszam_counter", maxEdiN);
+    }
   }
 
   return result;

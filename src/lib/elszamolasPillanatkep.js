@@ -8,6 +8,7 @@
  */
 
 import { loadLocal, saveLocal } from "./localDb";
+import { driveSave } from "./driveApi";
 import { loadFovallalkozok, loadSzabalyok } from "../modules/fovallalkozok/fovallalkozo.service";
 import { getMunkatipus } from "../modules/munkatipusok/munkatipus.service";
 
@@ -64,6 +65,13 @@ export function createPillanatkep(projekt, munkalapok = [], kalkulacio = null) {
   };
 
   saveLocal(KEY(projekt.id), pillanatkep);
+
+  // Összes pillanatkép mentése Drive-ra egyetlen fájlba
+  try {
+    const all = listPillanatkepek();
+    driveSave("pillanatkepek", { pillanatkepek: all }).catch(() => {});
+  } catch {}
+
   return pillanatkep;
 }
 
