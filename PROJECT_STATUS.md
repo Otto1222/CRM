@@ -1,23 +1,24 @@
 # PROJECT_STATUS.md – CRM Napelem ERP
-_Utolsó frissítés: 2026-06-02 (v7) – Számlák modul KÉSZ: PEASE API stub, PDF sablon, lista_
+_Utolsó frissítés: 2026-06-03 (v8) – Biztonsági javítások, Riportok KÉSZ, Munkakiosztás routing, code splitting_
 
 ## Fejlesztési sorrend és jelenlegi állapot
 
 | # | Modul | Állapot | Megjegyzés |
 |---|---|---|---|
-| 1 | Auth | ✅ KÉSZ | Username + jelszó form (SHA-256), Drive szinkron, AdminPanel |
-| 2 | Dashboard Shell | ✅ KÉSZ (alap) | Pénzügyi összesítő munkalapok alapján; projekt-centrikus átírás később |
+| 1 | Auth | ✅ KÉSZ | SHA-256 hash, session persistence, egyszeri jelszó panel, alapjlszó warning |
+| 2 | Dashboard Shell | ✅ KÉSZ (alap) | Pénzügyi összesítő munkalapok alapján |
 | 3 | Ügyfelek | ✅ KÉSZ | Teljes CRUD: add/edit/delete, státusz, megjegyzés, projekt szám |
-| 4 | Projektek | ✅ KÉSZ | CRUD, 14 státusz (terv szerint), műszaki mezők, ügyfél dropdown |
+| 4 | Projektek | ✅ KÉSZ | CRUD, 14 státusz, műszaki mezők, ügyfél dropdown |
 | 5 | Csapatok | ✅ KÉSZ | Teljes CRUD: név, telephely, tagok, kapacitás, szín, hétvége toggle |
-| 6 | Munkalapok | ✅ KÉSZ | CRUD, felmérés, VBF, fotók, projektből létrehozás (pre-fill), onClose fix |
-| 7 | Telepítő App (PWA) | ✅ KÉSZ | PWA manifest, SW (cache-first assets, network-first egyéb), offline mód, install banner |
+| 6 | Munkalapok | ✅ KÉSZ | CRUD, felmérés, VBF, fotók, projektből létrehozás (pre-fill) |
+| 7 | Telepítő App (PWA) | ✅ KÉSZ | PWA manifest, SW (cache-first assets, network-first egyéb), offline mód |
 | 8 | Google Drive | ✅ KÉSZ | driveApi + Apps Script webhook + auto per-projekt mappa (4 almappa) |
 | 9 | Fővállalkozók | ✅ KÉSZ | Teljes CRUD, elszámolási szabályok |
 | 10 | Elszámolási motor | ✅ KÉSZ | costEngine, settlementRule, per-fővállalkozó szabályok |
-| 11 | Költség modul | ✅ NAGYRÉSZT KÉSZ | TabKoltsegek ProjektDetailban, kártérítés kezelés |
-| 12 | Számlák | ✅ KÉSZ | Kimenő+bejövő lista, PEASE API stub, PDF sablon (szabad szerkesztés), riport |
-| 13 | Riportok | ⚠️ RÉSZLEGES | Dashboard pénzügyi összesítő, TabRiport megvan; nincs dedikált oldal |
+| 11 | Költség modul | ✅ KÉSZ | TabKoltsegek ProjektDetailban, kártérítés kezelés |
+| 12 | Számlák | ✅ KÉSZ | Kimenő+bejövő lista, PEASE API stub, PDF sablon, riport |
+| 13 | Riportok | ✅ KÉSZ | Fővállalkozó elszámolás, csapat teljesítmény, havi bontás grafikon, CSV export |
+| 14 | Munkakiosztás | ✅ KÉSZ | Admin/PM szerepkörnek elérhető, Sidebar menüpont, routing |
 
 ---
 
@@ -108,11 +109,19 @@ _Utolsó frissítés: 2026-06-02 (v7) – Számlák modul KÉSZ: PEASE API stub,
 - Sidebar: Számlák menüpont (Receipt ikon)
 - localDb + dataSync: szamlak kollekció Drive-ra szinkronizálva
 
-### ⚠️ 13. Riportok
-- Dashboard: havi bevétel összesítő munkalapokból
-- TabRiport: projekt szintű PDF export
-- reportService.js: projekt riport adatok
-- Hiányzik: dedikált Riportok oldal, fővállalkozónkénti elszámolás, csapat teljesítmény
+### ✅ 13. Riportok
+- `RiportokPage.jsx`: dedikált riportok oldal, Admin/PM/Iroda szerepkörnek
+- Fővállalkozó elszámolás tab: összesítő + projekt részletek expandálható sorokkal
+- Csapat teljesítmény tab: befejezett/aktív projektek, csapatbér összesítő
+- Havi bontás tab: recharts BarChart + táblázatos nézet
+- CSV export: minden tabhoz (pontosvesszős, UTF-8 BOM, Excel-kompatibilis)
+- KPI kártyák: projektek db, nettó bevétel, haszon (margin %), telepített panel
+- Évszűrő: bármely évre szűrhető
+
+### ✅ 14. Munkakiosztás
+- `Munkakiosztas.jsx`: XLSX import alapú munkakiosztás, algoritmus
+- Sidebar menüpont (CalendarRange ikon), Admin/Projektmenedzser szerepkörnek
+- App.jsx routing bekötve
 
 ---
 
@@ -122,7 +131,19 @@ _Utolsó frissítés: 2026-06-02 (v7) – Számlák modul KÉSZ: PEASE API stub,
 - **Adatbázis**: localStorage (elsődleges) + Google Drive JSON (szinkron)
 - **Drive sync**: Apps Script webhook (VITE_APPS_SCRIPT_URL)
 - **Deployment**: Vercel (pre-built dist, ingyenes tier)
+- **Bundle**: code splitting – vendor-react, vendor-charts, vendor-office, vendor-icons külön chunk
 - **Repo**: https://github.com/Otto1222/CRM.git
+
+## Biztonsági állapot (v8)
+
+| Téma | Állapot |
+|---|---|
+| Jelszó tárolás | ✅ SHA-256 hash, plain text soha nem kerül Drive-ra |
+| Regisztrációs email | ✅ Jelszó NEM szerepel az emailben |
+| Admin jelszó panel | ✅ Egyszeri megjelenítés, localStorage-ban NEM tárolódik |
+| Session persistence | ✅ sessionStorage (tab bezárásig megőrzi, frissítés után is bent marad) |
+| Alapértelmezett jelszavak | ⚠️ Manuálisan változtasd meg éles indítás előtt! |
+| Rate limiting | ❌ Nincs (kis csapat, acceptable) |
 
 ## localStorage kulcsok
 

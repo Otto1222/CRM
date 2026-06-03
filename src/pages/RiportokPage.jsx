@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
-import { BarChart3, TrendingUp, Sun, ChevronDown, ChevronRight, Users } from "lucide-react";
+import { BarChart3, TrendingUp, Sun, ChevronDown, ChevronRight, Users, Download } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { loadLocal } from "../lib/localDb";
 import { loadFovallalkozok } from "../modules/fovallalkozok/fovallalkozo.service";
@@ -309,6 +310,76 @@ function CsapatRiportTab({ data, expanded, onToggle }) {
   );
 }
 
+// ─── Havi bontás tab ──────────────────────────────────────────
+
+function HaviBontasTab({ data }) {
+  if (data.length === 0) {
+    return (
+      <div style={{ padding: 48, textAlign: "center", color: C.muted, fontSize: 14 }}>
+        Nincs adat a kiválasztott időszakra.
+      </div>
+    );
+  }
+
+  const chartData = data.map(d => ({
+    name: d.honap.replace("-", ". ") + ".",
+    "Nettó bevétel (eFt)": Math.round(d.bevitel / 1000),
+    "Haszon (eFt)":        Math.round(d.haszon  / 1000),
+  }));
+
+  return (
+    <div style={{ padding: "24px 16px" }}>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={chartData} margin={{ top: 8, right: 24, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94A3B8" }} />
+          <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={v => v + " e"} />
+          <Tooltip
+            formatter={(v, name) => [new Intl.NumberFormat("hu-HU").format(v) + " eFt", name]}
+            contentStyle={{ fontFamily: "system-ui, sans-serif", fontSize: 13, borderRadius: 8 }}
+          />
+          <Legend wrapperStyle={{ fontSize: 13 }} />
+          <Bar dataKey="Nettó bevétel (eFt)" fill="#2563EB" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="Haszon (eFt)"        fill="#059669" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+
+      <div style={{ marginTop: 20, borderRadius: 10, overflow: "hidden", border: "1px solid #E2E8F0" }}>
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 140px 140px 80px", gap: 0,
+          padding: "10px 16px", background: "#F8FAFC", borderBottom: "1px solid #E2E8F0",
+        }}>
+          {["Hónap", "Nettó bevétel", "Haszon", "Projektek"].map((h, i) => (
+            <div key={i} style={{
+              fontSize: 11, fontWeight: 700, color: "#94A3B8",
+              textTransform: "uppercase", letterSpacing: 0.7,
+              textAlign: i >= 1 ? "right" : "left",
+            }}>{h}</div>
+          ))}
+        </div>
+        {data.map(d => (
+          <div key={d.honap} style={{
+            display: "grid", gridTemplateColumns: "1fr 140px 140px 80px", gap: 0,
+            padding: "10px 16px", borderBottom: "1px solid #F1F5F9", alignItems: "center",
+          }}>
+            <div style={{ fontWeight: 600, color: "#0F172A", fontSize: 13 }}>{d.honap}</div>
+            <div style={{ textAlign: "right", fontWeight: 600, color: "#0F172A", fontSize: 13 }}>
+              {fmtFt(d.bevitel)}
+            </div>
+            <div style={{
+              textAlign: "right", fontWeight: 700, fontSize: 13,
+              color: d.haszon >= 0 ? "#059669" : "#DC2626",
+            }}>
+              {fmtFt(d.haszon)}
+            </div>
+            <div style={{ textAlign: "right", color: "#64748B", fontSize: 13 }}>{d.projektek}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Főoldal ──────────────────────────────────────────────────
 
 export default function RiportokPage() {
@@ -316,6 +387,7 @@ export default function RiportokPage() {
   const [evSzuro, setEvSzuro]       = useState(String(new Date().getFullYear()));
   const [expandedFv, setExpandedFv] = useState(null);
   const [expandedCs, setExpandedCs] = useState(null);
+  const [expandedHavi, setExpandedHavi] = useState(null);
 
   const [projektek,     setProjektek]     = useState(() => loadLocal("projektek")    || []);
   const [fovallalkozok, setFovallalkozok] = useState(() => loadFovallalkozok());
@@ -409,6 +481,53 @@ export default function RiportokPage() {
                  s + Number(p.penzugy?.darabszam || p.napelemDb || 0), 0),
   }), [projektKalkData]);
 
+  // Havi bontás (létrehozás dátuma szerint)
+  const haviBontas = useMemo(() => {
+    const map = {};
+    projektKalkData.forEach(({ projekt: p, kalk }) => {
+      const honap = (p.createdAt || p.tervezettKezdes || "").slice(0, 7);
+      if (!honap) return;
+      if (!map[honap]) map[honap] = { honap, bevitel: 0, haszon: 0, projektek: 0 };
+      map[honap].bevitel  += kalk.nettoBevitel || 0;
+      map[honap].haszon   += kalk.haszon       || 0;
+      map[honap].projektek++;
+    });
+    return Object.values(map).sort((a, b) => a.honap.localeCompare(b.honap));
+  }, [projektKalkData]);
+
+  // CSV export az aktív tabhoz
+  function exportCsv() {
+    let rows = [];
+    let filename = "riport.csv";
+    if (activeTab === "fovallalkozo") {
+      rows = [
+        ["Fővállalkozó", "Projektek", "Panel db", "Nettó bevétel (Ft)", "Összes ktg. (Ft)", "Haszon (Ft)", "Margin (%)"],
+        ...fvRiport.map(fv => {
+          const m = fv.osszBevitel > 0 ? Math.round((fv.osszHaszon / fv.osszBevitel) * 100) : "";
+          return [fv.nev, fv.projektek.length, fv.osszPanel, Math.round(fv.osszBevitel), Math.round(fv.osszKolts), Math.round(fv.osszHaszon), m];
+        }),
+      ];
+      filename = `fovallalkozo_elszamolas_${evSzuro}.csv`;
+    } else if (activeTab === "csapat") {
+      rows = [
+        ["Csapat", "Összes proj.", "Befejezett", "Aktív", "Panel db", "Csapatbér (Ft)"],
+        ...csapatRiport.map(cs => [cs.nev, cs.projektek.length, cs.befejezett, cs.aktiv, cs.osszPanel, Math.round(cs.osszCsapatBer)]),
+      ];
+      filename = `csapat_teljesitmeny_${evSzuro}.csv`;
+    } else {
+      rows = [
+        ["Hónap", "Nettó bevétel (Ft)", "Haszon (Ft)", "Projektek"],
+        ...haviBontas.map(h => [h.honap, Math.round(h.bevitel), Math.round(h.haszon), h.projektek]),
+      ];
+      filename = `havi_bontas_${evSzuro}.csv`;
+    }
+    const bom = "﻿";
+    const csv = bom + rows.map(r => r.map(c => `"${String(c ?? "").replace(/"/g, '""')}"`).join(";")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // Elérhető évek az adatokból
   const evOptions = useMemo(() => {
     const evek = new Set(
@@ -450,6 +569,18 @@ export default function RiportokPage() {
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            onClick={exportCsv}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "7px 14px", borderRadius: 8,
+              border: "1.5px solid #E2E8F0", background: "#F8FAFC",
+              color: "#475569", cursor: "pointer", fontSize: 13,
+              fontWeight: 600, fontFamily: FONT,
+            }}
+          >
+            <Download size={14} /> CSV export
+          </button>
           <span style={{ fontSize: 13, color: C.textSub }}>Időszak:</span>
           <select
             value={evSzuro}
@@ -505,6 +636,9 @@ export default function RiportokPage() {
             Csapat teljesítmény
           </span>
         </button>
+        <button style={tabStyle("havi")} onClick={() => setActiveTab("havi")}>
+          Havi bontás
+        </button>
       </div>
 
       {/* Tab tartalom */}
@@ -528,6 +662,9 @@ export default function RiportokPage() {
             expanded={expandedCs}
             onToggle={setExpandedCs}
           />
+        )}
+        {activeTab === "havi" && (
+          <HaviBontasTab data={haviBontas} />
         )}
       </div>
     </div>
