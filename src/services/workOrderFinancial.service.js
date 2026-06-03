@@ -31,6 +31,7 @@ export function loadTetelek(projektId) {
  * Bevételi tételeket generál és elmenti.
  */
 export function calcEsmentProjektPenzugy(projekt) {
+  if (!projekt) return null;
   const penzugy = projekt?.penzugy || {};
   const { fovallalkoziId, munkatipus, tavKm, csapatLetszam, munkanapok,
           felultBevitel, keziCsapatBer, keziUtikoltség, keziAnyagkoltség,

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Pencil, Printer } from "lucide-react";
+import { ArrowLeft, Pencil, Printer, Trash2 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getStatusConfig } from "./projekt.schema.js";
 import { exportToPDF } from "../../lib/exportService.js";
 import { formatProjectType } from "../../lib/projectTypeFormatter.js";
+import { deleteProjekt } from "./projekt.service.js";
 import ProjektForm from "./ProjektForm.jsx";
 import TabAttekintes from "./tabs/TabAttekintes.jsx";
 import TabAjanlatok from "./tabs/TabAjanlatok.jsx";
@@ -49,6 +50,18 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
 
   function handleSaved(updated) {
     setLokalProjekt(updated);
+  }
+
+  function handleDelete() {
+    const mls = (munkalapok || []).filter(
+      m => m.projektId === lokalProjekt.id || lokalProjekt.munkalapIds?.includes(m.id)
+    );
+    const figyelmezetes = mls.length > 0
+      ? `\n\n⚠️ A projekthez ${mls.length} munkalap tartozik – ezek NEM törlődnek, de elveszítik a projekt-kapcsolatukat.`
+      : "";
+    if (!window.confirm(`Biztosan törlöd ezt a projektet?\n\n${lokalProjekt.projektkod} – ${lokalProjekt.nev}${figyelmezetes}\n\nEz a művelet visszavonhatatlan!`)) return;
+    deleteProjekt(lokalProjekt.id);
+    onBack();
   }
 
   function handlePrint() {
@@ -154,6 +167,28 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
         </div>
 
         <div style={{ display: "flex", gap: 8 }}>
+          {currentUser?.role === "Admin" && (
+            <button
+              onClick={handleDelete}
+              title="Projekt törlése"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 12px",
+                background: "#FEF2F2",
+                color: "#DC2626",
+                border: "1px solid #FECACA",
+                borderRadius: 9,
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 13,
+                fontFamily: FONT,
+              }}
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
           <button
             onClick={handlePrint}
             style={{

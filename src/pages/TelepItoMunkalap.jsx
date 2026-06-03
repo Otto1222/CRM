@@ -380,7 +380,6 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   useEffect(()=>{
     const toSave = Object.fromEntries(Object.entries(fotok).map(([k,v])=>[k,v.map(f=>({name:f.name,size:f.size,type:f.type,originalName:f.originalName}))]));
     saveLocal(`fotok_${m.id}`,toSave);
-    window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:`fotok_${m.id}`}}));
   },[fotok,m.id]);
 
   useEffect(()=>{ saveLocal(`foto_hiany_${m.id}`,fotoHianyOkok); },[fotoHianyOkok,m.id]);
