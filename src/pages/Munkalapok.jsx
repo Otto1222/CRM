@@ -268,8 +268,8 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
                     <td style={{ padding:"14px 16px" }}>
                       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                         <div>
-                          <span style={{ fontWeight:700, color:C.accent }}>{m.dokumentumszam || m.ediSorszam || m.id}</span>
-                          {m.dokumentumszam && <span style={{ fontSize:10, color:C.muted, display:"block" }}>{m.id}</span>}
+                          <span style={{ fontWeight:700, color:C.accent }}>{m.dokumentumszam || m.ugyszam || m.ediSorszam || `#${m.id?.slice(-6)}`}</span>
+                          {m.dokumentumszam && m.ediSorszam && <span style={{ fontSize:10, color:C.muted, display:"block" }}>{m.ediSorszam}</span>}
                         </div>
                         {m.cimke && <CimkeBadge label={m.cimke} color={m.cimkeSzin||C.accent} />}
                         {m.munkalapTipus && <span style={{ fontSize:10, background:"#F1F5F9", color:C.muted, padding:"2px 7px", borderRadius:6, fontWeight:600 }}>{m.munkalapTipus}</span>}
@@ -295,7 +295,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
             const cl = data.ugyfelek?.find(u=>u.id===m.clientId);
             const clientNev = m.clientNev || cl?.name || "";
             const clientCim = m.clientCim || cl?.address || "";
-            const munkaszam  = m.ugyszam || m.dokumentumszam || m.ediSorszam || m.id;
+            const munkaszam  = m.dokumentumszam || m.ugyszam || m.ediSorszam || `#${m.id?.slice(-6)}`;
 
             // ── Telepítő egyszerűsített kártya ──────────────────
             if (userRole === "Telepítő") {

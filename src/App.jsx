@@ -37,11 +37,30 @@ const PAGE_TITLES = {
   beallitasok: "Beállítások",
 };
 
+function fixMunkalapokSzamozas(list) {
+  let changed = false;
+  const fixed = list.map(m => {
+    if (!m.dokumentumszam && !m.ugyszam && !m.ediSorszam) {
+      changed = true;
+      const fallback = `#${(m.id || "").slice(-6)}`;
+      return { ...m, dokumentumszam: fallback, ugyszam: fallback };
+    }
+    if (!m.dokumentumszam && (m.ugyszam || m.ediSorszam)) {
+      changed = true;
+      return { ...m, dokumentumszam: m.ugyszam || m.ediSorszam };
+    }
+    return m;
+  });
+  if (changed) saveLocal("munkalapok", fixed);
+  return fixed;
+}
+
 function loadInitialData() {
+  const rawMl = loadLocal("munkalapok") || SAMPLE_DATA.munkalapok || [];
   return {
     ...SAMPLE_DATA,
     projektek: loadLocal("projektek") || SAMPLE_DATA.projektek || [],
-    munkalapok: loadLocal("munkalapok") || SAMPLE_DATA.munkalapok || [],
+    munkalapok: fixMunkalapokSzamozas(rawMl),
     ugyfelek: loadLocal("ugyfelek") || SAMPLE_DATA.ugyfelek || [],
     beallitasok: loadLocal("beallitasok") || SAMPLE_DATA.beallitasok || {},
     munkatipusok: loadLocal("munkatipusok") || SAMPLE_DATA.munkatipusok || [],
