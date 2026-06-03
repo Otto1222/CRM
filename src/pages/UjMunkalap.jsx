@@ -292,7 +292,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
     const csapat = csapatok.find(c=>c.id===alap.csapatId);
 
     const ml = {
-      id:                alap.ugyszam,
+      id:                `ml_${Date.now()}`,  // egyedi belső ID (nem tartalmaz "/" karaktert)
       ugyszam:           alap.ugyszam,
       cimke:             alap.cimke,
       cimkeSzin:         alap.cimkeSzin,
