@@ -77,8 +77,10 @@ export function generateBeveteliTetelek(kontextus, inputok = {}) {
     } else {
       // Munkadíj: a szabályból veszi az adott tétel árát (ha van override), különben a munkatípusból
       const szabalyTetelAr = szabaly?.tetelArak?.[tetelDef.tetelTipusId];
+      // Szabály felülír: az árlogika típusa MARAD (darab_egysegar → még mindig db×ár),
+      // csak az ár értéke változik fővállalkozónként.
       const effDef = szabalyTetelAr !== undefined
-        ? { ...tetelDef, fixOsszeg: szabalyTetelAr, egysegAr: szabalyTetelAr, arlogikaTipus: "fix_osszeg" }
+        ? { ...tetelDef, fixOsszeg: szabalyTetelAr, egysegAr: szabalyTetelAr }
         : tetelDef;
       const result = calcMunkaDij(effDef, {
         darabszam,
