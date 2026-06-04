@@ -256,6 +256,31 @@
       font-weight: 700;
     }
 
+    /* ── Print bar ── */
+    .print-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+      background: #1E293B; color: #fff;
+      padding: 10px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+    .print-bar span { font-size: 13px; font-weight: 600; }
+    .print-bar button {
+      background: #2563EB; color: #fff; border: none; border-radius: 8px;
+      padding: 8px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .print-bar button:hover { background: #1D4ED8; }
+    .print-bar .inst-btn {
+      background: #059669;
+    }
+    .print-bar .inst-btn:hover { background: #047857; }
+    body.has-print-bar .layout { padding-top: 48px; }
+    @media print {
+      .print-bar { display: none !important; }
+      body.has-print-bar .layout { padding-top: 0; }
+    }
+
     /* ── Print ── */
     @media print {
       nav { display: none; }
@@ -297,7 +322,17 @@
     .new-tag { background: #DCFCE7; border-color: #86EFAC; color: #15803D; }
   </style>
 </head>
-<body>
+<body class="has-print-bar">
+
+<!-- Print bar -->
+<div class="print-bar">
+  <span>📖 CRM Napelem – Teljes kézikönyv</span>
+  <div style="display:flex;gap:8px">
+    <button class="inst-btn" onclick="window.open('installer-guide.html','_blank')">📱 Telepítői útmutató</button>
+    <button onclick="window.print()">🖨️ PDF mentés / Nyomtatás</button>
+  </div>
+</div>
+
 <div class="layout">
 
 <!-- ══ NAVIGÁCIÓ ══════════════════════════════════════════════ -->
@@ -1166,5 +1201,13 @@
 
 </main>
 </div>
+
+<script>
+  if (new URLSearchParams(location.search).get('print') === '1') {
+    window.addEventListener('load', function() {
+      setTimeout(function() { window.print(); }, 800);
+    });
+  }
+</script>
 </body>
 </html>

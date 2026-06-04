@@ -115,6 +115,14 @@ const MENU_ITEMS = [
     color: "#7C3AED",
     bg: "#F5F3FF",
   },
+  {
+    id: "kezikonyvek",
+    label: "Kézikönyvek & Útmutatók",
+    desc: "Teljes rendszer-kézikönyv PDF-ben · Telepítői útmutató letöltése",
+    icon: BookOpen,
+    color: "#0891B2",
+    bg: "#ECFEFF",
+  },
 ];
 
 export default function BeallitasokPage({ currentUser }) {
@@ -205,6 +213,14 @@ export default function BeallitasokPage({ currentUser }) {
       </div>
     );
   }
+  if (aktiv === "kezikonyvek") {
+    return (
+      <div>
+        <BackBtn onClick={() => setAktiv(null)} label="Kézikönyvek & Útmutatók" />
+        <KezikonyvekPanel />
+      </div>
+    );
+  }
   if (aktiv === "munkakiosztas") {
     return (
       <div>
@@ -229,7 +245,7 @@ export default function BeallitasokPage({ currentUser }) {
   // Főmenü – kártyás elrendezés
   const lathatoMenuk = MENU_ITEMS.filter(m => {
     if (role === "Admin") return true;
-    if (role === "Projektmenedzser") return ["fovallalkozok","munkatipusok","munkakiosztas","sablonok","lmra","vbfsablon"].includes(m.id);
+    if (role === "Projektmenedzser") return ["fovallalkozok","munkatipusok","munkakiosztas","sablonok","lmra","vbfsablon","kezikonyvek"].includes(m.id);
     return false;
   });
 
@@ -287,6 +303,77 @@ export default function BeallitasokPage({ currentUser }) {
       </div>
 
       {role === "Admin" && <AdatTorlesPanel />}
+    </div>
+  );
+}
+
+/// ─── Kézikönyvek panel ────────────────────────────────────────
+function KezikonyvekPanel() {
+  function openManual(print = false) {
+    window.open(`/manual.html${print ? "?print=1" : ""}`, "_blank");
+  }
+  function openInstaller(print = false) {
+    window.open(`/installer-guide.html${print ? "?print=1" : ""}`, "_blank");
+  }
+  return (
+    <div style={{ padding: "0 28px 40px", fontFamily: FONT, maxWidth: 680 }}>
+      <p style={{ fontSize: 13, color: C.muted, marginBottom: 24 }}>
+        Megnyitás → böngészőben olvasható · Letöltés PDF-ként → a megnyíló lapon nyomd a <strong>Ctrl+P</strong> billentyűt (vagy kattints a „PDF mentés" gombra), majd válaszd a „Mentés PDF-ként" opciót.
+      </p>
+
+      {/* Teljes kézikönyv */}
+      <div style={{ background: "#fff", border: `2px solid #BFDBFE`, borderRadius: 14, padding: "22px 24px", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 22 }}>📖</div>
+          <div>
+            <p style={{ fontWeight: 800, fontSize: 15, color: C.text, margin: "0 0 4px" }}>Teljes rendszer-kézikönyv</p>
+            <p style={{ fontSize: 12.5, color: C.muted, margin: 0, lineHeight: 1.5 }}>
+              Összes funkció: ügyfelek, projektek, munkalapok, számlák, riportok, beállítások. Telepítős fejezet is benne van. Ideális Admin / PM / Iroda felhasználóknak.
+            </p>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={() => openManual(false)}
+            style={{ flex: 1, padding: "10px 0", background: "#EFF6FF", color: "#1D4ED8", border: "1.5px solid #BFDBFE", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}
+          >
+            🌐 Megnyitás böngészőben
+          </button>
+          <button
+            onClick={() => openManual(true)}
+            style={{ flex: 1, padding: "10px 0", background: "#2563EB", color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}
+          >
+            📥 Letöltés PDF-ként
+          </button>
+        </div>
+      </div>
+
+      {/* Telepítői kézikönyv */}
+      <div style={{ background: "#fff", border: `2px solid #86EFAC`, borderRadius: 14, padding: "22px 24px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: "#F0FDF4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 22 }}>📱</div>
+          <div>
+            <p style={{ fontWeight: 800, fontSize: 15, color: C.text, margin: "0 0 4px" }}>Telepítői kézikönyv</p>
+            <p style={{ fontSize: 12.5, color: C.muted, margin: 0, lineHeight: 1.5 }}>
+              Kifejezetten Telepítő felhasználóknak: bejelentkezés, felmérési munkalap (7 fotókat.), kivitelezési munkalap (LMRA, VBF mérések, 29 fotókat.), lezárás. Ideális nyomtatva átadni az új telepítőknek.
+            </p>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={() => openInstaller(false)}
+            style={{ flex: 1, padding: "10px 0", background: "#F0FDF4", color: "#15803D", border: "1.5px solid #86EFAC", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}
+          >
+            🌐 Megnyitás böngészőben
+          </button>
+          <button
+            onClick={() => openInstaller(true)}
+            style={{ flex: 1, padding: "10px 0", background: "#059669", color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}
+          >
+            📥 Letöltés PDF-ként
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
