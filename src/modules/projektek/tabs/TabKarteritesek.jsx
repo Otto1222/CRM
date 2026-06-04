@@ -191,7 +191,7 @@ export default function TabKarteritesek({ projekt, munkalapok, currentUser }) {
 
       {/* Modal */}
       {ujModal && (
-        <div style={{ position:"fixed", inset:0, zIndex:2000, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={e => e.target===e.currentTarget && setUjModal(false)}>
+        <div style={{ position:"fixed", inset:0, zIndex:2000, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
           <div style={{ background:"#fff", borderRadius:14, width:"100%", maxWidth:480, maxHeight:"88vh", overflowY:"auto", padding:"24px 20px", fontFamily:FONT }}>
             <h3 style={{ fontFamily:FONT_HEADING, fontSize:17, fontWeight:800, margin:"0 0 18px", color:C.text }}>Kártérítés – {projekt.projektkod}</h3>
 

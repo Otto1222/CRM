@@ -190,7 +190,7 @@ export default function FelmeresJegyzokonyv({ m, onClose }) {
     <div style={{
       position:"fixed", inset:0, zIndex:2000, background:"rgba(0,0,0,.65)",
       display:"flex", alignItems:"center", justifyContent:"center", padding:"20px 16px",
-    }} onClick={e => { if (e.target===e.currentTarget) onClose(); }}>
+    }}>
       <div style={{
         background:"#fff", borderRadius:16, width:"100%", maxWidth:480,
         boxShadow:"0 24px 60px rgba(0,0,0,.3)", overflow:"hidden", fontFamily:FONT,

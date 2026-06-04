@@ -296,7 +296,6 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
       {/* Backdrop: testvér elem, nem szülő – így a modal belsejéből drag-select nem zárja be */}
       <div
         style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 0 }}
-        onClick={onClose}
       />
       <div
         style={{

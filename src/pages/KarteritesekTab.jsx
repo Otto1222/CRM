@@ -370,7 +370,7 @@ export default function KarteritesekTab({ userRole, currentUser }) {
 
       {/* ── Új kártérítés modal ── */}
       {ujModal && (
-        <div style={{ position:"fixed", inset:0, zIndex:2000, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={e => e.target === e.currentTarget && setUjModal(false)}>
+        <div style={{ position:"fixed", inset:0, zIndex:2000, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
           <div style={{ background:"#fff", borderRadius:16, width:"100%", maxWidth:540, maxHeight:"90vh", overflowY:"auto", padding:"28px 24px", fontFamily:FONT }}>
             <h3 style={{ fontFamily:FONT_HEADING, fontSize:18, fontWeight:800, margin:"0 0 20px", color:C.text }}>Új kártérítési tétel</h3>
 

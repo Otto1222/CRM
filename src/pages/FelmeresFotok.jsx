@@ -62,7 +62,6 @@ function NagyitasModal({ foto, onClose }) {
   if (!foto?.base64) return null;
   return (
     <div
-      onClick={onClose}
       style={{
         position: "fixed", inset: 0, zIndex: 9999,
         background: "rgba(0,0,0,0.93)", display: "flex",

@@ -161,8 +161,7 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
   const modInfo = ELSZAMOLASI_MODOK.find(m => m.id === f.mod);
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 2100, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-      onClick={e => e.target === e.currentTarget && onClose()}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 2100, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 580, padding: "24px", fontFamily: FONT, maxHeight: "92vh", overflowY: "auto" }}>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>

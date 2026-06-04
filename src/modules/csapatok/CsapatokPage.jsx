@@ -121,7 +121,7 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "20px 16px", overflowY: "auto" }}>
-      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 0 }} onClick={onClose} />
+      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 0 }} />
       <div style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "0 24px 60px rgba(0,0,0,.25)", fontFamily: FONT }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: "1px solid #E2E8F0" }}>
           <h2 style={{ fontFamily: FONT_HEADING, fontSize: 18, fontWeight: 800, margin: 0 }}>
@@ -354,8 +354,7 @@ function CsapatTagForm({ tag, csapatId, onSave, onClose }) {
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 3200, background: "rgba(0,0,0,.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-      onClick={e => e.target === e.currentTarget && onClose()}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 3200, background: "rgba(0,0,0,.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 420, padding: 22, fontFamily: FONT }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
           <h3 style={{ fontFamily: FONT_HEADING, fontSize: 15, fontWeight: 800, margin: 0 }}>
@@ -563,8 +562,7 @@ function AvSzabalyForm({ szabaly, csapatId, onSave, onClose }) {
   const eredmeny = calcSzabalyOsszeg(f, { darabszam: preDb, tavKm: preKm });
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 3100, background: "rgba(0,0,0,.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-      onClick={e => e.target === e.currentTarget && onClose()}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 3100, background: "rgba(0,0,0,.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 540, padding: 22, fontFamily: FONT, maxHeight: "90vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
           <h3 style={{ fontFamily: FONT_HEADING, fontSize: 15, fontWeight: 800, margin: 0 }}>

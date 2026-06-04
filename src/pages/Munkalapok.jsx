@@ -429,7 +429,7 @@ export function UjMunkalapModal({ data, onClose, onSave }) {
   ];
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
       <div style={{ background:"#fff", borderRadius:"20px 20px 0 0", width:"100%", maxWidth:680, maxHeight:"95vh", display:"flex", flexDirection:"column" }}>
         {/* Fejléc */}
         <div style={{ padding:"20px 24px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
