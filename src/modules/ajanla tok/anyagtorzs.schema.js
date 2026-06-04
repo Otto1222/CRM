@@ -2,11 +2,13 @@ export const ANYAGTORZS_KATEGORIAK = [
   "Napelem panel",
   "Inverter",
   "Akkumulátor",
+  "Akkumulátor vezérlő",
   "Okos mérő",
   "Tartószerkezet",
   "DC oldal",
   "AC oldal",
   "Kábel / Vezeték",
+  "Védelmi berendezések",
   "Munkadíj",
   "Kiszállás / Fuvar",
   "Engedélyezés",
@@ -62,6 +64,18 @@ export const SAMPLE_ANYAGTORZS = [
   { cikkszam: "MD-SZREL",  kategoria: "Munkadíj",      megnevezes: "Napelem rendszer szerelési munkadíj", egyseg: "kWp", nettoBeszerzesiAr: 0,    ajanlatiNetto: 45000,  afaKulcs: 27 },
   { cikkszam: "MD-ORA",    kategoria: "Munkadíj",      megnevezes: "Villanyszerelési óradíj",           egyseg: "óra", nettoBeszerzesiAr: 0,    ajanlatiNetto: 8500,   afaKulcs: 27 },
   { cikkszam: "MD-ENGED",  kategoria: "Engedélyezés",  megnevezes: "Hálózati engedélyezési díj",        egyseg: "komplett", nettoBeszerzesiAr: 0, ajanlatiNetto: 45000,  afaKulcs: 27 },
+  // ── Védelmi berendezések ──
+  { cikkszam: "VD-SPD-DC",  kategoria: "Védelmi berendezések", megnevezes: "DC túlfeszültség-védő (SPD) 1000V Type II", egyseg: "db", nettoBeszerzesiAr: 8500,  ajanlatiNetto: 14500, afaKulcs: 27 },
+  { cikkszam: "VD-SPD-AC",  kategoria: "Védelmi berendezések", megnevezes: "AC túlfeszültség-védő (SPD) 3×40A Type II", egyseg: "db", nettoBeszerzesiAr: 12000, ajanlatiNetto: 20000, afaKulcs: 27 },
+  { cikkszam: "VD-LEVAL",   kategoria: "Védelmi berendezések", megnevezes: "DC leválasztó 1000V 32A",                   egyseg: "db", nettoBeszerzesiAr: 4500,  ajanlatiNetto: 8000,  afaKulcs: 27 },
+  { cikkszam: "VD-KM1P",    kategoria: "Védelmi berendezések", megnevezes: "Kismegszakító 1P 16A C karakterisztika",    egyseg: "db", nettoBeszerzesiAr: 1800,  ajanlatiNetto: 3500,  afaKulcs: 27 },
+  { cikkszam: "VD-KM3P",    kategoria: "Védelmi berendezések", megnevezes: "Kismegszakító 3P 25A C karakterisztika",    egyseg: "db", nettoBeszerzesiAr: 4200,  ajanlatiNetto: 7800,  afaKulcs: 27 },
+  { cikkszam: "VD-FI",      kategoria: "Védelmi berendezések", megnevezes: "FI relé 2P 25A 30mA AC típus",             egyseg: "db", nettoBeszerzesiAr: 6500,  ajanlatiNetto: 11500, afaKulcs: 27 },
+  { cikkszam: "VD-ELOSZT",  kategoria: "Védelmi berendezések", megnevezes: "Elosztószekrény 12 modulos",               egyseg: "db", nettoBeszerzesiAr: 7000,  ajanlatiNetto: 13000, afaKulcs: 27 },
+  // ── Akkumulátor vezérlő ──
+  { cikkszam: "AV-EMS10",   kategoria: "Akkumulátor vezérlő", megnevezes: "EMS energiakezelő vezérlő 10 kW",           egyseg: "db", nettoBeszerzesiAr: 95000, ajanlatiNetto: 135000, afaKulcs: 27 },
+  { cikkszam: "AV-BMS",     kategoria: "Akkumulátor vezérlő", megnevezes: "BMS akkumulátor-menedzsment modul",         egyseg: "db", nettoBeszerzesiAr: 35000, ajanlatiNetto: 52000,  afaKulcs: 27 },
+  { cikkszam: "AV-HYBRID",  kategoria: "Akkumulátor vezérlő", megnevezes: "Hibrid inverter vezérlő 5 kW",              egyseg: "db", nettoBeszerzesiAr: 180000,ajanlatiNetto: 250000, afaKulcs: 27 },
   // ── Kiszállás ──
   { cikkszam: "KI-FIX",    kategoria: "Kiszállás / Fuvar", megnevezes: "Kiszállási díj fix",           egyseg: "komplett", nettoBeszerzesiAr: 8000, ajanlatiNetto: 18000, afaKulcs: 27 },
 ];

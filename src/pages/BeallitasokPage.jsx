@@ -1172,6 +1172,9 @@ function AnyagtorzsBeallitas() {
   const [search, setSearch]   = useState("");
   const [katFilter, setKatFilter] = useState("Mind");
   const [editItem, setEditItem]   = useState(null);
+  const [showCsvImport, setShowCsvImport] = useState(false);
+  const [csvPreview, setCsvPreview]       = useState(null);
+  const csvFileRef = useRef();
 
   useEffect(() => {
     const handler = () => setTetelek(loadAnyagtorzs());
@@ -1187,6 +1190,71 @@ function AnyagtorzsBeallitas() {
       return (a.megnevezes || "").toLowerCase().includes(q) ||
              (a.cikkszam   || "").toLowerCase().includes(q);
     });
+
+  function parseCsv(text) {
+    const lines = text.trim().split("\n").map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) return null;
+    const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, "").trim());
+    const rows = lines.slice(1).map(line => {
+      const vals = [];
+      let cur = "";
+      let inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] === '"') { inQ = !inQ; }
+        else if (line[i] === "," && !inQ) { vals.push(cur.trim()); cur = ""; }
+        else { cur += line[i]; }
+      }
+      vals.push(cur.trim());
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = (vals[i] || "").replace(/^"|"$/g, ""); });
+      return obj;
+    });
+    return rows;
+  }
+
+  function handleCsvFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const rows = parseCsv(ev.target.result);
+      if (!rows) { alert("Érvénytelen CSV formátum."); return; }
+      const existing = loadAnyagtorzs();
+      setCsvPreview({
+        rows,
+        news:    rows.filter(r => r.cikkszam && !existing.find(a => a.cikkszam === r.cikkszam)),
+        updates: rows.filter(r => r.cikkszam &&  existing.find(a => a.cikkszam === r.cikkszam)),
+      });
+    };
+    reader.readAsText(file, "UTF-8");
+    e.target.value = "";
+  }
+
+  function handleCsvImport() {
+    if (!csvPreview?.rows) return;
+    const existing = loadAnyagtorzs();
+    csvPreview.rows.forEach(r => {
+      if (!r.cikkszam) return;
+      const data = {
+        cikkszam: r.cikkszam, megnevezes: r.megnevezes || r.nev || "",
+        kategoria: r.kategoria || "", egyseg: r.egyseg || "db",
+        nettoBeszerzesiAr: Number(r.nettoBeszerzesiAr || r.bszerzAr || 0),
+        ajanlatiNetto: Number(r.ajanlatiNetto || r.ajanlatiAr || 0),
+        afaKulcs: Number(r.afaKulcs || r.afa || 27),
+        aktiv: r.aktiv !== "false" && r.aktiv !== "0",
+        megjegyzes: r.megjegyzes || "",
+      };
+      const found = existing.find(a => a.cikkszam === r.cikkszam);
+      if (found) { updateAnyagtorzsTetel(found.id, data); }
+      else { createAnyagtorzsTetel(data); }
+    });
+    const n = csvPreview.news.length;
+    const u = csvPreview.updates.length;
+    setTetelek(loadAnyagtorzs());
+    setCsvPreview(null);
+    setShowCsvImport(false);
+    alert(`Import kész! ${n} új tétel hozzáadva, ${u} frissítve.`);
+  }
 
   function handleDelete(id) {
     if (!window.confirm("Biztosan törlöd ezt az anyagtörzs tételt?")) return;
@@ -1212,6 +1280,66 @@ function AnyagtorzsBeallitas() {
           Az <strong>Anyagtörzs</strong> tartalmazza az árajánlatokban felhasználható anyagokat, eszközöket és munkadíjakat.
           Az ajánlatkészítőben az anyagkeresővel gyorsan kiválasztható egy tétel – az egységár és ÁFA automatikusan kitöltődik.
         </p>
+      </div>
+
+      {/* ── Google Sheets CSV import ── */}
+      <div style={{ background: "#F0F9FF", border: "1.5px solid #7DD3FC", borderRadius: 12, marginBottom: 14, overflow: "hidden" }}>
+        <button type="button" onClick={() => setShowCsvImport(o => !o)}
+          style={{ width: "100%", padding: "11px 16px", background: "none", border: "none", cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Upload size={15} color="#0284C7" />
+            <span style={{ fontWeight: 700, fontSize: 13, color: "#0284C7" }}>Google Sheets CSV import</span>
+            <span style={{ fontSize: 12, color: "#64748B" }}>— havi árfrissítés cikkszám szerint</span>
+          </div>
+          <ChevronRight size={15} style={{ transform: showCsvImport ? "rotate(90deg)" : "none", transition: "transform .2s", color: "#0284C7" }} />
+        </button>
+        {showCsvImport && (
+          <div style={{ padding: "0 16px 16px", borderTop: "1px solid #BAE6FD" }}>
+            <div style={{ background: "#E0F2FE", borderRadius: 9, padding: "10px 14px", margin: "12px 0 12px", fontSize: 12, color: "#075985", lineHeight: 1.7 }}>
+              <strong>Hogyan készítsd elő a Google Sheet-et:</strong><br />
+              1. A Sheet első sora fejlécek:{" "}
+              <code style={{ background: "#BAE6FD", padding: "1px 5px", borderRadius: 4 }}>
+                cikkszam, megnevezes, kategoria, egyseg, nettoBeszerzesiAr, ajanlatiNetto, afaKulcs
+              </code><br />
+              2. Fájl → Letöltés → <strong>Vesszővel tagolt értékek (.csv)</strong><br />
+              3. Töltsd fel az alábbi gombbal — egyező cikkszámú tételek frissülnek, az újak hozzáadódnak.
+            </div>
+            <input ref={csvFileRef} type="file" accept=".csv,text/csv" style={{ display: "none" }} onChange={handleCsvFile} />
+            {!csvPreview ? (
+              <button type="button" onClick={() => csvFileRef.current?.click()}
+                style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#0284C7", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontFamily: FONT, fontWeight: 700, fontSize: 13 }}>
+                <Upload size={14} /> CSV fájl kiválasztása
+              </button>
+            ) : (
+              <div>
+                <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+                  <div style={{ background: "#ECFDF5", borderRadius: 9, padding: "8px 14px", flex: 1, textAlign: "center" }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: "#059669", textTransform: "uppercase", margin: "0 0 2px" }}>Új tételek</p>
+                    <p style={{ fontSize: 20, fontWeight: 800, color: "#059669", margin: 0 }}>{csvPreview.news.length}</p>
+                  </div>
+                  <div style={{ background: "#FFFBEB", borderRadius: 9, padding: "8px 14px", flex: 1, textAlign: "center" }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: "#D97706", textTransform: "uppercase", margin: "0 0 2px" }}>Frissítendő</p>
+                    <p style={{ fontSize: 20, fontWeight: 800, color: "#D97706", margin: 0 }}>{csvPreview.updates.length}</p>
+                  </div>
+                  <div style={{ background: "#F8FAFC", borderRadius: 9, padding: "8px 14px", flex: 1, textAlign: "center" }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: "#64748B", textTransform: "uppercase", margin: "0 0 2px" }}>Összesen</p>
+                    <p style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", margin: 0 }}>{csvPreview.rows.length}</p>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button type="button" onClick={handleCsvImport}
+                    style={{ flex: 2, padding: "10px", background: "#0284C7", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
+                    Import indítása
+                  </button>
+                  <button type="button" onClick={() => setCsvPreview(null)}
+                    style={{ flex: 1, padding: "10px", background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 9, cursor: "pointer", fontFamily: FONT, fontWeight: 600, fontSize: 13 }}>
+                    Mégse
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
