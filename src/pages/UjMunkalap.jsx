@@ -444,7 +444,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                           if (billing) { updAlap("ar", billing.ar); setBillingInfo(billing.megjegyzes); }
                           else setBillingInfo(null);
                         }} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", cursor:"pointer", borderBottom:`1px solid ${C.border}`, fontSize:13 }}
-                          onMouseEnter={e => e.currentTarget.style.background="#F8FAFC"}
+                          onMouseEnter={e => e.currentTarget.style.background=C.bg}
                           onMouseLeave={e => e.currentTarget.style.background=""}
                         >
                           <div>

@@ -745,7 +745,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
                     </div>
                   ))}
                 </div>
-                {m.ar>0&&(()=>{const k=(m.munkaeroDij||0)+(m.kiszallasiDij||0)+(m.egyebKolts||0)+(m.items||[]).reduce((s,i)=>s+(i.net||0)*(i.qty||1),0);const er=(m.ar||0)-k;return(<div style={{padding:"8px 10px",background:er>=0?C.successLight:C.dangerLight,borderRadius:8}}><p style={{fontSize:12,fontWeight:700,color:er>=0?"#059669":C.danger,margin:0}}>Eredmény: {er.toLocaleString("hu-HU")} Ft{m.ar>0&&` (${Math.round((er/m.ar)*100)}%)`}</p></div>);})()}
+                {m.ar>0&&(()=>{const k=(m.munkaeroDij||0)+(m.kiszallasiDij||0)+(m.egyebKolts||0)+(m.items||[]).reduce((s,i)=>s+(i.net||0)*(i.qty||1),0);const er=(m.ar||0)-k;return(<div style={{padding:"8px 10px",background:er>=0?C.successLight:C.dangerLight,borderRadius:8}}><p style={{fontSize:12,fontWeight:700,color:er>=0?C.success:C.danger,margin:0}}>Eredmény: {er.toLocaleString("hu-HU")} Ft{m.ar>0&&` (${Math.round((er/m.ar)*100)}%)`}</p></div>);})()}
               </div>
             )}
             <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, marginBottom:10 }}>Státusz módosítása</p>
@@ -939,7 +939,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowFelmeresJkvD(true)} style={{ display:"flex", alignItems:"center", gap:7, padding:"8px 16px", background:"#16A34A", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
+              <button onClick={() => setShowFelmeresJkvD(true)} style={{ display:"flex", alignItems:"center", gap:7, padding:"8px 16px", background:C.success, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 📋 Nyilatkozat PDF
               </button>
             </div>
@@ -1097,8 +1097,8 @@ function TelepItoDetail({ m, data }) {
             <button style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 18px", background:"#fff", border:"2px solid #E2E8F0", borderRadius:10, cursor:"pointer", fontSize:14, fontFamily:FONT, marginBottom:10, color:C.text }}>💬 Információk</button>
             <button style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 18px", background:"#fff", border:"2px solid #E2E8F0", borderRadius:10, cursor:"pointer", fontSize:14, fontFamily:FONT, marginBottom:10, color:C.text }}>📏 Felmérés</button>
             <button style={{ width:"100%", padding:"13px", borderRadius:10, border:"none", background:C.accent, color:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:FONT, marginBottom:10 }}>Munkalap átvétel</button>
-            <button style={{ width:"100%", padding:"13px", borderRadius:10, border:"none", background:"#93C5FD", color:"#1e3a5f", fontWeight:600, fontSize:15, cursor:"pointer", fontFamily:FONT, marginBottom:10 }}>Kiírt anyag megrendelése</button>
-            <button style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", background:"#22C55E", color:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:FONT }}>Megkezdés →</button>
+            <button style={{ width:"100%", padding:"13px", borderRadius:10, border:"none", background:C.accent, color:C.text, fontWeight:600, fontSize:15, cursor:"pointer", fontFamily:FONT, marginBottom:10 }}>Kiírt anyag megrendelése</button>
+            <button style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", background:C.success, color:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:FONT }}>Megkezdés →</button>
           </div>
         </div>
       )}
@@ -1168,7 +1168,7 @@ function LmraAdminCard({ munkalap, userRole }) {
           {canExport && rec && ["alairva","exportalva"].includes(status) && (
             <button
               onClick={() => { exportLmraPdfWindow(rec, munkalap, null, currentUser?.name); setRec(loadLmraRec(munkalapId)); }}
-              style={{ padding:"5px 12px", background:"#7C3AED", color:"#fff", border:"none", borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
+              style={{ padding:"5px 12px", background:C.accent, color:"#fff", border:"none", borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
             >
               PDF
             </button>

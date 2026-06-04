@@ -943,7 +943,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
               <div key={item.label} style={{ display:"flex",alignItems:"flex-start",gap:10,padding:"10px 0",borderBottom:`1px solid ${C.border}` }}>
                 {item.ok?<CheckCircle2 size={20} color={C.success} style={{flexShrink:0,marginTop:2}}/>:<AlertTriangle size={20} color={C.warning} style={{flexShrink:0,marginTop:2}}/>}
                 <div>
-                  <p style={{ fontSize:14,color:item.ok?C.success:"#D97706",fontWeight:item.ok?600:500,margin:0 }}>{item.label}</p>
+                  <p style={{ fontSize:14,color:item.ok?C.success:C.warning,fontWeight:item.ok?600:500,margin:0 }}>{item.label}</p>
                   {!item.ok&&<p style={{ fontSize:11,color:C.muted,margin:"2px 0 0" }}>{item.info}</p>}
                 </div>
               </div>
