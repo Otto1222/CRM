@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { CheckCircle2, XCircle, Wifi, WifiOff, RefreshCw, AlertTriangle, Loader2, Clock, Shield } from "lucide-react";
+import { CheckCircle2, XCircle, Wifi, WifiOff, RefreshCw, AlertTriangle, Loader2, Clock, Shield, HardDrive } from "lucide-react";
 import { drivePing, driveAvailable } from "../lib/driveApi";
 import { SYNC_COLLECTIONS, getSyncLog, syncAllToDrive } from "../lib/dataSync.service";
 import { hasDefaultPasswords } from "../lib/crmUsers";
+import { getLocalStorageSizeMB } from "../lib/localDb";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 
 const COLLECTION_LABELS = {
@@ -27,8 +28,10 @@ export default function DriveStatusPanel() {
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncLog,     setSyncLog]     = useState(() => getSyncLog());
   const [defaultPw]                   = useState(() => hasDefaultPasswords());
+  const [storageMB]                   = useState(() => getLocalStorageSizeMB());
 
   const available = driveAvailable();
+  const storagePercent = Math.min(100, Math.round((storageMB / 5) * 100));
 
   async function handlePing() {
     setPingLoading(true);
@@ -201,6 +204,25 @@ export default function DriveStatusPanel() {
               </div>
             )}
           </div>
+        )}
+      </div>
+
+      {/* ── localStorage tárhely ── */}
+      <div style={{ background: "#fff", border: `1.5px solid ${storagePercent >= 80 ? "#FCD34D" : C.border}`, borderRadius: 14, padding: "16px 20px", marginTop: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <HardDrive size={16} color={storagePercent >= 80 ? "#D97706" : "#64748B"} />
+          <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>Helyi tárhely (localStorage)</span>
+          <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700, color: storagePercent >= 80 ? "#D97706" : C.muted }}>
+            {storageMB} MB / ~5 MB ({storagePercent}%)
+          </span>
+        </div>
+        <div style={{ height: 8, background: "#F1F5F9", borderRadius: 6, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${storagePercent}%`, background: storagePercent >= 80 ? "#F59E0B" : storagePercent >= 60 ? "#3B82F6" : "#22C55E", borderRadius: 6, transition: "width 0.4s" }} />
+        </div>
+        {storagePercent >= 80 && (
+          <p style={{ fontSize: 12, color: "#D97706", margin: "8px 0 0", fontWeight: 600 }}>
+            ⚠️ A tárhely {storagePercent}%-a tele van — végezz Drive mentést és tisztítsd meg a régi adatokat!
+          </p>
         )}
       </div>
 

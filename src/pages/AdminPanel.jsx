@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Eye, EyeOff, Pencil, Check, X, Copy, RefreshCw, ShieldCheck, User, Lock, Plus, Trash2, AlertTriangle, UserPlus } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getUsers, saveUsersLocal, hashPw } from "../lib/crmUsers";
+import { loadLocal, saveLocal } from "../lib/localDb";
 import Card from "../components/Card";
 
 function Avatar({ initials, color, size = 40 }) {
@@ -201,7 +202,6 @@ export default function AdminPanel({ currentUser }) {
     if (updates.name) {
       const oldUser = users.find(u => u.id === userId);
       if (oldUser && oldUser.name !== updates.name) {
-        const { loadLocal, saveLocal } = await import("../lib/localDb");
         const mls = loadLocal("munkalapok") || [];
         const updatedMls = mls.map(m => {
           if (m.assigneeId === userId || m.assigneeNev === oldUser.name) {

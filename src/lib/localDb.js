@@ -120,3 +120,17 @@ export function updateItem(collection, id, updates) {
   broadcastChange(detail);
   return next;
 }
+
+// localStorage teljes mérete MB-ban (böngésző ~5MB limitet engedélyez)
+export function getLocalStorageSizeMB() {
+  try {
+    let totalBytes = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      const val = localStorage.getItem(key) || "";
+      totalBytes += key.length + val.length;
+    }
+    // UTF-16 kódolás: 2 byte per karakter
+    return parseFloat(((totalBytes * 2) / (1024 * 1024)).toFixed(2));
+  } catch { return 0; }
+}
