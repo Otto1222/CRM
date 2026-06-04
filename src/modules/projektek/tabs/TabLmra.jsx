@@ -17,9 +17,10 @@ import {
 import { C, FONT, FONT_HEADING } from "../../../lib/constants";
 import {
   loadLmraRec, initOrLoadLmraRec, saveLmraRec,
-  lockLmraForInstaller, reopenLmra, exportLmraPdfWindow,
+  lockLmraForInstaller, reopenLmra,
   LMRA_STATUS_LABELS, LMRA_STATUS_COLORS,
 } from "../../../lib/lmraData.service";
+import { downloadLmraPdf } from "../../../lib/lmraPdfMerge";
 
 export default function TabLmra({ projekt, munkalapok, currentUser }) {
   const projektMunkalapok = (munkalapok || []).filter(
@@ -152,9 +153,9 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
     if (updated) setRec(updated);
   }
 
-  function handleExport() {
+  async function handleExport() {
     const fresh = loadLmraRec(munkalap.id) || rec;
-    exportLmraPdfWindow(fresh, munkalap, projekt, currentUser?.name);
+    await downloadLmraPdf(fresh, munkalap, currentUser?.name);
     setTimeout(() => setRec(loadLmraRec(munkalap.id) || fresh), 800);
   }
 

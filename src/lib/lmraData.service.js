@@ -9,6 +9,7 @@
  */
 
 import { LMRA_KOCKAZATOK } from "./lmraService.js";
+import { driveSave } from "./driveApi.js";
 
 const LMRA_REC_KEY        = id => `lmra_rec_${id}`;
 const TELEPITO_CS_KEY     = "telepito_csapatok";
@@ -48,7 +49,11 @@ export function loadLmraRec(munkalapId) {
 }
 
 export function saveLmraRec(munkalapId, rec) {
-  localStorage.setItem(LMRA_REC_KEY(munkalapId), JSON.stringify({ ...rec, updatedAt: new Date().toISOString() }));
+  const updated = { ...rec, updatedAt: new Date().toISOString() };
+  localStorage.setItem(LMRA_REC_KEY(munkalapId), JSON.stringify(updated));
+  driveSave(`lmra_${munkalapId}`, { lmra: updated })
+    .then(res => { if (!res.ok && !res.offline) console.warn("[LMRA Drive]", res.error); })
+    .catch(e => console.warn("[LMRA Drive]", e));
   dispatch("lmra");
 }
 
@@ -144,13 +149,20 @@ export function addResztvevo(munkalapId, resztvevo) {
   const id = `sig_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
   const uj = {
     id,
-    nev:          resztvevo.nev,
-    teamTagId:    resztvevo.teamTagId || null,
+    nev:           resztvevo.nev,
+    teamTagId:     resztvevo.teamTagId  || null,
+    tagId:         resztvevo.tagId      || null,   // csapat_tagok ID
+    csapatId:      resztvevo.csapatId   || null,
+    csapatNev:     resztvevo.csapatNev  || null,
+    szerep:        resztvevo.szerep     || null,
+    ideiglenes:    resztvevo.ideiglenes || false,
+    jelenVan:      resztvevo.jelenVan !== false,   // default: jelen van
+    autoHozzaadva: resztvevo.autoHozzaadva || false,
     addedManually: resztvevo.addedManually !== false,
-    savedToTeam:  false,
+    savedToTeam:   false,
     signatureData: null,
-    signedAt:     null,
-    signed:       false,
+    signedAt:      null,
+    signed:        false,
   };
   const updated = {
     ...rec,
@@ -159,6 +171,133 @@ export function addResztvevo(munkalapId, resztvevo) {
   };
   saveLmraRec(munkalapId, updated);
   return updated;
+}
+
+// Telepítő: ideiglenes dolgozó hozzáadása (kötelező: nev, csapatId/csapatNev, szerep)
+export function addIdeiglenesResztvevo(munkalapId, data) {
+  if (!data?.nev?.trim()) return { error: "Név kötelező!" };
+  if (!data?.szerep?.trim()) return { error: "Szerep kötelező!" };
+  return addResztvevo(munkalapId, {
+    nev:          data.nev.trim(),
+    csapatId:     data.csapatId   || null,
+    csapatNev:    data.csapatNev  || null,
+    szerep:       data.szerep.trim(),
+    ideiglenes:   true,
+    jelenVan:     true,
+    addedManually: true,
+    autoHozzaadva: false,
+  });
+}
+
+// Telepítő: jelenVan toggle
+export function updateResztvevoJelenlet(munkalapId, resztvevoId, jelenVan) {
+  const rec = loadLmraRec(munkalapId);
+  if (!rec) return null;
+  const updated = {
+    ...rec,
+    resztvevok: (rec.resztvevok || []).map(r =>
+      r.id === resztvevoId ? { ...r, jelenVan } : r
+    ),
+  };
+  saveLmraRec(munkalapId, updated);
+  return updated;
+}
+
+/**
+ * Automatikusan hozzáadja a csapatKiosztasok alapján a résztvevőket.
+ * Csak azokat adja hozzá, akik még nincsenek a listában (tagId alapján).
+ */
+export function autoPopulateResztvevok(munkalapId, munkalap) {
+  const rec = loadLmraRec(munkalapId);
+  if (!rec) return null;
+
+  const kiosztasok = munkalap?.csapatKiosztasok || [];
+  if (kiosztasok.length === 0) return rec;
+
+  let updatedResztvevok = [...(rec.resztvevok || [])];
+
+  for (const kioszt of kiosztasok) {
+    try {
+      const csapatTagok = JSON.parse(localStorage.getItem("csapat_tagok") || "[]")
+        .filter(t => t.csapatId === kioszt.csapatId && t.aktiv !== false);
+
+      for (const tag of csapatTagok) {
+        const alreadyIn = updatedResztvevok.some(
+          r => r.tagId === tag.id || r.nev === tag.nev
+        );
+        if (!alreadyIn) {
+          updatedResztvevok.push({
+            id:            `sig_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            nev:           tag.nev,
+            tagId:         tag.id,
+            csapatId:      kioszt.csapatId,
+            csapatNev:     kioszt.csapatNev || "",
+            szerep:        tag.szerep || "",
+            ideiglenes:    false,
+            jelenVan:      true,
+            autoHozzaadva: true,
+            addedManually: false,
+            savedToTeam:   false,
+            signatureData: null,
+            signedAt:      null,
+            signed:        false,
+          });
+        }
+      }
+    } catch {}
+  }
+
+  const updated = {
+    ...rec,
+    resztvevok: updatedResztvevok,
+    status: ["elokeszitve", "ujranyitva"].includes(rec.status) && updatedResztvevok.length > 0
+      ? "alairas_var"
+      : rec.status,
+  };
+  saveLmraRec(munkalapId, updated);
+  return updated;
+}
+
+/**
+ * Visszaadja a munkalaphoz releváns csapat tagokat az aláírási listához.
+ * Elsőbbség: csapat_tagok a csapatKiosztasokból → old telepito_csapat_tagok fallback
+ */
+export function getTagokForMunkalap(munkalap) {
+  const kiosztasok = munkalap?.csapatKiosztasok || [];
+
+  // Új rendszer: csapatKiosztasok tagjai
+  if (kiosztasok.length > 0) {
+    const result = [];
+    for (const kioszt of kiosztasok) {
+      try {
+        const tagok = JSON.parse(localStorage.getItem("csapat_tagok") || "[]")
+          .filter(t => t.csapatId === kioszt.csapatId && t.aktiv !== false);
+        result.push(...tagok.map(t => ({
+          id:        t.id,
+          nev:       t.nev,
+          csapatId:  t.csapatId,
+          csapatNev: kioszt.csapatNev || "",
+          szerep:    t.szerep || "",
+        })));
+      } catch {}
+    }
+    if (result.length > 0) return result;
+  }
+
+  // Régi csapatId alapján – csapat_tagok
+  const csapatId = munkalap?.csapatId;
+  if (csapatId) {
+    try {
+      const tagok = JSON.parse(localStorage.getItem("csapat_tagok") || "[]")
+        .filter(t => t.csapatId === csapatId && t.aktiv !== false);
+      if (tagok.length > 0) {
+        return tagok.map(t => ({ id: t.id, nev: t.nev, csapatId, csapatNev: "", szerep: t.szerep || "" }));
+      }
+    } catch {}
+  }
+
+  // Legacy fallback: telepito_csapat_tagok
+  return getAllAktivTagok();
 }
 
 // Telepítő: résztvevő eltávolítása (csak aláíratlan)

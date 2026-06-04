@@ -2,11 +2,10 @@
  * roles.js – Szerepkör alapú jogosultság kezelés
  */
 
-// arajanlatok, szerzodesek, naptar – ComingSoon stub, éles teszthez elrejtve
 export const ROLE_PAGES = {
-  "Admin":            ["dashboard","projektek","munkalapok","ugyfelek","szamlak","riportok","munkakiosztas","beallitasok"],
-  "Projektmenedzser": ["dashboard","projektek","munkalapok","ugyfelek","szamlak","riportok","munkakiosztas","beallitasok"],
-  "Iroda/Könyvelés":  ["dashboard","projektek","munkalapok","ugyfelek","szamlak","riportok"],
+  "Admin":            ["dashboard","projektek","munkalapok","ugyfelek","arajanlatok","szerzodesek","szamlak","naptar","riportok","beallitasok"],
+  "Projektmenedzser": ["dashboard","projektek","munkalapok","ugyfelek","arajanlatok","szerzodesek","szamlak","naptar","riportok","beallitasok"],
+  "Iroda/Könyvelés":  ["dashboard","projektek","munkalapok","ugyfelek","szamlak","naptar","riportok"],
   "Telepítő":         ["munkalapok"],
 };
 

@@ -14,32 +14,14 @@ export const PROJECT_STATUSES_NOT_VISIBLE_TO_INSTALLER = [
   "Elutasított",
 ];
 
-export const WORKORDER_STATUSES_VISIBLE_TO_INSTALLER = [
-  "Kiosztásra vár",
-  "Felmérésre vár",
-  "Kivitelezésre vár",
-  "Bővítés",
-  "Hibajavítás",
-  "Szerviz",
-  "Folyamatban",
-  "Ütemezett",
-  "Megkezdésre Vár",
-  "Kivitelezés",
-];
+// Egyetlen forrás: workflowRules.js – re-export a kompatibilitás megőrzéséhez
+export {
+  WORKORDER_STATUSES_VISIBLE_TO_INSTALLER,
+  isInstallerVisibleWorkorder,
+} from "../../lib/workflowRules.js";
 
 export function isInstallerVisibleProjectStatus(status) {
   return PROJECT_STATUSES_VISIBLE_TO_INSTALLER.includes(status);
-}
-
-export function isInstallerVisibleWorkorder(workorder, currentUser) {
-  if (!workorder || !currentUser) return false;
-  const statusOk = WORKORDER_STATUSES_VISIBLE_TO_INSTALLER.includes(workorder.status);
-  const assignedOk =
-    workorder.assigneeId === currentUser.id ||
-    workorder.csapatId   === currentUser.id ||
-    workorder.assigneeNev === currentUser.name ||
-    workorder.csapatNev  === currentUser.name;
-  return statusOk && assignedOk;
 }
 
 export function requiresInstallerAssignment(projectStatus) {
@@ -77,10 +59,13 @@ export function validateProjectBeforeSave(form) {
   return { ok: true, missing: [], message: "" };
 }
 
-// Munkalap validáció – CSAK ügyszám és ügyfél kötelező (dátum nem blokkoló)
+// Munkalap validáció – munkaszám + ügyfél kötelező (dátum nem blokkoló)
 export function validateWorkorderBeforeSave(workorder) {
   if (!workorder.ugyszam && !workorder.munkalapSzam && !workorder.dokumentumszam) {
     return { ok: false, message: "Munkaszám / Ügyszám megadása kötelező." };
+  }
+  if (!workorder.clientNev || String(workorder.clientNev).trim() === "") {
+    return { ok: false, message: "Ügyfél neve kötelező." };
   }
   return { ok: true, message: "" };
 }

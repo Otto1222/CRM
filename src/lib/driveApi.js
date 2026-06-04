@@ -151,8 +151,44 @@ export async function drivePing() {
   if (!SCRIPT_URL) return { ok: false, offline: true };
   const t0  = Date.now();
   const res = await get({ action: "ping" });
-  if (res?.ok) return { ok: true, ts: res.ts, latencyMs: Date.now() - t0 };
-  return { ok: false, error: res?.error || "Ismeretlen hiba" };
+  if (res?.ok) return { ok: true, ts: res.ts, latencyMs: Date.now() - t0, driveFolder: res.driveFolder };
+  return { ok: false, error: res?.driveError || res?.error || "Ismeretlen hiba" };
+}
+
+/**
+ * Drive diagnosztika – melyik fiókként fut a script, elérhetők-e a mappák, van-e írási jog.
+ * GET kéréssel hívódik – ha ez működik de testPost nem, "Execute as" beállítás a gond.
+ */
+export async function driveDiagnose() {
+  if (!SCRIPT_URL) return { ok: false, offline: true, error: "VITE_APPS_SCRIPT_URL nincs beállítva" };
+  return get({ action: "diagnose" });
+}
+
+/**
+ * POST-specifikus írásteszt – ugyanaz mint diagnose, de POST kéréssel.
+ * Ha GET (diagnose) zöld de ez piros → Apps Script "Execute as: User..." van beállítva.
+ * Ha ez is zöld → saveJson-ban van a valódi gond.
+ */
+export async function driveTestPost() {
+  if (!SCRIPT_URL) return { ok: false, offline: true };
+  return post({ action: "testPost" });
+}
+
+/**
+ * Google Calendar szinkron – egyedi esemény létrehozása / frissítése.
+ * Apps Script handler: "syncCalendarEvent" case (ld. calendarSync.service.js komment).
+ * Visszatér: { ok, eventId, action: "created"|"updated" }
+ */
+export async function driveSyncCalendarEvent(event, calendarId) {
+  return post({ action: "syncCalendarEvent", calendarId, event });
+}
+
+/**
+ * Google Calendar esemény törlése calendarEventId alapján.
+ * Apps Script handler: "deleteCalendarEvent" case (ld. calendarSync.service.js komment).
+ */
+export async function driveDeleteCalendarEvent(eventId, calendarId) {
+  return post({ action: "deleteCalendarEvent", calendarId, eventId });
 }
 
 export const driveAvailable = () => !!SCRIPT_URL;

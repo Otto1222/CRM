@@ -1,94 +1,77 @@
 /**
  * fovallalkozo.schema.js
+ * Egyszerűsített sémák az elszámolási motorhoz.
+ * A ELSZAMOLASI_MODOK és ELSZAMOLASI_MUNKATIPUSOK az elszamolasiMotor.js-ben vannak.
  */
 
-export const CSAPAT_BER_TIPUSOK = [
-  { id: "fix",         label: "Fix összeg" },
-  { id: "Ft/nap",      label: "Ft / munkanap" },
-  { id: "Ft/nap/fő",   label: "Ft / munkanap / fő" },
-  { id: "%",           label: "Bevétel %-a" },
-];
-
-export const UTIKOLTSÉG_TIPUSOK = [
-  { id: "nincs",         label: "Nincs km elszámolás" },
-  { id: "oda_vissza",    label: "Teljes oda-vissza km" },
-  { id: "kuszob_folott", label: "Csak küszöb feletti km" },
-  { id: "fix_kiszallas", label: "Fix kiszállási díj" },
-  { id: "kezi",          label: "Kézi elszámolás" },
-];
-
-export const ANYAGKOLTSÉG_MODJAI = [
-  { id: "tényleges",    label: "Tényleges (munkalap tételek)" },
-  { id: "kalkulált%",   label: "Bevétel %-a" },
-  { id: "fix",          label: "Fix összeg" },
-  { id: "kézi",         label: "Kézi bevitel" },
-];
-
-export const KARTÉRÍTÉS_MODJAI = [
-  { id: "tényleges", label: "Tényleges (rögzített kártérítések)" },
-  { id: "limit%",    label: "Bevétel %-os limitje" },
-  { id: "nincs",     label: "Nem kalkulálunk kártérítéssel" },
-];
+export { ELSZAMOLASI_MODOK, ELSZAMOLASI_MUNKATIPUSOK } from "./elszamolasiMotor.js";
 
 export const FOVALLALKOZO_SCHEMA = {
-  id:                    "",
-  nev:                   "",
-  rovidites:             "",   // max 4 karakter – pl. "GH", "WS" (Telepítő elől rejtett)
-  aktiv:                 true,
-  alapUtikoltsegFtKm:    80,    // Ft/km alap
-  alapSzamlazasiTipus:   "fix",
-  megjegyzes:            "",
-  createdAt:             "",
+  id:         "",
+  nev:        "",
+  rovidites:  "",   // max 4 kar. – pl. "GH", "WS"
+  aktiv:      true,
+  megjegyzes: "",
+  createdAt:  "",
 };
 
+/**
+ * Elszámolási szabály – fővállalkozóhoz VAGY alvállalkozói csapathoz.
+ *
+ * tulajdonosId  = fővállalkozó id  (fovallalkozoi szabályoknál)
+ *               = csapat id        (alvallalkozoi szabályoknál)
+ *
+ * Visszafelé kompatibilisan a régi fovallalkoziId mező is elfogadott.
+ */
 export const ELSZAMOLASI_SZABALY_SCHEMA = {
-  id:                    "",
-  fovallalkoziId:        "",
-  munkatipus:            "",     // pl. "Napelem telepítés"
-  aktiv:                 true,
-  // Bevétel
-  nettoBevitel:          0,      // Ft
-  // Csapat bér
-  csapatBerTipus:        "fix",
-  csapatBerOsszeg:       0,
-  // Útiköltség / Km-elszámolás
-  utikoltsegTipus:       "oda_vissza",  // KM_TIPUSOK id-je
-  utikoltsegFtKm:        0,             // 0 = fővállalkozó alapja
-  kmKuszob:              0,             // küszöb km (kuszob_folott esetén)
-  kmFixOsszeg:           0,             // fix kiszállási díj (fix_kiszallas esetén)
-  // Tételes árak override (munkatípus tételdefiníció fölé írja)
-  // { [tetelTipusId]: Ft } pl. { napelem_telepites: 15000 }
-  tetelArak:             {},
-  // Anyagköltség
-  anyagkoltségModja:     "tényleges",
-  anyagkoltségErtek:     0,      // % vagy fix összeg, ha nem tényleges
-  // Kártérítés
-  kartériétasModja:      "tényleges",
-  kartériétasLimit:      0,      // % ha limit% mód
-  megjegyzes:            "",
-  createdAt:             "",
+  id:            "",
+  tulajdonosId:  "",      // fővállalkozó ID
+  munkatipus:    "",      // "" = általános (minden munkatípusra)
+  aktiv:         true,
+
+  // Elszámolási mód – egy szabályhoz egy mód
+  mod:           "fix",   // "fix" | "darab" | "savos" | "km" | "fix_kiszallas"
+
+  // mod = "fix"
+  fixOsszeg:     0,
+
+  // mod = "darab"
+  darabEgysegAr: 0,
+
+  // mod = "savos"
+  savok:         [],      // [{ tol: number, ig: number|"", osszeg: number }]
+
+  // mod = "km"
+  kmDijFtKm:     0,
+  kmKuszobKm:    0,       // ez alatt nem jár km-díj
+
+  // mod = "fix_kiszallas"
+  kiszallasiDij: 0,
+
+  megjegyzes:    "",
+  createdAt:     "",
 };
 
 export const PROJEKT_PENZUGY_SCHEMA = {
-  fovallalkoziId:        "",
-  elszamolasiSzabalyId:  "",
-  munkatipus:            "",
-  csapatId:              "",
-  tavKm:                 0,
-  csapatLetszam:         1,
-  munkanapok:            1,
-  // Kézi felülírások (null = auto)
-  felultBevitel:         null,
-  keziCsapatBer:         null,
-  keziUtikoltség:        null,
-  keziAnyagkoltség:      null,
-  keziKartérités:        null,
-  emelőgepKoltseg:       0,
-  daruKoltseg:           0,
-  szallasKoltseg:        0,
-  bereltEszkozKoltseg:   0,
-  irodaAdminKoltseg:     0,
-  egyebKoltseg:          0,
-  // Állapot
-  szabalyElteres:        false,
+  fovallalkoziId:      "",
+  munkatipus:          "",
+  csapatId:            "",
+  darabszam:           1,
+  tavKm:               0,
+  csapatLetszam:       1,
+  munkanapok:          1,
+  // Kézi felülírások (null = auto-számítás)
+  felultBevitel:       null,
+  keziCsapatBer:       null,
+  keziUtikoltség:      null,
+  keziAnyagkoltság:    null,
+  keziKartérités:      null,
+  // Fix egyéb költségek
+  emelőgepKoltseg:     0,
+  daruKoltseg:         0,
+  szallasKoltseg:      0,
+  bereltEszkozKoltseg: 0,
+  irodaAdminKoltseg:   0,
+  egyebKoltseg:        0,
+  szabalyElteres:      false,
 };

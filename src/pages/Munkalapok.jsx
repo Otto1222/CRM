@@ -236,8 +236,8 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
         )}
       </div>
 
-      {/* Státusz szűrők */}
-      {!isMobile && (
+      {/* Státusz szűrők – Telepítőnek nem kell */}
+      {!isMobile && userRole !== "Telepítő" && (
         <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:16 }}>
           {STATUSES.map(s => (
             <button key={s} onClick={()=>setTab(s)} style={{ padding:"7px 13px", borderRadius:8, border:`1px solid ${tab===s?C.accent:C.border}`, background:tab===s?C.accentLight:"#fff", color:tab===s?C.accent:C.textSub, fontWeight:tab===s?700:400, fontSize:12, cursor:"pointer", fontFamily:FONT }}>{s}</button>
@@ -268,8 +268,8 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
                     <td style={{ padding:"14px 16px" }}>
                       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                         <div>
-                          <span style={{ fontWeight:700, color:C.accent }}>{m.dokumentumszam || m.ediSorszam || m.id}</span>
-                          {m.dokumentumszam && <span style={{ fontSize:10, color:C.muted, display:"block" }}>{m.id}</span>}
+                          <span style={{ fontWeight:700, color:C.accent }}>{m.dokumentumszam || m.ugyszam || m.ediSorszam || `#${m.id?.slice(-6)}`}</span>
+                          {m.dokumentumszam && m.ediSorszam && <span style={{ fontSize:10, color:C.muted, display:"block" }}>{m.ediSorszam}</span>}
                         </div>
                         {m.cimke && <CimkeBadge label={m.cimke} color={m.cimkeSzin||C.accent} />}
                         {m.munkalapTipus && <span style={{ fontSize:10, background:"#F1F5F9", color:C.muted, padding:"2px 7px", borderRadius:6, fontWeight:600 }}>{m.munkalapTipus}</span>}
@@ -295,7 +295,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
             const cl = data.ugyfelek?.find(u=>u.id===m.clientId);
             const clientNev = m.clientNev || cl?.name || "";
             const clientCim = m.clientCim || cl?.address || "";
-            const munkaszam  = m.ugyszam || m.dokumentumszam || m.ediSorszam || m.id;
+            const munkaszam  = m.dokumentumszam || m.ugyszam || m.ediSorszam || `#${m.id?.slice(-6)}`;
 
             // ── Telepítő egyszerűsített kártya ──────────────────
             if (userRole === "Telepítő") {
@@ -429,7 +429,7 @@ export function UjMunkalapModal({ data, onClose, onSave }) {
   ];
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
       <div style={{ background:"#fff", borderRadius:"20px 20px 0 0", width:"100%", maxWidth:680, maxHeight:"95vh", display:"flex", flexDirection:"column" }}>
         {/* Fejléc */}
         <div style={{ padding:"20px 24px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
@@ -1198,11 +1198,11 @@ function LmraAdminCard({ munkalap, userRole }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-export function MunkalapDetail({ m, data, userRole, onBack, onDelete, onRefresh }) {
+export function MunkalapDetail({ m, data, userRole, currentUser, onBack, onDelete, onRefresh }) {
   const isMobile = useIsMobile();
   if (userRole === "Telepítő") {
     if (m.status === "Felmérés") return <FelmeresTelepito m={m} data={data} onBack={onBack||(()=>window.history.back())} />;
-    return <TelepItoMunkalap m={m} data={data} onBack={onBack||(()=>window.history.back())} />;
+    return <TelepItoMunkalap m={m} data={data} currentUser={currentUser} onBack={onBack||(()=>window.history.back())} />;
   }
   if (isMobile) return <AdminMobileDetail m={m} data={data} userRole={userRole} onDelete={onDelete} onRefresh={onRefresh} />;
   return <AdminDesktopDetail m={m} data={data} userRole={userRole} onDelete={onDelete} onRefresh={onRefresh} />;

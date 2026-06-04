@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import { MunkalapLista, MunkalapDetail } from "./pages/Munkalapok";
 import Ugyfelek from "./pages/Ugyfelek";
 import ComingSoon from "./pages/ComingSoon";
+import ArajanlaltokPage from "./pages/ArajanlaltokPage.jsx";
 import BeallitasokPage from "./pages/BeallitasokPage";
 import UjMunkalap from "./pages/UjMunkalap";
 import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
@@ -22,7 +23,7 @@ import CsapatokPage from "./modules/csapatok/CsapatokPage.jsx";
 import SzamlakPage from "./modules/szamlak/SzamlakPage.jsx";
 import PwaInstallBanner from "./components/PwaInstallBanner.jsx";
 import RiportokPage from "./pages/RiportokPage.jsx";
-import Munkakiosztas from "./pages/Munkakiosztas.jsx";
+import NaptarPage from "./pages/NaptarPage.jsx";
 
 const PAGE_TITLES = {
   dashboard: "Pénzügy",
@@ -34,16 +35,34 @@ const PAGE_TITLES = {
   szamlak: "Számlák",
   csapat: "Csapat",
   naptar: "Naptár",
-  riportok:       "Riportok",
-  munkakiosztas:  "Munkakiosztás",
-  beallitasok:    "Beállítások",
+  riportok:    "Riportok",
+  beallitasok: "Beállítások",
 };
 
+function fixMunkalapokSzamozas(list) {
+  let changed = false;
+  const fixed = list.map(m => {
+    if (!m.dokumentumszam && !m.ugyszam && !m.ediSorszam) {
+      changed = true;
+      const fallback = `#${(m.id || "").slice(-6)}`;
+      return { ...m, dokumentumszam: fallback, ugyszam: fallback };
+    }
+    if (!m.dokumentumszam && (m.ugyszam || m.ediSorszam)) {
+      changed = true;
+      return { ...m, dokumentumszam: m.ugyszam || m.ediSorszam };
+    }
+    return m;
+  });
+  if (changed) saveLocal("munkalapok", fixed);
+  return fixed;
+}
+
 function loadInitialData() {
+  const rawMl = loadLocal("munkalapok") || SAMPLE_DATA.munkalapok || [];
   return {
     ...SAMPLE_DATA,
     projektek: loadLocal("projektek") || SAMPLE_DATA.projektek || [],
-    munkalapok: loadLocal("munkalapok") || SAMPLE_DATA.munkalapok || [],
+    munkalapok: fixMunkalapokSzamozas(rawMl),
     ugyfelek: loadLocal("ugyfelek") || SAMPLE_DATA.ugyfelek || [],
     beallitasok: loadLocal("beallitasok") || SAMPLE_DATA.beallitasok || {},
     munkatipusok: loadLocal("munkatipusok") || SAMPLE_DATA.munkatipusok || [],
@@ -57,21 +76,9 @@ function loadInitialData() {
   };
 }
 
-const SESSION_KEY = "crm_session_user";
-
-function loadSessionUser() {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
-
 export default function App() {
-  const [user, setUser] = useState(loadSessionUser);
-  const [page, setPage] = useState(() => {
-    const u = loadSessionUser();
-    return u ? getHomePage(u.role) : "dashboard";
-  });
+  const [user, setUser] = useState(null);
+  const [page, setPage] = useState("dashboard");
   const [sel, setSel] = useState(null);
   const [data, setData] = useState(loadInitialData);
   const [drive, setDrive] = useState("idle");
@@ -264,14 +271,12 @@ export default function App() {
   }
 
   function logout() {
-    sessionStorage.removeItem(SESSION_KEY);
     setUser(null);
     setSel(null);
     setPage("dashboard");
   }
 
   function handleLogin(u) {
-    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(u)); } catch {}
     setUser(u);
     setPage(getHomePage(u?.role));
     if (u?.role === "Admin") setDefaultPwWarning(hasDefaultPasswords());
@@ -300,6 +305,7 @@ export default function App() {
               m={sel}
               data={data}
               userRole={user?.role}
+              currentUser={user}
               onBack={() => setSel(null)}
               onDelete={handleDeleteMunkalap}
               onRefresh={() => {
@@ -356,15 +362,22 @@ export default function App() {
 
             {page === "ugyfelek" && <Ugyfelek data={data} currentUser={user} />}
 
-            {page === "arajanlatok" && <ComingSoon title="Árajánlatok" />}
+            {page === "arajanlatok" && <ArajanlaltokPage currentUser={user} />}
             {page === "szerzodések" && <ComingSoon title="Szerződések" />}
             {page === "szamlak" && <SzamlakPage currentUser={user} />}
             {page === "csapat" && <CsapatokPage currentUser={user} />}
-            {page === "naptar" && <ComingSoon title="Naptár" />}
+            {page === "naptar" && (
+              <NaptarPage
+                data={data}
+                currentUser={user}
+                onNavigate={(type, ref) => {
+                  if (type === "munkalap" && ref) { setPage("munkalapok"); setSel(ref); }
+                  else if (type === "projekt")    { setPage("projektek"); }
+                }}
+              />
+            )}
 
             {page === "riportok" && <RiportokPage currentUser={user} />}
-
-            {page === "munkakiosztas" && <Munkakiosztas />}
 
             {page === "beallitasok" && (
               <>

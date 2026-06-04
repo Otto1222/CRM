@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Clock, Wrench, Building2 } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Clock, Wrench, Building2, FileText, Users } from "lucide-react";
 import { C, FONT, FONT_HEADING, STATUS_CFG } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import { loadKarteritesek, addKarterites, updateKarterites } from "../lib/karterites";
@@ -165,8 +165,9 @@ export default function Dashboard({ user }) {
   const [sortField, setSortField]     = useState("date");
   const [sortDir, setSortDir]         = useState("desc");
   const [filterStatus, setFilterStatus] = useState("Összes");
-  const [munkalapok, setMunkalapok]   = useState(() => loadLocal("munkalapok") || []);
-  const [projektek, setProjektek]     = useState(() => loadLocal("projektek")  || []);
+  const [munkalapok, setMunkalapok]     = useState(() => loadLocal("munkalapok")   || []);
+  const [projektek, setProjektek]       = useState(() => loadLocal("projektek")    || []);
+  const [ajanlatok, setAjanlatok]       = useState(() => loadLocal("ajanla tok")   || []);
   const [karteritesek, setKarteritesek] = useState(() => loadKarteritesek());
 
   const isAdmin = canSeePrice(user?.role);
@@ -174,8 +175,9 @@ export default function Dashboard({ user }) {
   // Reaktív frissítés — saját localStorage olvasás, azonnali
   useEffect(() => {
     function refresh() {
-      setMunkalapok(loadLocal("munkalapok") || []);
-      setProjektek(loadLocal("projektek")   || []);
+      setMunkalapok(loadLocal("munkalapok")  || []);
+      setProjektek(loadLocal("projektek")    || []);
+      setAjanlatok(loadLocal("ajanla tok")   || []);
       setKarteritesek(loadKarteritesek());
     }
     window.addEventListener("crm-db-updated", refresh);
@@ -254,6 +256,26 @@ export default function Dashboard({ user }) {
     };
   }, [projektek]);
 
+  const ajanlatStats = useMemo(() => {
+    const toSum = arr => arr.reduce((s, a) => s + (Number(a.osszeg) || 0), 0);
+    const kikuld   = ajanlatok.filter(a => a.status === "Kiküldve");
+    const elfogad  = ajanlatok.filter(a => a.status === "Elfogadva");
+    const elutasit = ajanlatok.filter(a => a.status === "Elutasítva");
+    return {
+      kikuld:  { db: kikuld.length,   osszeg: toSum(kikuld)   },
+      elfogad: { db: elfogad.length,  osszeg: toSum(elfogad)  },
+      elutasit:{ db: elutasit.length, osszeg: toSum(elutasit) },
+    };
+  }, [ajanlatok]);
+
+  const projektStats = useMemo(() => {
+    const sajat      = projektek.filter(p => p.forrás && p.forrás !== "fővállalkozói");
+    const fov        = projektek.filter(p => p.forrás === "fővállalkozói");
+    const kivitelezés= projektek.filter(p => p.status === "Kivitelezés alatt");
+    const leszamlazva= projektek.filter(p => p.status === "Leszámlázva");
+    return { sajat: sajat.length, fov: fov.length, kivitelezés: kivitelezés.length, leszamlazva: leszamlazva.length };
+  }, [projektek]);
+
   function toggleSort(f) {
     if (sortField === f) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortField(f); setSortDir("desc"); }
@@ -286,6 +308,59 @@ export default function Dashboard({ user }) {
           />
         </>}
       </div>
+
+      {/* ── Értékesítés – Ajánlatok ── */}
+      {isAdmin && (
+        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #E2E8F0", padding:"16px 20px", marginBottom:20 }}>
+          <p style={{ fontFamily:FONT_HEADING, fontSize:15, fontWeight:800, color:"#0F172A", margin:"0 0 14px", display:"flex", alignItems:"center", gap:8 }}>
+            <FileText size={17} color="#2563EB" /> Értékesítés – Árajánlatok
+          </p>
+          <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+            <div style={{ background:"#FFFBEB", borderRadius:10, padding:"12px 16px", border:"1px solid #FCD34D40", flex:1, minWidth:130 }}>
+              <p style={{ fontSize:10, fontWeight:700, color:"#D97706", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Kiküldve</p>
+              <p style={{ fontSize:20, fontWeight:800, color:"#0F172A", margin:"0 0 2px" }}>{ajanlatStats.kikuld.db} db</p>
+              {ajanlatStats.kikuld.osszeg > 0 && <p style={{ fontSize:11, color:"#64748B", margin:0 }}>{ft(ajanlatStats.kikuld.osszeg)}</p>}
+            </div>
+            <div style={{ background:"#ECFDF5", borderRadius:10, padding:"12px 16px", border:"1px solid #86EFAC40", flex:1, minWidth:130 }}>
+              <p style={{ fontSize:10, fontWeight:700, color:"#059669", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Elfogadva</p>
+              <p style={{ fontSize:20, fontWeight:800, color:"#0F172A", margin:"0 0 2px" }}>{ajanlatStats.elfogad.db} db</p>
+              {ajanlatStats.elfogad.osszeg > 0 && <p style={{ fontSize:11, color:"#64748B", margin:0 }}>{ft(ajanlatStats.elfogad.osszeg)}</p>}
+            </div>
+            <div style={{ background:"#FEF2F2", borderRadius:10, padding:"12px 16px", border:"1px solid #FECACA40", flex:1, minWidth:130 }}>
+              <p style={{ fontSize:10, fontWeight:700, color:"#DC2626", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Elutasítva</p>
+              <p style={{ fontSize:20, fontWeight:800, color:"#0F172A", margin:"0 0 2px" }}>{ajanlatStats.elutasit.db} db</p>
+              {ajanlatStats.elutasit.osszeg > 0 && <p style={{ fontSize:11, color:"#64748B", margin:0 }}>{ft(ajanlatStats.elutasit.osszeg)}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Projektek állapota ── */}
+      {isAdmin && (
+        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #E2E8F0", padding:"16px 20px", marginBottom:20 }}>
+          <p style={{ fontFamily:FONT_HEADING, fontSize:15, fontWeight:800, color:"#0F172A", margin:"0 0 14px", display:"flex", alignItems:"center", gap:8 }}>
+            <Building2 size={17} color="#7C3AED" /> Projektek áttekintése
+          </p>
+          <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+            <div style={{ background:"#EFF6FF", borderRadius:10, padding:"12px 16px", border:"1px solid #BFDBFE40", flex:1, minWidth:130 }}>
+              <p style={{ fontSize:10, fontWeight:700, color:"#2563EB", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Saját projektek</p>
+              <p style={{ fontSize:20, fontWeight:800, color:"#0F172A", margin:0 }}>{projektStats.sajat}</p>
+            </div>
+            <div style={{ background:"#F5F3FF", borderRadius:10, padding:"12px 16px", border:"1px solid #C4B5FD40", flex:1, minWidth:130 }}>
+              <p style={{ fontSize:10, fontWeight:700, color:"#7C3AED", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Fővállalkozói</p>
+              <p style={{ fontSize:20, fontWeight:800, color:"#0F172A", margin:0 }}>{projektStats.fov}</p>
+            </div>
+            <div style={{ background:"#EFF6FF", borderRadius:10, padding:"12px 16px", border:"1px solid #93C5FD40", flex:1, minWidth:130 }}>
+              <p style={{ fontSize:10, fontWeight:700, color:"#1D4ED8", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Kivitelezés alatt</p>
+              <p style={{ fontSize:20, fontWeight:800, color:"#0F172A", margin:0 }}>{projektStats.kivitelezés}</p>
+            </div>
+            <div style={{ background:"#F0FDF4", borderRadius:10, padding:"12px 16px", border:"1px solid #86EFAC40", flex:1, minWidth:130 }}>
+              <p style={{ fontSize:10, fontWeight:700, color:"#15803D", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Leszámlázva (nem fizetve)</p>
+              <p style={{ fontSize:20, fontWeight:800, color:"#0F172A", margin:0 }}>{projektStats.leszamlazva}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Szűrők */}
       <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Pencil, Printer } from "lucide-react";
+import { ArrowLeft, Pencil, Printer, Trash2 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getStatusConfig } from "./projekt.schema.js";
 import { exportToPDF } from "../../lib/exportService.js";
 import { formatProjectType } from "../../lib/projectTypeFormatter.js";
+import { deleteProjekt } from "./projekt.service.js";
 import ProjektForm from "./ProjektForm.jsx";
 import TabAttekintes from "./tabs/TabAttekintes.jsx";
 import TabAjanlatok from "./tabs/TabAjanlatok.jsx";
@@ -16,19 +17,21 @@ import TabKommunikacio from "./tabs/TabKommunikacio.jsx";
 import TabNaplo from "./tabs/TabNaplo.jsx";
 import TabRiport from "./tabs/TabRiport.jsx";
 import TabLmra from "./tabs/TabLmra.jsx";
+import TabKarteritesek from "./tabs/TabKarteritesek.jsx";
 
 const TABS = [
-  { id: "attekintes",  label: "Áttekintés",  icon: "📊" },
-  { id: "ajanlatok",   label: "Ajánlatok",   icon: "📋" },
-  { id: "munkalapok",  label: "Munkalapok",  icon: "🔧" },
-  { id: "koltsegek",   label: "Költségek",   icon: "💰" },
-  { id: "dokumentumok",label: "Dokumentumok",icon: "📁" },
-  { id: "utemezas",    label: "Ütemezés",    icon: "📅" },
-  { id: "szamlazas",   label: "Számlázás",   icon: "🧾" },
-  { id: "kommunikacio",label: "Kommunikáció",icon: "💬" },
-  { id: "naplo",       label: "Napló",       icon: "📝" },
-  { id: "lmra",        label: "LMRA",        icon: "🛡️" },
-  { id: "riport",      label: "Riport / PDF",icon: "🖨️" },
+  { id: "attekintes",   label: "Áttekintés",   icon: "📊" },
+  { id: "ajanlatok",    label: "Ajánlatok",    icon: "📋" },
+  { id: "munkalapok",   label: "Munkalapok",   icon: "🔧" },
+  { id: "koltsegek",    label: "Költségek",    icon: "💰" },
+  { id: "karteritesek", label: "Kártérítések", icon: "⚠️" },
+  { id: "dokumentumok", label: "Dokumentumok", icon: "📁" },
+  { id: "utemezas",     label: "Ütemezés",     icon: "📅" },
+  { id: "szamlazas",    label: "Számlázás",    icon: "🧾" },
+  { id: "kommunikacio", label: "Kommunikáció", icon: "💬" },
+  { id: "naplo",        label: "Napló",        icon: "📝" },
+  { id: "lmra",         label: "LMRA",         icon: "🛡️" },
+  { id: "riport",       label: "Riport / PDF", icon: "🖨️" },
 ];
 
 export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateMunkalap, currentUser, onNewMunkalapForProjekt }) {
@@ -49,6 +52,18 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
 
   function handleSaved(updated) {
     setLokalProjekt(updated);
+  }
+
+  function handleDelete() {
+    const mls = (munkalapok || []).filter(
+      m => m.projektId === lokalProjekt.id || lokalProjekt.munkalapIds?.includes(m.id)
+    );
+    const figyelmezetes = mls.length > 0
+      ? `\n\n⚠️ A projekthez ${mls.length} munkalap tartozik – ezek NEM törlődnek, de elveszítik a projekt-kapcsolatukat.`
+      : "";
+    if (!window.confirm(`Biztosan törlöd ezt a projektet?\n\n${lokalProjekt.projektkod} – ${lokalProjekt.nev}${figyelmezetes}\n\nEz a művelet visszavonhatatlan!`)) return;
+    deleteProjekt(lokalProjekt.id);
+    onBack();
   }
 
   function handlePrint() {
@@ -80,6 +95,8 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
         return <TabKommunikacio {...props} />;
       case "naplo":
         return <TabNaplo {...props} />;
+      case "karteritesek":
+        return <TabKarteritesek {...props} />;
       case "lmra":
         return <TabLmra {...props} />;
       case "riport":
@@ -154,6 +171,28 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
         </div>
 
         <div style={{ display: "flex", gap: 8 }}>
+          {currentUser?.role === "Admin" && (
+            <button
+              onClick={handleDelete}
+              title="Projekt törlése"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 12px",
+                background: "#FEF2F2",
+                color: "#DC2626",
+                border: "1px solid #FECACA",
+                borderRadius: 9,
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 13,
+                fontFamily: FONT,
+              }}
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
           <button
             onClick={handlePrint}
             style={{

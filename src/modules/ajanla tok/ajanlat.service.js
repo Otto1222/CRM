@@ -4,11 +4,11 @@ const KEY         = "ajanla tok";
 const COUNTER_KEY = "edi_ajanlat_sorszam_counter";
 
 function nextAjanlatkod() {
-  const year    = new Date().getFullYear();
-  const counter = loadLocal(COUNTER_KEY) || { year, seq: 0 };
-  const seq     = counter.year === year ? counter.seq + 1 : 1;
-  saveLocal(COUNTER_KEY, { year, seq });
-  return `AJA-${year}-${String(seq).padStart(3, "0")}`;
+  const year  = new Date().getFullYear();
+  const raw   = loadLocal(COUNTER_KEY) || {};
+  const count = (raw[year] || 0) + 1;
+  saveLocal(COUNTER_KEY, { ...raw, [year]: count });
+  return `AJA-${year}-${String(count).padStart(3, "0")}`;
 }
 
 export function loadAjanlatok() {
@@ -19,7 +19,7 @@ export function createAjanlat(data, currentUser) {
   const item = {
     ...data,
     id:         crypto.randomUUID(),
-    ajanlatkod: nextAjanlatkod(),
+    ajanlatkod: data.ajanlatkod || nextAjanlatkod(),
     keszitette: currentUser?.name || currentUser?.username || "",
     createdAt:  new Date().toISOString().slice(0, 10),
     updatedAt:  new Date().toISOString().slice(0, 10),

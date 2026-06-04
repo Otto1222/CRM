@@ -14,9 +14,15 @@ import { getAktivCsapatok } from "../modules/csapatok/csapat.service";
 function genMunkalapKod(projektId, projektkod) {
   if (!projektId || !projektkod) return "";
   try {
-    const all   = JSON.parse(localStorage.getItem("munkalapok") || "[]");
-    const count = all.filter(m => m.projektId === projektId).length;
-    return `${projektkod}/M-${String(count + 1).padStart(3, "0")}`;
+    const all      = JSON.parse(localStorage.getItem("munkalapok") || "[]");
+    const existing = new Set(all.map(m => m.ugyszam || m.dokumentumszam).filter(Boolean));
+    let seq = all.filter(m => m.projektId === projektId).length + 1;
+    let candidate = `${projektkod}/M-${String(seq).padStart(3, "0")}`;
+    while (existing.has(candidate)) {
+      seq++;
+      candidate = `${projektkod}/M-${String(seq).padStart(3, "0")}`;
+    }
+    return candidate;
   } catch { return ""; }
 }
 
@@ -272,7 +278,6 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
 
   function validate() {
     const e={};
-    if(!alap.ugyszam) e.ugyszam="Kötelező!";
     if(!ugyfEl.nev)   e.ugyfel="Kötelező!";
     // Csapat és dátum opcionális – nem blokkolja a mentést
     setErrors(e);
@@ -292,9 +297,11 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
     // Kiválasztott csapat adatai
     const csapat = csapatok.find(c=>c.id===alap.csapatId);
 
+    const veglegesUgyszam = alap.ugyszam || generaltEdi;
+
     const ml = {
       id:                `ml_${Date.now()}`,  // egyedi belső ID (nem tartalmaz "/" karaktert)
-      ugyszam:           alap.ugyszam,
+      ugyszam:           veglegesUgyszam,
       cimke:             alap.cimke,
       cimkeSzin:         alap.cimkeSzin,
       status:            alap.status,
@@ -320,9 +327,9 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
       fovallalkoiAzonosito: alap.fovallalkoiAzonosito || "",
       ediSorszam:        generaltEdi,
       // Fő azonosító: projektkód/M-001 formátum; ha van fővállalkozói szám, hozzáfűzzük
-      dokumentumszam:    alap.ugyszam
-        ? (alap.fovallalkoiAzonosito?.trim() ? `${alap.ugyszam} / ${alap.fovallalkoiAzonosito.trim()}` : alap.ugyszam)
-        : generaltEdi,
+      dokumentumszam:    alap.fovallalkoiAzonosito?.trim()
+        ? `${veglegesUgyszam} / ${alap.fovallalkoiAzonosito.trim()}`
+        : veglegesUgyszam,
       // Csapat – a Telepítő szűrés erre támaszkodik
       assigneeId:        alap.csapatId,
       assigneeNev:       csapat?.nev || alap.csapatNev,

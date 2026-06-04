@@ -142,7 +142,7 @@ export default function SzamlaForm({ szamla, onClose, onSaved, currentUser }) {
         padding: "20px 16px", overflowY: "auto",
       }}
     >
-      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", zIndex: 0 }} onClick={onClose} />
+      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", zIndex: 0 }} />
       <div style={{
         position: "relative", zIndex: 1,
         background: "#fff", borderRadius: 16, width: "100%", maxWidth: 640,

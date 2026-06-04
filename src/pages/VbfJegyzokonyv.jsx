@@ -80,6 +80,11 @@ const VBF_SECTIONS = [
     ]
   },
   {
+    id: "epulet_alapfoldes", title: "Épület alapföldelés", fields: [
+      { key: "epulet_alapfoldes", label: "Épület alapföldelés", unit: "Ω" },
+    ]
+  },
+  {
     id: "tuzeseti", title: "Tűzeseti adatok", fields: [
       { key: "tuz_megszakito", label: "Megszakító értéke", unit: "A" },
     ]
@@ -128,7 +133,7 @@ function Szekció({ sec, data, onChange, hibak, validated }) {
         <span style={{ fontSize:12, color: secKitoltve===sec.fields.length?C.success:C.muted }}>
           {secKitoltve}/{sec.fields.length} kitöltve
         </span>
-        {open ? <ChevronUp size:16 color={C.muted}/> : <ChevronDown size={16} color={C.muted}/>}
+        {open ? <ChevronUp size={16} color={C.muted}/> : <ChevronDown size={16} color={C.muted}/>}
       </button>
       {open && (
         <div style={{ padding:"12px 16px 8px", background:"#fff" }}>

@@ -235,7 +235,7 @@ function KatKartya({ kat, photos, note, onPhotos, onNote, munkalapId, hibak }) {
 
       {/* Nagyítás */}
       {nagy && (
-        <div onClick={()=>setNagy(null)} style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,.93)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+        <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,.93)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
           <img src={nagy.base64} alt="" style={{maxWidth:"100%",maxHeight:"90vh",borderRadius:12,objectFit:"contain"}} onClick={e=>e.stopPropagation()}/>
           <button onClick={()=>setNagy(null)} style={{position:"absolute",top:20,right:20,background:"rgba(255,255,255,.15)",border:"none",borderRadius:"50%",width:44,height:44,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
             <X size={22} color="#fff"/>

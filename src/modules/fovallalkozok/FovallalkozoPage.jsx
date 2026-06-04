@@ -1,155 +1,277 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check, Calculator } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { ft } from "../../lib/helpers.js";
 import {
   loadFovallalkozok, createFovallalkozo, updateFovallalkozo, deleteFovallalkozo,
-  loadSzabalyok, createSzabaly, updateSzabaly, deleteSzabaly, getSzabalyokByFovallalkozo,
+  getSzabalyokByFovallalkozo, createSzabaly, updateSzabaly, deleteSzabaly,
 } from "./fovallalkozo.service.js";
 import {
-  CSAPAT_BER_TIPUSOK, UTIKOLTSÉG_TIPUSOK, ANYAGKOLTSÉG_MODJAI, KARTÉRÍTÉS_MODJAI,
-} from "./fovallalkozo.schema.js";
-import { BEVETELI_TETEL_TIPUSOK } from "../munkatipusok/munkatipus.schema.js";
-import { PROJEKT_TIPUSOK } from "../projektek/projekt.schema.js";
-import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
+  ELSZAMOLASI_MODOK, ELSZAMOLASI_MUNKATIPUSOK,
+  calcSzabalyOsszeg, szabalyLeiras,
+} from "./elszamolasiMotor.js";
 
-const inp = { width:"100%", boxSizing:"border-box", padding:"8px 11px", border:"1.5px solid #E2E8F0", borderRadius:8, fontSize:13, fontFamily:"inherit", outline:"none" };
-const FL = ({ label, children, half }) => (
-  <div style={{ gridColumn: half?"span 1":"span 2" }}>
-    <label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:.6 }}>{label}</label>
+const inp = {
+  width: "100%", boxSizing: "border-box", padding: "8px 11px",
+  border: "1.5px solid #E2E8F0", borderRadius: 8, fontSize: 13,
+  fontFamily: "inherit", outline: "none",
+};
+const FL = ({ label, children, half, full }) => (
+  <div style={{ gridColumn: full ? "span 2" : half ? "span 1" : "span 2" }}>
+    <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>
+      {label}
+    </label>
     {children}
   </div>
 );
 
-// ─── Elszámolási szabály form ─────────────────────────────────
-function SzabalyForm({ szabaly, fovallalkoziId, onSave, onClose }) {
-  const isNew = !szabaly?.id;
-  const munkatipusok = getAktivMunkatipusok();
-  const [f, setF] = useState({
-    fovallalkoziId,
-    munkatipus:          szabaly?.munkatipus          || "",
-    aktiv:               szabaly?.aktiv               ?? true,
-    nettoBevitel:        szabaly?.nettoBevitel         || 0,
-    csapatBerTipus:      szabaly?.csapatBerTipus       || "fix",
-    csapatBerOsszeg:     szabaly?.csapatBerOsszeg      || 0,
-    utikoltsegTipus:     szabaly?.utikoltsegTipus      || "oda_vissza",
-    utikoltsegFtKm:      szabaly?.utikoltsegFtKm       || 0,
-    kmKuszob:            szabaly?.kmKuszob              || 0,
-    kmFixOsszeg:         szabaly?.kmFixOsszeg           || 0,
-    tetelArak:           szabaly?.tetelArak             || {},
-    anyagkoltségModja:   szabaly?.anyagkoltségModja    || "tényleges",
-    anyagkoltségErtek:   szabaly?.anyagkoltségErtek    || 0,
-    kartériétasModja:    szabaly?.kartériétasModja     || "tényleges",
-    kartériétasLimit:    szabaly?.kartériétasLimit     || 0,
-    megjegyzes:          szabaly?.megjegyzes           || "",
-  });
-  const u = (k, v) => setF(p => ({...p, [k]:v}));
+// ─── Sáv szerkesztő ───────────────────────────────────────────
+
+function SavokSzerkeszto({ savok, onChange }) {
+  function addSav() {
+    const last = savok[savok.length - 1];
+    const ujTol = last ? (Number(last.ig) + 1) : 1;
+    onChange([...savok, { tol: ujTol, ig: "", osszeg: 0 }]);
+  }
+  function removeSav(i) {
+    onChange(savok.filter((_, idx) => idx !== i));
+  }
+  function updateSav(i, key, val) {
+    onChange(savok.map((s, idx) => idx === i ? { ...s, [key]: val } : s));
+  }
 
   return (
-    <div style={{ position:"fixed", inset:0, zIndex:2100, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
-      onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{ background:"#fff", borderRadius:14, width:"100%", maxWidth:560, padding:"24px", fontFamily:FONT, maxHeight:"90vh", overflowY:"auto" }}>
-        <h3 style={{ fontFamily:FONT_HEADING, fontSize:16, fontWeight:800, margin:"0 0 18px" }}>{isNew?"Új elszámolási szabály":"Szabály szerkesztése"}</h3>
-
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px 14px" }}>
-          <FL label="Munkatípus (üres = általános)">
-            <select value={f.munkatipus} onChange={e=>u("munkatipus",e.target.value)} style={inp}>
-              <option value="">— Minden munkatípusra —</option>
-              {munkatipusok.map(t=><option key={t.id} value={t.id}>{t.nev}</option>)}
-              {/* Fallback ha nincs munkatípus */}
-              {munkatipusok.length === 0 && PROJEKT_TIPUSOK.map(t=><option key={t}>{t}</option>)}
-            </select>
-          </FL>
-          <FL label="Aktív" half><label style={{ display:"flex", alignItems:"center", gap:8, paddingTop:8, cursor:"pointer" }}>
-            <input type="checkbox" checked={f.aktiv} onChange={e=>u("aktiv",e.target.checked)} style={{ width:16,height:16 }}/>
-            <span style={{ fontSize:13 }}>{f.aktiv?"Aktív":"Inaktív"}</span>
-          </label></FL>
-
-          <FL label="Nettó bevétel (Ft)">
-            <input type="number" value={f.nettoBevitel} onChange={e=>u("nettoBevitel",Number(e.target.value))} style={inp}/>
-          </FL>
-
-          <FL label="Csapat bér típusa" half>
-            <select value={f.csapatBerTipus} onChange={e=>u("csapatBerTipus",e.target.value)} style={inp}>
-              {CSAPAT_BER_TIPUSOK.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
-            </select>
-          </FL>
-          <FL label={`Csapat bér (${f.csapatBerTipus==="%"?"%":"Ft"})`} half>
-            <input type="number" value={f.csapatBerOsszeg} onChange={e=>u("csapatBerOsszeg",Number(e.target.value))} style={inp}/>
-          </FL>
-
-          <FL label="Km-elszámolás típusa" half>
-            <select value={f.utikoltsegTipus} onChange={e=>u("utikoltsegTipus",e.target.value)} style={inp}>
-              {UTIKOLTSÉG_TIPUSOK.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
-            </select>
-          </FL>
-          {f.utikoltsegTipus !== "nincs" && f.utikoltsegTipus !== "fix_kiszallas" && f.utikoltsegTipus !== "kezi" && (
-            <FL label="Ft/km díj (0 = fővállalkozó alapja)" half>
-              <input type="number" value={f.utikoltsegFtKm} onChange={e=>u("utikoltsegFtKm",Number(e.target.value))} style={inp}/>
-            </FL>
-          )}
-          {f.utikoltsegTipus === "kuszob_folott" && (
-            <FL label="Küszöb (km) – ez alatt nincs elszámolás">
-              <input type="number" value={f.kmKuszob} onChange={e=>u("kmKuszob",Number(e.target.value))} placeholder="pl. 50" style={inp}/>
-            </FL>
-          )}
-          {f.utikoltsegTipus === "fix_kiszallas" && (
-            <FL label="Fix kiszállási díj (Ft)">
-              <input type="number" value={f.kmFixOsszeg} onChange={e=>u("kmFixOsszeg",Number(e.target.value))} placeholder="0" style={inp}/>
-            </FL>
-          )}
-
-          <FL label="Anyagköltség módja" half>
-            <select value={f.anyagkoltségModja} onChange={e=>u("anyagkoltségModja",e.target.value)} style={inp}>
-              {ANYAGKOLTSÉG_MODJAI.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
-            </select>
-          </FL>
-          {f.anyagkoltségModja!=="tényleges"&&f.anyagkoltségModja!=="kézi"&&(
-            <FL label={f.anyagkoltségModja==="kalkulált%"?"Anyag %":"Fix összeg (Ft)"} half>
-              <input type="number" value={f.anyagkoltségErtek} onChange={e=>u("anyagkoltségErtek",Number(e.target.value))} style={inp}/>
-            </FL>
-          )}
-
-          <FL label="Kártérítés módja" half>
-            <select value={f.kartériétasModja} onChange={e=>u("kartériétasModja",e.target.value)} style={inp}>
-              {KARTÉRÍTÉS_MODJAI.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
-            </select>
-          </FL>
-          {f.kartériétasModja==="limit%"&&(
-            <FL label="Limit (%)" half>
-              <input type="number" value={f.kartériétasLimit} onChange={e=>u("kartériétasLimit",Number(e.target.value))} style={inp}/>
-            </FL>
-          )}
-
-          <FL label="Megjegyzés">
-            <input value={f.megjegyzes} onChange={e=>u("megjegyzes",e.target.value)} style={inp}/>
-          </FL>
-
-          {/* Tételes árak override */}
-          <div style={{ gridColumn:"span 2", paddingTop:10, borderTop:"1px solid #E2E8F0" }}>
-            <p style={{ fontSize:11, fontWeight:700, color:"#64748B", marginBottom:8 }}>
-              Tételes árak (felülírja a munkatípus definíciót)
-              <span style={{ fontWeight:400, marginLeft:6 }}>– csak ha ettől a fővállalkozótól eltérő összeg jár</span>
-            </p>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-              {BEVETELI_TETEL_TIPUSOK.filter(t => t.id !== "km_elszamolas").map(t => (
-                <div key={t.id}>
-                  <label style={{ fontSize:10, color:"#64748B", display:"block", marginBottom:2 }}>{t.label} (Ft, 0 = nem ír felül)</label>
-                  <input type="number"
-                    value={f.tetelArak?.[t.id] || ""}
-                    onChange={e => u("tetelArak", { ...f.tetelArak, [t.id]: e.target.value === "" ? undefined : Number(e.target.value) })}
-                    placeholder="0"
-                    style={{...inp, padding:"6px 10px"}}/>
-                </div>
-              ))}
-            </div>
+    <div>
+      {savok.length === 0 && (
+        <p style={{ fontSize: 12, color: "#94A3B8", fontStyle: "italic", margin: "4px 0 8px" }}>
+          Nincs sáv – add hozzá az alábbi gombbal
+        </p>
+      )}
+      {savok.map((sav, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+          <span style={{ fontSize: 11, color: "#64748B", minWidth: 20, textAlign: "right" }}>{i + 1}.</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
+            <input
+              type="number" min={0} placeholder="tól"
+              value={sav.tol}
+              onChange={e => updateSav(i, "tol", e.target.value)}
+              style={{ ...inp, width: 72, textAlign: "center" }}
+            />
+            <span style={{ fontSize: 11, color: "#94A3B8" }}>db  –</span>
+            <input
+              type="number" min={0} placeholder="ig (üres=∞)"
+              value={sav.ig}
+              onChange={e => updateSav(i, "ig", e.target.value)}
+              style={{ ...inp, width: 88, textAlign: "center" }}
+            />
+            <span style={{ fontSize: 11, color: "#94A3B8" }}>db  =</span>
+            <input
+              type="number" min={0} placeholder="összeg"
+              value={sav.osszeg}
+              onChange={e => updateSav(i, "osszeg", e.target.value)}
+              style={{ ...inp, flex: 1, textAlign: "right" }}
+            />
+            <span style={{ fontSize: 11, color: "#94A3B8" }}>Ft</span>
           </div>
+          <button onClick={() => removeSav(i)}
+            style={{ padding: "4px 6px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 6, cursor: "pointer" }}>
+            <X size={11} />
+          </button>
+        </div>
+      ))}
+      <button onClick={addSav}
+        style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", border: "1.5px dashed #CBD5E1", borderRadius: 7, background: "#F8FAFC", cursor: "pointer", fontSize: 12, color: "#475569", fontFamily: FONT, marginTop: 4 }}>
+        <Plus size={12} /> Új sáv hozzáadása
+      </button>
+    </div>
+  );
+}
+
+// ─── Tesztelő panel ───────────────────────────────────────────
+
+function KalkulacioTesztelo({ szabaly }) {
+  const [db,  setDb]  = useState(10);
+  const [km,  setKm]  = useState(50);
+
+  if (!szabaly?.mod) return null;
+  const needsDb = ["darab", "savos"].includes(szabaly.mod);
+  const needsKm = ["km", "fix_kiszallas"].includes(szabaly.mod);
+  const eredmeny = calcSzabalyOsszeg(szabaly, { darabszam: db, tavKm: km });
+
+  return (
+    <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "12px 14px", marginTop: 12 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: "#065F46", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 5 }}>
+        <Calculator size={13} /> Tesztelő – próba input
+      </p>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        {needsDb && (
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#374151" }}>
+            Darabszám:
+            <input type="number" min={0} value={db} onChange={e => setDb(Number(e.target.value))}
+              style={{ ...inp, width: 72, padding: "5px 8px" }} />
+          </label>
+        )}
+        {needsKm && (
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#374151" }}>
+            Egyirányú km:
+            <input type="number" min={0} value={km} onChange={e => setKm(Number(e.target.value))}
+              style={{ ...inp, width: 80, padding: "5px 8px" }} />
+          </label>
+        )}
+        <span style={{ fontSize: 16, fontWeight: 800, color: eredmeny > 0 ? "#059669" : "#94A3B8", marginLeft: 8 }}>
+          = {ft(eredmeny)}
+        </span>
+        {szabaly.mod === "savos" && (() => {
+          const s = (szabaly.savok || []).find(sv => {
+            const tol = Number(sv.tol) || 0;
+            const ig  = sv.ig !== "" && sv.ig !== null ? Number(sv.ig) : Infinity;
+            return db >= tol && db <= ig;
+          });
+          return s
+            ? <span style={{ fontSize: 11, color: "#059669" }}>(sáv: {s.tol}–{s.ig || "∞"} db)</span>
+            : <span style={{ fontSize: 11, color: "#DC2626" }}>(nincs egyező sáv!)</span>;
+        })()}
+        {szabaly.mod === "fix" && <span style={{ fontSize: 11, color: "#64748B" }}>(fix összeg, inputtól független)</span>}
+        {szabaly.mod === "fix_kiszallas" && <span style={{ fontSize: 11, color: "#64748B" }}>(fix, km-tól független)</span>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Elszámolási szabály form ─────────────────────────────────
+
+function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
+  const isNew = !szabaly?.id;
+
+  const [f, setF] = useState({
+    tulajdonosId,
+    munkatipus:    szabaly?.munkatipus    || "",
+    aktiv:         szabaly?.aktiv         ?? true,
+    mod:           szabaly?.mod           || "fix",
+    fixOsszeg:     szabaly?.fixOsszeg     || 0,
+    darabEgysegAr: szabaly?.darabEgysegAr || 0,
+    savok:         szabaly?.savok         || [],
+    kmDijFtKm:     szabaly?.kmDijFtKm     || 0,
+    kmKuszobKm:    szabaly?.kmKuszobKm    || 0,
+    kiszallasiDij: szabaly?.kiszallasiDij || 0,
+    megjegyzes:    szabaly?.megjegyzes    || "",
+  });
+  const u = (k, v) => setF(p => ({ ...p, [k]: v }));
+
+  const modInfo = ELSZAMOLASI_MODOK.find(m => m.id === f.mod);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 2100, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 580, padding: "24px", fontFamily: FONT, maxHeight: "92vh", overflowY: "auto" }}>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <h3 style={{ fontFamily: FONT_HEADING, fontSize: 16, fontWeight: 800, margin: 0 }}>
+            {isNew ? "Új elszámolási szabály" : "Szabály szerkesztése"}
+          </h3>
+          <button onClick={onClose} style={{ padding: "4px 8px", border: "none", background: "none", cursor: "pointer", color: "#94A3B8" }}>
+            <X size={16} />
+          </button>
         </div>
 
-        <div style={{ display:"flex", gap:10, marginTop:18, justifyContent:"flex-end" }}>
-          <button onClick={onClose} style={{ padding:"8px 16px", border:"1.5px solid #E2E8F0", borderRadius:8, background:"#fff", cursor:"pointer", fontFamily:FONT }}>Mégse</button>
-          <button onClick={()=>onSave(f)} style={{ padding:"8px 18px", background:"#2563EB", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontWeight:700, fontFamily:FONT }}>
-            {isNew?"Létrehozás":"Mentés"}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 14px" }}>
+
+          {/* Munkatípus */}
+          <FL label="Munkatípus">
+            <select value={f.munkatipus} onChange={e => u("munkatipus", e.target.value)} style={inp}>
+              <option value="">— Minden munkatípusra (általános) —</option>
+              {ELSZAMOLASI_MUNKATIPUSOK.map(mt => (
+                <option key={mt} value={mt}>{mt}</option>
+              ))}
+            </select>
+          </FL>
+
+          {/* Aktív toggle */}
+          <FL label="Állapot" half>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 8, cursor: "pointer" }}>
+              <input type="checkbox" checked={f.aktiv} onChange={e => u("aktiv", e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: "#2563EB" }} />
+              <span style={{ fontSize: 13, color: f.aktiv ? "#059669" : "#94A3B8", fontWeight: 600 }}>
+                {f.aktiv ? "Aktív" : "Inaktív"}
+              </span>
+            </label>
+          </FL>
+
+          {/* Elszámolási mód */}
+          <FL label="Elszámolási mód">
+            <select value={f.mod} onChange={e => u("mod", e.target.value)} style={{ ...inp, fontWeight: 600 }}>
+              {ELSZAMOLASI_MODOK.map(m => (
+                <option key={m.id} value={m.id}>{m.label}</option>
+              ))}
+            </select>
+            {modInfo?.hint && (
+              <p style={{ fontSize: 11, color: "#64748B", margin: "4px 0 0" }}>{modInfo.hint}</p>
+            )}
+          </FL>
+
+          {/* Mód-specifikus mezők */}
+          {f.mod === "fix" && (
+            <FL label="Fix összeg (Ft)" half>
+              <input type="number" min={0} value={f.fixOsszeg}
+                onChange={e => u("fixOsszeg", Number(e.target.value))} style={inp} />
+            </FL>
+          )}
+
+          {f.mod === "darab" && (
+            <FL label="Egységár (Ft / db)" half>
+              <input type="number" min={0} value={f.darabEgysegAr}
+                onChange={e => u("darabEgysegAr", Number(e.target.value))} style={inp} />
+            </FL>
+          )}
+
+          {f.mod === "km" && (<>
+            <FL label="Km-díj (Ft / km)" half>
+              <input type="number" min={0} value={f.kmDijFtKm}
+                onChange={e => u("kmDijFtKm", Number(e.target.value))} style={inp} />
+            </FL>
+            <FL label="Küszöb km (ez alatt nem jár)" half>
+              <input type="number" min={0} value={f.kmKuszobKm}
+                onChange={e => u("kmKuszobKm", Number(e.target.value))} placeholder="0" style={inp} />
+            </FL>
+          </>)}
+
+          {f.mod === "fix_kiszallas" && (
+            <FL label="Fix kiszállási díj (Ft)" half>
+              <input type="number" min={0} value={f.kiszallasiDij}
+                onChange={e => u("kiszallasiDij", Number(e.target.value))} style={inp} />
+            </FL>
+          )}
+
+          {/* Sávos szerkesztő */}
+          {f.mod === "savos" && (
+            <FL label="Sávos díjazás – korlátlan sáv (darabszám tól–ig = összeg)">
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 9, padding: "12px 14px", marginTop: 4 }}>
+                <SavokSzerkeszto savok={f.savok} onChange={v => u("savok", v)} />
+              </div>
+              <p style={{ fontSize: 11, color: "#64748B", margin: "5px 0 0" }}>
+                Az „ig" mező üresen hagyható → az a sáv a legfelső korlát nélküli sávot jelenti (∞).
+              </p>
+            </FL>
+          )}
+
+          {/* Megjegyzés */}
+          <FL label="Megjegyzés (opcionális)">
+            <input value={f.megjegyzes} onChange={e => u("megjegyzes", e.target.value)}
+              placeholder="pl. Szezonális megállapodás, stb." style={inp} />
+          </FL>
+        </div>
+
+        {/* Tesztelő */}
+        <KalkulacioTesztelo szabaly={f} />
+
+        {/* Gombok */}
+        <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
+          <button onClick={onClose}
+            style={{ padding: "8px 16px", border: "1.5px solid #E2E8F0", borderRadius: 8, background: "#fff", cursor: "pointer", fontFamily: FONT }}>
+            Mégse
+          </button>
+          <button onClick={() => onSave(f)}
+            style={{ padding: "8px 20px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
+            {isNew ? "Létrehozás" : "Mentés"}
           </button>
         </div>
       </div>
@@ -157,108 +279,206 @@ function SzabalyForm({ szabaly, fovallalkoziId, onSave, onClose }) {
   );
 }
 
+// ─── Szabály kártya ───────────────────────────────────────────
+
+function SzabalyKartya({ sz, onEdit, onDelete, onToggle }) {
+  const modInfo = ELSZAMOLASI_MODOK.find(m => m.id === sz.mod);
+  const leiras  = szabalyLeiras(sz);
+  const savokDb = sz.mod === "savos" ? (sz.savok?.length || 0) : null;
+
+  return (
+    <div style={{
+      background: sz.aktiv ? "#F8FAFC" : "#F1F5F9",
+      border: `1px solid ${sz.aktiv ? "#E2E8F0" : "#CBD5E1"}`,
+      borderLeft: `3px solid ${sz.aktiv ? "#2563EB" : "#94A3B8"}`,
+      borderRadius: 9, padding: "10px 14px", marginBottom: 6,
+      display: "flex", alignItems: "flex-start", gap: 10,
+      opacity: sz.aktiv ? 1 : 0.65,
+    }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: "flex", gap: 7, alignItems: "center", marginBottom: 4, flexWrap: "wrap" }}>
+          <span style={{ fontWeight: 700, fontSize: 13, color: "#0F172A" }}>
+            {sz.munkatipus || "Általános (minden típusra)"}
+          </span>
+          <span style={{ fontSize: 11, background: "#EFF6FF", color: "#2563EB", padding: "1px 8px", borderRadius: 20, fontWeight: 700 }}>
+            {modInfo?.label || sz.mod}
+          </span>
+          {!sz.aktiv && <span style={{ fontSize: 10, background: "#F1F5F9", color: "#94A3B8", padding: "1px 7px", borderRadius: 20 }}>Inaktív</span>}
+        </div>
+        <div style={{ fontSize: 12, color: "#475569", display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ fontWeight: 600, color: "#059669" }}>{leiras}</span>
+          {savokDb !== null && <span>{savokDb} sáv</span>}
+          {sz.megjegyzes && <span style={{ color: "#94A3B8" }}>{sz.megjegyzes}</span>}
+        </div>
+        {/* Sávok összefoglalás */}
+        {sz.mod === "savos" && (sz.savok || []).length > 0 && (
+          <div style={{ marginTop: 6, display: "flex", gap: 4, flexWrap: "wrap" }}>
+            {(sz.savok || []).map((s, i) => (
+              <span key={i} style={{ fontSize: 10, background: "#DBEAFE", color: "#1D4ED8", padding: "2px 7px", borderRadius: 20, fontWeight: 600 }}>
+                {s.tol}–{s.ig || "∞"} db: {Number(s.osszeg || 0).toLocaleString("hu-HU")} Ft
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+        <button onClick={onToggle} title={sz.aktiv ? "Inaktiválás" : "Aktiválás"}
+          style={{ padding: "4px 8px", background: sz.aktiv ? "#FFFBEB" : "#ECFDF5", color: sz.aktiv ? "#D97706" : "#059669", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 10, fontWeight: 700, fontFamily: FONT }}>
+          {sz.aktiv ? "Inakt." : "Aktív"}
+        </button>
+        <button onClick={onEdit}
+          style={{ padding: "4px 8px", background: "#EFF6FF", color: "#2563EB", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 11 }}>
+          <Pencil size={11} />
+        </button>
+        <button onClick={onDelete}
+          style={{ padding: "4px 7px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 6, cursor: "pointer" }}>
+          <Trash2 size={11} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Fővállalkozó sor ─────────────────────────────────────────
+
 function FvSor({ fv, onUpdate, onDelete }) {
-  const [open, setOpen]     = useState(false);
-  const [editFv, setEditFv] = useState(false);
-  const [ujSz, setUjSz]     = useState(false);
+  const [open,    setOpen]    = useState(false);
+  const [editFv,  setEditFv]  = useState(false);
+  const [ujSz,    setUjSz]    = useState(false);
   const [szerkSz, setSzerkSz] = useState(null);
-  const [fvForm, setFvForm] = useState({ nev:fv.nev, rovidites:fv.rovidites||"", alapUtikoltsegFtKm:fv.alapUtikoltsegFtKm||80, megjegyzes:fv.megjegyzes||"" });
+  const [fvForm,  setFvForm]  = useState({ nev: fv.nev, rovidites: fv.rovidites || "", megjegyzes: fv.megjegyzes || "" });
   const [szabalyok, setSzabalyok] = useState(() => getSzabalyokByFovallalkozo(fv.id));
 
   function refresh() { setSzabalyok(getSzabalyokByFovallalkozo(fv.id)); }
 
   function handleSzSave(data) {
     if (szerkSz?.id) updateSzabaly(szerkSz.id, data);
-    else createSzabaly({ ...data, fovallalkoziId: fv.id });
+    else createSzabaly({ ...data, tulajdonosId: fv.id });
     refresh();
     setSzerkSz(null);
     setUjSz(false);
   }
 
+  const aktivSzabaly = szabalyok.filter(s => s.aktiv !== false).length;
+
   return (
-    <div style={{ background:"#fff", border:`1.5px solid ${fv.aktiv?"#E2E8F0":"#F1F5F9"}`, borderRadius:12, marginBottom:10, overflow:"hidden", opacity:fv.aktiv?1:.65 }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12, padding:"14px 18px", cursor:"pointer" }} onClick={()=>setOpen(o=>!o)}>
-        <div style={{ flex:1 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontWeight:700, fontSize:15 }}>{fv.nev}</span>
-            {fv.rovidites && <span style={{ fontSize:11, background:"#EFF6FF", color:"#2563EB", padding:"2px 9px", borderRadius:20, fontWeight:700 }}>[{fv.rovidites}]</span>}
-            <span style={{ fontSize:11, background:fv.aktiv?"#DCFCE7":"#F1F5F9", color:fv.aktiv?"#166534":"#94A3B8", padding:"2px 9px", borderRadius:20, fontWeight:600 }}>{fv.aktiv?"Aktív":"Inaktív"}</span>
-            <span style={{ fontSize:12, color:"#64748B" }}>Alap: {fv.alapUtikoltsegFtKm||80} Ft/km · {szabalyok.length} szabály</span>
+    <div style={{ background: "#fff", border: `1.5px solid ${open ? "#2563EB" : C.border}`, borderRadius: 12, marginBottom: 10, overflow: "hidden", opacity: fv.aktiv ? 1 : .6 }}>
+
+      {/* Fejléc */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", cursor: "pointer" }}
+        onClick={() => setOpen(o => !o)}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ fontWeight: 700, fontSize: 15, color: "#0F172A" }}>{fv.nev}</span>
+            {fv.rovidites && (
+              <span style={{ fontSize: 11, background: "#EFF6FF", color: "#2563EB", padding: "2px 9px", borderRadius: 20, fontWeight: 700 }}>
+                [{fv.rovidites}]
+              </span>
+            )}
+            <span style={{ fontSize: 11, background: fv.aktiv ? "#DCFCE7" : "#F1F5F9", color: fv.aktiv ? "#166534" : "#94A3B8", padding: "2px 9px", borderRadius: 20, fontWeight: 600 }}>
+              {fv.aktiv ? "Aktív" : "Inaktív"}
+            </span>
+            <span style={{ fontSize: 12, color: "#64748B" }}>
+              {aktivSzabaly} aktív szabály
+            </span>
           </div>
-          {fv.megjegyzes && <p style={{ fontSize:11, color:"#94A3B8", margin:"2px 0 0" }}>{fv.megjegyzes}</p>}
+          {fv.megjegyzes && (
+            <p style={{ fontSize: 11, color: "#94A3B8", margin: "2px 0 0" }}>{fv.megjegyzes}</p>
+          )}
         </div>
-        <button onClick={e=>{e.stopPropagation();onUpdate(fv.id,{aktiv:!fv.aktiv});}} style={{ padding:"5px 10px", border:"1px solid #E2E8F0", borderRadius:7, background:"#fff", cursor:"pointer", fontSize:11, fontFamily:FONT }}>
-          {fv.aktiv?"Inaktivál":"Aktivál"}
-        </button>
-        <button onClick={e=>{e.stopPropagation();setEditFv(true);}} style={{ padding:"5px 10px", border:"none", background:"#EFF6FF", color:"#2563EB", borderRadius:7, cursor:"pointer", fontSize:11, fontFamily:FONT }}>Szerkeszt</button>
-        <button onClick={e=>{e.stopPropagation();onDelete(fv.id);}} style={{ padding:"5px 8px", border:"none", background:"#FEF2F2", color:"#DC2626", borderRadius:7, cursor:"pointer" }}><Trash2 size={13}/></button>
-        {open?<ChevronUp size={16} color="#94A3B8"/>:<ChevronDown size={16} color="#94A3B8"/>}
+        <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+          <button onClick={() => onUpdate(fv.id, { aktiv: !fv.aktiv })}
+            style={{ padding: "5px 10px", border: "1px solid #E2E8F0", borderRadius: 7, background: "#fff", cursor: "pointer", fontSize: 11, fontFamily: FONT }}>
+            {fv.aktiv ? "Inaktivál" : "Aktivál"}
+          </button>
+          <button onClick={() => setEditFv(true)}
+            style={{ padding: "5px 10px", border: "none", background: "#EFF6FF", color: "#2563EB", borderRadius: 7, cursor: "pointer", fontSize: 11, fontFamily: FONT }}>
+            Szerkeszt
+          </button>
+          <button onClick={() => onDelete(fv.id)}
+            style={{ padding: "5px 8px", border: "none", background: "#FEF2F2", color: "#DC2626", borderRadius: 7, cursor: "pointer" }}>
+            <Trash2 size={13} />
+          </button>
+        </div>
+        {open ? <ChevronUp size={16} color="#94A3B8" /> : <ChevronDown size={16} color="#94A3B8" />}
       </div>
 
-      {/* Szerkesztés form */}
+      {/* FV szerkesztő */}
       {editFv && (
-        <div style={{ borderTop:"1px solid #F1F5F9", padding:"14px 18px", background:"#F8FAFC", display:"grid", gridTemplateColumns:"2fr 0.7fr 1fr 2fr", gap:10 }}>
-          <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Név</label>
-            <input value={fvForm.nev} onChange={e=>setFvForm(p=>({...p,nev:e.target.value}))} style={inp}/></div>
-          <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Rövidítés (max 4)</label>
-            <input value={fvForm.rovidites||""} onChange={e=>setFvForm(p=>({...p,rovidites:e.target.value.toUpperCase().slice(0,4)}))} placeholder="pl. GH" maxLength={4} style={inp}/></div>
-          <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Alap Ft/km</label>
-            <input type="number" value={fvForm.alapUtikoltsegFtKm} onChange={e=>setFvForm(p=>({...p,alapUtikoltsegFtKm:Number(e.target.value)}))} style={inp}/></div>
-          <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Megjegyzés</label>
-            <input value={fvForm.megjegyzes} onChange={e=>setFvForm(p=>({...p,megjegyzes:e.target.value}))} style={inp}/></div>
-          <div style={{ gridColumn:"span 4", display:"flex", gap:8, justifyContent:"flex-end" }}>
-            <button type="button" onClick={()=>setEditFv(false)} style={{ padding:"7px 14px", border:"1.5px solid #E2E8F0", borderRadius:8, background:"#fff", cursor:"pointer", fontFamily:FONT }}>Mégse</button>
-            <button type="button" onClick={()=>{onUpdate(fv.id,fvForm);setEditFv(false);}} style={{ padding:"7px 14px", background:"#059669", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontWeight:700, fontFamily:FONT }}>Mentés</button>
+        <div style={{ borderTop: "1px solid #F1F5F9", padding: "14px 18px", background: "#F8FAFC", display: "grid", gridTemplateColumns: "2fr 0.7fr 2fr", gap: 10 }}>
+          <div>
+            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Név</label>
+            <input value={fvForm.nev} onChange={e => setFvForm(p => ({ ...p, nev: e.target.value }))} style={inp} />
+          </div>
+          <div>
+            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Rövidítés (max 4)</label>
+            <input value={fvForm.rovidites} onChange={e => setFvForm(p => ({ ...p, rovidites: e.target.value.toUpperCase().slice(0, 4) }))} maxLength={4} style={inp} />
+          </div>
+          <div>
+            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Megjegyzés</label>
+            <input value={fvForm.megjegyzes} onChange={e => setFvForm(p => ({ ...p, megjegyzes: e.target.value }))} style={inp} />
+          </div>
+          <div style={{ gridColumn: "span 3", display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button type="button" onClick={() => setEditFv(false)}
+              style={{ padding: "7px 14px", border: "1.5px solid #E2E8F0", borderRadius: 8, background: "#fff", cursor: "pointer", fontFamily: FONT }}>
+              Mégse
+            </button>
+            <button type="button" onClick={() => { onUpdate(fv.id, fvForm); setEditFv(false); }}
+              style={{ padding: "7px 14px", background: "#059669", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
+              Mentés
+            </button>
           </div>
         </div>
       )}
 
       {/* Szabályok */}
       {open && (
-        <div style={{ borderTop:"1px solid #F1F5F9", padding:"14px 18px" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-            <span style={{ fontSize:12, fontWeight:700, color:"#374151" }}>Elszámolási szabályok ({szabalyok.length})</span>
-            <button onClick={()=>setUjSz(true)} style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 12px", background:"#2563EB", color:"#fff", border:"none", borderRadius:7, cursor:"pointer", fontWeight:600, fontSize:12, fontFamily:FONT }}>
-              <Plus size={12}/> Új szabály
+        <div style={{ borderTop: "1px solid #F1F5F9", padding: "14px 18px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>Elszámolási szabályok</span>
+              <span style={{ fontSize: 12, color: "#64748B", marginLeft: 6 }}>
+                ({szabalyok.length} db — egy szabály = egy munkatípus + egy elszámolási mód)
+              </span>
+            </div>
+            <button onClick={() => setUjSz(true)}
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: FONT }}>
+              <Plus size={12} /> Új szabály
             </button>
           </div>
-          {szabalyok.length === 0
-            ? <p style={{ fontSize:12, color:"#94A3B8", fontStyle:"italic" }}>Még nincs szabály – adj hozzá az „Új szabály" gombbal</p>
-            : szabalyok.map(sz => (
-              <div key={sz.id} style={{ background:"#F8FAFC", border:"1px solid #E2E8F0", borderRadius:9, padding:"10px 14px", marginBottom:6, display:"flex", alignItems:"flex-start", gap:10 }}>
-                <div style={{ flex:1 }}>
-                  <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:4 }}>
-                    <span style={{ fontWeight:700, fontSize:13 }}>{sz.munkatipus || "Általános (minden típus)"}</span>
-                    <span style={{ fontSize:10, background:sz.aktiv?"#DCFCE7":"#F1F5F9", color:sz.aktiv?"#166534":"#94A3B8", padding:"1px 7px", borderRadius:20, fontWeight:600 }}>{sz.aktiv?"Aktív":"Inaktív"}</span>
-                  </div>
-                  <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>
-                    {[
-                      ["Bevétel", ft(sz.nettoBevitel)],
-                      ["Csapat bér", `${CSAPAT_BER_TIPUSOK.find(t=>t.id===sz.csapatBerTipus)?.label||"—"}: ${sz.csapatBerTipus==="%"?sz.csapatBerOsszeg+"%":ft(sz.csapatBerOsszeg)}`],
-                      ["Útiköltség", UTIKOLTSÉG_TIPUSOK.find(t=>t.id===sz.utikoltsegTipus)?.label||"—"],
-                      ["Anyag", ANYAGKOLTSÉG_MODJAI.find(t=>t.id===sz.anyagkoltségModja)?.label||"—"],
-                    ].map(([l,v])=>(
-                      <span key={l} style={{ fontSize:11, color:"#475569" }}><b>{l}:</b> {v}</span>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ display:"flex", gap:5, flexShrink:0 }}>
-                  <button onClick={()=>setSzerkSz(sz)} style={{ padding:"4px 8px", background:"#EFF6FF", color:"#2563EB", border:"none", borderRadius:6, cursor:"pointer", fontSize:11 }}>Szerkeszt</button>
-                  <button onClick={()=>{ deleteSzabaly(sz.id); refresh(); }} style={{ padding:"4px 7px", background:"#FEF2F2", color:"#DC2626", border:"none", borderRadius:6, cursor:"pointer" }}><Trash2 size={11}/></button>
-                </div>
-              </div>
+
+          {szabalyok.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "20px 0", color: "#94A3B8" }}>
+              <p style={{ fontSize: 13, fontWeight: 600 }}>Még nincs szabály</p>
+              <p style={{ fontSize: 12, marginTop: 4 }}>Add hozzá az „Új szabály" gombbal</p>
+            </div>
+          ) : (
+            szabalyok.map(sz => (
+              <SzabalyKartya
+                key={sz.id}
+                sz={sz}
+                onEdit={() => setSzerkSz(sz)}
+                onDelete={() => { if (window.confirm("Törlöd ezt a szabályt?")) { deleteSzabaly(sz.id); refresh(); } }}
+                onToggle={() => { updateSzabaly(sz.id, { aktiv: !sz.aktiv }); refresh(); }}
+              />
             ))
-          }
+          )}
+
+          {/* Súgó */}
+          <div style={{ marginTop: 12, padding: "10px 14px", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 9, fontSize: 12, color: "#1E40AF" }}>
+            <strong>Több szabály is lehet ugyanahhoz a munkatípushoz</strong> – pl. egy sávos díj + egy fix kiszállási díj.
+            Mindkettő összeadódik a projekt kalkulációban.
+            Ha van pontos munkatípus egyezés, az általános szabályok nem lépnek életbe.
+          </div>
         </div>
       )}
 
       {(ujSz || szerkSz) && (
         <SzabalyForm
           szabaly={szerkSz}
-          fovallalkoziId={fv.id}
+          tulajdonosId={fv.id}
           onSave={handleSzSave}
-          onClose={()=>{ setUjSz(false); setSzerkSz(null); }}
+          onClose={() => { setUjSz(false); setSzerkSz(null); }}
         />
       )}
     </div>
@@ -266,71 +486,101 @@ function FvSor({ fv, onUpdate, onDelete }) {
 }
 
 // ─── Fő oldal ─────────────────────────────────────────────────
+
 export default function FovallalkozoPage({ userRole }) {
   const [fvk,    setFvk]    = useState(() => loadFovallalkozok());
   const [ujOpen, setUjOpen] = useState(false);
-  const [ujForm, setUjForm] = useState({ nev:"", rovidites:"", alapUtikoltsegFtKm:80, megjegyzes:"" });
+  const [ujForm, setUjForm] = useState({ nev: "", rovidites: "", megjegyzes: "" });
 
-  useEffect(()=>{
-    const fn = e => { if(["fovallalkozok","elszamolasi_szabalyok"].includes(e.detail?.collection)) setFvk(loadFovallalkozok()); };
+  useEffect(() => {
+    const fn = e => {
+      if (["fovallalkozok", "elszamolasi_szabalyok"].includes(e.detail?.collection)) {
+        setFvk(loadFovallalkozok());
+      }
+    };
     window.addEventListener("crm-db-updated", fn);
-    return ()=>window.removeEventListener("crm-db-updated", fn);
-  },[]);
+    return () => window.removeEventListener("crm-db-updated", fn);
+  }, []);
 
   function handleCreate() {
     if (!ujForm.nev.trim()) return;
     createFovallalkozo(ujForm);
     setFvk(loadFovallalkozok());
     setUjOpen(false);
-    setUjForm({ nev:"", rovidites:"", alapUtikoltsegFtKm:80, megjegyzes:"" });
+    setUjForm({ nev: "", rovidites: "", megjegyzes: "" });
   }
 
-  const isAdmin = ["Admin","Projektmenedzser"].includes(userRole);
+  const isAdmin = ["Admin", "Projektmenedzser"].includes(userRole);
 
   return (
-    <div style={{ padding:"24px 28px", fontFamily:FONT, maxWidth:900 }}>
-      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:20 }}>
+    <div style={{ padding: "24px 28px", fontFamily: FONT, maxWidth: 920 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontFamily:FONT_HEADING, fontSize:22, fontWeight:800, margin:"0 0 4px" }}>🏢 Fővállalkozók & Elszámolási szabályok</h1>
-          <p style={{ fontSize:13, color:"#64748B", margin:0 }}>Fővállalkozónként eltérő elszámolási szabályok kezelése</p>
+          <h1 style={{ fontFamily: FONT_HEADING, fontSize: 22, fontWeight: 800, margin: "0 0 4px" }}>
+            Fővállalkozók & Elszámolási szabályok
+          </h1>
+          <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
+            Szabályalapú elszámolási motor – Fix, Darabszám×Ft, Sávos, Km, Fix kiszállás
+          </p>
         </div>
         {isAdmin && (
-          <button onClick={()=>setUjOpen(true)} style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 18px", background:"#2563EB", color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
-            <Plus size={15}/> Új fővállalkozó
+          <button onClick={() => setUjOpen(true)}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
+            <Plus size={15} /> Új fővállalkozó
           </button>
         )}
       </div>
 
+      {/* Mód leírás */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
+        {ELSZAMOLASI_MODOK.map(m => (
+          <span key={m.id} style={{ fontSize: 11, background: "#F1F5F9", color: "#475569", padding: "4px 10px", borderRadius: 20, fontWeight: 600 }}>
+            {m.label}
+          </span>
+        ))}
+      </div>
+
       {fvk.length === 0 && !ujOpen && (
-        <div style={{ textAlign:"center", padding:"60px 0", color:"#94A3B8" }}>
-          <p style={{ fontSize:15, fontWeight:600 }}>Még nincs fővállalkozó rögzítve</p>
-          <p style={{ fontSize:13, marginTop:6 }}>Az „Új fővállalkozó" gombbal hozd létre az elsőt</p>
+        <div style={{ textAlign: "center", padding: "60px 0", color: "#94A3B8" }}>
+          <p style={{ fontSize: 15, fontWeight: 600 }}>Még nincs fővállalkozó</p>
+          <p style={{ fontSize: 13, marginTop: 6 }}>Az „Új fővállalkozó" gombbal hozd létre az elsőt</p>
         </div>
       )}
 
       {fvk.map(fv => (
         <FvSor key={fv.id} fv={fv}
-          onUpdate={(id,u)=>{ updateFovallalkozo(id,u); setFvk(loadFovallalkozok()); }}
-          onDelete={(id)=>{ if(window.confirm("Törlöd ezt a fővállalkozót?")){ deleteFovallalkozo(id); setFvk(loadFovallalkozok()); } }}
+          onUpdate={(id, u) => { updateFovallalkozo(id, u); setFvk(loadFovallalkozok()); }}
+          onDelete={id => { if (window.confirm("Törlöd ezt a fővállalkozót?")) { deleteFovallalkozo(id); setFvk(loadFovallalkozok()); } }}
         />
       ))}
 
+      {/* Új FV form */}
       {ujOpen && (
-        <div style={{ background:"#F0F9FF", border:"2px solid #93C5FD", borderRadius:12, padding:"18px", marginTop:12 }}>
-          <p style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>Új fővállalkozó adatai</p>
-          <div style={{ display:"grid", gridTemplateColumns:"2fr 0.7fr 1fr 2fr", gap:10, marginBottom:12 }}>
-            <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Név *</label>
-              <input value={ujForm.nev} onChange={e=>setUjForm(p=>({...p,nev:e.target.value}))} placeholder="pl. Green-Home Kft." style={inp}/></div>
-            <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Rövidítés (max 4)</label>
-              <input value={ujForm.rovidites||""} onChange={e=>setUjForm(p=>({...p,rovidites:e.target.value.toUpperCase().slice(0,4)}))} placeholder="pl. GH" maxLength={4} style={inp}/></div>
-            <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Alap Ft/km</label>
-              <input type="number" value={ujForm.alapUtikoltsegFtKm} onChange={e=>setUjForm(p=>({...p,alapUtikoltsegFtKm:Number(e.target.value)}))} style={inp}/></div>
-            <div><label style={{ fontSize:10, fontWeight:700, color:"#64748B", display:"block", marginBottom:3 }}>Megjegyzés</label>
-              <input value={ujForm.megjegyzes} onChange={e=>setUjForm(p=>({...p,megjegyzes:e.target.value}))} style={inp}/></div>
+        <div style={{ background: "#F0F9FF", border: "2px solid #93C5FD", borderRadius: 12, padding: "18px", marginTop: 12 }}>
+          <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Új fővállalkozó adatai</p>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 0.7fr 2fr", gap: 10, marginBottom: 12 }}>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Név *</label>
+              <input value={ujForm.nev} onChange={e => setUjForm(p => ({ ...p, nev: e.target.value }))} placeholder="pl. Green-Home Kft." style={inp} />
+            </div>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Rövidítés</label>
+              <input value={ujForm.rovidites} onChange={e => setUjForm(p => ({ ...p, rovidites: e.target.value.toUpperCase().slice(0, 4) }))} maxLength={4} style={inp} />
+            </div>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Megjegyzés</label>
+              <input value={ujForm.megjegyzes} onChange={e => setUjForm(p => ({ ...p, megjegyzes: e.target.value }))} style={inp} />
+            </div>
           </div>
-          <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
-            <button type="button" onClick={()=>setUjOpen(false)} style={{ padding:"8px 16px", border:"1.5px solid #E2E8F0", borderRadius:8, background:"#fff", cursor:"pointer", fontFamily:FONT }}>Mégse</button>
-            <button type="button" onClick={handleCreate} disabled={!ujForm.nev.trim()} style={{ padding:"8px 18px", background:ujForm.nev.trim()?"#2563EB":"#CBD5E1", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontWeight:700, fontFamily:FONT }}>Létrehozás</button>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button type="button" onClick={() => setUjOpen(false)}
+              style={{ padding: "8px 16px", border: "1.5px solid #E2E8F0", borderRadius: 8, background: "#fff", cursor: "pointer", fontFamily: FONT }}>
+              Mégse
+            </button>
+            <button type="button" onClick={handleCreate} disabled={!ujForm.nev.trim()}
+              style={{ padding: "8px 18px", background: ujForm.nev.trim() ? "#2563EB" : "#CBD5E1", color: "#fff", border: "none", borderRadius: 8, cursor: ujForm.nev.trim() ? "pointer" : "default", fontWeight: 700, fontFamily: FONT }}>
+              Létrehozás
+            </button>
           </div>
         </div>
       )}
