@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { X, Save, Navigation } from "lucide-react";
+import { useState, useMemo } from "react";
+import { X, Save, Navigation, TrendingUp } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { loadLocal, saveLocal } from "../../lib/localDb.js";
@@ -7,6 +7,7 @@ import { PROJEKT_STATUSZOK } from "./projekt.schema.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { getAktivCsapatok } from "../csapatok/csapat.service.js";
 import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
+import { calcProjektElszamolas, buildInput } from "../../services/settlementCalculator.js";
 import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
 import { createProjekt, updateProjekt } from "./projekt.service.js";
 import { createInitialWorkorderForProject } from "../../services/projectWorkorder.service.js";
@@ -68,10 +69,10 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
     clientEmail: projekt?.clientEmail || "",
     kapcsolattarto: projekt?.kapcsolattarto || "",
     telepitesiCim: projekt?.telepitesiCim || "",
-    napelemDb: projekt?.napelemDb || 0,
-    inverterDb: projekt?.inverterDb || 0,
-    akkumulator: projekt?.akkumulator || false,
-    okosmerő: projekt?.okosmerő || false,
+    napelemDb:     projekt?.napelemDb     || 0,
+    inverterDb:    projekt?.inverterDb    || 0,
+    akkumulatorDb: projekt?.akkumulatorDb ?? (projekt?.akkumulator ? 1 : 0),
+    smartMeterDb:  projekt?.smartMeterDb  ?? (projekt?.okosmerő   ? 1 : 0),
     autoTolto: projekt?.autoTolto || false,
     projektvezetoId: projekt?.projektvezetoId || "",
     projektvezetoNev: projekt?.projektvezetoNev || "",
@@ -207,7 +208,13 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
       const data = {
         ...form,
         elfogadottAjanlat: Number(form.elfogadottAjanlat) || 0,
-        penzugy: form.penzugy,
+        // Backward compat boolean mezők szinkronban az db értékekkel
+        akkumulator: (form.akkumulatorDb || 0) > 0,
+        okosmerő:    (form.smartMeterDb  || 0) > 0,
+        penzugy: {
+          ...form.penzugy,
+          darabszam: form.napelemDb || form.penzugy?.darabszam || 1,
+        },
       };
       delete data.megjegyzes;
       let saved;
@@ -485,29 +492,21 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
             <Field label="Inverter darabszám" half>
               <input type="number" min="0" value={form.inverterDb} onChange={e => upd("inverterDb", Number(e.target.value))} placeholder="0" style={inp} />
             </Field>
-            <div style={{ gridColumn: "span 2", display: "flex", gap: 16, flexWrap: "wrap" }}>
-              {[
-                { key: "akkumulator", label: "Akkumulátor" },
-                { key: "okosmerő",    label: "Okosmérő" },
-                { key: "autoTolto",   label: "Elektromos autótöltő" },
-              ].map(({ key, label }) => (
-                <label key={key} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14, fontWeight: 500, color: "#334155", userSelect: "none" }}>
-                  <div
-                    onClick={() => upd(key, !form[key])}
-                    style={{
-                      width: 44, height: 24, borderRadius: 12, position: "relative", cursor: "pointer",
-                      background: form[key] ? "#2563EB" : "#CBD5E1", transition: "background .2s",
-                    }}
-                  >
-                    <div style={{
-                      position: "absolute", top: 3, left: form[key] ? 23 : 3, width: 18, height: 18,
-                      borderRadius: "50%", background: "#fff", transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)",
-                    }} />
-                  </div>
-                  {label}: <span style={{ color: form[key] ? "#059669" : "#94A3B8", fontWeight: 700 }}>{form[key] ? "Van" : "Nincs"}</span>
-                </label>
-              ))}
-            </div>
+            <Field label="Akkumulátor db" half>
+              <input type="number" min="0" value={form.akkumulatorDb} onChange={e => upd("akkumulatorDb", Number(e.target.value))} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Smart meter db" half>
+              <input type="number" min="0" value={form.smartMeterDb} onChange={e => upd("smartMeterDb", Number(e.target.value))} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Elektromos autótöltő" half>
+              <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:14, fontWeight:500, color:"#334155", userSelect:"none", paddingTop:4 }}>
+                <div onClick={() => upd("autoTolto", !form.autoTolto)}
+                  style={{ width:44, height:24, borderRadius:12, position:"relative", cursor:"pointer", background:form.autoTolto?"#2563EB":"#CBD5E1", transition:"background .2s" }}>
+                  <div style={{ position:"absolute", top:3, left:form.autoTolto?23:3, width:18, height:18, borderRadius:"50%", background:"#fff", transition:"left .2s", boxShadow:"0 1px 3px rgba(0,0,0,.2)" }}/>
+                </div>
+                <span style={{ color:form.autoTolto?"#059669":"#94A3B8", fontWeight:700 }}>{form.autoTolto?"Van":"Nincs"}</span>
+              </label>
+            </Field>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Ütemezés
@@ -578,6 +577,51 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
             <Field label="Elfogadott ajánlat (Ft)" half>
               <input type="number" value={form.elfogadottAjanlat} onChange={e => upd("elfogadottAjanlat", e.target.value)} placeholder="0" style={inp} />
             </Field>
+
+            {/* Várható bevétel preview */}
+            {form.penzugy.fovallalkoziId && (() => {
+              try {
+                const mockProj = {
+                  id: "_preview",
+                  penzugy: { ...form.penzugy, darabszam: form.napelemDb || form.penzugy.darabszam || 1 },
+                  napelemDb:     form.napelemDb     || 0,
+                  inverterDb:    form.inverterDb     || 0,
+                  akkumulatorDb: form.akkumulatorDb  || 0,
+                  smartMeterDb:  form.smartMeterDb   || 0,
+                  munkalapIds:   [],
+                };
+                const kalk = calcProjektElszamolas(mockProj, []);
+                if (kalk.autoBevitel > 0 || kalk.beveteliTetelek.length > 0) {
+                  return (
+                    <div style={{ gridColumn:"span 2", background:"#F0FDF4", border:"1.5px solid #86EFAC", borderRadius:10, padding:"12px 16px", marginTop:4 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:8 }}>
+                        <TrendingUp size={15} color="#059669"/>
+                        <span style={{ fontSize:12, fontWeight:700, color:"#166534", textTransform:"uppercase", letterSpacing:.5 }}>Várható fővállalkozói bevétel</span>
+                      </div>
+                      {kalk.beveteliTetelek.map((t, i) => (
+                        <div key={i} style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#374151", marginBottom:3 }}>
+                          <span>{t.megnevezes}</span>
+                          <span style={{ fontWeight:700, color:"#059669" }}>{t.autoNetto.toLocaleString("hu-HU")} Ft</span>
+                        </div>
+                      ))}
+                      {kalk.beveteliTetelek.length > 1 && (
+                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, fontWeight:800, color:"#059669", borderTop:"1px solid #86EFAC", paddingTop:6, marginTop:4 }}>
+                          <span>Összesen</span>
+                          <span>{kalk.autoBevitel.toLocaleString("hu-HU")} Ft</span>
+                        </div>
+                      )}
+                      {kalk.autoBevitel === 0 && kalk.beveteliTetelek.some(t=>t.hiany) && (
+                        <p style={{ fontSize:11, color:"#D97706", margin:"4px 0 0" }}>⚠️ A sávos szabály nem találja a darabszám tartományát – ellenőrizd a szabályokat.</p>
+                      )}
+                      {kalk.beveteliTetelek.length === 0 && (
+                        <p style={{ fontSize:11, color:"#D97706", margin:0 }}>Nincs aktív szabály ehhez a munkatípushoz – add meg a Beállítások → Fővállalkozók menüben.</p>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              } catch { return null; }
+            })()}
           </div>
         </div>
         <div style={{ padding: "14px 24px", borderTop: "1px solid #E2E8F0", display: "flex", gap: 10, justifyContent: "flex-end" }}>

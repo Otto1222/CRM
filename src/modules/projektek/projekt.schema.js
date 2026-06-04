@@ -53,8 +53,10 @@ export const PROJEKT_SCHEMA = {
   // Műszaki adatok
   napelemDb:           0,
   inverterDb:          0,
-  akkumulator:         false,
-  okosmerő:            false,
+  akkumulatorDb:       0,    // db szám (régi: akkumulator boolean)
+  smartMeterDb:        0,    // db szám (régi: okosmerő boolean)
+  akkumulator:         false, // backward compat
+  okosmerő:            false, // backward compat
   autoTolto:           false,
   // Csapat
   projektvezetoId:     "",

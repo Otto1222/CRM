@@ -10,6 +10,7 @@ import FelmeresTelepito from "./FelmeresTelepito";
 import FelmeresFotok from "./FelmeresFotok";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
 import { driveSave, driveVbfSave } from "../lib/driveApi";
+import { calcMunkalapElszamolas, saveMunkalapElszamolas } from "../services/settlementCalculator";
 
 // ─── Sorozatszámos tételek ────────────────────────────────────
 const SERIAL_CATEGORIES = ["inverter","akkumulátor","akkumulator","okosmérő","okosmerő","okos mérő","optimalizáló","optimalizalo","napelem","panel"];
@@ -370,6 +371,18 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   const [progressMsg, setProgressMsg] = useState("");
   const [megjegyzes, setMegjegyzes] = useState(m.megjegyzes||"");
 
+  // Elszámolási adatok – a projektből örökölve, de a telepítő módosíthatja
+  const initEa = m.elszamolasAdatok || {};
+  const proj = data.projektek?.find(p => p.id === m.projektId);
+  const [elszamolasAdatok, setElszamolasAdatok] = useState({
+    panelDb:       initEa.panelDb       ?? proj?.napelemDb    ?? 0,
+    inverterDb:    initEa.inverterDb    ?? proj?.inverterDb   ?? 0,
+    akkumulatorDb: initEa.akkumulatorDb ?? proj?.akkumulatorDb ?? 0,
+    smartMeterDb:  initEa.smartMeterDb  ?? proj?.smartMeterDb  ?? 0,
+    tavKm:         initEa.tavKm         ?? proj?.penzugy?.tavKm ?? 0,
+    anyagkoltság:  initEa.anyagkoltság  ?? 0,
+  });
+
   const [vbf, setVbf] = useState(()=>loadLocal(`vbf_${m.id}`)||VBF_TEMPLATE);
   const [fotok,setFotok] = useState(()=>loadLocal(`fotok_${m.id}`)||Object.fromEntries(FOTO_KAT.map(k=>[k.id,[]])));
   const [fotoHianyOkok, setFotoHianyOkok] = useState(()=>{
@@ -484,12 +497,25 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
     }
 
     const ts = new Date().toISOString();
+
+    // ── Elszámolás mentése lezáráskor ──────────────────────
+    try {
+      const mlElszamolas = calcMunkalapElszamolas(
+        { ...m, elszamolasAdatok },
+        proj
+      );
+      saveMunkalapElszamolas(m.id, mlElszamolas);
+    } catch (e) {
+      console.warn("[TelepItoMunkalap] Elszámolás mentés hiba:", e);
+    }
+
     const updates = {
       status:"Ellenőrzés alatt",
       statusSzin:"#D97706",
       befejezesIdopont:ts,
       lezarva:true,
       megjegyzes:megjegyzes.trim(),
+      elszamolasAdatok, // tényleges adatok mentése
     };
 
     updateItem("munkalapok",m.id,updates);
@@ -841,6 +867,32 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Elszámolási adatok megerősítése */}
+          <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, padding:16, marginBottom:16 }}>
+            <p style={{ fontSize:13, fontWeight:700, color:"#475569", marginBottom:12 }}>💰 Elszámolási adatok (lezáráskor rögzítve)</p>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px 12px" }}>
+              {[
+                { key:"panelDb",       label:"Panel db" },
+                { key:"inverterDb",    label:"Inverter db" },
+                { key:"akkumulatorDb", label:"Akkumulátor db" },
+                { key:"smartMeterDb",  label:"Smart meter db" },
+                { key:"tavKm",         label:"Km (oda)" },
+                { key:"anyagkoltság",  label:"Anyagköltség (Ft)" },
+              ].map(({ key, label }) => (
+                <div key={key}>
+                  <label style={{ fontSize:10, fontWeight:700, color:C.muted, display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:.5 }}>{label}</label>
+                  <input
+                    type="number" min="0"
+                    value={elszamolasAdatok[key] ?? 0}
+                    onChange={e => setElszamolasAdatok(p => ({ ...p, [key]: Number(e.target.value) }))}
+                    style={{ width:"100%", boxSizing:"border-box", padding:"7px 10px", border:`1.5px solid ${C.border}`, borderRadius:8, fontSize:13, fontFamily:FONT, outline:"none" }}
+                  />
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize:11, color:C.muted, marginTop:8 }}>Az adatok a projektből öröklődnek, de pontosíthatók.</p>
           </div>
 
           <button
