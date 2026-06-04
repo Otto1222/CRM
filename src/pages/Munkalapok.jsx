@@ -236,8 +236,8 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
         )}
       </div>
 
-      {/* Státusz szűrők */}
-      {!isMobile && (
+      {/* Státusz szűrők – Telepítőnek nem kell */}
+      {!isMobile && userRole !== "Telepítő" && (
         <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:16 }}>
           {STATUSES.map(s => (
             <button key={s} onClick={()=>setTab(s)} style={{ padding:"7px 13px", borderRadius:8, border:`1px solid ${tab===s?C.accent:C.border}`, background:tab===s?C.accentLight:"#fff", color:tab===s?C.accent:C.textSub, fontWeight:tab===s?700:400, fontSize:12, cursor:"pointer", fontFamily:FONT }}>{s}</button>

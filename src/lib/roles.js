@@ -6,7 +6,7 @@ export const ROLE_PAGES = {
   "Admin":            ["dashboard","projektek","munkalapok","ugyfelek","arajanlatok","szerzodesek","szamlak","naptar","riportok","beallitasok"],
   "Projektmenedzser": ["dashboard","projektek","munkalapok","ugyfelek","arajanlatok","szerzodesek","szamlak","naptar","riportok","beallitasok"],
   "Iroda/Könyvelés":  ["dashboard","projektek","munkalapok","ugyfelek","szamlak","naptar","riportok"],
-  "Telepítő":         ["munkalapok","naptar"],
+  "Telepítő":         ["munkalapok"],
 };
 
 export function canSeePrice(role) {
