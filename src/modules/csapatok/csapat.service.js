@@ -85,7 +85,7 @@ export function calcCsapatAlvallalkozoiBer(csapat, params = {}) {
 }
 
 /**
- * Csapat km-elszámolás (alvállalkozói oldal)
+ * Csapat km-elszámolás (alvállalkozói oldal) – backward compat
  */
 export function calcCsapatKmBer(csapat, tavKm = 0) {
   if (!csapat?.kmElszamolasAktiv || !csapat.kmDijFtKm) return { osszeg: 0, megjegyzes: "" };
@@ -94,4 +94,40 @@ export function calcCsapatKmBer(csapat, tavKm = 0) {
   const elszam = Math.max(0, tavKm - kuszob);
   const osszeg = Math.round(elszam * 2 * ftKm);
   return { osszeg, megjegyzes: `${tavKm} km − ${kuszob} km küszöb = ${elszam} km × 2 × ${ftKm} Ft/km` };
+}
+
+// ─── Alvállalkozói elszámolási szabályok (új motor) ──────────
+
+const AV_KEY = "av_szabalyok";
+
+export function loadAvSzabalyok() {
+  try { return JSON.parse(localStorage.getItem(AV_KEY) || "[]"); } catch { return []; }
+}
+
+function saveAvSzabalyok(list) {
+  localStorage.setItem(AV_KEY, JSON.stringify(list));
+  dispatch();
+}
+
+export function getAvSzabalyokByCsapat(csapatId) {
+  return loadAvSzabalyok().filter(s => s.tulajdonosId === csapatId);
+}
+
+export function createAvSzabaly(csapatId, data) {
+  const item = {
+    ...data,
+    id:           `avs_${Date.now()}`,
+    tulajdonosId: csapatId,
+    createdAt:    new Date().toISOString(),
+  };
+  saveAvSzabalyok([...loadAvSzabalyok(), item]);
+  return item;
+}
+
+export function updateAvSzabaly(id, updates) {
+  saveAvSzabalyok(loadAvSzabalyok().map(s => s.id === id ? { ...s, ...updates } : s));
+}
+
+export function deleteAvSzabaly(id) {
+  saveAvSzabalyok(loadAvSzabalyok().filter(s => s.id !== id));
 }

@@ -1,14 +1,15 @@
 /**
- * fovallalkozo.service.js – CRUD a fővállalkozókhoz és szabályokhoz
+ * fovallalkozo.service.js – CRUD fővállalkozókhoz és elszámolási szabályokhoz
  */
 
 import { FOVALLALKOZO_SCHEMA, ELSZAMOLASI_SZABALY_SCHEMA } from "./fovallalkozo.schema.js";
+import { findEgyezoSzabalyok } from "./elszamolasiMotor.js";
 import { createBackup } from "../../lib/backupService.js";
 
-const FV_KEY  = "fovallalkozok";
-const SZ_KEY  = "elszamolasi_szabalyok";
+const FV_KEY = "fovallalkozok";
+const SZ_KEY = "elszamolasi_szabalyok";
 
-const dispatch = (col) =>
+const dispatch = col =>
   window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: col } }));
 
 // ─── Fővállalkozók ────────────────────────────────────────────
@@ -18,8 +19,6 @@ const DEFAULT_FOVALLALKOZOK = [
     id: "fv_demo1",
     nev: "JuniorVital Kft.",
     aktiv: true,
-    alapUtikoltsegFtKm: 80,
-    alapSzamlazasiTipus: "fix",
     megjegyzes: "Demo fővállalkozó – szerkeszd vagy töröld",
     createdAt: new Date().toISOString(),
   },
@@ -100,22 +99,25 @@ export function deleteSzabaly(id) {
   saveSzabalyok(loadSzabalyok().filter(s => s.id !== id));
 }
 
+export function getSzabalyokByFovallalkozo(fovallalkoziId) {
+  return loadSzabalyok().filter(s => {
+    const ownerId = s.tulajdonosId || s.fovallalkoziId;
+    return ownerId === fovallalkoziId;
+  });
+}
+
 /**
- * Aktív szabály keresés fővállalkozó + munkatípus alapján.
- * Ha nincs pontos egyezés, az általános ("") munkatípusú szabályt adja.
+ * Visszaadja az összes egyező aktív szabályt (motorhoz delegál).
+ * Ha van pontos munkatípus egyezés → pontosak; ha nincs → általánosak.
  */
 export function findSzabaly(fovallalkoziId, munkatipus) {
   if (!fovallalkoziId) return null;
-  const szabalyok = loadSzabalyok().filter(s =>
-    s.fovallalkoziId === fovallalkoziId && s.aktiv !== false
-  );
-  // Pontos egyezés
-  const pontos = szabalyok.find(s => s.munkatipus === munkatipus);
-  if (pontos) return pontos;
-  // Általános (üres munkatípus = minden munkára)
-  return szabalyok.find(s => !s.munkatipus) || null;
+  const szabalyok = loadSzabalyok();
+  const egyezok   = findEgyezoSzabalyok(fovallalkoziId, munkatipus, szabalyok);
+  return egyezok[0] || null; // backward compat – single result
 }
 
-export function getSzabalyokByFovallalkozo(fovallalkoziId) {
-  return loadSzabalyok().filter(s => s.fovallalkoziId === fovallalkoziId);
+export function findSzabalyok(fovallalkoziId, munkatipus) {
+  if (!fovallalkoziId) return [];
+  return findEgyezoSzabalyok(fovallalkoziId, munkatipus, loadSzabalyok());
 }

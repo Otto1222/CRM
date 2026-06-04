@@ -1,9 +1,17 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Users, MapPin, X, Save, ChevronDown, DollarSign } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, MapPin, X, Save, ChevronDown, DollarSign, Calculator } from "lucide-react";
 import { FONT, FONT_HEADING, C } from "../../lib/constants.js";
+import { ft } from "../../lib/helpers.js";
 import { getUsers } from "../../lib/crmUsers.js";
-import { loadCsapatok, createCsapat, updateCsapat, deleteCsapat } from "./csapat.service.js";
+import {
+  loadCsapatok, createCsapat, updateCsapat, deleteCsapat,
+  getAvSzabalyokByCsapat, createAvSzabaly, updateAvSzabaly, deleteAvSzabaly,
+} from "./csapat.service.js";
 import { CSAPAT_ELSZAMOLAS_TIPUSOK } from "./csapat.schema.js";
+import {
+  ELSZAMOLASI_MODOK, ELSZAMOLASI_MUNKATIPUSOK,
+  calcSzabalyOsszeg, szabalyLeiras,
+} from "../fovallalkozok/elszamolasiMotor.js";
 import AddressSearch from "../../components/AddressSearch.jsx";
 
 const SZINEK = [
@@ -302,6 +310,253 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
   );
 }
 
+// ─── AV Sávok szerkesztő ─────────────────────────────────────
+
+function AvSavokSzerkeszto({ savok, onChange }) {
+  function addSav() {
+    const last = savok[savok.length - 1];
+    onChange([...savok, { tol: last ? (Number(last.ig) + 1) : 1, ig: "", osszeg: 0 }]);
+  }
+  function removeSav(i) { onChange(savok.filter((_, idx) => idx !== i)); }
+  function updSav(i, k, v) { onChange(savok.map((s, idx) => idx === i ? { ...s, [k]: v } : s)); }
+  const inpS = { width: "100%", boxSizing: "border-box", padding: "6px 8px", border: "1.5px solid #E2E8F0", borderRadius: 7, fontSize: 12, fontFamily: "inherit", outline: "none" };
+
+  return (
+    <div>
+      {savok.map((sav, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
+          <span style={{ fontSize: 10, color: "#94A3B8", minWidth: 16 }}>{i + 1}.</span>
+          <input type="number" value={sav.tol} onChange={e => updSav(i, "tol", e.target.value)}
+            placeholder="tól" style={{ ...inpS, width: 65, textAlign: "center" }} />
+          <span style={{ fontSize: 10, color: "#94A3B8" }}>–</span>
+          <input type="number" value={sav.ig} onChange={e => updSav(i, "ig", e.target.value)}
+            placeholder="ig(∞)" style={{ ...inpS, width: 75, textAlign: "center" }} />
+          <span style={{ fontSize: 10, color: "#94A3B8" }}>db =</span>
+          <input type="number" value={sav.osszeg} onChange={e => updSav(i, "osszeg", e.target.value)}
+            placeholder="Ft" style={{ ...inpS, flex: 1, textAlign: "right" }} />
+          <span style={{ fontSize: 10, color: "#94A3B8" }}>Ft</span>
+          <button onClick={() => removeSav(i)}
+            style={{ padding: "3px 5px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 5, cursor: "pointer" }}>
+            <X size={10} />
+          </button>
+        </div>
+      ))}
+      <button onClick={addSav}
+        style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", border: "1.5px dashed #CBD5E1", borderRadius: 6, background: "#F8FAFC", cursor: "pointer", fontSize: 11, color: "#475569", fontFamily: FONT, marginTop: 4 }}>
+        <Plus size={10} /> Új sáv
+      </button>
+    </div>
+  );
+}
+
+// ─── AV Szabály form modal ────────────────────────────────────
+
+function AvSzabalyForm({ szabaly, csapatId, onSave, onClose }) {
+  const isNew = !szabaly?.id;
+  const inpF = { width: "100%", boxSizing: "border-box", padding: "8px 11px", border: "1.5px solid #E2E8F0", borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none" };
+
+  const [f, setF] = useState({
+    tulajdonosId:  csapatId,
+    munkatipus:    szabaly?.munkatipus    || "",
+    aktiv:         szabaly?.aktiv         ?? true,
+    mod:           szabaly?.mod           || "fix",
+    fixOsszeg:     szabaly?.fixOsszeg     || 0,
+    darabEgysegAr: szabaly?.darabEgysegAr || 0,
+    savok:         szabaly?.savok         || [],
+    kmDijFtKm:     szabaly?.kmDijFtKm     || 0,
+    kmKuszobKm:    szabaly?.kmKuszobKm    || 0,
+    kiszallasiDij: szabaly?.kiszallasiDij || 0,
+    megjegyzes:    szabaly?.megjegyzes    || "",
+  });
+  const u = (k, v) => setF(p => ({ ...p, [k]: v }));
+
+  const [preDb, setPreDb] = useState(10);
+  const [preKm, setPreKm] = useState(50);
+  const eredmeny = calcSzabalyOsszeg(f, { darabszam: preDb, tavKm: preKm });
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 3100, background: "rgba(0,0,0,.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 540, padding: 22, fontFamily: FONT, maxHeight: "90vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+          <h3 style={{ fontFamily: FONT_HEADING, fontSize: 15, fontWeight: 800, margin: 0 }}>
+            {isNew ? "Új AV szabály" : "Szabály szerkesztése"}
+          </h3>
+          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: "#94A3B8" }}><X size={15}/></button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 12px" }}>
+          <div style={{ gridColumn: "span 2" }}>
+            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Munkatípus</label>
+            <select value={f.munkatipus} onChange={e => u("munkatipus", e.target.value)} style={inpF}>
+              <option value="">— Minden munkatípusra (általános) —</option>
+              {ELSZAMOLASI_MUNKATIPUSOK.map(mt => <option key={mt} value={mt}>{mt}</option>)}
+            </select>
+          </div>
+
+          <div style={{ gridColumn: "span 2" }}>
+            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Elszámolási mód</label>
+            <select value={f.mod} onChange={e => u("mod", e.target.value)} style={{ ...inpF, fontWeight: 600 }}>
+              {ELSZAMOLASI_MODOK.map(m => <option key={m.id} value={m.id}>{m.label} – {m.hint}</option>)}
+            </select>
+          </div>
+
+          {f.mod === "fix" && (
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Fix összeg (Ft)</label>
+              <input type="number" min={0} value={f.fixOsszeg} onChange={e => u("fixOsszeg", Number(e.target.value))} style={inpF}/>
+            </div>
+          )}
+          {f.mod === "darab" && (
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Egységár (Ft/db)</label>
+              <input type="number" min={0} value={f.darabEgysegAr} onChange={e => u("darabEgysegAr", Number(e.target.value))} style={inpF}/>
+            </div>
+          )}
+          {f.mod === "km" && (<>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Ft/km díj</label>
+              <input type="number" min={0} value={f.kmDijFtKm} onChange={e => u("kmDijFtKm", Number(e.target.value))} style={inpF}/>
+            </div>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Küszöb km</label>
+              <input type="number" min={0} value={f.kmKuszobKm} onChange={e => u("kmKuszobKm", Number(e.target.value))} placeholder="0" style={inpF}/>
+            </div>
+          </>)}
+          {f.mod === "fix_kiszallas" && (
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Fix kiszállási díj (Ft)</label>
+              <input type="number" min={0} value={f.kiszallasiDij} onChange={e => u("kiszallasiDij", Number(e.target.value))} style={inpF}/>
+            </div>
+          )}
+          {f.mod === "savos" && (
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Sávos díjazás</label>
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 8, padding: "10px 12px" }}>
+                <AvSavokSzerkeszto savok={f.savok} onChange={v => u("savok", v)} />
+              </div>
+            </div>
+          )}
+
+          <div style={{ gridColumn: "span 2" }}>
+            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Megjegyzés</label>
+            <input value={f.megjegyzes} onChange={e => u("megjegyzes", e.target.value)} placeholder="opcionális" style={inpF}/>
+          </div>
+        </div>
+
+        {/* Tesztelő */}
+        <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 9, padding: "10px 12px", marginTop: 12 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#065F46", margin: "0 0 7px", display: "flex", alignItems: "center", gap: 4 }}>
+            <Calculator size={12}/> Tesztelő
+          </p>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            {["darab","savos"].includes(f.mod) && (
+              <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
+                db: <input type="number" value={preDb} onChange={e => setPreDb(Number(e.target.value))}
+                  style={{ width: 60, padding: "4px 7px", border: "1.5px solid #BBF7D0", borderRadius: 6, fontSize: 12, fontFamily: FONT }}/>
+              </label>
+            )}
+            {["km","fix_kiszallas"].includes(f.mod) && (
+              <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
+                km: <input type="number" value={preKm} onChange={e => setPreKm(Number(e.target.value))}
+                  style={{ width: 65, padding: "4px 7px", border: "1.5px solid #BBF7D0", borderRadius: 6, fontSize: 12, fontFamily: FONT }}/>
+              </label>
+            )}
+            <span style={{ fontSize: 15, fontWeight: 800, color: eredmeny > 0 ? "#059669" : "#94A3B8" }}>
+              = {ft(eredmeny)}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={{ padding: "7px 14px", border: "1.5px solid #E2E8F0", borderRadius: 7, background: "#fff", cursor: "pointer", fontFamily: FONT }}>Mégse</button>
+          <button onClick={() => onSave(f)} style={{ padding: "7px 18px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
+            {isNew ? "Létrehozás" : "Mentés"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── AV Szabály panel (csapat kártyában) ─────────────────────
+
+function AvSzabalyPanel({ csapatId }) {
+  const [szabalyok, setSzabalyok] = useState(() => getAvSzabalyokByCsapat(csapatId));
+  const [ujForm,    setUjForm]    = useState(false);
+  const [szerkSz,   setSzerkSz]   = useState(null);
+
+  function refresh() { setSzabalyok(getAvSzabalyokByCsapat(csapatId)); }
+
+  function handleSave(data) {
+    if (szerkSz?.id) updateAvSzabaly(szerkSz.id, data);
+    else createAvSzabaly(csapatId, data);
+    refresh(); setUjForm(false); setSzerkSz(null);
+  }
+
+  return (
+    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #F1F5F9" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: .7, margin: 0 }}>
+          Elszámolási szabályok ({szabalyok.length} db)
+        </p>
+        <button onClick={() => setUjForm(true)}
+          style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: FONT }}>
+          <Plus size={10}/> Új szabály
+        </button>
+      </div>
+
+      {szabalyok.length === 0 ? (
+        <p style={{ fontSize: 12, color: "#94A3B8", fontStyle: "italic", margin: "4px 0" }}>
+          Még nincs alvállalkozói szabály – adj hozzá az „Új szabály" gombbal
+        </p>
+      ) : (
+        szabalyok.map(sz => {
+          const modInfo = ELSZAMOLASI_MODOK.find(m => m.id === sz.mod);
+          return (
+            <div key={sz.id} style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderLeft: "3px solid #7C3AED", borderRadius: 8, padding: "8px 12px", marginBottom: 5, display: "flex", alignItems: "flex-start", gap: 8, opacity: sz.aktiv === false ? .6 : 1 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 2, flexWrap: "wrap" }}>
+                  <span style={{ fontWeight: 700, fontSize: 12, color: "#0F172A" }}>{sz.munkatipus || "Általános"}</span>
+                  <span style={{ fontSize: 10, background: "#F3E8FF", color: "#7C3AED", padding: "1px 7px", borderRadius: 20, fontWeight: 700 }}>{modInfo?.label || sz.mod}</span>
+                  {sz.aktiv === false && <span style={{ fontSize: 10, color: "#94A3B8" }}>Inaktív</span>}
+                </div>
+                <div style={{ fontSize: 11, color: "#059669", fontWeight: 600 }}>{szabalyLeiras(sz)}</div>
+                {sz.mod === "savos" && (sz.savok || []).length > 0 && (
+                  <div style={{ marginTop: 4, display: "flex", gap: 3, flexWrap: "wrap" }}>
+                    {(sz.savok || []).map((s, i) => (
+                      <span key={i} style={{ fontSize: 10, background: "#EDE9FE", color: "#6D28D9", padding: "1px 6px", borderRadius: 20 }}>
+                        {s.tol}–{s.ig || "∞"}: {Number(s.osszeg || 0).toLocaleString("hu-HU")} Ft
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
+                <button onClick={() => { updateAvSzabaly(sz.id, { aktiv: !sz.aktiv }); refresh(); }}
+                  style={{ padding: "3px 7px", background: sz.aktiv !== false ? "#FFFBEB" : "#ECFDF5", color: sz.aktiv !== false ? "#D97706" : "#059669", border: "none", borderRadius: 5, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>
+                  {sz.aktiv !== false ? "Inakt." : "Aktív"}
+                </button>
+                <button onClick={() => setSzerkSz(sz)} style={{ padding: "3px 6px", background: "#EFF6FF", color: "#2563EB", border: "none", borderRadius: 5, cursor: "pointer" }}><Pencil size={10}/></button>
+                <button onClick={() => { if (window.confirm("Törlöd?")) { deleteAvSzabaly(sz.id); refresh(); } }} style={{ padding: "3px 5px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 5, cursor: "pointer" }}><Trash2 size={10}/></button>
+              </div>
+            </div>
+          );
+        })
+      )}
+
+      {(ujForm || szerkSz) && (
+        <AvSzabalyForm
+          szabaly={szerkSz}
+          csapatId={csapatId}
+          onSave={handleSave}
+          onClose={() => { setUjForm(false); setSzerkSz(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
 function CsapatKartya({ csapat, onEdit, onDelete }) {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -340,9 +595,9 @@ function CsapatKartya({ csapat, onEdit, onDelete }) {
           <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
             <button
               onClick={() => setExpanded(e => !e)}
-              style={{ padding: "6px 10px", borderRadius: 8, border: "1.5px solid #E2E8F0", background: "#fff", cursor: "pointer", fontSize: 12, fontFamily: FONT, display: "flex", alignItems: "center", gap: 4, color: "#64748B" }}
+              style={{ padding: "6px 10px", borderRadius: 8, border: "1.5px solid #E2E8F0", background: expanded ? "#EFF6FF" : "#fff", cursor: "pointer", fontSize: 12, fontFamily: FONT, display: "flex", alignItems: "center", gap: 4, color: expanded ? "#2563EB" : "#64748B" }}
             >
-              Tagok <ChevronDown size={13} style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+              Tagok & Szabályok <ChevronDown size={13} style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
             </button>
             <button onClick={() => onEdit(csapat)} style={{ padding: "7px 12px", borderRadius: 8, border: "1.5px solid #E2E8F0", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontFamily: FONT, color: "#475569" }}>
               <Pencil size={13} /> Szerkesztés
@@ -368,6 +623,8 @@ function CsapatKartya({ csapat, onEdit, onDelete }) {
         {expanded && (csapat.tagok || []).length === 0 && (
           <p style={{ marginTop: 10, fontSize: 12, color: "#94A3B8", fontStyle: "italic" }}>Még nincs hozzárendelt tag</p>
         )}
+
+        {expanded && <AvSzabalyPanel csapatId={csapat.id} />}
       </div>
     </div>
   );
