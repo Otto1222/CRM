@@ -157,11 +157,21 @@ export async function drivePing() {
 
 /**
  * Drive diagnosztika – melyik fiókként fut a script, elérhetők-e a mappák, van-e írási jog.
- * @returns {{ ok, activeUser, dbFolder: {ok, name, error, writeTest}, munkaFolder: {ok, name, error} }}
+ * GET kéréssel hívódik – ha ez működik de testPost nem, "Execute as" beállítás a gond.
  */
 export async function driveDiagnose() {
   if (!SCRIPT_URL) return { ok: false, offline: true, error: "VITE_APPS_SCRIPT_URL nincs beállítva" };
   return get({ action: "diagnose" });
+}
+
+/**
+ * POST-specifikus írásteszt – ugyanaz mint diagnose, de POST kéréssel.
+ * Ha GET (diagnose) zöld de ez piros → Apps Script "Execute as: User..." van beállítva.
+ * Ha ez is zöld → saveJson-ban van a valódi gond.
+ */
+export async function driveTestPost() {
+  if (!SCRIPT_URL) return { ok: false, offline: true };
+  return post({ action: "testPost" });
 }
 
 /**

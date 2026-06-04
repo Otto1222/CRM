@@ -6,9 +6,13 @@
 //   2. Új projekt → másold be ezt a kódot
 //   3. Mentés → Üzembe helyezés → Új üzembe helyezés
 //   4. Típus: Webalkalmazás
-//      Végrehajtás: Saját fiókként
+//      Végrehajtás: *** SAJÁT FIÓKKÉNT (Me) *** ← KÖTELEZŐ!
 //      Hozzáférés: Mindenki
-//   5. Az URL-t másold be a CRM .env fájlba: VITE_APPS_SCRIPT_URL=...
+//   5. Az URL-t másold be a CRM Vercel env: VITE_APPS_SCRIPT_URL=...
+//
+// KRITIKUS: Ha "Végrehajtás: User accessing the web app" van beállítva,
+//   a POST kérések anonim kontextusban futnak és a DriveApp.getFolderById()
+//   "Nem található azonosítójú elem" hibát dob. Mindig "Saját fiókként" kell!
 //
 // FRISSÍTÉS (ha már van deployed URL):
 //   Üzembe helyezés → Üzembe helyezések kezelése → Szerkesztés → Új verzió
@@ -56,6 +60,7 @@ function dispatch(p) {
 
   if (action === "ping")                 return ping();
   if (action === "diagnose")             return diagnose();
+  if (action === "testPost")             return testPost();
   if (action === "saveJson")             return saveJson(p);
   if (action === "loadJson")             return loadJson(p);
   if (action === "saveFoto")             return saveFoto(p);
@@ -135,17 +140,46 @@ function diagnose() {
   return result;
 }
 
+// ─── POST-specifikus írásteszt (diagnosztikához) ──────────────────
+// Kizárólag POST kérésként fut – megmutatja hogy a POST kontextusban
+// elérhető-e a DB_FOLDER. Ha ez sikeres de saveJson nem, "Execute as" gond van.
+function testPost() {
+  try {
+    var folder = DriveApp.getFolderById(DB_FOLDER_ID);
+    var name   = folder.getName();
+    var f      = folder.createFile("_post_test_.tmp", "ok", MimeType.PLAIN_TEXT);
+    f.setTrashed(true);
+    return { ok: true, folderName: name, folderId: DB_FOLDER_ID };
+  } catch(e) {
+    return { ok: false, error: e.message, folderId: DB_FOLDER_ID };
+  }
+}
+
 // ─── JSON mentés (CRM_db mappába) ─────────────────────────────────
 // params: { fileName, content }
+// FONTOS: setContent() helyett mindig törlés + újralétrehozás, hogy
+// más fiók által létrehozott régi fájlok ne okozzanak jogosultsági hibát.
 function saveJson(p) {
   if (!p.fileName) return { ok: false, error: "fileName hiányzik" };
-  var folder = DriveApp.getFolderById(DB_FOLDER_ID);
-  var json   = JSON.stringify(p.content, null, 2);
-  var files  = folder.getFilesByName(p.fileName);
-  if (files.hasNext()) {
-    files.next().setContent(json);
-  } else {
+  var folder;
+  try {
+    folder = DriveApp.getFolderById(DB_FOLDER_ID);
+  } catch(e) {
+    return { ok: false, error: "DB mappa nem elérhető: " + e.message, step: "getFolderById", folderId: DB_FOLDER_ID };
+  }
+  var json = JSON.stringify(p.content, null, 2);
+  // Régi fájlok törlése (ha nincs jogosultság, csendben kihagyjuk)
+  try {
+    var old = folder.getFilesByName(p.fileName);
+    while (old.hasNext()) {
+      try { old.next().setTrashed(true); } catch(e2) { /* régi fájl más fiókhoz tartozik – OK */ }
+    }
+  } catch(e) { /* lista hiba – kihagyjuk */ }
+  // Új fájl létrehozása
+  try {
     folder.createFile(p.fileName, json, MimeType.PLAIN_TEXT);
+  } catch(e) {
+    return { ok: false, error: "Fájl létrehozás sikertelen: " + e.message, step: "createFile", fileName: p.fileName };
   }
   return {
     ok:        true,

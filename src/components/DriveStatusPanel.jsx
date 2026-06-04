@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { CheckCircle2, XCircle, Wifi, WifiOff, RefreshCw, AlertTriangle, Loader2, Clock, Shield, Search, FolderSearch } from "lucide-react";
-import { drivePing, driveDiagnose, driveAvailable } from "../lib/driveApi";
+import { CheckCircle2, XCircle, Wifi, WifiOff, RefreshCw, AlertTriangle, Loader2, Clock, Shield, Search, FolderSearch, Send } from "lucide-react";
+import { drivePing, driveDiagnose, driveTestPost, driveAvailable } from "../lib/driveApi";
 import { SYNC_COLLECTIONS, getSyncLog, syncAllToDrive } from "../lib/dataSync.service";
 import { hasDefaultPasswords } from "../lib/crmUsers";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
@@ -25,6 +25,8 @@ export default function DriveStatusPanel() {
   const [pingLoading,     setPingLoading]      = useState(false);
   const [diagnoseResult,  setDiagnoseResult]  = useState(null);
   const [diagnoseLoading, setDiagnoseLoading] = useState(false);
+  const [postTestResult,  setPostTestResult]  = useState(null);
+  const [postTestLoading, setPostTestLoading] = useState(false);
   const [syncResult,      setSyncResult]      = useState(null);
   const [syncLoading,     setSyncLoading]     = useState(false);
   const [syncLog,         setSyncLog]         = useState(() => getSyncLog());
@@ -46,6 +48,14 @@ export default function DriveStatusPanel() {
     const res = await driveDiagnose();
     setDiagnoseResult(res);
     setDiagnoseLoading(false);
+  }
+
+  async function handlePostTest() {
+    setPostTestLoading(true);
+    setPostTestResult(null);
+    const res = await driveTestPost();
+    setPostTestResult(res);
+    setPostTestLoading(false);
   }
 
   async function handleSyncAll() {
@@ -133,6 +143,50 @@ export default function DriveStatusPanel() {
               <p style={{ marginTop: 6, fontWeight: 400, fontSize: 12, color: "#991B1B" }}>
                 👉 A Drive mappa ID nem elérhető a script fiókja számára. Futtasd a Részletes diagnosztikát!
               </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── POST írásteszt ── */}
+      <div style={{ background: "#fff", border: `1.5px solid ${C.border}`, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: postTestResult ? 12 : 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Send size={18} color="#059669" />
+            <div>
+              <span style={{ fontWeight: 700, fontSize: 15, color: C.text }}>POST kérés teszt</span>
+              <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 0" }}>
+                Mentési kérést szimulál – ha ez piros de a diagnosztika zöld: "Execute as" beállítási gond
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handlePostTest}
+            disabled={postTestLoading}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: postTestLoading ? "#E2E8F0" : "#059669", color: "#fff", border: "none", borderRadius: 9, cursor: postTestLoading ? "default" : "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}
+          >
+            {postTestLoading ? <Loader2 size={13} /> : <Send size={13} />}
+            {postTestLoading ? "Tesztelés…" : "POST írásteszt"}
+          </button>
+        </div>
+
+        {postTestResult && (
+          <div style={{ padding: "10px 14px", borderRadius: 9, background: postTestResult.ok ? "#F0FDF4" : "#FEF2F2", border: `1px solid ${postTestResult.ok ? "#86EFAC" : "#FECACA"}`, fontSize: 13, color: postTestResult.ok ? "#166534" : "#DC2626", fontWeight: 600 }}>
+            {postTestResult.ok
+              ? `✅ POST írás OK – mappa: "${postTestResult.folderName}"`
+              : `❌ POST írás SIKERTELEN: ${postTestResult.error}`}
+            {!postTestResult.ok && (
+              <div style={{ marginTop: 8, background: "#FFF1F2", borderRadius: 8, padding: "10px 12px", fontWeight: 400 }}>
+                <p style={{ margin: "0 0 6px", fontWeight: 700, color: "#991B1B" }}>🔧 Megoldás – script.google.com-on:</p>
+                <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#7F1D1D", lineHeight: 2 }}>
+                  <li>Nyisd meg a projektet script.google.com-on</li>
+                  <li><strong>Üzembe helyezés → Üzembe helyezések kezelése</strong></li>
+                  <li>A listában lévő deployment melletti ceruza ikonra kattints</li>
+                  <li><strong>Végrehajtás:</strong> változtasd "<em>User accessing…</em>" helyett <strong>"Saját fiókként (Me)"</strong>-re</li>
+                  <li>Új verzió → Üzembe helyezés</li>
+                  <li>Ha az URL változott: Vercel → VITE_APPS_SCRIPT_URL frissítése → Redeploy</li>
+                </ol>
+              </div>
             )}
           </div>
         )}
