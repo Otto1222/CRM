@@ -165,11 +165,13 @@ export default function DriveStatusPanel() {
             {/* Script fiók */}
             <div style={{ background: "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 14px" }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .6, margin: "0 0 5px" }}>Apps Script futó fiók</p>
-              <p style={{ fontSize: 14, fontWeight: 700, color: diagnoseResult.activeUser ? "#0F172A" : "#EF4444", margin: 0 }}>
-                {diagnoseResult.activeUser || "Nem sikerült lekérdezni"}
+              <p style={{ fontSize: 14, fontWeight: 700, color: diagnoseResult.activeUser ? "#0F172A" : "#64748B", margin: 0 }}>
+                {diagnoseResult.activeUser || "Nem elérhető (normális web app módban)"}
               </p>
               <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 0", lineHeight: 1.5 }}>
-                Ez a Google fiók futtatja a scriptet. A Drive mappáknak ehhez a fiókhoz kell tartozniuk (vagy legalább hozzáféréssel rendelkeznie rájuk).
+                {diagnoseResult.activeUser
+                  ? "Ez a Google fiók futtatja a scriptet. A Drive mappáknak ehhez a fiókhoz kell tartozniuk."
+                  : "A Session.getEffectiveUser() üres stringet ad vissza Google Apps Script web app módban – ez normális, nem jelent hibát. A mappa elérhetőség az irányadó."}
               </p>
             </div>
 
