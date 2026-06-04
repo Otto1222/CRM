@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Save, Navigation } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
@@ -48,6 +48,12 @@ const inp = {
   background: "#FAFAFA",
 };
 export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) {
+  useEffect(() => {
+    const h = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
+  }, [onClose]);
+
   const isNew = !projekt?.id;
   const users = getUsers();
   const csapatok = getAktivCsapatok();

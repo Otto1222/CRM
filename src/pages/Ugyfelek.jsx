@@ -68,6 +68,12 @@ function StatuszBadge({ s }) {
 
 // ─── Ügyfél form modal ───────────────────────────────────────
 function UgyfelForm({ ugyfel, onClose, onSaved }) {
+  useEffect(() => {
+    const h = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
+  }, [onClose]);
+
   const isNew = !ugyfel?.id;
   const [form, setForm] = useState({
     name:       ugyfel?.name       || "",

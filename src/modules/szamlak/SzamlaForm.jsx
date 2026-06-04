@@ -24,6 +24,12 @@ const Field = ({ label, children, half }) => (
 );
 
 export default function SzamlaForm({ szamla, onClose, onSaved, currentUser }) {
+  useEffect(() => {
+    const h = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
+  }, [onClose]);
+
   const isNew      = !szamla?.id;
   const ugyfelek   = loadLocal("ugyfelek") || [];
   const projektek  = loadLocal("projektek") || [];

@@ -55,6 +55,12 @@ function TorlesModal({ csapat, onConfirm, onCancel }) {
 }
 
 function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
+  useEffect(() => {
+    const h = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
+  }, [onClose]);
+
   const isNew = !csapat?.id;
   const allUsers = getUsers().filter(u => ["Admin", "Projektmenedzser", "Telepítő"].includes(u.role));
 
