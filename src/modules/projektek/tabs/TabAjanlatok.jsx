@@ -24,7 +24,7 @@ export default function TabAjanlatok({ projekt }) {
           </div>
         )}
         {projekt?.forrás && (
-          <div style={{ background: projekt.forrás === "fővállalkozói" ? C.accentLight : C.accentLight, border: `1.5px solid ${projekt.forrás === "fővállalkozói" ? "#C4B5FD" : C.accentLight}`, borderRadius: 10, padding: "10px 16px" }}>
+          <div style={{ background: projekt.forrás === "fővállalkozói" ? C.accentLight : C.accentLight, border: `1.5px solid ${projekt.forrás === "fővállalkozói" ? C.accent : C.accentLight}`, borderRadius: 10, padding: "10px 16px" }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: projekt.forrás === "fővállalkozói" ? C.accent : C.accent, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Projekt típusa</p>
             <p style={{ fontSize: 15, fontWeight: 700, color: projekt.forrás === "fővállalkozói" ? C.accent : C.accent, margin: 0 }}>{getProjektTipus(projekt.forrás)}</p>
           </div>
@@ -34,24 +34,24 @@ export default function TabAjanlatok({ projekt }) {
       {/* Fővállalkozói extra adatok */}
       {projekt?.forrás === "fővállalkozói" && (projekt.fovKapcsolattarto || projekt.fovFizetesiHatarido || projekt.fovMegjegyzes) && (
         <div style={{ background: C.accentLight, border: "1.5px solid #C4B5FD", borderRadius: 12, padding: "16px 20px", marginBottom: 20 }}>
-          <p style={{ fontFamily: FONT_HEADING, fontSize: 14, fontWeight: 800, color: "#6D28D9", margin: "0 0 12px" }}>Fővállalkozói adatok</p>
+          <p style={{ fontFamily: FONT_HEADING, fontSize: 14, fontWeight: 800, color: C.accent, margin: "0 0 12px" }}>Fővállalkozói adatok</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {projekt.fovKapcsolattarto && (
               <div>
                 <p style={{ fontSize: 10, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Kapcsolattartó</p>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#1E1B4B", margin: 0 }}>{projekt.fovKapcsolattarto}</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>{projekt.fovKapcsolattarto}</p>
               </div>
             )}
             {projekt.fovFizetesiHatarido && (
               <div>
                 <p style={{ fontSize: 10, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Fizetési határidő</p>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#1E1B4B", margin: 0 }}>{projekt.fovFizetesiHatarido}</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>{projekt.fovFizetesiHatarido}</p>
               </div>
             )}
             {projekt.fovMegjegyzes && (
               <div style={{ gridColumn: "span 2" }}>
                 <p style={{ fontSize: 10, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Megjegyzés</p>
-                <p style={{ fontSize: 14, color: "#1E1B4B", margin: 0 }}>{projekt.fovMegjegyzes}</p>
+                <p style={{ fontSize: 14, color: C.text, margin: 0 }}>{projekt.fovMegjegyzes}</p>
               </div>
             )}
           </div>

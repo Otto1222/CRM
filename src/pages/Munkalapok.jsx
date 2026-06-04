@@ -406,9 +406,9 @@ export function UjMunkalapModal({ data, onClose, onSave }) {
       <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>{label}</label>
       {area
         ? <textarea value={form[k]||""} onChange={e=>upd(k,e.target.value)} placeholder={placeholder} rows={3}
-            style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical", background:"#F8FAFC" }} />
+            style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical", background:C.bg }} />
         : <input type={type} value={form[k]||""} onChange={e=>upd(k,e.target.value)} placeholder={placeholder}
-            style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }} />
+            style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }} />
       }
     </div>
   );
@@ -417,7 +417,7 @@ export function UjMunkalapModal({ data, onClose, onSave }) {
     <div style={{ marginBottom:12 }}>
       <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>{label}</label>
       <input type={type} value={form.felmeres[k]||""} onChange={e=>updF(k,e.target.value)} placeholder={placeholder}
-        style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }} />
+        style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }} />
     </div>
   );
 
@@ -458,14 +458,14 @@ export function UjMunkalapModal({ data, onClose, onSave }) {
               <div style={{ display:"grid", gridTemplateColumns: isMobile?"1fr":"1fr 1fr", gap:12 }}>
                 <div style={{ marginBottom:14 }}>
                   <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Ügyfél</label>
-                  <select value={form.clientId} onChange={e=>upd("clientId",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
+                  <select value={form.clientId} onChange={e=>upd("clientId",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }}>
                     <option value="">— Válassz ügyfelet —</option>
                     {data.ugyfelek.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
                 </div>
                 <div style={{ marginBottom:14 }}>
                   <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Szerelő / Csapat</label>
-                  <select value={form.assigneeId} onChange={e=>upd("assigneeId",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
+                  <select value={form.assigneeId} onChange={e=>upd("assigneeId",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }}>
                     <option value="">— Válassz szerelőt —</option>
                     {USERS.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
@@ -474,11 +474,11 @@ export function UjMunkalapModal({ data, onClose, onSave }) {
               <div style={{ display:"grid", gridTemplateColumns: isMobile?"1fr":"1fr 1fr", gap:12 }}>
                 <div style={{ marginBottom:14 }}>
                   <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Cimke</label>
-                  <input value={form.cimke} onChange={e=>upd("cimke",e.target.value)} placeholder="Junior Vital, Saját Önerős…" style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }} />
+                  <input value={form.cimke} onChange={e=>upd("cimke",e.target.value)} placeholder="Junior Vital, Saját Önerős…" style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }} />
                 </div>
                 <div style={{ marginBottom:14 }}>
                   <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Státusz</label>
-                  <select value={form.status} onChange={e=>upd("status",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
+                  <select value={form.status} onChange={e=>upd("status",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }}>
                     {["Megkezdésre Vár","Felmérés","Kivitelezés","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=><option key={s}>{s}</option>)}
                   </select>
                 </div>
@@ -601,8 +601,8 @@ function DetailHeader({ m, client, isMobile }) {
         <span style={{ fontWeight:800, fontSize: isMobile?15:17, color:"#fff" }}>{m.id}</span>
         {m.cimke&&<CimkeBadge label={m.cimke} color={m.cimkeSzin||C.accent}/>}
         <div style={{ marginLeft:"auto", display:"flex", gap:14 }}>
-          {client?.phone&&<a href={`tel:${client.phone}`} style={{ color:"#4ADE80" }}><Phone size={22}/></a>}
-          {client?.address&&<a href={`https://maps.google.com/?q=${encodeURIComponent(client.address)}`} target="_blank" rel="noreferrer" style={{ color:"#60A5FA" }}><MapPin size={22}/></a>}
+          {client?.phone&&<a href={`tel:${client.phone}`} style={{ color:C.success }}><Phone size={22}/></a>}
+          {client?.address&&<a href={`https://maps.google.com/?q=${encodeURIComponent(client.address)}`} target="_blank" rel="noreferrer" style={{ color:C.accent }}><MapPin size={22}/></a>}
         </div>
       </div>
       {client&&(
@@ -642,7 +642,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
   const FieldRow = ({label, value}) => value ? (
     <div style={{ padding:"0 16px" }}>
       <p style={{ fontSize:12, color:C.muted, paddingTop:10, marginBottom:4 }}>{label}</p>
-      <div style={{ background:"#E8EDF5", borderRadius:6, padding:"10px 12px", marginBottom:2, fontSize:14, color:C.text, borderBottom:"1px solid #D1D9E6" }}>{value}</div>
+      <div style={{ background:C.bg, borderRadius:6, padding:"10px 12px", marginBottom:2, fontSize:14, color:C.text, borderBottom:"1px solid #D1D9E6" }}>{value}</div>
     </div>
   ) : null;
 
@@ -651,7 +651,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
       <DetailHeader m={m} client={client} isMobile />
       <div style={{ display:"flex", background:C.sidebar }}>
         {tabs.map((t,i)=>(
-          <button key={i} onClick={()=>setTab(i)} style={{ flex:1, padding:"12px 0", border:"none", background:"transparent", color:tab===i?"#fff":"#94A3B8", cursor:"pointer", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", borderBottom:tab===i?"3px solid #fff":"3px solid transparent", fontFamily:FONT }}>
+          <button key={i} onClick={()=>setTab(i)} style={{ flex:1, padding:"12px 0", border:"none", background:"transparent", color:tab===i?"#fff":C.muted, cursor:"pointer", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", borderBottom:tab===i?"3px solid #fff":"3px solid transparent", fontFamily:FONT }}>
             {t.icon}
           </button>
         ))}
@@ -696,7 +696,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
         {/* PM workflow gombok */}
         {m.status === "Ellenőrzés alatt" && ["Projektmenedzser","Admin"].includes(userRole) && (
           <div style={{ background:C.warningLight, border:`1.5px solid ${C.warning}60`, borderRadius:12, padding:"14px 16px", marginBottom:12 }}>
-            <p style={{ fontSize:13, fontWeight:700, color:"#92400E", margin:"0 0 10px" }}>⚠️ Ellenőrzésre vár – PM átvétel szükséges</p>
+            <p style={{ fontSize:13, fontWeight:700, color:C.warning, margin:"0 0 10px" }}>⚠️ Ellenőrzésre vár – PM átvétel szükséges</p>
             <div style={{ display:"flex", gap:8 }}>
               <button onClick={() => {
                 updateItem("munkalapok", m.id, { status:"Lezárva", statusSzin:"#059669" });
@@ -745,14 +745,14 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
                     </div>
                   ))}
                 </div>
-                {m.ar>0&&(()=>{const k=(m.munkaeroDij||0)+(m.kiszallasiDij||0)+(m.egyebKolts||0)+(m.items||[]).reduce((s,i)=>s+(i.net||0)*(i.qty||1),0);const er=(m.ar||0)-k;return(<div style={{padding:"8px 10px",background:er>=0?"#ECFDF5":"#FEF2F2",borderRadius:8}}><p style={{fontSize:12,fontWeight:700,color:er>=0?"#059669":"#DC2626",margin:0}}>Eredmény: {er.toLocaleString("hu-HU")} Ft{m.ar>0&&` (${Math.round((er/m.ar)*100)}%)`}</p></div>);})()}
+                {m.ar>0&&(()=>{const k=(m.munkaeroDij||0)+(m.kiszallasiDij||0)+(m.egyebKolts||0)+(m.items||[]).reduce((s,i)=>s+(i.net||0)*(i.qty||1),0);const er=(m.ar||0)-k;return(<div style={{padding:"8px 10px",background:er>=0?C.successLight:C.dangerLight,borderRadius:8}}><p style={{fontSize:12,fontWeight:700,color:er>=0?"#059669":C.danger,margin:0}}>Eredmény: {er.toLocaleString("hu-HU")} Ft{m.ar>0&&` (${Math.round((er/m.ar)*100)}%)`}</p></div>);})()}
               </div>
             )}
             <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, marginBottom:10 }}>Státusz módosítása</p>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
               {/* Spec 5. pont teljes státusz lista */}
               {["Létrehozva","Kiosztva csapatnak","Folyamatban","Helyszínen lezárva","Ellenőrzés alatt","Jóváhagyva","Számlázásra kész","Lezárva","Felmérés","Befejezett Felmérés","Meghiúsult"].map(s=>{
-                const cfg=STATUS_CFG[s]||{bg:"#F1F5F9",text:C.muted,dot:C.muted};
+                const cfg=STATUS_CFG[s]||{bg:C.bg,text:C.muted,dot:C.muted};
                 // Admin-only státuszok: Jóváhagyva, Számlázásra kész, Lezárva
                 const adminOnly = ["Jóváhagyva","Számlázásra kész","Lezárva"].includes(s);
                 const isAdmin = ["Admin","Projektmenedzser","Iroda/Könyvelés"].includes(userRole);
@@ -786,7 +786,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
             <button onClick={()=>printMunkalap(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#fff", color:C.text, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT }}>
               👁 Előnézet
             </button>
-            <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#FEF2F2", color:C.danger, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
+            <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:C.dangerLight, color:C.danger, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
               🗑️ Munkalap törlése
             </button>
             <button onClick={()=>setShowUjrakiosztas(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:C.accentLight, color:C.accent, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
@@ -872,7 +872,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
             return mezok.map(([label,value])=>(
               <div key={label} style={{ padding:"0 16px" }}>
                 <p style={{ fontSize:12, color:C.muted, paddingTop:10, marginBottom:4 }}>{label}</p>
-                <div style={{ background:"#E8EDF5", borderRadius:6, padding:"10px 12px", marginBottom:2, fontSize:14, color:C.text, borderBottom:"1px solid #D1D9E6" }}>{String(value)}</div>
+                <div style={{ background:C.bg, borderRadius:6, padding:"10px 12px", marginBottom:2, fontSize:14, color:C.text, borderBottom:"1px solid #D1D9E6" }}>{String(value)}</div>
               </div>
             ));
           })()}
@@ -1009,14 +1009,14 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Státusz módosítása</h4>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
             {["Felmérés","Befejezett Felmérés","Kiosztásra vár","Kivitelezésre vár","Megkezdésre Vár","Folyamatban","Kivitelezés","Ellenőrzés alatt","Lezárva","Számlázva","Kész","Meghiúsult"].map(s=>{
-              const cfg=STATUS_CFG[s]||{bg:"#F1F5F9",text:C.muted,dot:C.muted};
+              const cfg=STATUS_CFG[s]||{bg:C.bg,text:C.muted,dot:C.muted};
               return <button key={s} onClick={()=>{updateItem("munkalapok",m.id,{status:s});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
             })}
           </div>
           {/* PM Workflow gyorsgombok */}
           {m.status === "Ellenőrzés alatt" && ["Projektmenedzser","Admin"].includes(userRole) && (
             <div style={{ marginTop:12, padding:"12px 14px", background:C.warningLight, border:`1.5px solid ${C.warning}60`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <p style={{ fontSize:13, fontWeight:700, color:"#92400E", margin:0 }}>⚠️ Ellenőrzésre vár – PM átvétel szükséges</p>
+              <p style={{ fontSize:13, fontWeight:700, color:C.warning, margin:0 }}>⚠️ Ellenőrzésre vár – PM átvétel szükséges</p>
               <button onClick={()=>{updateItem("munkalapok",m.id,{status:"Lezárva",statusSzin:"#059669"});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}} style={{ padding:"9px 18px", background:C.success, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 ✅ Lezárva (munkát átvettem)
               </button>
@@ -1045,7 +1045,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           <button onClick={() => printMunkalap(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"transparent", color:C.textSub, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT }}>
             <Eye size={15}/>Előnézet
           </button>
-          <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"#FEF2F2", color:C.danger, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
+          <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:C.dangerLight, color:C.danger, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
             <Trash2 size={15}/>Munkalap törlése
           </button>
         </Card>
@@ -1070,7 +1070,7 @@ function TelepItoDetail({ m, data }) {
   const FieldRow = ({label,value}) => value ? (
     <div style={{ padding:"0 16px" }}>
       <p style={{ fontSize:12, color:C.muted, paddingTop:10, marginBottom:4 }}>{label}</p>
-      <div style={{ background:"#E8EDF5", borderRadius:6, padding:"10px 12px", marginBottom:2, fontSize:14, color:C.text, borderBottom:"1px solid #D1D9E6" }}>{value}</div>
+      <div style={{ background:C.bg, borderRadius:6, padding:"10px 12px", marginBottom:2, fontSize:14, color:C.text, borderBottom:"1px solid #D1D9E6" }}>{value}</div>
     </div>
   ) : null;
 
@@ -1079,7 +1079,7 @@ function TelepItoDetail({ m, data }) {
       <DetailHeader m={m} client={client} isMobile />
       <div style={{ display:"flex", background:C.sidebar }}>
         {["📄","📦","📋"].map((ic,i)=>(
-          <button key={i} onClick={()=>setTab(i)} style={{ flex:1, padding:"12px 0", border:"none", background:"transparent", color:tab===i?"#fff":"#94A3B8", cursor:"pointer", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", borderBottom:tab===i?"3px solid #fff":"3px solid transparent" }}>
+          <button key={i} onClick={()=>setTab(i)} style={{ flex:1, padding:"12px 0", border:"none", background:"transparent", color:tab===i?"#fff":C.muted, cursor:"pointer", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", borderBottom:tab===i?"3px solid #fff":"3px solid transparent" }}>
             {ic}
           </button>
         ))}
@@ -1148,7 +1148,7 @@ function LmraAdminCard({ munkalap, userRole }) {
 
   const status = rec?.status || "nincs";
   const label  = LMRA_STATUS_LABELS[status] || status;
-  const color  = LMRA_STATUS_COLORS[status] || "#94A3B8";
+  const color  = LMRA_STATUS_COLORS[status] || C.muted;
 
   return (
     <Card style={{ padding:"16px 18px", marginTop:12 }}>
@@ -1176,7 +1176,7 @@ function LmraAdminCard({ munkalap, userRole }) {
           {canEdit && (
             <button
               onClick={() => setOpen(p => !p)}
-              style={{ padding:"5px 12px", background:open?C.accent:"#F8FAFC", color:open?"#fff":C.textSub, border:`1px solid ${open?C.accent:C.border}`, borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
+              style={{ padding:"5px 12px", background:open?C.accent:C.bg, color:open?"#fff":C.textSub, border:`1px solid ${open?C.accent:C.border}`, borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
             >
               {open ? "Bezárás" : "LMRA szerkesztése"}
             </button>

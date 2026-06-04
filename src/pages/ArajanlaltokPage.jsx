@@ -177,7 +177,7 @@ export default function ArajanlaltokPage({ currentUser }) {
                 const linkedProjekt = a.projektId ? projektek.find(p => p.id === a.projektId) : null;
                 const cfg = getAjanlatStatusConfig(a.status);
                 return (
-                  <tr key={a.id} style={{ borderBottom: `1px solid ${C.bg}`, background: i % 2 === 0 ? "#fff" : "#FAFAFA", cursor: "pointer" }}
+                  <tr key={a.id} style={{ borderBottom: `1px solid ${C.bg}`, background: i % 2 === 0 ? "#fff" : C.bg, cursor: "pointer" }}
                     onClick={() => openEditor(a)}>
                     <td style={{ padding: "12px 14px" }}>
                       <p style={{ fontWeight: 700, color: C.accent, margin: 0 }}>{a.ajanlatkod}</p>

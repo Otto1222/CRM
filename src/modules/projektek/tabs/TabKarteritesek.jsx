@@ -20,7 +20,7 @@ function StatusBadge({ status }) {
 function FelelosBadge({ type, snapshot }) {
   const cfg = {
     sajat_csapat: { bg:C.accentLight, color:C.accent, icon:"👥" },
-    alvallalkozo: { bg:C.warningLight, color:"#EA580C", icon:"🤝" },
+    alvallalkozo: { bg:C.warningLight, color:C.warning, icon:"🤝" },
     egyeb:        { bg:C.bg, color:C.muted, icon:"❓" },
   }[type] || { bg:C.bg, color:C.muted, icon:"❓" };
   return (
@@ -273,9 +273,9 @@ export default function TabKarteritesek({ projekt, munkalapok, currentUser }) {
 
               {form.responsibleType === "alvallalkozo" && (
                 <div style={{ background:C.warningLight, borderRadius:9, padding:"12px" }}>
-                  <label style={{ fontSize:12, fontWeight:700, color:"#EA580C", display:"block", marginBottom:4 }}>Alvállalkozó *</label>
+                  <label style={{ fontSize:12, fontWeight:700, color:C.warning, display:"block", marginBottom:4 }}>Alvállalkozó *</label>
                   <select value={form.responsibleSubcontractorId} onChange={e => setF("responsibleSubcontractorId", e.target.value)}
-                    style={{ width:"100%", padding:"9px 11px", border:`1.5px solid ${errors.responsibleSubcontractorId?C.danger:"#FED7AA"}`, borderRadius:8, fontSize:13, fontFamily:FONT, outline:"none", background:"#fff" }}>
+                    style={{ width:"100%", padding:"9px 11px", border:`1.5px solid ${errors.responsibleSubcontractorId?C.danger:C.warning}`, borderRadius:8, fontSize:13, fontFamily:FONT, outline:"none", background:"#fff" }}>
                     <option value="">– Válassz alvállalkozót –</option>
                     {avCs.map(c => <option key={c.id} value={c.id}>{c.nev}</option>)}
                   </select>

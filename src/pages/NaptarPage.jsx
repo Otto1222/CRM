@@ -19,7 +19,7 @@ const SYNC_COLORS = {
   idle:    { bg: "rgba(255,255,255,0.08)", color: C?.muted || C.muted },
   syncing: { bg: C.accent,               color: "#fff" },
   ok:      { bg: C.success,               color: "#fff" },
-  error:   { bg: "#B91C1C",               color: "#fff" },
+  error:   { bg: C.danger,               color: "#fff" },
 };
 
 function toDateStr(d) { return d.toISOString().slice(0, 10); }
@@ -308,13 +308,13 @@ export default function NaptarPage({ data, currentUser, onNavigate }) {
       <div style={{
         display: "flex", alignItems: "center", gap: 8,
         padding: "6px 12px", borderRadius: 8, marginBottom: 12,
-        background: liveActive ? "#064E3B" : "rgba(255,255,255,0.04)",
-        border: `1px solid ${liveActive ? "#065F46" : C.border}`,
+        background: liveActive ? C.text : "rgba(255,255,255,0.04)",
+        border: `1px solid ${liveActive ? C.accent : C.border}`,
         fontSize: 12,
       }}>
         <span style={{
           width: 8, height: 8, borderRadius: "50%",
-          background: liveActive ? "#34D399" : "#4B5563",
+          background: liveActive ? C.success : C.muted,
           flexShrink: 0,
           boxShadow: liveActive ? "0 0 0 3px #34D39930" : "none",
         }} />
@@ -608,8 +608,8 @@ const ICON_BTN = {
 
 const INPUT_STYLE = {
   width: "100%", padding: "8px 12px", borderRadius: 9,
-  border: `1px solid ${C?.border || "#1E293B"}`,
-  background: C?.card || "#1E293B", color: C?.text || C.bg,
+  border: `1px solid ${C?.border || C.border}`,
+  background: C?.card || C.border, color: C?.text || C.bg,
   fontSize: 14, boxSizing: "border-box", fontFamily: "system-ui, sans-serif",
 };
 
@@ -621,14 +621,14 @@ const BTN_PRIMARY = {
 
 const BTN_SECONDARY = {
   padding: "8px 14px", borderRadius: 9,
-  border: `1px solid ${C?.border || "#1E293B"}`,
-  background: C?.card || "#1E293B", color: C?.text || C.bg,
+  border: `1px solid ${C?.border || C.border}`,
+  background: C?.card || C.border, color: C?.text || C.bg,
   cursor: "pointer", fontSize: 13,
 };
 
 const NAV_BTN = {
-  background: C?.card || "#1E293B",
-  border: `1px solid ${C?.border || "#1E293B"}`,
+  background: C?.card || C.border,
+  border: `1px solid ${C?.border || C.border}`,
   borderRadius: 8, padding: "6px 10px",
   cursor: "pointer", color: C?.text || C.bg,
   display: "flex", alignItems: "center",

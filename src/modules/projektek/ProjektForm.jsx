@@ -46,7 +46,7 @@ const inp = {
   fontSize: 14,
   fontFamily: "inherit",
   outline: "none",
-  background: "#FAFAFA",
+  background: C.bg,
 };
 export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved, currentUser }) {
   const isNew = !projekt?.id;
@@ -524,7 +524,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               <input type="number" min="0" value={form.smartMeterDb} onChange={e => upd("smartMeterDb", Number(e.target.value))} placeholder="0" style={inp} />
             </Field>
             <Field label="Elektromos autótöltő" half>
-              <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:14, fontWeight:500, color:"#334155", userSelect:"none", paddingTop:4 }}>
+              <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:14, fontWeight:500, color:C.textSub, userSelect:"none", paddingTop:4 }}>
                 <div onClick={() => upd("autoTolto", !form.autoTolto)}
                   style={{ width:44, height:24, borderRadius:12, position:"relative", cursor:"pointer", background:form.autoTolto?C.accent:C.border, transition:"background .2s" }}>
                   <div style={{ position:"absolute", top:3, left:form.autoTolto?23:3, width:18, height:18, borderRadius:"50%", background:"#fff", transition:"left .2s", boxShadow:"0 1px 3px rgba(0,0,0,.2)" }}/>

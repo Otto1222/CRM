@@ -5,7 +5,7 @@ import { saveFelmeresFotok, loadFelmeresFotok } from "../lib/munkalapDb";
 
 // ── Státusz → fázis leíró ────────────────────────────────────
 const STATUS_FAZIS = {
-  "Felmérés":    { szin: "#0EA5E9", bg: "#E0F2FE", icon: "📸", szoveg: "Felmérési fázis – fotók feltölthetők" },
+  "Felmérés":    { szin: C.accent, bg: "#E0F2FE", icon: "📸", szoveg: "Felmérési fázis – fotók feltölthetők" },
   "Kivitelezés": { szin: "#EA580C", bg: "#FFF7ED", icon: "🔧", szoveg: "Kivitelezési fázis – korábbi fotók megtekinthetők, új képek feltölthetők" },
   "Megkezdésre Vár": { szin: "#38BDF8", bg: "#F0F9FF", icon: "⏳", szoveg: "Megkezdésre vár – fotók megtekinthetők, új feltöltés lehetséges" },
 };
@@ -94,7 +94,7 @@ function NagyitasModal({ foto, onClose }) {
 
 // ── Egy fotó kártya ──────────────────────────────────────────
 function FotoKartya({ foto, canDelete, onDelete, onClick }) {
-  const tipusSzin = foto.tipus === "Felmérés" ? "#0EA5E9" : "#EA580C";
+  const tipusSzin = foto.tipus === "Felmérés" ? C.accent : "#EA580C";
   return (
     <div style={{ position: "relative", width: 90, height: 90, flexShrink: 0 }}>
       {foto.base64 ? (
@@ -166,7 +166,7 @@ function FotoKartya({ foto, canDelete, onDelete, onClick }) {
 // ── Feltöltés gomb ───────────────────────────────────────────
 function FeltoltesGomb({ tipus, loading, onFiles }) {
   const ref = useRef();
-  const szin = tipus === "Felmérés" ? "#0EA5E9" : "#EA580C";
+  const szin = tipus === "Felmérés" ? C.accent : "#EA580C";
   const bg   = tipus === "Felmérés" ? "#E0F2FE" : "#FFF7ED";
   const icon = tipus === "Felmérés" ? "📸" : "🔧";
   return (
@@ -335,7 +335,7 @@ export default function FelmeresFotok({ munkalapId, status, userRole, onFotokCha
           style={{
             border: `2px dashed ${drag ? C.accent : C.border}`,
             borderRadius: 12, padding: "16px", textAlign: "center",
-            background: drag ? C.accentLight : "#F8FAFC", marginBottom: 20,
+            background: drag ? C.accentLight : C.bg, marginBottom: 20,
             transition: "all .15s", display: drag ? "block" : "none",
           }}
         >
@@ -348,7 +348,7 @@ export default function FelmeresFotok({ munkalapId, status, userRole, onFotokCha
       <FotoSzekció
         cim="Felmérési fotók"
         tipus="Felmérés"
-        szin="#0EA5E9"
+        szin={C.accent}
         bg="#E0F2FE"
         fotok={felmeresKepek}
         canDelete={canDelete}

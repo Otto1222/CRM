@@ -164,7 +164,7 @@ export default function TabDokumentumok({ projekt }) {
 
       {/* Tipp */}
       <div style={{
-        background: "#F0F9FF", border: "1.5px solid #BAE6FD",
+        background: C.accentLight, border: "1.5px solid #BAE6FD",
         borderRadius: 10, padding: "12px 16px",
         fontSize: 12, color: C.accent, lineHeight: 1.7,
       }}>

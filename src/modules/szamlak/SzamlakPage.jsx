@@ -139,7 +139,7 @@ export default function SzamlakPage({ currentUser }) {
               style={{
                 display: "flex", alignItems: "center", gap: 6,
                 padding: "9px 14px", borderRadius: 9, border: "1.5px solid #6366F1",
-                background: "#EEF2FF", color: "#4338CA", cursor: "pointer",
+                background: C.accentLight, color: C.accent, cursor: "pointer",
                 fontWeight: 700, fontSize: 13, fontFamily: FONT,
               }}
             >
@@ -168,8 +168,8 @@ export default function SzamlakPage({ currentUser }) {
 
       {/* PEASE szinkron üzenet */}
       {peaseSync.msg && (
-        <div style={{ background: "#EEF2FF", border: "1.5px solid #C7D2FE", borderRadius: 10,
-          padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "#4338CA", fontWeight: 600 }}>
+        <div style={{ background: C.accentLight, border: "1.5px solid #C7D2FE", borderRadius: 10,
+          padding: "10px 16px", marginBottom: 16, fontSize: 13, color: C.accent, fontWeight: 600 }}>
           🔄 {peaseSync.msg}
         </div>
       )}
@@ -243,10 +243,10 @@ export default function SzamlakPage({ currentUser }) {
 
       {/* PEASE import előnézet */}
       {importLista && (
-        <div style={{ background: "#EEF2FF", border: "1.5px solid #C7D2FE", borderRadius: 12,
+        <div style={{ background: C.accentLight, border: "1.5px solid #C7D2FE", borderRadius: 12,
           padding: "16px", marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <p style={{ fontWeight: 700, fontSize: 14, color: "#4338CA", margin: 0 }}>
+            <p style={{ fontWeight: 700, fontSize: 14, color: C.accent, margin: 0 }}>
               📥 PEASE import – {importLista.length} számla importálható
             </p>
             <button onClick={() => setImportLista(null)} style={{ border: "none", background: "none", cursor: "pointer", color: C.muted }}>
@@ -273,7 +273,7 @@ export default function SzamlakPage({ currentUser }) {
             </div>
           ))}
           {importLista.length > 5 && (
-            <p style={{ fontSize: 12, color: "#6366F1", textAlign: "center", marginTop: 8 }}>
+            <p style={{ fontSize: 12, color: C.accent, textAlign: "center", marginTop: 8 }}>
               + {importLista.length - 5} további számla
             </p>
           )}
@@ -316,7 +316,7 @@ export default function SzamlakPage({ currentUser }) {
                       <td style={{ padding: "11px 14px" }}>
                         <p style={{ fontWeight: 700, fontSize: 13, margin: 0 }}>{s.szamlaszam || "—"}</p>
                         {s.peaseSzinkron && (
-                          <span style={{ fontSize: 10, color: "#6366F1" }}>PEASE</span>
+                          <span style={{ fontSize: 10, color: C.accent }}>PEASE</span>
                         )}
                       </td>
                       <td style={{ padding: "11px 14px", fontSize: 13, color: C.text }}>

@@ -30,7 +30,7 @@ export default function Login({ onLogin }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#075E56",
+      background: C.accent,
       display: "flex",
       fontFamily: FONT,
       position: "relative",
@@ -118,7 +118,7 @@ export default function Login({ onLogin }) {
           </div>
           <div style={{
             fontFamily: FONT, fontWeight: 600, fontSize: 20,
-            color: "#18ACA0", letterSpacing: 5,
+            color: C.success, letterSpacing: 5,
             textTransform: "uppercase", marginTop: 4,
           }}>
             Solutions
@@ -134,7 +134,7 @@ export default function Login({ onLogin }) {
 
         <div style={{
           width: 48, height: 2,
-          background: "#E30613",
+          background: C.danger,
           marginBottom: 32, borderRadius: 2,
         }} />
 
@@ -159,7 +159,7 @@ export default function Login({ onLogin }) {
             "Munkalapok & elszámolások",
           ].map(t => (
             <div key={t} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <ChevronRight size={14} color="#18ACA0" />
+              <ChevronRight size={14} color={C.success} />
               <span style={{ fontFamily: FONT, fontSize: 13, color: "rgba(255,255,255,0.55)" }}>{t}</span>
             </div>
           ))}
@@ -187,16 +187,16 @@ export default function Login({ onLogin }) {
             <div style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center",
               width: 56, height: 56, borderRadius: 16,
-              background: "#075E56",
+              background: C.accent,
               boxShadow: "0 6px 20px rgba(7,94,86,0.35)",
               marginBottom: 14,
             }}>
-              <span style={{ fontFamily: FONT, fontWeight: 900, fontSize: 18, color: "#18ACA0", letterSpacing: 1 }}>EDI</span>
+              <span style={{ fontFamily: FONT, fontWeight: 900, fontSize: 18, color: C.success, letterSpacing: 1 }}>EDI</span>
             </div>
-            <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 20, color: "#1D1D1B", letterSpacing: 0.2 }}>
+            <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 20, color: C.text, letterSpacing: 0.2 }}>
               Bejelentkezés
             </div>
-            <div style={{ fontFamily: FONT, fontSize: 13, color: "#707070", marginTop: 4 }}>
+            <div style={{ fontFamily: FONT, fontSize: 13, color: C.muted, marginTop: 4 }}>
               E.D.I. Solutions Kft. – CRM platform
             </div>
           </div>
@@ -207,17 +207,17 @@ export default function Login({ onLogin }) {
             <div>
               <label style={{
                 fontFamily: FONT, fontSize: 11, fontWeight: 700,
-                color: "#3C3C3B", textTransform: "uppercase", letterSpacing: 0.9,
+                color: C.textSub, textTransform: "uppercase", letterSpacing: 0.9,
                 display: "block", marginBottom: 7,
               }}>Felhasználónév</label>
               <div className="edi-input-wrap" style={{
                 display: "flex", alignItems: "center", gap: 10,
-                background: "#F2F5F4",
-                border: `1.5px solid ${error ? "#E30613" : "#DDE3E1"}`,
+                background: C.bg,
+                border: `1.5px solid ${error ? C.danger : C.border}`,
                 borderRadius: 11, padding: "0 14px",
                 transition: "all .18s",
               }}>
-                <User size={15} color="#707070" />
+                <User size={15} color={C.muted} />
                 <input
                   type="text"
                   value={username}
@@ -229,7 +229,7 @@ export default function Login({ onLogin }) {
                     flex: 1, border: "none", outline: "none",
                     fontSize: 14.5, padding: "13px 0",
                     fontFamily: FONT, background: "transparent",
-                    color: "#1D1D1B",
+                    color: C.text,
                   }}
                 />
               </div>
@@ -239,17 +239,17 @@ export default function Login({ onLogin }) {
             <div>
               <label style={{
                 fontFamily: FONT, fontSize: 11, fontWeight: 700,
-                color: "#3C3C3B", textTransform: "uppercase", letterSpacing: 0.9,
+                color: C.textSub, textTransform: "uppercase", letterSpacing: 0.9,
                 display: "block", marginBottom: 7,
               }}>Jelszó</label>
               <div className="edi-input-wrap" style={{
                 display: "flex", alignItems: "center", gap: 10,
-                background: "#F2F5F4",
-                border: `1.5px solid ${error ? "#E30613" : "#DDE3E1"}`,
+                background: C.bg,
+                border: `1.5px solid ${error ? C.danger : C.border}`,
                 borderRadius: 11, padding: "0 14px",
                 transition: "all .18s",
               }}>
-                <Lock size={15} color="#707070" />
+                <Lock size={15} color={C.muted} />
                 <input
                   type={showPw ? "text" : "password"}
                   value={password}
@@ -260,14 +260,14 @@ export default function Login({ onLogin }) {
                     flex: 1, border: "none", outline: "none",
                     fontSize: 14.5, padding: "13px 0",
                     fontFamily: FONT, background: "transparent",
-                    color: "#1D1D1B",
+                    color: C.text,
                   }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw(p => !p)}
                   tabIndex={-1}
-                  style={{ border: "none", background: "none", cursor: "pointer", padding: "4px", color: "#707070", display: "flex", alignItems: "center" }}
+                  style={{ border: "none", background: "none", cursor: "pointer", padding: "4px", color: C.muted, display: "flex", alignItems: "center" }}
                 >
                   {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
@@ -277,9 +277,9 @@ export default function Login({ onLogin }) {
             {/* Hibaüzenet */}
             {error && (
               <div style={{
-                background: "#FDEAEB", border: "1.5px solid #F5A0A5",
+                background: C.dangerLight, border: "1.5px solid #F5A0A5",
                 borderRadius: 10, padding: "10px 14px",
-                fontSize: 13, color: "#C1000F", fontWeight: 600,
+                fontSize: 13, color: C.danger, fontWeight: 600,
                 display: "flex", alignItems: "center", gap: 8,
               }}>
                 <span style={{ fontSize: 15, flexShrink: 0 }}>⚠</span> {error}
@@ -294,7 +294,7 @@ export default function Login({ onLogin }) {
               style={{
                 marginTop: 4, padding: "14px",
                 borderRadius: 11, border: "none",
-                background: loading ? "#6B6B6A" : "#075E56",
+                background: loading ? C.muted : C.accent,
                 color: "#fff", fontWeight: 700, fontSize: 14.5,
                 cursor: loading ? "not-allowed" : "pointer",
                 fontFamily: FONT,
@@ -320,7 +320,7 @@ export default function Login({ onLogin }) {
             </button>
           </form>
 
-          <p style={{ textAlign: "center", fontSize: 11, color: "#707070", marginTop: 22, fontFamily: FONT }}>
+          <p style={{ textAlign: "center", fontSize: 11, color: C.muted, marginTop: 22, fontFamily: FONT }}>
             Elfelejtett jelszó? Kérd az adminisztrátortól.
           </p>
         </div>

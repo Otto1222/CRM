@@ -157,12 +157,12 @@ function KatKartya({ kat, photos, note, onPhotos, onNote, munkalapId, hibak }) {
   return (
     <div style={{
       background:"#fff", borderRadius:14, marginBottom:14,
-      border:`2px solid ${hiba?"#EF4444":ok?"#86EFAC":C.border}`,
+      border:`2px solid ${hiba?C.danger:ok?C.success:C.border}`,
       overflow:"hidden",
     }}>
       {/* Fejléc */}
       <div style={{
-        padding:"12px 16px", background:hiba?"#FEF2F2":ok?"#F0FDF4":"#F8FAFC",
+        padding:"12px 16px", background:hiba?C.dangerLight:ok?C.successLight:C.bg,
         borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:12,
       }}>
         <span style={{fontSize:22}}>{kat.icon}</span>
@@ -171,9 +171,9 @@ function KatKartya({ kat, photos, note, onPhotos, onNote, munkalapId, hibak }) {
           <p style={{fontSize:11,color:C.muted,margin:"2px 0 0"}}>{kat.leiras}</p>
         </div>
         {ok
-          ? <CheckCircle2 size={22} color="#22C55E"/>
+          ? <CheckCircle2 size={22} color={C.success}/>
           : hiba
-            ? <AlertTriangle size={22} color="#EF4444"/>
+            ? <AlertTriangle size={22} color={C.danger}/>
             : <div style={{width:22,height:22,borderRadius:"50%",border:`2px solid ${C.border}`}}/>
         }
       </div>
@@ -185,7 +185,7 @@ function KatKartya({ kat, photos, note, onPhotos, onNote, munkalapId, hibak }) {
             {photos.map((f,i) => (
               <div key={f.id} style={{position:"relative",width:78,height:78}}>
                 <img src={f.base64} alt={f.nev} onClick={()=>setNagy(f)}
-                  style={{width:78,height:78,objectFit:"cover",borderRadius:9,border:`1.5px solid ${f.driveNev?"#86EFAC":C.border}`,cursor:"pointer"}}/>
+                  style={{width:78,height:78,objectFit:"cover",borderRadius:9,border:`1.5px solid ${f.driveNev?C.success:C.border}`,cursor:"pointer"}}/>
                 <div style={{position:"absolute",top:2,left:2,background:"rgba(0,0,0,0.6)",borderRadius:4,padding:"1px 5px",fontSize:10,color:"#fff",fontWeight:700}}>{i+1}</div>
                 {f.driveNev && <div style={{position:"absolute",bottom:3,left:3,background:"rgba(5,150,105,.85)",borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center"}}><CheckCircle2 size={10} color="#fff"/></div>}
                 <button onClick={()=>onPhotos(prev=>prev.filter(p=>p.id!==f.id))} style={{position:"absolute",top:2,right:2,width:20,height:20,background:"rgba(220,38,38,.9)",border:"none",borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -202,16 +202,16 @@ function KatKartya({ kat, photos, note, onPhotos, onNote, munkalapId, hibak }) {
           rows={2}
           style={{
             width:"100%",boxSizing:"border-box",padding:"9px 12px",
-            border:`1.5px solid ${!vanFoto&&hiba&&!noteOk?"#EF4444":C.border}`,
+            border:`1.5px solid ${!vanFoto&&hiba&&!noteOk?C.danger:C.border}`,
             borderRadius:9,fontSize:13,fontFamily:FONT,resize:"none",outline:"none",
-            background: !vanFoto && !noteOk ? "#FEF2F2" : "#F8FAFC",
+            background: !vanFoto && !noteOk ? C.dangerLight : C.bg,
             marginBottom:10,
           }}
         />
 
         {/* Hibaüzenet */}
         {hiba && !ok && (
-          <p style={{fontSize:11,color:"#EF4444",fontWeight:600,marginBottom:8}}>
+          <p style={{fontSize:11,color:C.danger,fontWeight:600,marginBottom:8}}>
             Kötelező: tölts fel képet VAGY írj legalább 3 értelmes magyar szót!
           </p>
         )}
@@ -221,9 +221,9 @@ function KatKartya({ kat, photos, note, onPhotos, onNote, munkalapId, hibak }) {
           style={{
             display:"flex",alignItems:"center",justifyContent:"center",gap:8,
             width:"100%",padding:"10px",borderRadius:10,
-            border:`2px dashed ${vanFoto?"#86EFAC":hiba?"#EF4444":C.border}`,
-            background:vanFoto?"#F0FDF4":hiba?"#FEF2F2":"#F8FAFC",
-            color:vanFoto?"#16A34A":hiba?"#EF4444":C.textSub,
+            border:`2px dashed ${vanFoto?C.success:hiba?C.danger:C.border}`,
+            background:vanFoto?C.successLight:hiba?C.dangerLight:C.bg,
+            color:vanFoto?C.success:hiba?C.danger:C.textSub,
             cursor:"pointer",fontFamily:FONT,fontWeight:600,fontSize:13,
           }}>
           {loading ? <Loader2 size={16} style={{animation:"spin 1s linear infinite"}}/> : <Camera size={16}/>}
@@ -310,7 +310,7 @@ export default function FelmeresTelepito({ m, data, onBack }) {
     const canvas = alairasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    ctx.strokeStyle = "#1E3A5F";
+    ctx.strokeStyle = C.text;
     ctx.lineWidth = 2.5;
     ctx.lineCap = "round";
     let drawing = false;
@@ -391,36 +391,36 @@ export default function FelmeresTelepito({ m, data, onBack }) {
   const katOkDb   = FOTO_KAT.filter(k=>(katFotok[k.id]||[]).length>0||ertelmesMagyarSzo(fotoNotes[k.id])).length;
 
   return (
-    <div style={{minHeight:"100vh",background:"#F1F5F9",fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:FONT}}>
       {/* Fejléc */}
-      <div style={{background:"#1E3A5F"}}>
+      <div style={{background:C.text}}>
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"44px 16px 8px"}}>
-          <button onClick={()=>onBack()} style={{border:"none",background:"none",color:"#94A3B8",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:13,fontFamily:FONT,fontWeight:600}}>
+          <button onClick={()=>onBack()} style={{border:"none",background:"none",color:C.muted,cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:13,fontFamily:FONT,fontWeight:600}}>
             <ArrowLeft size={18}/> Vissza
           </button>
           <span style={{fontWeight:800,fontSize:14,color:"#fff",flex:1}}>{m.id}</span>
           <button onClick={()=>window.open("/installer-guide.html","_blank")} title="Telepítői útmutató" style={{border:"none",background:"rgba(255,255,255,0.12)",color:"#fff",cursor:"pointer",borderRadius:8,padding:"5px 8px",display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:600,fontFamily:FONT}}>
             <BookOpen size={15}/> Útmutató
           </button>
-          <span style={{background:"#0EA5E9",color:"#fff",borderRadius:8,padding:"3px 10px",fontSize:11,fontWeight:700}}>📸 Felmérés</span>
+          <span style={{background:C.success,color:"#fff",borderRadius:8,padding:"3px 10px",fontSize:11,fontWeight:700}}>📸 Felmérés</span>
         </div>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px 14px"}}>
           <div>
             <p style={{fontWeight:700,fontSize:16,color:"#fff",margin:0}}>{clientNev}</p>
-            <p style={{fontSize:12,color:"#94A3B8",margin:"2px 0 0"}}>{clientCim}</p>
+            <p style={{fontSize:12,color:C.muted,margin:"2px 0 0"}}>{clientCim}</p>
           </div>
           <div style={{display:"flex",gap:14}}>
-            {clientTel && <a href={`tel:${clientTel}`} style={{color:"#4ADE80"}}><Phone size={22}/></a>}
-            {clientCim && <a href={`https://maps.google.com/?q=${encodeURIComponent(clientCim)}`} target="_blank" rel="noreferrer" style={{color:"#60A5FA"}}><MapPin size={22}/></a>}
+            {clientTel && <a href={`tel:${clientTel}`} style={{color:C.success}}><Phone size={22}/></a>}
+            {clientCim && <a href={`https://maps.google.com/?q=${encodeURIComponent(clientCim)}`} target="_blank" rel="noreferrer" style={{color:C.accent}}><MapPin size={22}/></a>}
           </div>
         </div>
       </div>
 
       {/* Projekt megjegyzés (ha van) */}
       {projektMegjegyzes && (
-        <div style={{margin:"12px 16px 0",padding:"12px 14px",background:"#EFF6FF",borderRadius:12,border:"1.5px solid #BFDBFE"}}>
-          <p style={{fontSize:11,fontWeight:700,color:"#1D4ED8",marginBottom:4,textTransform:"uppercase",letterSpacing:.7}}>📋 Projekt megjegyzés</p>
-          <p style={{fontSize:13,color:"#1E40AF",lineHeight:1.6,margin:0}}>{projektMegjegyzes}</p>
+        <div style={{margin:"12px 16px 0",padding:"12px 14px",background:C.accentLight,borderRadius:12,border:"1.5px solid #BFDBFE"}}>
+          <p style={{fontSize:11,fontWeight:700,color:C.accent,marginBottom:4,textTransform:"uppercase",letterSpacing:.7}}>📋 Projekt megjegyzés</p>
+          <p style={{fontSize:13,color:C.accent,lineHeight:1.6,margin:0}}>{projektMegjegyzes}</p>
         </div>
       )}
 
@@ -431,12 +431,12 @@ export default function FelmeresTelepito({ m, data, onBack }) {
           <p style={{fontSize:10,color:C.muted,margin:0}}>fotó</p>
         </div>
         <div style={{textAlign:"center"}}>
-          <p style={{fontSize:20,fontWeight:800,color:"#22C55E",margin:0}}>{katOkDb}/7</p>
+          <p style={{fontSize:20,fontWeight:800,color:C.success,margin:0}}>{katOkDb}/7</p>
           <p style={{fontSize:10,color:C.muted,margin:0}}>kész kat.</p>
         </div>
         <div style={{flex:1}}>
           <div style={{background:C.bg,borderRadius:6,height:8,overflow:"hidden"}}>
-            <div style={{width:`${Math.round(katOkDb/7*100)}%`,height:"100%",background:katOkDb===7?"#22C55E":C.accent,borderRadius:6,transition:"width .3s"}}/>
+            <div style={{width:`${Math.round(katOkDb/7*100)}%`,height:"100%",background:katOkDb===7?C.success:C.accent,borderRadius:6,transition:"width .3s"}}/>
           </div>
           <p style={{fontSize:10,color:C.muted,margin:"3px 0 0"}}>{Math.round(katOkDb/7*100)}% kész · {driveKep} Drive-on</p>
         </div>
@@ -464,7 +464,7 @@ export default function FelmeresTelepito({ m, data, onBack }) {
         {/* Szöveges mezők */}
         {SZOVEGES_CSOPORTOK.map(csoport => (
           <div key={csoport.cim} style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,marginBottom:14,overflow:"hidden"}}>
-            <div style={{padding:"10px 16px",background:"#F8FAFC",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{padding:"10px 16px",background:C.bg,borderBottom:`1px solid ${C.border}`}}>
               <p style={{fontWeight:700,fontSize:13,color:C.text,margin:0}}>📋 {csoport.cim}</p>
             </div>
             <div style={{padding:"12px 16px"}}>
@@ -475,7 +475,7 @@ export default function FelmeresTelepito({ m, data, onBack }) {
                     value={adatok[mezo.k]||""}
                     onChange={e=>updAdat(mezo.k,e.target.value)}
                     placeholder={mezo.label}
-                    style={{width:"100%",boxSizing:"border-box",padding:"9px 12px",border:`1.5px solid ${C.border}`,borderRadius:9,fontSize:13,fontFamily:FONT,outline:"none",background:"#FAFAFA"}}
+                    style={{width:"100%",boxSizing:"border-box",padding:"9px 12px",border:`1.5px solid ${C.border}`,borderRadius:9,fontSize:13,fontFamily:FONT,outline:"none",background:C.bg}}
                   />
                 </div>
               ))}
@@ -484,18 +484,18 @@ export default function FelmeresTelepito({ m, data, onBack }) {
         ))}
 
         {/* Nyilatkozat */}
-        <div style={{background:"#fff",borderRadius:14,border:`2px solid ${nyilatkozat?"#22C55E":C.border}`,marginBottom:14,padding:"16px"}}>
+        <div style={{background:"#fff",borderRadius:14,border:`2px solid ${nyilatkozat?C.success:C.border}`,marginBottom:14,padding:"16px"}}>
           <p style={{fontWeight:700,fontSize:14,color:C.text,marginBottom:12}}>📝 Nyilatkozat</p>
-          <p style={{fontSize:12,color:"#475569",lineHeight:1.7,marginBottom:14}}>{NYILATKOZAT}</p>
+          <p style={{fontSize:12,color:C.muted,lineHeight:1.7,marginBottom:14}}>{NYILATKOZAT}</p>
           <label style={{display:"flex",alignItems:"flex-start",gap:12,cursor:"pointer"}}>
             <div onClick={()=>setNyilatkozat(v=>!v)} style={{
-              width:24,height:24,borderRadius:6,border:`2px solid ${nyilatkozat?"#22C55E":"#CBD5E1"}`,
-              background:nyilatkozat?"#22C55E":"#fff",flexShrink:0,marginTop:1,
+              width:24,height:24,borderRadius:6,border:`2px solid ${nyilatkozat?C.success:C.border}`,
+              background:nyilatkozat?C.success:"#fff",flexShrink:0,marginTop:1,
               display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",
             }}>
               {nyilatkozat && <span style={{color:"#fff",fontSize:16,fontWeight:900}}>✓</span>}
             </div>
-            <span style={{fontSize:13,color:nyilatkozat?"#166534":"#64748B",fontWeight:nyilatkozat?700:400,lineHeight:1.5}}>
+            <span style={{fontSize:13,color:nyilatkozat?C.success:C.muted,fontWeight:nyilatkozat?700:400,lineHeight:1.5}}>
               Elolvastam és elfogadom a fenti nyilatkozatot
             </span>
           </label>
@@ -505,14 +505,14 @@ export default function FelmeresTelepito({ m, data, onBack }) {
         <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,marginBottom:14,padding:"16px"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
             <p style={{fontWeight:700,fontSize:14,color:C.text,margin:0}}>✍️ Ügyfél aláírása</p>
-            {alairas && <button onClick={clearAlairas} style={{fontSize:12,color:"#DC2626",border:"none",background:"none",cursor:"pointer",fontWeight:600}}>Törlés</button>}
+            {alairas && <button onClick={clearAlairas} style={{fontSize:12,color:C.danger,border:"none",background:"none",cursor:"pointer",fontWeight:600}}>Törlés</button>}
           </div>
-          <div style={{position:"relative",border:`1.5px solid ${C.border}`,borderRadius:10,overflow:"hidden",background:"#FAFAFA"}}>
+          <div style={{position:"relative",border:`1.5px solid ${C.border}`,borderRadius:10,overflow:"hidden",background:C.bg}}>
             <canvas ref={alairasRef} width={320} height={140}
               style={{display:"block",width:"100%",height:140,touchAction:"none",cursor:"crosshair"}}/>
             {!alairas && (
               <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-                <p style={{fontSize:13,color:"#CBD5E1",fontStyle:"italic"}}>✍️ Ügyfél aláírásának helye</p>
+                <p style={{fontSize:13,color:C.border,fontStyle:"italic"}}>✍️ Ügyfél aláírásának helye</p>
               </div>
             )}
           </div>
@@ -527,14 +527,14 @@ export default function FelmeresTelepito({ m, data, onBack }) {
         padding:"12px 16px 24px",
       }}>
         {hibaKijelzes && !validateKategoriak() && (
-          <p style={{fontSize:12,color:"#EF4444",fontWeight:700,textAlign:"center",marginBottom:8}}>
+          <p style={{fontSize:12,color:C.danger,fontWeight:700,textAlign:"center",marginBottom:8}}>
             ⚠️ {FOTO_KAT.filter(k=>!((katFotok[k.id]||[]).length>0||ertelmesMagyarSzo(fotoNotes[k.id]))).length} kategória hiányos!
           </p>
         )}
         <button onClick={handleMentes} disabled={saving}
           style={{
             width:"100%",padding:"15px",borderRadius:12,border:"none",
-            background: mentve?"#22C55E":saving?"#94A3B8":katOkDb===7?"#2563EB":"#0EA5E9",
+            background: mentve?C.success:saving?C.muted:katOkDb===7?C.accent:C.success,
             color:"#fff",fontWeight:700,fontSize:16,cursor:saving?"not-allowed":"pointer",
             display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT,
           }}>

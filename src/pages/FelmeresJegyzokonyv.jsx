@@ -80,9 +80,9 @@ export default function FelmeresJegyzokonyv({ m, onClose }) {
   .check-box {
     width: 6mm;
     height: 6mm;
-    border: 1.5pt solid ${nyilatkozat ? "#22C55E" : "#1E3A5F"};
+    border: 1.5pt solid ${nyilatkozat ? C.success : C.text};
     border-radius: 1.5pt;
-    background: ${nyilatkozat ? "#22C55E" : "#fff"};
+    background: ${nyilatkozat ? C.success : "#fff"};
     flex-shrink: 0;
     margin-top: 0.5mm;
     display: flex;
@@ -196,12 +196,12 @@ export default function FelmeresJegyzokonyv({ m, onClose }) {
         boxShadow:"0 24px 60px rgba(0,0,0,.3)", overflow:"hidden", fontFamily:FONT,
       }}>
         {/* Fejléc */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px", borderBottom:"1px solid #E2E8F0", background:"#F8FAFC" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px", borderBottom:"1px solid #E2E8F0", background:C.bg }}>
           <div>
-            <h2 style={{ fontSize:16, fontWeight:800, margin:0, color:"#0F172A" }}>📋 Felmérési Nyilatkozat</h2>
-            <p style={{ fontSize:12, color:"#64748B", margin:"2px 0 0" }}>{m.id} · {m.clientNev}</p>
+            <h2 style={{ fontSize:16, fontWeight:800, margin:0, color:C.text }}>📋 Felmérési Nyilatkozat</h2>
+            <p style={{ fontSize:12, color:C.muted, margin:"2px 0 0" }}>{m.id} · {m.clientNev}</p>
           </div>
-          <button onClick={onClose} style={{ border:"none", background:"none", cursor:"pointer", color:"#64748B" }}>
+          <button onClick={onClose} style={{ border:"none", background:"none", cursor:"pointer", color:C.muted }}>
             <X size={22}/>
           </button>
         </div>
@@ -211,42 +211,42 @@ export default function FelmeresJegyzokonyv({ m, onClose }) {
           {/* Info sor */}
           <div style={{ display:"flex", gap:12, marginBottom:16 }}>
             {[["📅 Dátum", datumHu], ["👷 Csapat", csapatNev]].map(([l,v]) => (
-              <div key={l} style={{ flex:1, background:"#F8FAFC", borderRadius:10, padding:"10px 12px", border:"1px solid #E2E8F0" }}>
-                <p style={{ fontSize:10, fontWeight:700, color:"#64748B", marginBottom:3 }}>{l}</p>
-                <p style={{ fontSize:13, fontWeight:700, color:"#0F172A" }}>{v}</p>
+              <div key={l} style={{ flex:1, background:C.bg, borderRadius:10, padding:"10px 12px", border:"1px solid #E2E8F0" }}>
+                <p style={{ fontSize:10, fontWeight:700, color:C.muted, marginBottom:3 }}>{l}</p>
+                <p style={{ fontSize:13, fontWeight:700, color:C.text }}>{v}</p>
               </div>
             ))}
           </div>
 
           {/* Nyilatkozat */}
-          <div style={{ border:`2px solid ${nyilatkozat?"#22C55E":"#E2E8F0"}`, borderRadius:12, padding:"14px", marginBottom:14 }}>
+          <div style={{ border:`2px solid ${nyilatkozat?C.success:C.border}`, borderRadius:12, padding:"14px", marginBottom:14 }}>
             <div style={{ display:"flex", gap:10, marginBottom:8 }}>
-              <div style={{ width:22, height:22, borderRadius:5, border:`2px solid ${nyilatkozat?"#22C55E":"#CBD5E1"}`, background:nyilatkozat?"#22C55E":"#fff", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <div style={{ width:22, height:22, borderRadius:5, border:`2px solid ${nyilatkozat?C.success:C.border}`, background:nyilatkozat?C.success:"#fff", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
                 {nyilatkozat && <span style={{ color:"#fff", fontSize:14, fontWeight:800 }}>✓</span>}
               </div>
-              <p style={{ fontSize:12, color:nyilatkozat?"#166534":"#94A3B8", fontWeight:600 }}>
+              <p style={{ fontSize:12, color:nyilatkozat?C.success:C.muted, fontWeight:600 }}>
                 {nyilatkozat ? "✅ Nyilatkozat elfogadva" : "⬜ Nem fogadta el"}
               </p>
             </div>
-            <p style={{ fontSize:11, color:"#475569", lineHeight:1.6 }}>{NYILATKOZAT}</p>
+            <p style={{ fontSize:11, color:C.muted, lineHeight:1.6 }}>{NYILATKOZAT}</p>
           </div>
 
           {/* Aláírás */}
           <div style={{ border:"1px solid #E2E8F0", borderRadius:12, padding:"12px", marginBottom:16 }}>
-            <p style={{ fontSize:12, fontWeight:700, color:"#0F172A", marginBottom:8 }}>✍️ Ügyfél aláírása</p>
+            <p style={{ fontSize:12, fontWeight:700, color:C.text, marginBottom:8 }}>✍️ Ügyfél aláírása</p>
             {alairas
               ? <img src={alairas} alt="Aláírás" style={{ border:"1px solid #E2E8F0", borderRadius:8, maxHeight:80, maxWidth:"100%" }}/>
-              : <p style={{ fontSize:12, color:"#CBD5E1", fontStyle:"italic" }}>Nincs rögzítve</p>
+              : <p style={{ fontSize:12, color:C.border, fontStyle:"italic" }}>Nincs rögzítve</p>
             }
           </div>
         </div>
 
         {/* Lábléc */}
-        <div style={{ padding:"12px 20px", borderTop:"1px solid #E2E8F0", background:"#F8FAFC", display:"flex", gap:10, justifyContent:"flex-end" }}>
-          <button onClick={onClose} style={{ padding:"9px 16px", borderRadius:9, border:"1.5px solid #E2E8F0", background:"#fff", color:"#475569", fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:FONT }}>
+        <div style={{ padding:"12px 20px", borderTop:"1px solid #E2E8F0", background:C.bg, display:"flex", gap:10, justifyContent:"flex-end" }}>
+          <button onClick={onClose} style={{ padding:"9px 16px", borderRadius:9, border:"1.5px solid #E2E8F0", background:"#fff", color:C.muted, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:FONT }}>
             Bezárás
           </button>
-          <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 20px", background:"#1E3A5F", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:14, fontFamily:FONT }}>
+          <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 20px", background:C.text, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:14, fontFamily:FONT }}>
             <Printer size={16}/> PDF mentés
           </button>
         </div>

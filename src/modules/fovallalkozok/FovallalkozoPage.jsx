@@ -100,7 +100,7 @@ function KalkulacioTesztelo({ szabaly }) {
 
   return (
     <div style={{ background: C.successLight, border: "1px solid #86EFAC", borderRadius: 10, padding: "12px 14px", marginTop: 12 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: "#065F46", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 5 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: C.accent, margin: "0 0 8px", display: "flex", alignItems: "center", gap: 5 }}>
         <Calculator size={13} /> Tesztelő – próba input
       </p>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -465,7 +465,7 @@ function FvSor({ fv, onUpdate, onDelete }) {
           )}
 
           {/* Súgó */}
-          <div style={{ marginTop: 12, padding: "10px 14px", background: C.accentLight, border: "1px solid #BFDBFE", borderRadius: 9, fontSize: 12, color: "#1E40AF" }}>
+          <div style={{ marginTop: 12, padding: "10px 14px", background: C.accentLight, border: "1px solid #BFDBFE", borderRadius: 9, fontSize: 12, color: C.accent }}>
             <strong>Több szabály is lehet ugyanahhoz a munkatípushoz</strong> – pl. egy sávos díj + egy fix kiszállási díj.
             Mindkettő összeadódik a projekt kalkulációban.
             Ha van pontos munkatípus egyezés, az általános szabályok nem lépnek életbe.
@@ -556,7 +556,7 @@ export default function FovallalkozoPage({ userRole }) {
 
       {/* Új FV form */}
       {ujOpen && (
-        <div style={{ background: "#F0F9FF", border: "2px solid #93C5FD", borderRadius: 12, padding: "18px", marginTop: 12 }}>
+        <div style={{ background: C.accentLight, border: "2px solid #93C5FD", borderRadius: 12, padding: "18px", marginTop: 12 }}>
           <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Új fővállalkozó adatai</p>
           <div style={{ display: "grid", gridTemplateColumns: "2fr 0.7fr 2fr", gap: 10, marginBottom: 12 }}>
             <div>

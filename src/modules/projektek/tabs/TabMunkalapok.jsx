@@ -83,7 +83,7 @@ function CsapatKiosztasPanel({ munkalap }) {
 
       {/* Új kiosztás form */}
       <div style={{ background: C.successLight, border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 12px", marginTop: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: "#065F46", margin: "0 0 8px" }}>Új csapat kiosztása</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: C.accent, margin: "0 0 8px" }}>Új csapat kiosztása</p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 6 }}>
           <select value={ujCsapatId} onChange={e => setUjCsapatId(e.target.value)} style={{ ...inpS, gridColumn: "span 2" }}>
             <option value="">— Válassz csapatot —</option>

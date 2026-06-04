@@ -107,7 +107,7 @@ function VbfNumInput({ value, onCommit, unit, piros }) {
         onChange={e => setLocal(e.target.value.replace(/[^0-9.,]/g,""))}
         onBlur={handleBlur}
         placeholder="—"
-        style={{ flex:1, padding:"8px 10px", border:`1.5px solid ${piros&&!local?"#EF4444":C.border}`, borderRadius:8, fontSize:15, fontFamily:FONT, color:C.text, outline:"none", background:piros&&!local?"#FEF2F2":"#F8FAFC", minWidth:0 }}
+        style={{ flex:1, padding:"8px 10px", border:`1.5px solid ${piros&&!local?C.danger:C.border}`, borderRadius:8, fontSize:15, fontFamily:FONT, color:C.text, outline:"none", background:piros&&!local?C.dangerLight:C.bg, minWidth:0 }}
       />
       {unit && <span style={{ fontSize:12, color:C.muted, whiteSpace:"nowrap", flexShrink:0, minWidth:32 }}>{unit}</span>}
     </div>
@@ -123,7 +123,7 @@ function VbfTextInput({ value, onCommit, piros }) {
       onChange={e=>setLocal(e.target.value)}
       onBlur={()=>onCommit(local)}
       placeholder="pl. Risen Energy 425W"
-      style={{ width:"100%", padding:"8px 10px", border:`1.5px solid ${piros&&!local?"#EF4444":C.border}`, borderRadius:8, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:piros&&!local?"#FEF2F2":"#F8FAFC" }}
+      style={{ width:"100%", padding:"8px 10px", border:`1.5px solid ${piros&&!local?C.danger:C.border}`, borderRadius:8, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:piros&&!local?C.dangerLight:C.bg }}
     />
   );
 }
@@ -162,7 +162,7 @@ function FotoKartya({ kat, photos, onChange, hianyOk, onHianyOkChange }) {
   return (
     <div style={{
       background:"#fff",
-      border:`1.5px solid ${nincsKep&&!hianyOk?"#FCA5A5":nincsKep&&hianyOk?"#86EFAC":C.border}`,
+      border:`1.5px solid ${nincsKep&&!hianyOk?C.danger:nincsKep&&hianyOk?C.success:C.border}`,
       borderRadius:12, padding:"14px 16px", marginBottom:12
     }}>
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
@@ -170,7 +170,7 @@ function FotoKartya({ kat, photos, onChange, hianyOk, onHianyOkChange }) {
           <p style={{ fontWeight:700, fontSize:15, color:C.text, marginBottom:2 }}>{kat.nev}</p>
           <p style={{ fontSize:12, color:C.muted, lineHeight:1.5 }}>{kat.leiras}</p>
         </div>
-        <button onClick={()=>ref.current?.click()} style={{ width:48, height:48, flexShrink:0, background:"#EFF6FF", border:`1.5px solid #93C5FD`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+        <button onClick={()=>ref.current?.click()} style={{ width:48, height:48, flexShrink:0, background:C.accentLight, border:`1.5px solid #93C5FD`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
           <Camera size={22} color="#D97706"/>
         </button>
       </div>
@@ -195,7 +195,7 @@ function FotoKartya({ kat, photos, onChange, hianyOk, onHianyOkChange }) {
 
       {nincsKep && (
         <div style={{ marginTop:10 }}>
-          <p style={{ fontSize:11, fontWeight:700, color: hianyOk?"#059669":"#DC2626", marginBottom:6, textTransform:"uppercase", letterSpacing:.6 }}>
+          <p style={{ fontSize:11, fontWeight:700, color: hianyOk?C.success:C.danger, marginBottom:6, textTransform:"uppercase", letterSpacing:.6 }}>
             {hianyOk ? "✓ Indoklás megadva" : "⚠️ Kötelező magyarázat – nincs fotó"}
           </p>
           <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
@@ -210,9 +210,9 @@ function FotoKartya({ kat, photos, onChange, hianyOk, onHianyOkChange }) {
                   fontWeight:600,
                   cursor:"pointer",
                   fontFamily:FONT,
-                  background: hianyOk===ok ? "#DCFCE7" : "#F8FAFC",
-                  color: hianyOk===ok ? "#059669" : "#64748B",
-                  border: `1.5px solid ${hianyOk===ok ? "#86EFAC" : "#E2E8F0"}`,
+                  background: hianyOk===ok ? C.successLight : C.bg,
+                  color: hianyOk===ok ? C.success : C.muted,
+                  border: `1.5px solid ${hianyOk===ok ? C.success : C.border}`,
                 }}
               >
                 {ok}
@@ -289,12 +289,12 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
   }
 
   return (
-    <div style={{ padding:"16px", background:"#F1F5F9" }}>
+    <div style={{ padding:"16px", background:C.bg }}>
       <p style={{ fontSize:13, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
         Kék keretes tételeknél minden darabhoz külön sorozatszám szükséges.
       </p>
 
-      {hiba&&<div style={{ background:"#FEF2F2",border:`1px solid #FECACA`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.danger }}>⚠️ {hiba}</div>}
+      {hiba&&<div style={{ background:C.dangerLight,border:`1px solid #FECACA`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.danger }}>⚠️ {hiba}</div>}
 
       {anyagok.map(a=>(
         <div key={a.id} style={{ background:"#fff", border:`1.5px solid ${a.needSerial?"#2563EB30":C.border}`, borderRadius:12, padding:"12px 14px", marginBottom:10 }}>
@@ -318,7 +318,7 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
                 value={sn}
                 onChange={e=>updSerial(a.id,idx,e.target.value)}
                 placeholder="pl. SN-1234567890"
-                style={{ width:"100%", marginTop:4, padding:"9px 12px", border:`1.5px solid ${!sn?C.accent:C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none", background:!sn?"#EFF6FF":"#F8FAFC" }}
+                style={{ width:"100%", marginTop:4, padding:"9px 12px", border:`1.5px solid ${!sn?C.accent:C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none", background:!sn?C.accentLight:C.bg }}
               />
             </div>
           ))}
@@ -457,7 +457,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   function doMegkezdes() {
     const ts = new Date().toISOString();
     const ujStatus = ["Kivitelezésre vár","Megkezdésre Vár","Ütemezett","Kiosztásra vár","Létrehozva","Kiosztva csapatnak"].includes(m.status) ? "Folyamatban" : m.status;
-    updateItem("munkalapok", m.id, { megkezdve: true, megkezdesIdopont: ts, status: ujStatus, statusSzin: "#2563EB" });
+    updateItem("munkalapok", m.id, { megkezdve: true, megkezdesIdopont: ts, status: ujStatus, statusSzin: C.accent });
     window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
     syncMunkalapokToDrive(); // státusz: Folyamatban → Drive-ra
     setMegkezdve(true);
@@ -639,14 +639,14 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   if (m.status==="Felmérés"&&!lezart) return <FelmeresTelepito m={m} data={data} onBack={onBack}/>;
 
   if (lezart) return (
-    <div style={{ minHeight:"100vh",background:"#F1F5F9",fontFamily:FONT }}>
-      <div style={{ background:"#2C4A6E",padding:"44px 16px 16px" }}>
-        <button onClick={onBack} style={{ border:"none",background:"none",color:"#94A3B8",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:13,fontFamily:FONT,fontWeight:600 }}>
+    <div style={{ minHeight:"100vh",background:C.bg,fontFamily:FONT }}>
+      <div style={{ background:C.text,padding:"44px 16px 16px" }}>
+        <button onClick={onBack} style={{ border:"none",background:"none",color:C.muted,cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:13,fontFamily:FONT,fontWeight:600 }}>
           <ArrowLeft size={18}/> Feladatok
         </button>
         <p style={{ fontWeight:800,fontSize:16,color:"#fff",marginTop:8 }}>{munkalapAzonosito}</p>
         <p style={{ fontWeight:700,fontSize:15,color:"#fff" }}>{clientNev}</p>
-        <p style={{ fontSize:12,color:"#94A3B8" }}>{clientCim}</p>
+        <p style={{ fontSize:12,color:C.muted }}>{clientCim}</p>
       </div>
       <div style={{ padding:24,textAlign:"center" }}>
         <Lock size={48} color={C.muted} style={{ opacity:.3,display:"block",margin:"0 auto 16px" }}/>
@@ -654,16 +654,16 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
           {m.status==="Lezárva"||m.status==="Számlázva" ? `Munka ${m.status}` : "Munka lezárva – Ellenőrzés alatt"}
         </p>
         <p style={{ fontSize:14,color:C.muted,marginBottom:8 }}>Befejezve: {m.befejezesIdopont?new Date(m.befejezesIdopont).toLocaleString("hu-HU"):"—"}</p>
-        {m.megjegyzes&&<div style={{ background:"#F8FAFC",border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 16px",margin:"0 auto",maxWidth:400,textAlign:"left" }}><p style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Megjegyzés:</p><p style={{ fontSize:14,color:C.text }}>{m.megjegyzes}</p></div>}
+        {m.megjegyzes&&<div style={{ background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 16px",margin:"0 auto",maxWidth:400,textAlign:"left" }}><p style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Megjegyzés:</p><p style={{ fontSize:14,color:C.text }}>{m.megjegyzes}</p></div>}
         <p style={{ fontSize:13,color:C.muted,marginTop:16 }}>Módosítás csak Admin / Projektmenedzser fiókból lehetséges.</p>
       </div>
     </div>
   );
 
   if (progress!==null) return (
-    <div style={{ minHeight:"100vh",background:"#F1F5F9",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32,fontFamily:FONT }}>
+    <div style={{ minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32,fontFamily:FONT }}>
       <div style={{ background:"#fff",borderRadius:20,padding:32,width:"100%",maxWidth:400,textAlign:"center",boxShadow:"0 8px 32px rgba(0,0,0,.1)" }}>
-        <div style={{ width:72,height:72,borderRadius:"50%",background:progress===100?C.success:"#EFF6FF",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px" }}>
+        <div style={{ width:72,height:72,borderRadius:"50%",background:progress===100?C.success:C.accentLight,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px" }}>
           {progress===100?<CheckCircle2 size={36} color="#fff"/>:<Save size={32} color={C.accent}/>}
         </div>
         <p style={{ fontSize:17,fontWeight:700,color:C.text,marginBottom:8 }}>{progressMsg}</p>
@@ -681,9 +681,9 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   const TABS = megkezdve?TABS_AFTER:TABS_BEFORE;
 
   const Header=()=>(
-    <div style={{ background:"#2C4A6E" }}>
+    <div style={{ background:C.text }}>
       <div style={{ display:"flex",alignItems:"center",gap:10,padding:"44px 16px 8px" }}>
-        <button onClick={onBack} style={{ border:"none",background:"none",color:"#94A3B8",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:13,fontFamily:FONT,fontWeight:600 }}>
+        <button onClick={onBack} style={{ border:"none",background:"none",color:C.muted,cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:13,fontFamily:FONT,fontWeight:600 }}>
           <ArrowLeft size={18}/> Feladatok
         </button>
         <span style={{ fontWeight:800,fontSize:14,color:"#fff",flex:1 }}>{munkalapAzonosito}</span>
@@ -695,7 +695,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
       <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px 14px" }}>
         <div>
           <p style={{ fontWeight:700,fontSize:16,color:"#fff" }}>{clientNev}</p>
-          <p style={{ fontSize:12,color:"#94A3B8" }}>{clientCim}</p>
+          <p style={{ fontSize:12,color:C.muted }}>{clientCim}</p>
         </div>
         <div style={{ display:"flex",gap:12 }}>
           {clientTel&&<a href={`tel:${clientTel}`} style={{ color:"#4ADE80" }}><Phone size={22}/></a>}
@@ -706,9 +706,9 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   );
 
   const TabSav=()=>(
-    <div style={{ display:"flex",background:"#2C4A6E",overflowX:"auto" }}>
+    <div style={{ display:"flex",background:C.text,overflowX:"auto" }}>
       {TABS.map((t,i)=>(
-        <button key={i} onClick={()=>setActiveTab(i)} style={{ flex:1,padding:"12px 4px",border:"none",background:"transparent",color:activeTab===i?"#fff":"#94A3B8",cursor:"pointer",borderBottom:activeTab===i?"3px solid #fff":"3px solid transparent",fontSize:20,minWidth:44 }}>
+        <button key={i} onClick={()=>setActiveTab(i)} style={{ flex:1,padding:"12px 4px",border:"none",background:"transparent",color:activeTab===i?"#fff":C.muted,cursor:"pointer",borderBottom:activeTab===i?"3px solid #fff":"3px solid transparent",fontSize:20,minWidth:44 }}>
           {t.icon}
         </button>
       ))}
@@ -716,33 +716,33 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   );
 
   const InfoTab=()=>{
-    const FR=({label,value})=>value?(<div><p style={{ fontSize:12,color:"#64748B",paddingTop:8,marginBottom:3 }}>{label}</p><div style={{ background:"#E8EDF5",borderRadius:6,padding:"9px 12px",fontSize:14,color:C.text }}>{value}</div></div>):null;
+    const FR=({label,value})=>value?(<div><p style={{ fontSize:12,color:C.muted,paddingTop:8,marginBottom:3 }}>{label}</p><div style={{ background:C.bg,borderRadius:6,padding:"9px 12px",fontSize:14,color:C.text }}>{value}</div></div>):null;
 
     const kiosztasok = m.csapatKiosztasok || [];
 
     return (
-      <div style={{ padding:"0 16px 16px",background:"#F1F5F9" }}>
+      <div style={{ padding:"0 16px 16px",background:C.bg }}>
         <FR label="Projekt megnevezés" value={m.projektMegnevezes}/>
         <FR label="Feladat" value={m.feladat}/>
         <FR label="Kapcsolattartó" value={clientNev}/>
         <FR label="Telefonszám" value={clientTel}/>
         <FR label="Értékesítő" value={m.ertekesito}/>
-        {m.megkezdesIdopont&&<div style={{ marginTop:12,padding:"10px 14px",background:"#EFF6FF",border:`1px solid #BFDBFE`,borderRadius:10,fontSize:13,color:C.accent }}>▶️ Megkezdve: <b>{new Date(m.megkezdesIdopont).toLocaleString("hu-HU")}</b></div>}
+        {m.megkezdesIdopont&&<div style={{ marginTop:12,padding:"10px 14px",background:C.accentLight,border:`1px solid #BFDBFE`,borderRadius:10,fontSize:13,color:C.accent }}>▶️ Megkezdve: <b>{new Date(m.megkezdesIdopont).toLocaleString("hu-HU")}</b></div>}
 
         {/* Kiosztott csapatok */}
         {kiosztasok.length > 0 && (
           <div style={{ marginTop:14, background:"#fff", border:`1px solid ${C.border}`, borderRadius:10, overflow:"hidden" }}>
             <div style={{ padding:"10px 14px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:7 }}>
-              <Users size={14} color="#2563EB"/>
-              <span style={{ fontSize:12, fontWeight:700, color:"#1D4ED8" }}>Kiosztott csapatok ({kiosztasok.length})</span>
+              <Users size={14} color={C.accent}/>
+              <span style={{ fontSize:12, fontWeight:700, color:C.accent }}>Kiosztott csapatok ({kiosztasok.length})</span>
             </div>
             {kiosztasok.map(k => {
               const tagok = getCsapatTagok(k.csapatId).filter(t => t.aktiv !== false);
               return (
                 <div key={k.id || k.csapatId} style={{ padding:"10px 14px", borderBottom:`1px solid #F1F5F9` }}>
                   <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom: tagok.length ? 6 : 0 }}>
-                    <span style={{ fontSize:13, fontWeight:700, color:"#0F172A" }}>{k.csapatNev || k.csapatId}</span>
-                    <span style={{ fontSize:10, fontWeight:700, background: k.tipus==="focsapat"?"#EFF6FF":"#F0FDF4", color: k.tipus==="focsapat"?"#1D4ED8":"#059669", padding:"1px 7px", borderRadius:20 }}>
+                    <span style={{ fontSize:13, fontWeight:700, color:C.text }}>{k.csapatNev || k.csapatId}</span>
+                    <span style={{ fontSize:10, fontWeight:700, background: k.tipus==="focsapat"?C.accentLight:C.successLight, color: k.tipus==="focsapat"?C.accent:C.success, padding:"1px 7px", borderRadius:20 }}>
                       {k.tipus==="focsapat" ? "Főcsapat" : "Segítő"}
                     </span>
                     {k.datumTol && <span style={{ fontSize:11, color:C.muted }}>{k.datumTol}{k.datumIg ? ` – ${k.datumIg}` : ""}</span>}
@@ -750,7 +750,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
                   {tagok.length > 0 && (
                     <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
                       {tagok.map(tag => (
-                        <span key={tag.id} style={{ fontSize:11, background:"#F8FAFC", border:`1px solid ${C.border}`, color:C.text, padding:"2px 8px", borderRadius:20 }}>
+                        <span key={tag.id} style={{ fontSize:11, background:C.bg, border:`1px solid ${C.border}`, color:C.text, padding:"2px 8px", borderRadius:20 }}>
                           {tag.nev} <span style={{ color:C.muted }}>({tag.szerep || "—"})</span>
                         </span>
                       ))}
@@ -765,29 +765,29 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
 
         {/* Ha nincs kiosztás de van csapatNev */}
         {kiosztasok.length === 0 && m.csapatNev && (
-          <div style={{ marginTop:10, padding:"8px 12px", background:"#F8FAFC", border:`1px solid ${C.border}`, borderRadius:9, fontSize:12, color:C.text }}>
+          <div style={{ marginTop:10, padding:"8px 12px", background:C.bg, border:`1px solid ${C.border}`, borderRadius:9, fontSize:12, color:C.text }}>
             👷 Csapat: <strong>{m.csapatNev}</strong>
           </div>
         )}
 
         {!megkezdve ? (
           <div style={{ marginTop: 20 }}>
-            <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#92400E" }}>
+            <div style={{ background: C.warningLight, border: "1px solid #FCD34D", borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.warning }}>
               <Shield size={16} color="#D97706" />
               <span><b>LMRA szükséges</b> – minden csapattag aláírja a kockázatbecslést a munkakezdés előtt</span>
             </div>
-            <button onClick={handleMegkezdes} style={{ width:"100%",padding:"15px",borderRadius:12,border:"none",background:"#22C55E",color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT }}>
+            <button onClick={handleMegkezdes} style={{ width:"100%",padding:"15px",borderRadius:12,border:"none",background:C.success,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT }}>
               <Shield size={18}/> LMRA + Megkezdés →
             </button>
           </div>
         ) : (
           <div>
-            <div style={{ marginTop:12,padding:"10px 14px",background:"#ECFDF5",border:`1px solid #A7F3D0`,borderRadius:10,fontSize:13,color:C.success,fontWeight:600 }}>✅ Munka folyamatban</div>
+            <div style={{ marginTop:12,padding:"10px 14px",background:C.successLight,border:`1px solid #A7F3D0`,borderRadius:10,fontSize:13,color:C.success,fontWeight:600 }}>✅ Munka folyamatban</div>
             {(() => {
               const lmraRec = loadLocal(`lmra_rec_${m.id}`);
               if (lmraRec && ["alairva","exportalva"].includes(lmraRec.status)) {
                 return (
-                  <div style={{ marginTop:8,padding:"8px 12px",background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:9,fontSize:12,color:"#166534" }}>
+                  <div style={{ marginTop:8,padding:"8px 12px",background:C.successLight,border:"1px solid #86EFAC",borderRadius:9,fontSize:12,color:C.success }}>
                     🛡️ LMRA aláírva · {(lmraRec.resztvevok||[]).filter(r=>r.signed).map(r=>r.nev).join(", ")}
                   </div>
                 );
@@ -801,7 +801,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   };
 
   const AnyagokTab=()=>(
-    <div style={{ background:"#F1F5F9" }}>
+    <div style={{ background:C.bg }}>
       {(m.anyagok||[]).length===0&&<div style={{ padding:"32px 16px",textAlign:"center",color:C.muted }}><p>Nincsenek anyagok</p></div>}
       {(m.anyagok||[]).map((a,i)=>(
         <div key={i} style={{ padding:"13px 16px",borderBottom:"1px solid #D1D9E6",display:"flex",justifyContent:"space-between" }}>
@@ -816,12 +816,12 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
     const f=m.felmeres||{};
     const mezok=[["Csatlakozási pont",f.csatlakozasiPont],["AC védelem",f.acVedelem],["Inverter fal",f.inverterFal],["Akkumulátor fal",f.akkuFal],["Tető típus",f.tetoTipus],["Tartószerkezet",f.tartoszerkezetTipus],["DC kábel hossz",f.dcKabelHossz],["DC védelem",f.dcVedelem],["Panel elrendezés",f.panelElrendezes],["Megközelíthetőség",f.megkozelithetoseg]].filter(([,v])=>v!==undefined&&v!=="");
     return (
-      <div style={{ background:"#F1F5F9" }}>
+      <div style={{ background:C.bg }}>
         {mezok.length===0&&<div style={{ padding:"32px 16px",textAlign:"center",color:C.muted }}><p>Nincs felmérés adat</p></div>}
         {mezok.map(([label,value])=>(
           <div key={label} style={{ padding:"0 16px" }}>
-            <p style={{ fontSize:12,color:"#64748B",paddingTop:8,marginBottom:3 }}>{label}</p>
-            <div style={{ background:"#E8EDF5",borderRadius:6,padding:"9px 12px",fontSize:14,color:C.text }}>{String(value)}</div>
+            <p style={{ fontSize:12,color:C.muted,paddingTop:8,marginBottom:3 }}>{label}</p>
+            <div style={{ background:C.bg,borderRadius:6,padding:"9px 12px",fontSize:14,color:C.text }}>{String(value)}</div>
           </div>
         ))}
       </div>
@@ -829,11 +829,11 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   };
 
   const VbfTab=()=>(
-    <div style={{ padding:"16px",background:"#F1F5F9" }}>
-      {figy&&<div style={{ background:"#FEF2F2",border:`1px solid #FECACA`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.danger,display:"flex",alignItems:"center",gap:8 }}>
+    <div style={{ padding:"16px",background:C.bg }}>
+      {figy&&<div style={{ background:C.dangerLight,border:`1px solid #FECACA`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.danger,display:"flex",alignItems:"center",gap:8 }}>
         <AlertTriangle size={16}/>Hiányos VBF mezők – töltsd ki vagy hagyd üresen ha nem releváns
       </div>}
-      <div style={{ background:"#EFF6FF",border:`1px solid #BFDBFE`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#1D4ED8" }}>
+      <div style={{ background:C.accentLight,border:`1px solid #BFDBFE`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.accent }}>
         💡 Üres mező = nem releváns. Ha nulla az érték, hagyd üresen.
       </div>
       <MeroSzakasz title="AC feszültség">{["L1","L2","L3"].map(l=><MeroSor key={l} label={l} value={vbf.acFeszultseg[l]} onCommit={v=>updVbf("acFeszultseg",l,v)} unit="V" piros={figy}/>)}</MeroSzakasz>
@@ -851,7 +851,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
       </MeroSzakasz>
       <MeroSzakasz title="Panel pontos adatok">
         <div style={{ marginBottom:12 }}>
-          <p style={{ fontSize:13,color:C.muted,marginBottom:6 }}>Napelem Típusa <span style={{ fontSize:11,color:"#2563EB" }}>(szöveg)</span></p>
+          <p style={{ fontSize:13,color:C.muted,marginBottom:6 }}>Napelem Típusa <span style={{ fontSize:11,color:C.accent }}>(szöveg)</span></p>
           <VbfTextInput value={vbf.panelTipus} onCommit={v=>updVbf("panelTipus",null,v)} piros={figy}/>
         </div>
         <MeroSor label="Voc" value={vbf.panelVoc} onCommit={v=>updVbf("panelVoc",null,v)} unit="V" piros={figy}/>
@@ -873,7 +873,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   );
 
   const FotokTab=()=>(
-    <div style={{ padding:"16px",background:"#F1F5F9" }}>
+    <div style={{ padding:"16px",background:C.bg }}>
       <p style={{ fontSize:13,color:C.muted,marginBottom:16,lineHeight:1.6 }}>
         Minden kategóriába töltsd fel a fotókat. Ha nincs fotó, kötelező magyarázatot választani!
       </p>
@@ -898,7 +898,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   const lezarhatoE = ell_vbfOk && ell_osszesFoto>0 && ell_megjegyzesMegvan && (ell_mindenKatOk||ell_hianyosKat.length===0);
 
   return (
-    <div style={{ minHeight:"100vh",background:"#F1F5F9",fontFamily:FONT }}>
+    <div style={{ minHeight:"100vh",background:C.bg,fontFamily:FONT }}>
       <Header/>
       <TabSav/>
       {activeTab===0&&<InfoTab/>}
@@ -908,11 +908,11 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
       {megkezdve&&activeTab===4&&<VbfTab/>}
       {megkezdve&&activeTab===5&&<FotokTab/>}
       {megkezdve&&activeTab===6&&(
-        <div style={{ padding:"16px",background:"#F1F5F9",paddingBottom:80 }}>
-          <div style={{ background:"#fff",border:`1.5px solid ${!ell_megjegyzesMegvan?"#FCA5A5":C.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
+        <div style={{ padding:"16px",background:C.bg,paddingBottom:80 }}>
+          <div style={{ background:"#fff",border:`1.5px solid ${!ell_megjegyzesMegvan?C.danger:C.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
             <p style={{ fontSize:14,fontWeight:700,color:C.text,marginBottom:4 }}>
               📝 Megjegyzés / munkavégzés összefoglalója
-              <span style={{ color:"#DC2626",marginLeft:6,fontSize:12 }}>*kötelező</span>
+              <span style={{ color:C.danger,marginLeft:6,fontSize:12 }}>*kötelező</span>
             </p>
             <p style={{ fontSize:12,color:C.muted,marginBottom:10 }}>Írd le a telepítés menetét, észrevételeket, problémákat.</p>
             <textarea
@@ -927,7 +927,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
               }}
               placeholder="Pl. A telepítés rendben megtörtént. Az inverter a garázs falán lett elhelyezve..."
               rows={5}
-              style={{ width:"100%",padding:"10px 12px",border:`1.5px solid ${!ell_megjegyzesMegvan?"#EF4444":C.border}`,borderRadius:9,fontSize:14,fontFamily:FONT,color:C.text,outline:"none",background:"#F8FAFC",resize:"vertical",boxSizing:"border-box" }}
+              style={{ width:"100%",padding:"10px 12px",border:`1.5px solid ${!ell_megjegyzesMegvan?C.danger:C.border}`,borderRadius:9,fontSize:14,fontFamily:FONT,color:C.text,outline:"none",background:C.bg,resize:"vertical",boxSizing:"border-box" }}
             />
             {ell_megjegyzesMegvan && <span style={{ fontSize:11,color:C.success }}>✓ Megjegyzés megadva</span>}
           </div>
@@ -944,7 +944,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
                 {item.ok?<CheckCircle2 size={20} color={C.success} style={{flexShrink:0,marginTop:2}}/>:<AlertTriangle size={20} color="#D97706" style={{flexShrink:0,marginTop:2}}/>}
                 <div>
                   <p style={{ fontSize:14,color:item.ok?C.success:"#D97706",fontWeight:item.ok?600:500,margin:0 }}>{item.label}</p>
-                  {!item.ok&&<p style={{ fontSize:11,color:"#94A3B8",margin:"2px 0 0" }}>{item.info}</p>}
+                  {!item.ok&&<p style={{ fontSize:11,color:C.muted,margin:"2px 0 0" }}>{item.info}</p>}
                 </div>
               </div>
             ))}
@@ -953,7 +953,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
           {/* Napi jelenlét napló */}
           <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, padding:16, marginBottom:16 }}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12, flexWrap:"wrap", gap:8 }}>
-              <p style={{ fontSize:13, fontWeight:700, color:"#0F172A", margin:0 }}>👥 Napi jelenlét napló</p>
+              <p style={{ fontSize:13, fontWeight:700, color:C.text, margin:0 }}>👥 Napi jelenlét napló</p>
               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                 <label style={{ fontSize:11, color:C.muted }}>Dátum:</label>
                 <input type="date" value={jelenletDatum} onChange={e => setJelenletDatum(e.target.value)}
@@ -962,8 +962,8 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
             </div>
 
             {jelenletNaplok.length === 0 && javasloltJelenlet.length > 0 && (
-              <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE", borderRadius:9, padding:"10px 14px", marginBottom:12 }}>
-                <p style={{ fontSize:12, color:"#1D4ED8", margin:"0 0 8px", fontWeight:600 }}>
+              <div style={{ background:C.accentLight, border:"1px solid #BFDBFE", borderRadius:9, padding:"10px 14px", marginBottom:12 }}>
+                <p style={{ fontSize:12, color:C.accent, margin:"0 0 8px", fontWeight:600 }}>
                   {javasloltJelenlet.length} csapattag importálható a kiosztott csapatokból
                 </p>
                 <button onClick={initJelenletFromJavaslat}
@@ -981,17 +981,17 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
             ) : (
               <div>
                 {jelenletNaplok.map(bej => (
-                  <div key={bej.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", border:`1px solid ${C.border}`, borderRadius:9, marginBottom:6, background: bej.jelen ? "#fff" : "#F8FAFC", opacity: bej.jelen ? 1 : .6 }}>
+                  <div key={bej.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", border:`1px solid ${C.border}`, borderRadius:9, marginBottom:6, background: bej.jelen ? "#fff" : C.bg, opacity: bej.jelen ? 1 : .6 }}>
                     {/* Jelen toggle */}
                     <div onClick={() => { updateJelenletBejegyzes(bej.id, { jelen: !bej.jelen }); refreshJelenlet(); }}
                       style={{ width:34, height:18, borderRadius:9, position:"relative", cursor:"pointer", flexShrink:0,
-                        background: bej.jelen ? "#059669" : "#CBD5E1", transition:"background .2s" }}>
+                        background: bej.jelen ? C.success : C.border, transition:"background .2s" }}>
                       <div style={{ position:"absolute", top:1, left: bej.jelen ? 17 : 1, width:16, height:16, borderRadius:"50%", background:"#fff", transition:"left .2s" }} />
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <p style={{ margin:0, fontWeight:700, fontSize:13, color: bej.jelen ? C.text : C.muted }}>
                         {bej.nev}
-                        {bej.ideiglenes && <span style={{ fontSize:10, background:"#FFF7ED", color:"#C2410C", padding:"1px 5px", borderRadius:20, marginLeft:5 }}>Ideiglenes</span>}
+                        {bej.ideiglenes && <span style={{ fontSize:10, background:C.warningLight, color:C.warning, padding:"1px 5px", borderRadius:20, marginLeft:5 }}>Ideiglenes</span>}
                       </p>
                       <div style={{ display:"flex", gap:6, marginTop:1 }}>
                         {bej.csapatNev && <span style={{ fontSize:10, color:C.muted }}>{bej.csapatNev}</span>}
@@ -1001,7 +1001,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
                     {/* Óra vagy napi bér */}
                     <div style={{ display:"flex", alignItems:"center", gap:4, flexShrink:0 }}>
                       {bej.napiBer > 0 ? (
-                        <span style={{ fontSize:11, color:"#059669", fontWeight:600 }}>
+                        <span style={{ fontSize:11, color:C.success, fontWeight:600 }}>
                           {Number(bej.napiBer).toLocaleString("hu-HU")} Ft
                         </span>
                       ) : (
@@ -1014,12 +1014,12 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
                       )}
                     </div>
                     <button onClick={() => { deleteJelenletBejegyzes(bej.id); refreshJelenlet(); }}
-                      style={{ padding:"3px 5px", background:"#FEF2F2", border:"none", borderRadius:5, cursor:"pointer", color:"#DC2626", flexShrink:0 }}>
+                      style={{ padding:"3px 5px", background:C.dangerLight, border:"none", borderRadius:5, cursor:"pointer", color:C.danger, flexShrink:0 }}>
                       <X size={11}/>
                     </button>
                   </div>
                 ))}
-                <div style={{ textAlign:"right", fontSize:12, color:"#059669", fontWeight:700, marginTop:8, paddingTop:8, borderTop:`1px solid ${C.border}` }}>
+                <div style={{ textAlign:"right", fontSize:12, color:C.success, fontWeight:700, marginTop:8, paddingTop:8, borderTop:`1px solid ${C.border}` }}>
                   Összes bérköltség: {jelenletNaplok.filter(j=>j.jelen).reduce((s,j) => s + (j.koltseg || calcJelenletKoltseg(j)), 0).toLocaleString("hu-HU")} Ft
                 </div>
               </div>
@@ -1028,7 +1028,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
 
           {/* Elszámolási adatok megerősítése */}
           <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, padding:16, marginBottom:16 }}>
-            <p style={{ fontSize:13, fontWeight:700, color:"#475569", marginBottom:12 }}>💰 Elszámolási adatok (lezáráskor rögzítve)</p>
+            <p style={{ fontSize:13, fontWeight:700, color:C.muted, marginBottom:12 }}>💰 Elszámolási adatok (lezáráskor rögzítve)</p>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px 12px" }}>
               {[
                 { key:"panelDb",       label:"Panel db" },
@@ -1060,7 +1060,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
               padding:"15px",
               borderRadius:12,
               border:"none",
-              background:lezarhatoE?"#22C55E":"#CBD5E1",
+              background:lezarhatoE?C.success:C.border,
               color:"#fff",
               fontWeight:700,
               fontSize:16,
@@ -1075,7 +1075,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
             {lezarhatoE?"✅ Munka befejezése és lezárása":"🔒 Hiányos dokumentáció"}
           </button>
 
-          {!lezarhatoE&&<p style={{ fontSize:12,color:"#DC2626",textAlign:"center",marginTop:8,fontWeight:600 }}>Piros jelölésű feltételek teljesítése szükséges.</p>}
+          {!lezarhatoE&&<p style={{ fontSize:12,color:C.danger,textAlign:"center",marginTop:8,fontWeight:600 }}>Piros jelölésű feltételek teljesítése szükséges.</p>}
         </div>
       )}
 

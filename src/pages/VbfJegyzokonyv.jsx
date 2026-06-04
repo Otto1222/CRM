@@ -110,7 +110,7 @@ function MezoSor({ field, value, onChange, hiba }) {
             border:`1.5px solid ${hiba ? C.danger : (value !== "" && value !== undefined ? C.success : C.border)}`,
             borderRadius:8, fontSize:14, fontFamily:FONT,
             color:C.text, outline:"none",
-            background: hiba ? "#FEF2F2" : "#fff",
+            background: hiba ? C.dangerLight : "#fff",
           }}
         />
       </div>
@@ -128,7 +128,7 @@ function Szekció({ sec, data, onChange, hibak, validated }) {
 
   return (
     <div style={{ marginBottom:12, borderRadius:12, overflow:"hidden", border:`1.5px solid ${secHibak>0&&validated?C.danger:secKitoltve===sec.fields.length?C.success:C.border}` }}>
-      <button onClick={()=>setOpen(p=>!p)} style={{ width:"100%", display:"flex", alignItems:"center", gap:12, padding:"13px 16px", background:secKitoltve===sec.fields.length?"#ECFDF5":secHibak>0&&validated?"#FEF2F2":"#F8FAFC", border:"none", cursor:"pointer", fontFamily:FONT }}>
+      <button onClick={()=>setOpen(p=>!p)} style={{ width:"100%", display:"flex", alignItems:"center", gap:12, padding:"13px 16px", background:secKitoltve===sec.fields.length?C.successLight:secHibak>0&&validated?C.dangerLight:C.bg, border:"none", cursor:"pointer", fontFamily:FONT }}>
         <span style={{ flex:1, fontWeight:700, fontSize:14, color:C.text, textAlign:"left" }}>{sec.title}</span>
         <span style={{ fontSize:12, color: secKitoltve===sec.fields.length?C.success:C.muted }}>
           {secKitoltve}/{sec.fields.length} kitöltve

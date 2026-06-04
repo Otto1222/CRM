@@ -71,8 +71,8 @@ function FotoKategoria({ kat, photos, onChange, munkalapId }) {
 
   return (
     <div style={{ marginBottom:10, borderRadius:12, overflow:"hidden", border:`1.5px solid ${hiany?"#FCA5A5":ok&&photos.length>0?"#86EFAC":C.border}` }}>
-      <button onClick={() => setOpen(p=>!p)} style={{ width:"100%", display:"flex", alignItems:"center", gap:12, padding:"13px 16px", background: ok&&photos.length>0?"#F0FDF4":hiany?"#FEF2F2":"#F8FAFC", border:"none", cursor:"pointer", fontFamily:FONT }}>
-        <div style={{ width:36, height:36, borderRadius:9, background: ok&&photos.length>0?"#22C55E":hiany?"#EF4444":"#E2E8F0", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+      <button onClick={() => setOpen(p=>!p)} style={{ width:"100%", display:"flex", alignItems:"center", gap:12, padding:"13px 16px", background: ok&&photos.length>0?"#F0FDF4":hiany?C.dangerLight:C.bg, border:"none", cursor:"pointer", fontFamily:FONT }}>
+        <div style={{ width:36, height:36, borderRadius:9, background: ok&&photos.length>0?C.success:hiany?C.danger:C.border, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
           <Camera size={18} color="#fff"/>
         </div>
         <div style={{ flex:1, textAlign:"left" }}>
@@ -112,7 +112,7 @@ function FotoKategoria({ kat, photos, onChange, munkalapId }) {
             onDragOver={e=>{e.preventDefault();setDrag(true);}}
             onDragLeave={()=>setDrag(false)}
             onClick={()=>fileRef.current?.click()}
-            style={{ border:`2px dashed ${drag?C.accent:C.border}`, borderRadius:10, padding:"16px 12px", textAlign:"center", cursor:"pointer", background:drag?C.accentLight:"#F8FAFC" }}
+            style={{ border:`2px dashed ${drag?C.accent:C.border}`, borderRadius:10, padding:"16px 12px", textAlign:"center", cursor:"pointer", background:drag?C.accentLight:C.bg }}
           >
             <Camera size={24} color={drag?C.accent:C.muted} style={{ display:"block", margin:"0 auto 6px" }}/>
             <p style={{ fontSize:13, fontWeight:600, color:drag?C.accent:C.textSub }}>

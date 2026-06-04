@@ -28,9 +28,9 @@ export default function ProjektTable({ projektek, munkalapok, onSelect, userRole
               const penz  = showPenz ? calcProjektPenzugy(mls) : null;
               return (
                 <tr key={p.id} onClick={()=>onSelect(p)}
-                  style={{ borderBottom:`1px solid ${C.bg}`, background: i%2===0?"#fff":"#FAFAFA", cursor:"pointer" }}
+                  style={{ borderBottom:`1px solid ${C.bg}`, background: i%2===0?"#fff":C.bg, cursor:"pointer" }}
                   onMouseEnter={e=>e.currentTarget.style.background=C.accentLight}
-                  onMouseLeave={e=>e.currentTarget.style.background=i%2===0?"#fff":"#FAFAFA"}>
+                  onMouseLeave={e=>e.currentTarget.style.background=i%2===0?"#fff":C.bg}>
                   <td style={{ padding:"11px 12px", fontWeight:700, color: C.accent }}>{p.projektkod}</td>
                   <td style={{ padding:"11px 12px", fontWeight:600, color: C.text, maxWidth:200 }}>
                     <div style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.nev}</div>

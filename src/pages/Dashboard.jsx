@@ -21,7 +21,7 @@ function StatCard({ label, value, sub, color, bg, icon: Icon }) {
 }
 
 function StatusBadge({ s }) {
-  const cfg = STATUS_CFG[s] || { bg:"#F2F5F4", text:C.muted, dot:"#9E9E9E" };
+  const cfg = STATUS_CFG[s] || { bg:"#F2F5F4", text:C.muted, dot:C.muted };
   return (
     <span style={{ background:cfg.bg, color:cfg.text, borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:700, whiteSpace:"nowrap" }}>
       {s}
@@ -95,7 +95,7 @@ function KarteritesekSzekció({ karteritesek, isAdmin, user, onRefresh }) {
             <div key={k.id} style={{
               display:"flex", alignItems:"center", gap:14, padding:"10px 14px",
               background: k.elfogadott===true ? C.dangerLight : k.elfogadott===false ? C.bg : C.warningLight,
-              borderRadius:10, border:`1px solid ${k.elfogadott===true ? "#F5A0A5" : k.elfogadott===false ? C.border : "#FCD34D"}`,
+              borderRadius:10, border:`1px solid ${k.elfogadott===true ? C.danger : k.elfogadott===false ? C.border : C.warning}`,
             }}>
               <div style={{ flex:1 }}>
                 <p style={{ fontWeight:700, fontSize:13, margin:0, color: C.text }}>{k.ok}</p>
@@ -400,7 +400,7 @@ export default function Dashboard({ user }) {
                 <tr><td colSpan={20} style={{ padding:"40px", textAlign:"center", color: C.muted }}>Nincsenek munkalapok</td></tr>
               )}
               {tableData.map((m, i) => (
-                <tr key={m.id} style={{ borderBottom:`1px solid ${C.bg}`, background: i%2===0 ? "#fff" : "#FAFAFA",
+                <tr key={m.id} style={{ borderBottom:`1px solid ${C.bg}`, background: i%2===0 ? "#fff" : C.bg,
                   ...(isAdmin && m.bevetal > 0 ? { borderLeft:`3px solid ${m.nyereseg ? C.success : C.danger}` } : {}),
                 }}>
                   <td style={{ padding:"12px 14px" }}>
@@ -415,8 +415,8 @@ export default function Dashboard({ user }) {
                   {isAdmin && <>
                     <td style={{ padding:"12px 14px", fontWeight:600, color: C.success }}>{m.bevetal > 0 ? ft(m.bevetal) : "—"}</td>
                     <td style={{ padding:"12px 14px", color: C.danger }}>{m.osszesKolts > 0 ? ft(m.osszesKolts) : "—"}</td>
-                    <td style={{ padding:"12px 14px", color: m.kartEritesElf>0 ? C.danger : "#9E9E9E", fontSize:12 }}>{m.kartEritesElf > 0 ? ft(m.kartEritesElf) : "—"}</td>
-                    <td style={{ padding:"12px 14px", fontWeight:700, color: m.bevetal > 0 ? (m.nyereseg ? C.success : C.danger) : "#9E9E9E" }}>
+                    <td style={{ padding:"12px 14px", color: m.kartEritesElf>0 ? C.danger : C.muted, fontSize:12 }}>{m.kartEritesElf > 0 ? ft(m.kartEritesElf) : "—"}</td>
+                    <td style={{ padding:"12px 14px", fontWeight:700, color: m.bevetal > 0 ? (m.nyereseg ? C.success : C.danger) : C.muted }}>
                       {m.bevetal > 0 ? ft(m.eredmeny) : "—"}
                     </td>
                     <td style={{ padding:"12px 14px" }}>
@@ -486,20 +486,20 @@ export default function Dashboard({ user }) {
               </thead>
               <tbody>
                 {projektBilling.rows.map((row, i) => (
-                  <tr key={row.id} style={{ borderBottom:`1px solid ${C.bg}`, background: i%2===0?"#fff":"#FAFAFA", borderLeft:`3px solid ${row.nyereseg ? C.success : C.danger}` }}>
+                  <tr key={row.id} style={{ borderBottom:`1px solid ${C.bg}`, background: i%2===0?"#fff":C.bg, borderLeft:`3px solid ${row.nyereseg ? C.success : C.danger}` }}>
                     <td style={{ padding:"10px 14px" }}>
                       <p style={{ fontWeight:800, color: C.accent, margin:0 }}>{row.projektkod}</p>
                       {row.hianyos && <span style={{ fontSize:9, background: C.dangerLight, color: C.danger, padding:"1px 5px", borderRadius:4, fontWeight:700 }}>hiányos konfig</span>}
                     </td>
                     <td style={{ padding:"10px 14px", color: C.textSub, fontSize:12 }}>{row.nev}</td>
                     <td style={{ padding:"10px 14px", color: C.textSub }}>{row.fovNev}</td>
-                    <td style={{ padding:"10px 14px", fontWeight:700, color: C.success }}>{row.nettoBevitel > 0 ? ft(row.nettoBevitel) : <span style={{color:"#9E9E9E"}}>—</span>}</td>
-                    <td style={{ padding:"10px 14px", color: C.danger }}>{row.csapatBer > 0 ? ft(row.csapatBer) : <span style={{color:"#9E9E9E"}}>—</span>}</td>
-                    <td style={{ padding:"10px 14px", color: C.accent }}>{row.alvallalkozoiBer > 0 ? ft(row.alvallalkozoiBer) : <span style={{color:"#9E9E9E"}}>—</span>}</td>
+                    <td style={{ padding:"10px 14px", fontWeight:700, color: C.success }}>{row.nettoBevitel > 0 ? ft(row.nettoBevitel) : <span style={{color:C.muted}}>—</span>}</td>
+                    <td style={{ padding:"10px 14px", color: C.danger }}>{row.csapatBer > 0 ? ft(row.csapatBer) : <span style={{color:C.muted}}>—</span>}</td>
+                    <td style={{ padding:"10px 14px", color: C.accent }}>{row.alvallalkozoiBer > 0 ? ft(row.alvallalkozoiBer) : <span style={{color:C.muted}}>—</span>}</td>
                     <td style={{ padding:"10px 14px", color: C.muted, fontSize:12 }}>
                       {(row.utikoltség + row.alvallalkozoiKmBer + row.anyagkoltség) > 0
                         ? ft(row.utikoltség + row.alvallalkozoiKmBer + row.anyagkoltség)
-                        : <span style={{color:"#9E9E9E"}}>—</span>}
+                        : <span style={{color:C.muted}}>—</span>}
                     </td>
                     <td style={{ padding:"10px 14px", fontWeight:800, color: row.nyereseg ? C.success : C.danger }}>{ft(row.haszon)}</td>
                     <td style={{ padding:"10px 14px" }}>
@@ -507,7 +507,7 @@ export default function Dashboard({ user }) {
                         <span style={{ background: row.nyereseg ? C.successLight : C.dangerLight, color: row.nyereseg ? C.success : C.danger, padding:"3px 9px", borderRadius:6, fontWeight:700, fontSize:12 }}>
                           {row.haszonPct}%
                         </span>
-                      ) : <span style={{color:"#9E9E9E"}}>—</span>}
+                      ) : <span style={{color:C.muted}}>—</span>}
                     </td>
                   </tr>
                 ))}
@@ -524,8 +524,8 @@ export default function Dashboard({ user }) {
         <div style={{ background: C.warningLight, border:`1.5px solid ${C.warning}60`, borderRadius:12, padding:"14px 20px", marginTop:20, display:"flex", gap:12, alignItems:"flex-start" }}>
           <AlertTriangle size={18} color={C.warning} style={{ flexShrink:0, marginTop:1 }} />
           <div>
-            <p style={{ fontWeight:700, fontSize:13, color:"#92400E", margin:"0 0 3px" }}>Fővállalkozói elszámolás nincs beállítva egyetlen projektnél sem</p>
-            <p style={{ fontSize:12, color:"#92400E", margin:0, lineHeight:1.6 }}>
+            <p style={{ fontWeight:700, fontSize:13, color:C.warning, margin:"0 0 3px" }}>Fővállalkozói elszámolás nincs beállítva egyetlen projektnél sem</p>
+            <p style={{ fontSize:12, color:C.warning, margin:0, lineHeight:1.6 }}>
               Projekt szintű kalkulált bevételhez: <strong>Beállítások → Munkatípusok</strong> (bevételi tételek, egységárak) →
               <strong> Beállítások → Fővállalkozók</strong> (elszámolási szabályok) →
               <strong> Projekt szerkesztése</strong> → Fővállalkozó + munkatípus kiválasztása.

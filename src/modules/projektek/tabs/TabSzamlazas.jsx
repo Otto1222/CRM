@@ -65,7 +65,7 @@ export default function TabSzamlazas({ projekt, currentUser }) {
         <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
           {[
             { label: "Kimenő számlák", value: ft(osszesBrutto), color: C.success,  bg: C.successLight },
-            { label: "Fizetve",        value: ft(fizetve),       color: C.accent,  bg: "#F0F9FF" },
+            { label: "Fizetve",        value: ft(fizetve),       color: C.accent,  bg: C.accentLight },
             { label: "Várakozik",      value: ft(varakozik),     color: C.warning,  bg: C.warningLight },
           ].map(k => (
             <div key={k.label} style={{ background: k.bg, borderRadius: 12, padding: "12px 16px", flex: 1, minWidth: 140, border: `1px solid ${k.color}30` }}>

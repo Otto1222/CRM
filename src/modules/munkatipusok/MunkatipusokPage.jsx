@@ -221,7 +221,7 @@ export default function MunkatipusokPage({ userRole }) {
       ))}
 
       {ujOpen && (
-        <div style={{ background:"#F0F9FF", border:"2px solid #93C5FD", borderRadius:12, padding:"16px", marginTop:12 }}>
+        <div style={{ background:C.accentLight, border:"2px solid #93C5FD", borderRadius:12, padding:"16px", marginTop:12 }}>
           <p style={{ fontWeight:700, fontSize:14, marginBottom:10 }}>Új munkatípus neve</p>
           <div style={{ display:"flex", gap:8 }}>
             <input value={ujNev} onChange={e=>setUjNev(e.target.value)} placeholder="pl. Napelemes rendszer telepítés" style={{...inp,flex:1}}/>

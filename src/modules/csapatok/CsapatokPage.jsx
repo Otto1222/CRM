@@ -23,7 +23,7 @@ const SZINEK = [
 const inp = {
   width: "100%", boxSizing: "border-box", padding: "9px 12px",
   border: "1.5px solid #E2E8F0", borderRadius: 9, fontSize: 14,
-  fontFamily: "inherit", outline: "none", background: "#FAFAFA",
+  fontFamily: "inherit", outline: "none", background: C.bg,
 };
 
 function Toggle({ value, onChange, label }) {
@@ -41,7 +41,7 @@ function Toggle({ value, onChange, label }) {
           borderRadius: "50%", background: "#fff", transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)",
         }} />
       </div>
-      <span style={{ fontSize: 14, color: "#334155", fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: 14, color: C.textSub, fontWeight: 500 }}>{label}</span>
     </label>
   );
 }
@@ -160,8 +160,8 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
                     flex: 1, padding: "9px 12px", borderRadius: 9, cursor: "pointer", fontFamily: FONT,
                     fontSize: 13, fontWeight: 700, transition: "all .15s",
                     background: form.tipus === t.id ? (t.id === "sajat" ? C.accentLight : C.warningLight) : C.bg,
-                    color:      form.tipus === t.id ? (t.id === "sajat" ? C.accent : "#C2410C") : C.muted,
-                    border: `2px solid ${form.tipus === t.id ? (t.id === "sajat" ? C.accentLight : "#FED7AA") : C.border}`,
+                    color:      form.tipus === t.id ? (t.id === "sajat" ? C.accent : C.warning) : C.muted,
+                    border: `2px solid ${form.tipus === t.id ? (t.id === "sajat" ? C.accentLight : C.warning) : C.border}`,
                   }}
                 >
                   {t.id === "sajat" ? "🏢 " : "🤝 "}{t.label}
@@ -260,7 +260,7 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
                   <div style={{ position: "absolute", top: 2, left: form.elszamolasAktiv ? 20 : 2, width: 18, height: 18,
                     borderRadius: "50%", background: "#fff", transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
                 </div>
-                <span style={{ fontSize: 13, color: "#334155", fontWeight: 500 }}>
+                <span style={{ fontSize: 13, color: C.textSub, fontWeight: 500 }}>
                   {form.elszamolasAktiv ? "Aktív" : "Kikapcsolva"}
                 </span>
               </label>
@@ -302,7 +302,7 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
                         <div style={{ position: "absolute", top: 1, left: form.kmElszamolasAktiv ? 17 : 1, width: 16, height: 16,
                           borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
                       </div>
-                      <span style={{ fontSize: 12, color: "#334155" }}>{form.kmElszamolasAktiv ? "Aktív" : "Nincs"}</span>
+                      <span style={{ fontSize: 12, color: C.textSub }}>{form.kmElszamolasAktiv ? "Aktív" : "Nincs"}</span>
                     </label>
                   </div>
                   {form.kmElszamolasAktiv && (
@@ -403,7 +403,7 @@ function CsapatTagForm({ tag, csapatId, onSave, onClose }) {
               <div style={{ position: "absolute", top: 2, left: f.aktiv ? 18 : 2, width: 16, height: 16,
                 borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
             </div>
-            <span style={{ fontSize: 13, color: "#334155", fontWeight: 500 }}>{f.aktiv ? "Aktív tag" : "Inaktív"}</span>
+            <span style={{ fontSize: 13, color: C.textSub, fontWeight: 500 }}>{f.aktiv ? "Aktív tag" : "Inaktív"}</span>
           </label>
         </div>
 
@@ -634,7 +634,7 @@ function AvSzabalyForm({ szabaly, csapatId, onSave, onClose }) {
         </div>
 
         <div style={{ background: C.successLight, border: "1px solid #86EFAC", borderRadius: 9, padding: "10px 12px", marginTop: 12 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: "#065F46", margin: "0 0 7px", display: "flex", alignItems: "center", gap: 4 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: C.accent, margin: "0 0 7px", display: "flex", alignItems: "center", gap: 4 }}>
             <Calculator size={12}/> Tesztelő
           </p>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -704,14 +704,14 @@ function AvSzabalyPanel({ csapatId }) {
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 2, flexWrap: "wrap" }}>
                   <span style={{ fontWeight: 700, fontSize: 12, color: C.text }}>{sz.munkatipus || "Általános"}</span>
-                  <span style={{ fontSize: 10, background: "#F3E8FF", color: C.accent, padding: "1px 7px", borderRadius: 20, fontWeight: 700 }}>{modInfo?.label || sz.mod}</span>
+                  <span style={{ fontSize: 10, background: C.accentLight, color: C.accent, padding: "1px 7px", borderRadius: 20, fontWeight: 700 }}>{modInfo?.label || sz.mod}</span>
                   {sz.aktiv === false && <span style={{ fontSize: 10, color: C.muted }}>Inaktív</span>}
                 </div>
                 <div style={{ fontSize: 11, color: C.success, fontWeight: 600 }}>{szabalyLeiras(sz)}</div>
                 {sz.mod === "savos" && (sz.savok || []).length > 0 && (
                   <div style={{ marginTop: 4, display: "flex", gap: 3, flexWrap: "wrap" }}>
                     {(sz.savok || []).map((s, i) => (
-                      <span key={i} style={{ fontSize: 10, background: C.accentLight, color: "#6D28D9", padding: "1px 6px", borderRadius: 20 }}>
+                      <span key={i} style={{ fontSize: 10, background: C.accentLight, color: C.accent, padding: "1px 6px", borderRadius: 20 }}>
                         {s.tol}–{s.ig || "∞"}: {Number(s.osszeg || 0).toLocaleString("hu-HU")} Ft
                       </span>
                     ))}
@@ -746,7 +746,7 @@ function AvSzabalyPanel({ csapatId }) {
 function CsapatKartya({ csapat, onEdit, onDelete }) {
   const [expanded, setExpanded] = useState(false);
   const tipusInfo = csapat.tipus === "alvallalkozo"
-    ? { label: "Alvállalkozó", bg: C.warningLight, color: "#C2410C", border: "#FED7AA" }
+    ? { label: "Alvállalkozó", bg: C.warningLight, color: C.warning, border: C.warning }
     : { label: "Saját csapat", bg: C.accentLight, color: C.accent, border: C.accentLight };
 
   const tagok = getCsapatTagok(csapat.id);
