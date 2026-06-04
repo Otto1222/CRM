@@ -17,19 +17,21 @@ import TabKommunikacio from "./tabs/TabKommunikacio.jsx";
 import TabNaplo from "./tabs/TabNaplo.jsx";
 import TabRiport from "./tabs/TabRiport.jsx";
 import TabLmra from "./tabs/TabLmra.jsx";
+import TabKarteritesek from "./tabs/TabKarteritesek.jsx";
 
 const TABS = [
-  { id: "attekintes",  label: "Áttekintés",  icon: "📊" },
-  { id: "ajanlatok",   label: "Ajánlatok",   icon: "📋" },
-  { id: "munkalapok",  label: "Munkalapok",  icon: "🔧" },
-  { id: "koltsegek",   label: "Költségek",   icon: "💰" },
-  { id: "dokumentumok",label: "Dokumentumok",icon: "📁" },
-  { id: "utemezas",    label: "Ütemezés",    icon: "📅" },
-  { id: "szamlazas",   label: "Számlázás",   icon: "🧾" },
-  { id: "kommunikacio",label: "Kommunikáció",icon: "💬" },
-  { id: "naplo",       label: "Napló",       icon: "📝" },
-  { id: "lmra",        label: "LMRA",        icon: "🛡️" },
-  { id: "riport",      label: "Riport / PDF",icon: "🖨️" },
+  { id: "attekintes",   label: "Áttekintés",   icon: "📊" },
+  { id: "ajanlatok",    label: "Ajánlatok",    icon: "📋" },
+  { id: "munkalapok",   label: "Munkalapok",   icon: "🔧" },
+  { id: "koltsegek",    label: "Költségek",    icon: "💰" },
+  { id: "karteritesek", label: "Kártérítések", icon: "⚠️" },
+  { id: "dokumentumok", label: "Dokumentumok", icon: "📁" },
+  { id: "utemezas",     label: "Ütemezés",     icon: "📅" },
+  { id: "szamlazas",    label: "Számlázás",    icon: "🧾" },
+  { id: "kommunikacio", label: "Kommunikáció", icon: "💬" },
+  { id: "naplo",        label: "Napló",        icon: "📝" },
+  { id: "lmra",         label: "LMRA",         icon: "🛡️" },
+  { id: "riport",       label: "Riport / PDF", icon: "🖨️" },
 ];
 
 export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateMunkalap, currentUser, onNewMunkalapForProjekt }) {
@@ -93,6 +95,8 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
         return <TabKommunikacio {...props} />;
       case "naplo":
         return <TabNaplo {...props} />;
+      case "karteritesek":
+        return <TabKarteritesek {...props} />;
       case "lmra":
         return <TabLmra {...props} />;
       case "riport":
