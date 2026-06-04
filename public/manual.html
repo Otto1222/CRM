@@ -316,6 +316,8 @@
     <li><a href="#projektek">📋 Projektek</a></li>
     <li><a href="#munkalapok">🔧 Munkalapok</a></li>
     <li><a href="#telepito">📱 Telepítő felület</a></li>
+    <li><a href="#telepito-felmeres" style="padding-left:32px;font-size:12px">└ Felmérési munkalap</a></li>
+    <li><a href="#telepito-kivitelez" style="padding-left:32px;font-size:12px">└ Kivitelezési munkalap</a></li>
 
     <li class="section"><a>Pénzügyek</a></li>
     <li><a href="#szamlak">🧾 Számlák</a></li>
@@ -626,42 +628,209 @@
   <!-- ══════════════════════════════════════════════════════════
        TELEPÍTŐ FELÜLET
   ══════════════════════════════════════════════════════════ -->
-  <h2 id="telepito">📱 Telepítő felület</h2>
-  <p>A Telepítő szerepkörű felhasználók kizárólag a Munkalapok oldalt látják, ahol egy mobil-barát nézet fogadja őket.</p>
+  <h2 id="telepito">📱 Telepítő felület – Teljes útmutató</h2>
+  <p>A Telepítő szerepkörű felhasználók bejelentkezés után közvetlenül a saját munkalapjaikat látják. Más menü nem elérhető — kizárólag a hozzájuk rendelt feladatok jelennek meg.</p>
 
-  <h3>Munka megkezdése</h3>
-  <ol>
-    <li>Lépj be Telepítő fiókkal (pl. <code>kutasi</code>)</li>
-    <li>A megjelenő listában keresd meg a hozzád rendelt munkalapot</li>
-    <li>Nyisd meg → kattints a <strong>Munka megkezdése</strong> gombra</li>
-    <li>A rendszer rögzíti a <strong>kezdési időpontot</strong> (óra, perc, másodperc pontossággal)</li>
-  </ol>
+  <div class="alert alert-info">
+    <span class="icon">ℹ️</span>
+    <p><strong>Fontos:</strong> A Telepítő nem látja az anyagok árát, a pénzügyi adatokat, a fővállalkozó nevét, és nem ér el más menüpontot. Csak a saját neve vagy csapata szerint kiosztott munkalapok látszanak.</p>
+  </div>
 
-  <h3>A munkalap kitöltése – Fülek</h3>
-  <table>
-    <thead><tr><th>Fül</th><th>Tartalom</th></tr></thead>
-    <tbody>
-      <tr><td><strong>ℹ️ Info</strong></td><td>Ügyfél adatok, telepítési cím, projekt kód megtekintése</td></tr>
-      <tr><td><strong>📦 Anyagok</strong></td><td>A munkalaphoz rendelt eszközök és mennyiségek ellenőrzése/szerkesztése</td></tr>
-      <tr><td><strong>📋 Felmérés</strong></td><td>Helyszíni mérési adatok rögzítése</td></tr>
-      <tr><td><strong>📝 VBF</strong></td><td>Villámvédelmi biztonsági fejlap kitöltése</td></tr>
-      <tr><td><strong>📸 Fotók</strong></td><td>Helyszíni fotók feltöltése (telepítés előtt/közben/után)</td></tr>
-      <tr><td><strong>✅ Befejezés</strong></td><td>Lezárási összefoglaló, aláírás, LMRA</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Munka lezárása</h3>
-  <ol>
-    <li>Töltsd ki az összes szükséges fület</li>
-    <li>A <strong>Befejezés fülön</strong> ellenőrizd az összefoglalót</li>
-    <li>Kattints a <strong>Munka lezárása</strong> gombra</li>
-    <li>A rendszer rögzíti a befejezési időpontot és kiszámolja az eltelt munkaidőt</li>
-    <li>A státusz automatikusan <strong>„Kitöltésre vár"</strong> → PM ellenőrzi</li>
-  </ol>
+  <!-- ── MUNKALAP LISTA ── -->
+  <h3>1. Munkalap lista</h3>
+  <p>Bejelentkezés után minden hozzárendelt, aktív munkalap kártyaként jelenik meg:</p>
+  <div class="card" style="font-family:monospace;font-size:13px;background:#1E293B;color:#E2E8F0;border-color:#334155;">
+    <div style="color:#94A3B8;margin-bottom:8px;">— Munkalap kártya —</div>
+    <div>☀️ &nbsp;<strong style="color:#fff">T003700</strong> &nbsp;&nbsp; 2024.12.15</div>
+    <div style="margin-top:4px"><span style="background:#FEF3C7;color:#92400E;border-radius:4px;padding:1px 7px;font-size:12px;">Megkezdésre vár</span></div>
+    <div style="margin-top:8px;color:#94A3B8">Napelem rendszer telepítése</div>
+    <div style="margin-top:4px"><strong style="color:#fff">Kovács Péter</strong></div>
+    <div style="color:#64748B;font-size:12px">1044 Budapest, Példa utca 12.</div>
+  </div>
+  <p>A kártyán látható adatok: telepítés típus ikonja, munkaszám, dátum, státusz, projekt megnevezés, ügyfél neve és címe.<br/>
+  A <strong>kereső ikonnal</strong> szűrhetsz munkaszámra, ügyfél névre vagy projekt kódra.</p>
 
   <div class="alert alert-warn">
     <span class="icon">⚠️</span>
-    <p><strong>Fontos:</strong> A Telepítő nem látja az anyagok árát, csak a nevét és mennyiségét. Az árak csak Admin, PM és Iroda szerepköröknek láthatók.</p>
+    <p>Befejezett, lezárt, számlázott munkalapok <strong>nem jelennek meg</strong> a listában — ez normális.</p>
+  </div>
+
+  <!-- ── KÉT MUNKATÍPUS ── -->
+  <h3>2. Kétféle munkatípus</h3>
+  <p>A rendszer automatikusan felismeri, hogy a munkalap <strong>Felmérés</strong> vagy <strong>Kivitelezés</strong> típusú, és más-más felületet nyit meg.</p>
+  <div class="card-grid">
+    <div class="card-sm" style="border-color:#0EA5E9;background:#F0F9FF;">
+      <h4 style="color:#0369A1">📋 Felmérés típusú munkalap</h4>
+      <p>Helyszíni felmérés dokumentálása: fotók (7 kategória), szöveges adatok, nyilatkozat és ügyfél aláírás. A lezárás után státusz: <strong>Befejezett Felmérés</strong>.</p>
+    </div>
+    <div class="card-sm" style="border-color:#059669;background:#F0FDF4;">
+      <h4 style="color:#065F46">⚙️ Kivitelezés típusú munkalap</h4>
+      <p>Telepítés elvégzése: LMRA kockázatbecslés → anyagok + sorozatszámok → VBF mérések → fotók (27 kategória) → ügyfél aláírás. A lezárás után státusz: <strong>Ellenőrzés alatt</strong>.</p>
+    </div>
+  </div>
+
+  <!-- ══ FELMÉRÉS ══ -->
+  <h3 id="telepito-felmeres" style="border-top:2px solid #E2E8F0;padding-top:24px;margin-top:32px;">📋 A – Felmérési munkalap lépései</h3>
+
+  <h4>A/1 – Fotók (7 kategória)</h4>
+  <p>Minden kategóriához <strong>legalább 1 fotót</strong> kell feltölteni, vagy ha nincs lehetőség, <strong>minimum 3 érdemi szavas magyarázatot</strong> kell írni.</p>
+  <table>
+    <thead><tr><th>#</th><th>Kategória</th><th>Mit kell fotózni?</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>🔌 Csatlakozási pont</td><td>Hova csatlakozik a rendszer — tábló, alhálózat stb.</td></tr>
+      <tr><td>2</td><td>⚡ Inverter fal, elhelyezés</td><td>Tervezett inverter helye — fal típusa, mérete</td></tr>
+      <tr><td>3</td><td>🔋 Akkumulátor elhelyezése</td><td>Tervezett akkumulátor elhelyezési hely</td></tr>
+      <tr><td>4</td><td>🏠 Tető típusa</td><td>Tető anyaga, szöge, iránya, akadályok</td></tr>
+      <tr><td>5</td><td>🏗️ Padlás</td><td>Padlástér állapota, járhatóság, kábelvezet lehetőség</td></tr>
+      <tr><td>6</td><td>⛈️ Villámhárító</td><td>Van-e villámhárító? Ha igen, típusa és állapota</td></tr>
+      <tr><td>7</td><td>📊 Mérőóra és kismegszakító</td><td>Mérőóra, kismegszakító típusa, kapacitás, elhelyezés</td></tr>
+    </tbody>
+  </table>
+
+  <h4>A/2 – Szöveges adatok (5 csoport)</h4>
+  <div class="field-list">
+    <div class="field-row"><span class="field-name">Csatlakozási pont</span><span class="field-desc">Csatl. pont állapota · AC kábel tervezett hossz (m) · AC védelem típus · Komm. kábel hossza (m)</span></div>
+    <div class="field-row"><span class="field-name">Inverter / Akkumulátor</span><span class="field-desc">Inverter fal leírása · Akkumulátor fal leírása · Akku kábel tervezett hossz (m)</span></div>
+    <div class="field-row"><span class="field-name">Tető / Szerkezet</span><span class="field-desc">Tető típus · Tetőszerkezet típus · Padlás · Villámhárító · Tartószerkezet típus · Pótcserép</span></div>
+    <div class="field-row"><span class="field-name">DC / Panel</span><span class="field-desc">DC kábel hossz (m) · DC kábel nyomvonal · DC védelem típus · Tűzeseti kapcsoló szükséges · Panel elrendezés</span></div>
+    <div class="field-row"><span class="field-name">Egyéb</span><span class="field-desc">Felhordó eszköz szükséges · Engedélyeztetés állapota · Visszwatt védelem · Megközelíthetőség, megjegyzés</span></div>
+  </div>
+
+  <h4>A/3 – Nyilatkozat és aláírás</h4>
+  <ol>
+    <li>Olvasd el a nyilatkozatot (az ügyfél és a kivitelező közötti előzetes egyeztetés megerősítése)</li>
+    <li>Pipáld be: <strong>„Elolvastam és elfogadom a fenti nyilatkozatot"</strong></li>
+    <li>Az ügyfél <strong>ujjával aláírja</strong> a képernyőn a felmérési lapot</li>
+    <li>Kattints: <strong>💾 Felmérés mentése</strong></li>
+    <li>Státusz automatikusan: <strong>Befejezett Felmérés</strong> → PM megkapja</li>
+  </ol>
+
+  <!-- ══ KIVITELEZÉS ══ -->
+  <h3 id="telepito-kivitelez" style="border-top:2px solid #E2E8F0;padding-top:24px;margin-top:32px;">⚙️ B – Kivitelezési munkalap lépései</h3>
+  <p>A kivitelezési munkalap 7 fülből áll. Az első 3 fül a munka megkezdése előtt is elérhető, a többi csak az LMRA aláírás után nyílik meg.</p>
+
+  <h4>B/1 – Info fül → LMRA + Munka megkezdése</h4>
+  <p>Az Info fülön láthatók a projekt adatai (megnevezés, feladat leírás, kapcsolattartó neve és telefonszáma).</p>
+  <div class="alert alert-warn">
+    <span class="icon">⚠️</span>
+    <p><strong>LMRA kötelező!</strong> A munka megkezdése előtt minden csapattagnak alá kell írnia a kockázatbecslést. Kattints a <strong>„🛡️ LMRA + Megkezdés →"</strong> gombra, töltsd ki a kockázatbecslési lapot, és minden csapattag írjon alá. Csak ezután nyílnak meg a 4–7. fülek.</p>
+  </div>
+
+  <h4>B/2 – Anyagok fül (olvasható)</h4>
+  <p>A PM által előre feltöltött anyaglista nézhető meg itt (eszköz neve, mennyiség, egység). Szerkeszteni nem lehet.</p>
+
+  <h4>B/3 – Felmérés fül (olvasható)</h4>
+  <p>Ha a projekthez korábban felmérési munkalap is tartozott, annak adatai itt olvashatók: csatlakozási pont, tető típus, kábel hosszak stb.</p>
+
+  <h4>B/4 – Felhasznált anyagok fül ⟵ <em>Csak munka megkezdése után!</em></h4>
+  <p>Rögzítsd a ténylegesen felhasznált anyagokat. <strong>Sorozatszámot igénylő eszközöknél</strong> minden darabhoz külön S/N mezőt kell kitölteni:</p>
+  <div class="status-list">
+    <span class="status-pill" style="background:#EFF6FF;color:#1D4ED8">Inverter</span>
+    <span class="status-pill" style="background:#EFF6FF;color:#1D4ED8">Akkumulátor</span>
+    <span class="status-pill" style="background:#EFF6FF;color:#1D4ED8">Optimalizáló</span>
+    <span class="status-pill" style="background:#EFF6FF;color:#1D4ED8">Okos Mérő</span>
+    <span class="status-pill" style="background:#EFF6FF;color:#1D4ED8">Napelem panel</span>
+  </div>
+  <p>Plusz anyagot az „<strong>+ Hozzáad</strong>" gombbal adhatsz hozzá. Ha sorozatszámot igénylő eszközt adsz hozzá, a rendszer automatikusan annyi S/N mezőt generál, amennyi a darabszám. Mentés: <strong>💾 Anyagok mentése</strong>.</p>
+
+  <h4>B/5 – VBF Protokoll fül (Villamos biztonsági felülvizsgálat)</h4>
+  <p>Töltsd ki a helyszíni mérési adatokat. Az üres mező = nem releváns, hagyhatod üresen. Ha nulla az érték, hagyd üresen!</p>
+  <table>
+    <thead><tr><th>Szekció</th><th>Mezők</th><th>Egység</th></tr></thead>
+    <tbody>
+      <tr><td>AC feszültség</td><td>L1, L2, L3</td><td>V</td></tr>
+      <tr><td>Kismegszakító – Inverternél</td><td>L1, L2, L3</td><td>A</td></tr>
+      <tr><td>Kismegszakító – Mérőhelynél</td><td>L1, L2, L3</td><td>A</td></tr>
+      <tr><td>Panelszám</td><td>ST1, ST2, ST3, ST4, ST5, ST6</td><td>db</td></tr>
+      <tr><td>DC feszültség</td><td>ST1, ST2, ST3, ST4, ST5, ST6</td><td>V</td></tr>
+      <tr><td>Hurokellenállás</td><td>L1, L2, L3</td><td>MΩ</td></tr>
+      <tr><td>Smart meter &amp; Akkumulátor</td><td>SM, AKKU</td><td>db</td></tr>
+      <tr><td>Betáplált DC teljesítmény</td><td>DC</td><td>Wp</td></tr>
+      <tr><td>Panel pontos adatok</td><td>Típus (szöveg), Voc, Vmp, Imp, Isc, Teljesítmény</td><td>V / A / Wp</td></tr>
+      <tr><td>Inverter pontos adatok</td><td>kVA</td><td>kVA</td></tr>
+      <tr><td>Tűzeseti adatok</td><td>A</td><td>A</td></tr>
+    </tbody>
+  </table>
+  <p>Mentés: <strong>💾 VBF mentése</strong> — az adatok automatikusan Drive-ra is feltöltődnek.</p>
+
+  <h4>B/6 – Fotók fül (27 kategória)</h4>
+  <p>Minden kategóriához <strong>legalább 1 fotót</strong> tölts fel. Ha nincs lehetőség fotózni, kötelező a három lehetőség egyikét kiválasztani:</p>
+  <div class="status-list">
+    <span class="status-pill" style="background:#FEF3C7;color:#92400E">Nincs ilyen eszköz</span>
+    <span class="status-pill" style="background:#FEF3C7;color:#92400E">Nem releváns a munkatípushoz</span>
+    <span class="status-pill" style="background:#FEF3C7;color:#92400E">Nem látható</span>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Kategória</th><th>Min. fotó</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>AC box (fedéllel és fedél nélkül)</td><td>3 db</td></tr>
+      <tr><td>2</td><td>Akkumulátor</td><td>2 db</td></tr>
+      <tr><td>3</td><td>Akkumulátor adattábla</td><td>1 db</td></tr>
+      <tr><td>4</td><td>Csatlakozási / rákötési pont</td><td>2 db</td></tr>
+      <tr><td>5</td><td>DC box (fedéllel és fedél nélkül)</td><td>3 db</td></tr>
+      <tr><td>6</td><td>EPH kötés</td><td>1 db</td></tr>
+      <tr><td>7</td><td>Egyéb dokumentáció</td><td>nyilatkozat, fővállalkozói doc.</td></tr>
+      <tr><td>8</td><td>Elrendezés + stringek</td><td>1 db</td></tr>
+      <tr><td>9</td><td>Figyelmeztető tábla</td><td>1 db</td></tr>
+      <tr><td>10</td><td>Füstérzékelő</td><td>1 db (beszerelve)</td></tr>
+      <tr><td>11</td><td>Inverter</td><td>2 db (elölnézet, csatlakozásokkal)</td></tr>
+      <tr><td>12</td><td>Inverter adattábla</td><td>1 db</td></tr>
+      <tr><td>13</td><td>Inverter beállítások</td><td>Visszatáplálás, SM, akku, üzemmód</td></tr>
+      <tr><td>14</td><td>Inverter működéséről</td><td>1 db (élő termelés)</td></tr>
+      <tr><td>15</td><td>Kábel nyomvonal (AC/DC)</td><td>kábel hossza alapján több db</td></tr>
+      <tr><td>16</td><td>Matricák, feliratok</td><td>min. 3 db (AC box, DC box, csatl. pont)</td></tr>
+      <tr><td>17</td><td>Mérés ellenőrzése</td><td>Fogyasztásmérés ellenőrzés</td></tr>
+      <tr><td>18</td><td>Mérőhelyről</td><td>3 db (teljesítmény, mérő, mérőhely)</td></tr>
+      <tr><td>19</td><td>Napelemek</td><td>min. 2 db (különböző szögekből)</td></tr>
+      <tr><td>20</td><td>Napelem SN számok</td><td>minden panel sorozatszáma olvasható</td></tr>
+      <tr><td>21</td><td>Optimalizáló</td><td>min. 1 db (felszerelve)</td></tr>
+      <tr><td>22</td><td>Plant létrehozás</td><td>1 db (online monitoring rendszer)</td></tr>
+      <tr><td>23</td><td>Pályázati tábla</td><td>3 db (közeli, 1-2 m, szemközti járdáról)</td></tr>
+      <tr><td>24</td><td>Smart mérő / mérés</td><td>2 db (mérési elrendezés, kommunikáció)</td></tr>
+      <tr><td>25</td><td>Tartószerkezet</td><td>min. 2 db (különböző szögekből)</td></tr>
+      <tr><td>26</td><td>Tető kivezetés</td><td>1 db (kábel tetőre kivezetése)</td></tr>
+      <tr><td>27</td><td>Tűzeseti leválasztó</td><td>1 db (csatlakoztatva)</td></tr>
+      <tr><td>28</td><td>Wifi Stick</td><td>1 db (adatok olvashatók)</td></tr>
+      <tr><td>29</td><td>Wifi beállítás</td><td>1 db (sikeres wifi csatlakozás)</td></tr>
+    </tbody>
+  </table>
+  <p>A feltöltött fotók automatikusan Drive-ra kerülnek. Zöld pipa jelzi a Drive-ra mentett fotókat.</p>
+
+  <h4>B/7 – Befejezés fül → Munka lezárása</h4>
+  <ol>
+    <li><strong>Megjegyzés</strong> (kötelező): Írd le röviden a telepítés menetét, esetleges eltéréseket</li>
+    <li>Ellenőrizd a <strong>Munka ellenőrzése</strong> listát — minden sor zöld pipa legyen:</li>
+  </ol>
+  <div class="card" style="font-size:13.5px;">
+    <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid #E2E8F0"><span style="color:#22C55E;font-size:16px">✓</span> <strong>VBF Jegyzőkönyv</strong> — kötelező mezők kitöltve</div>
+    <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid #E2E8F0"><span style="color:#22C55E;font-size:16px">✓</span> <strong>Fotók</strong> — minden kategória: fotó vagy indok megadva</div>
+    <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid #E2E8F0"><span style="color:#22C55E;font-size:16px">✓</span> <strong>Felhasznált anyagok</strong> — sorozatszámok kitöltve</div>
+    <div style="display:flex;gap:10px;padding:6px 0"><span style="color:#22C55E;font-size:16px">✓</span> <strong>Megjegyzés</strong> — legalább egy karakter</div>
+  </div>
+  <ol start="3">
+    <li>Ha minden zöld → kattints: <strong>✅ Munka befejezése és lezárása</strong></li>
+    <li>Az ügyfél <strong>aláírja</strong> a befejezési lapot a képernyőn</li>
+    <li>A rendszer feltölti az összes adatot Drive-ra (folyamatjelző sáv látható)</li>
+    <li>Státusz: <strong>Ellenőrzés alatt</strong> → a PM/Admin ellenőrzi és lezárja</li>
+  </ol>
+
+  <div class="alert alert-success">
+    <span class="icon">✅</span>
+    <p><strong>Lezárás után</strong> a munkalap <strong>zárolva</strong> van — módosítani csak Admin vagy PM tud. A Telepítőnél a lista automatikusan frissül és ez a munkalap eltűnik az aktív feladatok közül.</p>
+  </div>
+
+  <!-- ── ÖSSZEFOGLALÓ FLOW ── -->
+  <h3>Telepítő teljes munkafolyamat – összefoglaló</h3>
+  <div class="workflow">
+    <div class="wf-step"><div class="wf-box">1. Bejelentkezés</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">2. Munkalap kiválaszt.</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">3. LMRA aláírás</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">4. Anyagok + S/N</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">5. VBF mérések</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">6. Fotók (27 kat.)</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">7. Megjegyzés</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">8. Ügyfél aláírás</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">9. Lezárás ✅</div></div>
   </div>
 
   <hr />
