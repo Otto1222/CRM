@@ -1,10 +1,13 @@
-import { CSAPAT_SCHEMA } from "./csapat.schema.js";
+import { CSAPAT_SCHEMA, CSAPAT_TAG_SCHEMA } from "./csapat.schema.js";
 
-const KEY = "csapatok";
+const KEY            = "csapatok";
+const CSAPAT_TAGOK_KEY = "csapat_tagok";
 
-function dispatch() {
-  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "csapatok" } }));
+function dispatch(col = "csapatok") {
+  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: col } }));
 }
+
+// ─── Csapatok ────────────────────────────────────────────────
 
 export function loadCsapatok() {
   try { return JSON.parse(localStorage.getItem(KEY) || "[]"); }
@@ -13,7 +16,7 @@ export function loadCsapatok() {
 
 function saveCsapatok(list) {
   localStorage.setItem(KEY, JSON.stringify(list));
-  dispatch();
+  dispatch("csapatok");
 }
 
 export function getAktivCsapatok() {
@@ -53,12 +56,59 @@ export function deleteCsapat(id) {
   saveCsapatok(loadCsapatok().filter(c => c.id !== id));
 }
 
-/**
- * Csapat alvállalkozói bér számítás
- * @param {object} csapat
- * @param {object} params – { nettoBevitel, munkanapok, csapatLetszam, darabszam }
- * @returns {{ osszeg: number, megjegyzes: string }}
- */
+// ─── Csapat Tagok ─────────────────────────────────────────────
+
+export function loadCsapatTagok() {
+  try { return JSON.parse(localStorage.getItem(CSAPAT_TAGOK_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function saveCsapatTagok(list) {
+  localStorage.setItem(CSAPAT_TAGOK_KEY, JSON.stringify(list));
+  dispatch("csapat_tagok");
+}
+
+export function getCsapatTagok(csapatId) {
+  return loadCsapatTagok().filter(t => t.csapatId === csapatId);
+}
+
+export function getAktivCsapatTagok(csapatId) {
+  return getCsapatTagok(csapatId).filter(t => t.aktiv !== false);
+}
+
+export function getAllAktivCsapatTagok() {
+  return loadCsapatTagok().filter(t => t.aktiv !== false);
+}
+
+export function createCsapatTag(csapatId, data) {
+  const now = new Date().toISOString();
+  const tag = {
+    ...CSAPAT_TAG_SCHEMA,
+    ...data,
+    id: `ctag_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
+    csapatId,
+    aktiv: data.aktiv !== undefined ? data.aktiv : true,
+    createdAt: now,
+    updatedAt: now,
+  };
+  saveCsapatTagok([...loadCsapatTagok(), tag]);
+  return tag;
+}
+
+export function updateCsapatTag(id, updates) {
+  saveCsapatTagok(
+    loadCsapatTagok().map(t =>
+      t.id === id ? { ...t, ...updates, id, updatedAt: new Date().toISOString() } : t
+    )
+  );
+}
+
+export function deleteCsapatTag(id) {
+  saveCsapatTagok(loadCsapatTagok().filter(t => t.id !== id));
+}
+
+// ─── Csapat alvállalkozói bér számítás (backward compat) ─────
+
 export function calcCsapatAlvallalkozoiBer(csapat, params = {}) {
   if (!csapat?.elszamolasAktiv) return { osszeg: 0, megjegyzes: "Nincs alvállalkozói elszámolás" };
 
@@ -84,9 +134,6 @@ export function calcCsapatAlvallalkozoiBer(csapat, params = {}) {
   }
 }
 
-/**
- * Csapat km-elszámolás (alvállalkozói oldal) – backward compat
- */
 export function calcCsapatKmBer(csapat, tavKm = 0) {
   if (!csapat?.kmElszamolasAktiv || !csapat.kmDijFtKm) return { osszeg: 0, megjegyzes: "" };
   const kuszob = Number(csapat.kmKuszobKm) || 0;
@@ -96,7 +143,7 @@ export function calcCsapatKmBer(csapat, tavKm = 0) {
   return { osszeg, megjegyzes: `${tavKm} km − ${kuszob} km küszöb = ${elszam} km × 2 × ${ftKm} Ft/km` };
 }
 
-// ─── Alvállalkozói elszámolási szabályok (új motor) ──────────
+// ─── Alvállalkozói elszámolási szabályok (új motor) ───────────
 
 const AV_KEY = "av_szabalyok";
 
@@ -106,7 +153,7 @@ export function loadAvSzabalyok() {
 
 function saveAvSzabalyok(list) {
   localStorage.setItem(AV_KEY, JSON.stringify(list));
-  dispatch();
+  dispatch("av_szabalyok");
 }
 
 export function getAvSzabalyokByCsapat(csapatId) {

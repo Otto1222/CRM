@@ -84,6 +84,8 @@ function normalizeWorkorder(data = {}) {
     csapatId: data.csapatId || data.assigneeId || "",
     csapatNev: data.csapatNev || data.assigneeNev || "",
 
+    csapatKiosztasok: data.csapatKiosztasok || [],
+
     megjegyzes: data.megjegyzes || "",
 
     createdAt: data.createdAt || now,
