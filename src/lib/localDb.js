@@ -21,8 +21,12 @@ const KEYS = {
   crm_napelem_users:           "crm_napelem_users",
   szamlak:                     "szamlak",
   edi_sorszam_counter:         "edi_sorszam_counter",
-  edi_projekt_sorszam_counter: "edi_projekt_sorszam_counter",
-  crm_backups:                 "crm_backups",
+  edi_projekt_sorszam_counter:  "edi_projekt_sorszam_counter",
+  "ajanla tok":                 "ajanla tok",
+  edi_ajanlat_sorszam_counter:  "edi_ajanlat_sorszam_counter",
+  anyagtorzs:                   "anyagtorzs",
+  ajanlat_sablonok:             "ajanlat_sablonok",
+  crm_backups:                  "crm_backups",
 };
 
 // ─── Cross-tab szinkronizáció BroadcastChannel-lel ───────────
@@ -119,18 +123,4 @@ export function updateItem(collection, id, updates) {
   // Többi tab (cross-tab szinkron)
   broadcastChange(detail);
   return next;
-}
-
-// localStorage teljes mérete MB-ban (böngésző ~5MB limitet engedélyez)
-export function getLocalStorageSizeMB() {
-  try {
-    let totalBytes = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      const val = localStorage.getItem(key) || "";
-      totalBytes += key.length + val.length;
-    }
-    // UTF-16 kódolás: 2 byte per karakter
-    return parseFloat(((totalBytes * 2) / (1024 * 1024)).toFixed(2));
-  } catch { return 0; }
 }
