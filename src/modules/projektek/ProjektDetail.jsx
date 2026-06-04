@@ -115,7 +115,7 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
             border: "none",
             background: "none",
             cursor: "pointer",
-            color: "#64748B",
+            color: C.muted,
             padding: "4px",
             display: "flex",
             alignItems: "center",
@@ -129,12 +129,12 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
 
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#64748B" }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: C.muted }}>
               {lokalProjekt.projektkod}
             </span>
 
             {lokalProjekt.kulsoAzonosito && (
-              <span style={{ fontSize: 11, color: "#94A3B8" }}>
+              <span style={{ fontSize: 11, color: C.muted }}>
                 / {lokalProjekt.kulsoAzonosito}
               </span>
             )}
@@ -158,14 +158,14 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
               fontFamily: FONT_HEADING,
               fontSize: 22,
               fontWeight: 800,
-              color: "#0F172A",
+              color: C.text,
               margin: "0 0 2px",
             }}
           >
             {lokalProjekt.nev}
           </h1>
 
-          <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
+          <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
             {lokalProjekt.clientNev} · {lokalProjekt.csapatNev || "—"} · {formattedTipus}
           </p>
         </div>
@@ -180,9 +180,9 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
                 alignItems: "center",
                 gap: 6,
                 padding: "8px 12px",
-                background: "#FEF2F2",
-                color: "#DC2626",
-                border: "1px solid #FECACA",
+                background: C.dangerLight,
+                color: C.danger,
+                border: `1px solid ${C.danger}40`,
                 borderRadius: 9,
                 cursor: "pointer",
                 fontWeight: 600,
@@ -200,8 +200,8 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
               alignItems: "center",
               gap: 6,
               padding: "8px 14px",
-              background: "#F1F5F9",
-              color: "#475569",
+              background: C.bg,
+              color: C.muted,
               border: "none",
               borderRadius: 9,
               cursor: "pointer",
@@ -220,7 +220,7 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
               alignItems: "center",
               gap: 6,
               padding: "8px 16px",
-              background: "#2563EB",
+              background: C.accent,
               color: "#fff",
               border: "none",
               borderRadius: 9,
@@ -235,7 +235,7 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 2, borderBottom: "2px solid #E2E8F0", marginBottom: 0, overflowX: "auto" }}>
+      <div style={{ display: "flex", gap: 2, borderBottom: `2px solid ${C.border}`, marginBottom: 0, overflowX: "auto" }}>
         {TABS.map(t => (
           <button
             key={t.id}
@@ -248,8 +248,8 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
               fontFamily: FONT,
               fontWeight: tab === t.id ? 700 : 500,
               fontSize: 13,
-              color: tab === t.id ? "#2563EB" : "#64748B",
-              borderBottom: tab === t.id ? "2px solid #2563EB" : "2px solid transparent",
+              color: tab === t.id ? C.accent : C.muted,
+              borderBottom: tab === t.id ? `2px solid ${C.accent}` : "2px solid transparent",
               marginBottom: -2,
               whiteSpace: "nowrap",
             }}

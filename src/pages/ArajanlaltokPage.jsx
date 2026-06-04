@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Edit2, Trash2, Search, X, FileText, ArrowRight, CheckCircle } from "lucide-react";
-import { FONT, FONT_HEADING } from "../lib/constants";
+import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import { loadLocal } from "../lib/localDb";
 import { AJANLAT_STATUSZOK, getAjanlatStatusConfig } from "../modules/ajanla tok/ajanlat.schema";
@@ -10,10 +10,10 @@ import ProjektForm from "../modules/projektek/ProjektForm";
 
 function StatusPicker({ current, onSelect }) {
   return (
-    <div style={{ background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,.12)", padding: 8, display: "flex", flexDirection: "column", gap: 2, minWidth: 170, zIndex: 100 }}>
+    <div style={{ background: "#fff", border: `1.5px solid ${C.border}`, borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,.12)", padding: 8, display: "flex", flexDirection: "column", gap: 2, minWidth: 170, zIndex: 100 }}>
       {AJANLAT_STATUSZOK.map(s => (
         <button key={s.id} onClick={() => onSelect(s.id)}
-          style={{ padding: "7px 12px", borderRadius: 7, border: "none", background: s.id === current ? s.bg : "transparent", color: s.id === current ? s.szin : "#374151", fontWeight: s.id === current ? 700 : 500, fontSize: 13, cursor: "pointer", textAlign: "left", fontFamily: FONT }}>
+          style={{ padding: "7px 12px", borderRadius: 7, border: "none", background: s.id === current ? s.bg : "transparent", color: s.id === current ? s.szin : C.textSub, fontWeight: s.id === current ? 700 : 500, fontSize: 13, cursor: "pointer", textAlign: "left", fontFamily: FONT }}>
           {s.id}
         </button>
       ))}
@@ -93,7 +93,6 @@ export default function ArajanlaltokPage({ currentUser }) {
 
   const isAdmin = ["Admin", "Projektmenedzser"].includes(currentUser?.role);
 
-  // ── Teljes képernyős szerkesztő nézet ───────────────────────
   if (showEditor) {
     return (
       <AjanlatEditor
@@ -105,13 +104,13 @@ export default function ArajanlaltokPage({ currentUser }) {
   }
 
   return (
-    <div style={{ padding: "24px 28px", fontFamily: FONT, background: "#F8FAFC", minHeight: "100vh" }}>
+    <div style={{ padding: "24px 28px", fontFamily: FONT, background: C.bg, minHeight: "100vh" }}>
       {/* Fejléc */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: "#0F172A", margin: 0 }}>Árajánlatok</h1>
+        <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: C.text, margin: 0 }}>Árajánlatok</h1>
         {isAdmin && (
           <button onClick={() => openEditor(null)}
-            style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", background: C.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
             <Plus size={16} /> Új ajánlat
           </button>
         )}
@@ -120,15 +119,15 @@ export default function ArajanlaltokPage({ currentUser }) {
       {/* Stat kártyák */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
         {[
-          { label: "Kiküldve",   db: stats.kikuld.db,   osszeg: stats.kikuld.osszeg,   color: "#D97706", bg: "#FFFBEB" },
-          { label: "Elfogadva",  db: stats.elfogad.db,  osszeg: stats.elfogad.osszeg,  color: "#059669", bg: "#ECFDF5" },
-          { label: "Elutasítva", db: stats.elutasit.db, osszeg: stats.elutasit.osszeg, color: "#DC2626", bg: "#FEF2F2" },
-          { label: "Összes",     db: stats.osszes,      osszeg: 0,                     color: "#0369A1", bg: "#F0F9FF" },
+          { label: "Kiküldve",   db: stats.kikuld.db,   osszeg: stats.kikuld.osszeg,   color: C.warning,  bg: C.warningLight  },
+          { label: "Elfogadva",  db: stats.elfogad.db,  osszeg: stats.elfogad.osszeg,  color: C.success,  bg: C.successLight  },
+          { label: "Elutasítva", db: stats.elutasit.db, osszeg: stats.elutasit.osszeg, color: C.danger,   bg: C.dangerLight   },
+          { label: "Összes",     db: stats.osszes,      osszeg: 0,                     color: C.accent,   bg: C.accentLight   },
         ].map(c => (
           <div key={c.label} style={{ background: c.bg, borderRadius: 12, padding: "14px 18px", border: `1px solid ${c.color}30`, flex: 1, minWidth: 140 }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: c.color, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 4px" }}>{c.label}</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", margin: "0 0 2px" }}>{c.db} db</p>
-            {c.osszeg > 0 && <p style={{ fontSize: 12, color: "#64748B", margin: 0 }}>{ft(c.osszeg)}</p>}
+            <p style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: "0 0 2px" }}>{c.db} db</p>
+            {c.osszeg > 0 && <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>{ft(c.osszeg)}</p>}
           </div>
         ))}
       </div>
@@ -139,36 +138,36 @@ export default function ArajanlaltokPage({ currentUser }) {
           {["Összes", ...AJANLAT_STATUSZOK.map(s => s.id)].map(s => (
             <button key={s} onClick={() => setFilterStatus(s)}
               style={{ padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
-                background: filterStatus === s ? "#2563EB" : "#fff",
-                color:      filterStatus === s ? "#fff"    : "#64748B",
-                border:    `1.5px solid ${filterStatus === s ? "#2563EB" : "#E2E8F0"}`,
+                background: filterStatus === s ? C.accent : "#fff",
+                color:      filterStatus === s ? "#fff"   : C.muted,
+                border:    `1.5px solid ${filterStatus === s ? C.accent : C.border}`,
               }}>
               {s}
             </button>
           ))}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "6px 12px", minWidth: 200, maxWidth: 300 }}>
-          <Search size={15} color="#94A3B8" />
+        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", border: `1.5px solid ${C.border}`, borderRadius: 9, padding: "6px 12px", minWidth: 200, maxWidth: 300 }}>
+          <Search size={15} color={C.muted} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Kód, ügyfél, megnevezés…"
             style={{ border: "none", outline: "none", fontSize: 13, fontFamily: FONT, background: "transparent", flex: 1 }} />
-          {search && <button onClick={() => setSearch("")} style={{ border: "none", background: "none", cursor: "pointer", color: "#94A3B8", padding: 0 }}><X size={14} /></button>}
+          {search && <button onClick={() => setSearch("")} style={{ border: "none", background: "none", cursor: "pointer", color: C.muted, padding: 0 }}><X size={14} /></button>}
         </div>
       </div>
 
       {/* Táblázat */}
-      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", overflow: "hidden" }}>
+      <div style={{ background: "#fff", borderRadius: 14, border: `1px solid ${C.border}`, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ background: "#F8FAFC", borderBottom: "2px solid #E2E8F0" }}>
+              <tr style={{ background: C.bg, borderBottom: `2px solid ${C.border}` }}>
                 {["Ajánlatkód", "Ügyfél", "Megnevezés", "Összeg", "Státusz", "Érvényesség", "Projekt", ""].map(h => (
-                  <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={8} style={{ padding: "48px", textAlign: "center", color: "#94A3B8" }}>
+                <tr><td colSpan={8} style={{ padding: "48px", textAlign: "center", color: C.muted }}>
                   <div><FileText size={32} style={{ marginBottom: 10, opacity: 0.3 }} /></div>
                   <p style={{ margin: 0, fontWeight: 600 }}>Nincsenek ajánlatok</p>
                   <p style={{ margin: "4px 0 0", fontSize: 12 }}>Kattints az "+ Új ajánlat" gombra az első létrehozásához</p>
@@ -178,20 +177,20 @@ export default function ArajanlaltokPage({ currentUser }) {
                 const linkedProjekt = a.projektId ? projektek.find(p => p.id === a.projektId) : null;
                 const cfg = getAjanlatStatusConfig(a.status);
                 return (
-                  <tr key={a.id} style={{ borderBottom: "1px solid #F1F5F9", background: i % 2 === 0 ? "#fff" : "#FAFAFA", cursor: "pointer" }}
+                  <tr key={a.id} style={{ borderBottom: `1px solid ${C.bg}`, background: i % 2 === 0 ? "#fff" : "#FAFAFA", cursor: "pointer" }}
                     onClick={() => openEditor(a)}>
                     <td style={{ padding: "12px 14px" }}>
-                      <p style={{ fontWeight: 700, color: "#2563EB", margin: 0 }}>{a.ajanlatkod}</p>
-                      <p style={{ fontSize: 10, color: "#94A3B8", margin: 0 }}>{a.createdAt}</p>
+                      <p style={{ fontWeight: 700, color: C.accent, margin: 0 }}>{a.ajanlatkod}</p>
+                      <p style={{ fontSize: 10, color: C.muted, margin: 0 }}>{a.createdAt}</p>
                     </td>
                     <td style={{ padding: "12px 14px" }}>
-                      <p style={{ fontWeight: 600, color: "#0F172A", margin: 0 }}>{a.clientNev || "—"}</p>
-                      {a.clientTel && <p style={{ fontSize: 11, color: "#64748B", margin: 0 }}>{a.clientTel}</p>}
+                      <p style={{ fontWeight: 600, color: C.text, margin: 0 }}>{a.clientNev || "—"}</p>
+                      {a.clientTel && <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>{a.clientTel}</p>}
                     </td>
-                    <td style={{ padding: "12px 14px", color: "#374151", maxWidth: 200 }}>
+                    <td style={{ padding: "12px 14px", color: C.textSub, maxWidth: 200 }}>
                       <p style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nev || "—"}</p>
                     </td>
-                    <td style={{ padding: "12px 14px", fontWeight: 700, color: a.osszeg ? "#0F172A" : "#94A3B8", whiteSpace: "nowrap" }}>
+                    <td style={{ padding: "12px 14px", fontWeight: 700, color: a.osszeg ? C.text : C.muted, whiteSpace: "nowrap" }}>
                       {a.osszeg ? ft(Number(a.osszeg)) : "—"}
                     </td>
                     <td style={{ padding: "12px 14px" }} onClick={e => e.stopPropagation()}>
@@ -207,30 +206,30 @@ export default function ArajanlaltokPage({ currentUser }) {
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: "12px 14px", color: "#64748B", fontSize: 12 }}>{a.ervenyesseg || "—"}</td>
+                    <td style={{ padding: "12px 14px", color: C.muted, fontSize: 12 }}>{a.ervenyesseg || "—"}</td>
                     <td style={{ padding: "12px 14px" }} onClick={e => e.stopPropagation()}>
                       {linkedProjekt ? (
-                        <span style={{ background: "#ECFDF5", color: "#059669", border: "1px solid #86EFAC", borderRadius: 8, padding: "3px 8px", fontSize: 11, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ background: C.successLight, color: C.success, border: `1px solid ${C.success}40`, borderRadius: 8, padding: "3px 8px", fontSize: 11, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
                           <CheckCircle size={11} /> {linkedProjekt.projektkod}
                         </span>
                       ) : a.status === "Elfogadva" && isAdmin ? (
                         <button onClick={() => handleProjektLetrehoz(a)}
-                          style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", background: "#EFF6FF", color: "#2563EB", border: "1.5px solid #BFDBFE", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 11, fontFamily: FONT, whiteSpace: "nowrap" }}>
+                          style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", background: C.accentLight, color: C.accent, border: `1.5px solid ${C.accent}40`, borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 11, fontFamily: FONT, whiteSpace: "nowrap" }}>
                           <ArrowRight size={12} /> Projekt létrehozása
                         </button>
                       ) : (
-                        <span style={{ color: "#94A3B8", fontSize: 12 }}>—</span>
+                        <span style={{ color: C.muted, fontSize: 12 }}>—</span>
                       )}
                     </td>
                     <td style={{ padding: "12px 14px" }} onClick={e => e.stopPropagation()}>
                       {isAdmin && (
                         <div style={{ display: "flex", gap: 6 }}>
                           <button onClick={() => openEditor(a)}
-                            style={{ padding: "5px 8px", background: "#F1F5F9", border: "none", borderRadius: 7, cursor: "pointer", color: "#475569" }} title="Szerkesztés">
+                            style={{ padding: "5px 8px", background: C.bg, border: "none", borderRadius: 7, cursor: "pointer", color: C.muted }} title="Szerkesztés">
                             <Edit2 size={14} />
                           </button>
                           <button onClick={() => handleDelete(a)}
-                            style={{ padding: "5px 8px", background: "#FEF2F2", border: "none", borderRadius: 7, cursor: "pointer", color: "#DC2626" }} title="Törlés">
+                            style={{ padding: "5px 8px", background: C.dangerLight, border: "none", borderRadius: 7, cursor: "pointer", color: C.danger }} title="Törlés">
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -242,8 +241,8 @@ export default function ArajanlaltokPage({ currentUser }) {
             </tbody>
           </table>
         </div>
-        <div style={{ padding: "10px 16px", borderTop: "1px solid #E2E8F0", background: "#F8FAFC" }}>
-          <p style={{ fontSize: 12, color: "#64748B", margin: 0 }}>{filtered.length} ajánlat · Kattints egy sorra a szerkesztőhöz</p>
+        <div style={{ padding: "10px 16px", borderTop: `1px solid ${C.border}`, background: C.bg }}>
+          <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>{filtered.length} ajánlat · Kattints egy sorra a szerkesztőhöz</p>
         </div>
       </div>
 

@@ -1,7 +1,7 @@
-import { STATUS_CFG } from "../lib/constants";
+import { STATUS_CFG, C } from "../lib/constants";
 
 export default function StatusBadge({ s }) {
-  const cfg = STATUS_CFG[s] || { bg: "#F1F5F9", text: "#94A3B8", dot: "#94A3B8" };
+  const cfg = STATUS_CFG[s] || { bg: C.bg, text: C.muted, dot: C.muted };
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 5,

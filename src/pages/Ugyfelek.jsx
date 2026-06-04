@@ -5,38 +5,32 @@ import { loadLocal, saveLocal } from "../lib/localDb";
 import { canSeeFovallalkozo } from "../lib/roles";
 import { loadFovallalkozok } from "../modules/fovallalkozok/fovallalkozo.service";
 
-// Dinamikusan feloldja az ügyfél forrás-rövidítését a fővállalkozók aktuális adatai alapján
 function resolveForrAs(u, fovallalkozok) {
   if (!u.forrás || u.forrás === "Saját") return u.forrás;
-  // 1) Próbál rövidítés alapján találni (ha nem változott)
   const byRov = fovallalkozok.find(f => f.rovidites === u.forrás);
   if (byRov) return byRov.rovidites;
-  // 2) Ha a rövidítés megváltozott, a fővállalkozó nevével azonosítja
   if (u.fovallalkozoNev) {
     const byNev = fovallalkozok.find(f =>
       f.nev?.toLowerCase().trim() === u.fovallalkozoNev?.toLowerCase().trim()
     );
     if (byNev?.rovidites) return byNev.rovidites;
   }
-  // 3) Fallback: tárolt érték
   return u.forrás;
 }
 
-// ─── Státusz konfig ───────────────────────────────────────────
 const STATUSZ_CFG = {
-  "Aktív":        { bg: "#ECFDF5", color: "#059669" },
-  "Potenciális":  { bg: "#EFF6FF", color: "#2563EB" },
-  "Inaktív":      { bg: "#F1F5F9", color: "#64748B" },
+  "Aktív":        { bg: C.successLight, color: C.success },
+  "Potenciális":  { bg: C.accentLight,  color: C.accent  },
+  "Inaktív":      { bg: C.bg,           color: C.muted   },
 };
 const STATUSZOK = Object.keys(STATUSZ_CFG);
 const TIPUSOK   = ["Magánszemély", "Vállalkozás"];
 
-// ─── Input stílus ────────────────────────────────────────────
 const inp = {
   width: "100%",
   boxSizing: "border-box",
   padding: "9px 12px",
-  border: "1.5px solid #E2E8F0",
+  border: `1.5px solid ${C.border}`,
   borderRadius: 9,
   fontSize: 14,
   fontFamily: "inherit",
@@ -44,11 +38,10 @@ const inp = {
   background: "#FAFAFA",
 };
 
-// ─── Label + mező segéd ──────────────────────────────────────
 function Field({ label, children, half }) {
   return (
     <div style={{ gridColumn: half ? "span 1" : "span 2" }}>
-      <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>
+      <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>
         {label}
       </label>
       {children}
@@ -56,9 +49,8 @@ function Field({ label, children, half }) {
   );
 }
 
-// ─── Státusz badge ───────────────────────────────────────────
 function StatuszBadge({ s }) {
-  const cfg = STATUSZ_CFG[s] || { bg: "#F1F5F9", color: "#64748B" };
+  const cfg = STATUSZ_CFG[s] || { bg: C.bg, color: C.muted };
   return (
     <span style={{ background: cfg.bg, color: cfg.color, borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
       {s || "Aktív"}
@@ -66,7 +58,6 @@ function StatuszBadge({ s }) {
   );
 }
 
-// ─── Ügyfél form modal ───────────────────────────────────────
 function UgyfelForm({ ugyfel, onClose, onSaved }) {
   useEffect(() => {
     const h = (e) => { if (e.key === "Escape") onClose(); };
@@ -113,31 +104,27 @@ function UgyfelForm({ ugyfel, onClose, onSaved }) {
   }
 
   return (
-    <div
-      style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "20px 16px", overflowY: "auto" }}
-    >
+    <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "20px 16px", overflowY: "auto" }}>
       <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 0 }} />
       <div style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "0 24px 60px rgba(0,0,0,.25)", fontFamily: FONT }}>
-        {/* Fejléc */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: "1px solid #E2E8F0" }}>
-          <h2 style={{ fontFamily: FONT_HEADING, fontSize: 18, fontWeight: 800, margin: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: `1px solid ${C.border}` }}>
+          <h2 style={{ fontFamily: FONT_HEADING, fontSize: 18, fontWeight: 800, margin: 0, color: C.text }}>
             {isNew ? "Új ügyfél" : "Ügyfél szerkesztése"}
           </h2>
-          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: "#94A3B8" }}>
+          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: C.muted }}>
             <X size={22} />
           </button>
         </div>
 
-        {/* Form */}
         <div style={{ padding: "20px 24px" }}>
           {hiba && (
-            <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 9, padding: "9px 12px", marginBottom: 14, fontSize: 13, color: "#DC2626", fontWeight: 600 }}>
+            <div style={{ background: C.dangerLight, border: `1.5px solid ${C.danger}40`, borderRadius: 9, padding: "9px 12px", marginBottom: 14, fontSize: 13, color: C.danger, fontWeight: 600 }}>
               {hiba}
             </div>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px" }}>
             <Field label="Név *">
-              <input value={form.name} onChange={e => upd("name", e.target.value)} placeholder="pl. Kovács János" style={{ ...inp, border: "2px solid #2563EB", fontWeight: 600 }} />
+              <input value={form.name} onChange={e => upd("name", e.target.value)} placeholder="pl. Kovács János" style={{ ...inp, border: `2px solid ${C.accent}`, fontWeight: 600 }} />
             </Field>
             <Field label="Típus" half>
               <select value={form.type} onChange={e => upd("type", e.target.value)} style={inp}>
@@ -170,12 +157,11 @@ function UgyfelForm({ ugyfel, onClose, onSaved }) {
           </div>
         </div>
 
-        {/* Lábléc */}
-        <div style={{ padding: "14px 24px", borderTop: "1px solid #E2E8F0", display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #E2E8F0", background: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
+        <div style={{ padding: "14px 24px", borderTop: `1px solid ${C.border}`, display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={{ padding: "9px 18px", borderRadius: 9, border: `1.5px solid ${C.border}`, background: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT, color: C.text }}>
             Mégse
           </button>
-          <button onClick={handleSave} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 22px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
+          <button onClick={handleSave} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 22px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
             <Save size={15} />
             {isNew ? "Ügyfél létrehozása" : "Mentés"}
           </button>
@@ -185,23 +171,22 @@ function UgyfelForm({ ugyfel, onClose, onSaved }) {
   );
 }
 
-// ─── Törlés megerősítő ───────────────────────────────────────
 function TorlesModal({ ugyfel, onCancel, onConfirm }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 2100, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 400, padding: 28, fontFamily: FONT, textAlign: "center" }}>
-        <div style={{ width: 52, height: 52, background: "#FEF2F2", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-          <Trash2 size={24} color="#DC2626" />
+        <div style={{ width: 52, height: 52, background: C.dangerLight, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+          <Trash2 size={24} color={C.danger} />
         </div>
-        <h3 style={{ fontFamily: FONT_HEADING, fontSize: 17, fontWeight: 800, margin: "0 0 8px" }}>Ügyfél törlése</h3>
-        <p style={{ fontSize: 13, color: "#64748B", margin: "0 0 24px" }}>
+        <h3 style={{ fontFamily: FONT_HEADING, fontSize: 17, fontWeight: 800, margin: "0 0 8px", color: C.text }}>Ügyfél törlése</h3>
+        <p style={{ fontSize: 13, color: C.muted, margin: "0 0 24px" }}>
           Biztosan törlöd <strong>{ugyfel.name}</strong> ügyfelét? A művelet nem vonható vissza.
         </p>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: "10px", border: "1.5px solid #E2E8F0", borderRadius: 9, background: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
+          <button onClick={onCancel} style={{ flex: 1, padding: "10px", border: `1.5px solid ${C.border}`, borderRadius: 9, background: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT, color: C.text }}>
             Mégse
           </button>
-          <button onClick={onConfirm} style={{ flex: 1, padding: "10px", background: "#DC2626", color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
+          <button onClick={onConfirm} style={{ flex: 1, padding: "10px", background: C.danger, color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
             Törlés
           </button>
         </div>
@@ -210,7 +195,6 @@ function TorlesModal({ ugyfel, onCancel, onConfirm }) {
   );
 }
 
-// ─── Fő komponens ────────────────────────────────────────────
 export default function Ugyfelek({ data, currentUser }) {
   const [ugyfelek, setUgyfelek] = useState(() => loadLocal("ugyfelek") || data?.ugyfelek || []);
   const [q, setQ]               = useState("");
@@ -220,12 +204,10 @@ export default function Ugyfelek({ data, currentUser }) {
   const [editItem, setEditItem]           = useState(null);
   const [torlesItem, setTorlesItem]       = useState(null);
   const canPartner = canSeeFovallalkozo(currentUser?.role);
-  // Fővállalkozók betöltése a forrás dinamikus feloldásához
   const fovallalkozok = loadFovallalkozok();
 
   const projektek = data?.projektek || [];
 
-  // Reaktív frissítés
   useEffect(() => {
     function refresh(e) {
       if (!e.detail?.collection || e.detail.collection === "ugyfelek") {
@@ -243,15 +225,8 @@ export default function Ugyfelek({ data, currentUser }) {
     ).length;
   }
 
-  function handleEdit(c) {
-    setEditItem(c);
-    setFormOpen(true);
-  }
-
-  function handleNew() {
-    setEditItem(null);
-    setFormOpen(true);
-  }
+  function handleEdit(c) { setEditItem(c); setFormOpen(true); }
+  function handleNew()    { setEditItem(null); setFormOpen(true); }
 
   function handleTorles(c) {
     const list = loadLocal("ugyfelek") || [];
@@ -264,7 +239,6 @@ export default function Ugyfelek({ data, currentUser }) {
 
   const SZUROK = ["Összes", ...STATUSZOK];
 
-  // Fővállalkozó forrás szűrő értékek (csak nem-Saját egyediek)
   const allForrasok = canPartner
     ? ["Összes", "Saját", ...new Set(ugyfelek.filter(u => u.forrás && u.forrás !== "Saját").map(u => u.forrás))]
     : [];
@@ -297,41 +271,39 @@ export default function Ugyfelek({ data, currentUser }) {
 
   return (
     <div style={{ padding: "24px 28px", fontFamily: FONT }}>
-      {/* Fejléc */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: "#0F172A", margin: "0 0 4px" }}>
+          <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>
             👤 Ügyfelek
           </h1>
-          <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
+          <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
             {ugyfelek.length} ügyfél · {ugyfelek.filter(c => (c.status || "Aktív") === "Aktív").length} aktív
           </p>
         </div>
         <div style={{ display:"flex", gap:8 }}>
           {canPartner && (
-            <button type="button" onClick={exportCsv} style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 16px", background:"#F1F5F9", color:"#475569", border:"1.5px solid #E2E8F0", borderRadius:10, cursor:"pointer", fontWeight:600, fontSize:13, fontFamily:FONT }}>
+            <button type="button" onClick={exportCsv} style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 16px", background: C.bg, color: C.muted, border:`1.5px solid ${C.border}`, borderRadius:10, cursor:"pointer", fontWeight:600, fontSize:13, fontFamily:FONT }}>
               <Download size={14}/> CSV export
             </button>
           )}
           <button
             type="button"
             onClick={handleNew}
-            style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: C.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}
           >
             <Plus size={15} /> Új ügyfél
           </button>
         </div>
       </div>
 
-      {/* Szűrők + keresés */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ position: "relative", flex: 1, minWidth: 220, maxWidth: 340 }}>
-          <Search size={15} color="#94A3B8" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+          <Search size={15} color={C.muted} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
           <input
             value={q}
             onChange={e => setQ(e.target.value)}
             placeholder="Keresés név, e-mail, telefon szerint…"
-            style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px 9px 34px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 13, fontFamily: FONT, outline: "none", background: "#fff" }}
+            style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px 9px 34px", border: `1.5px solid ${C.border}`, borderRadius: 10, fontSize: 13, fontFamily: FONT, outline: "none", background: "#fff" }}
           />
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap:"wrap" }}>
@@ -340,22 +312,22 @@ export default function Ugyfelek({ data, currentUser }) {
               key={s}
               type="button"
               onClick={() => setStatuszFilter(s)}
-              style={{ padding: "6px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: FONT, fontWeight: 600, fontSize: 12, whiteSpace: "nowrap", background: statuszFilter === s ? "#2563EB" : "#F1F5F9", color: statuszFilter === s ? "#fff" : "#64748B" }}
+              style={{ padding: "6px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: FONT, fontWeight: 600, fontSize: 12, whiteSpace: "nowrap", background: statuszFilter === s ? C.accent : C.bg, color: statuszFilter === s ? "#fff" : C.muted }}
             >
               {s}
             </button>
           ))}
           {canPartner && allForrasok.length > 2 && (
             <>
-              <span style={{ color:"#CBD5E1", alignSelf:"center" }}>|</span>
+              <span style={{ color: C.border, alignSelf:"center" }}>|</span>
               {allForrasok.map(f => (
                 <button
                   key={f}
                   type="button"
                   onClick={() => setForrasFilter(f)}
                   style={{ padding:"6px 14px", borderRadius:20, border:"none", cursor:"pointer", fontFamily:FONT, fontWeight:600, fontSize:12, whiteSpace:"nowrap",
-                    background: forrasFilter===f ? (f==="Saját"?"#059669":"#2563EB") : "#F1F5F9",
-                    color: forrasFilter===f ? "#fff" : "#64748B" }}
+                    background: forrasFilter===f ? (f==="Saját" ? C.success : C.accent) : C.bg,
+                    color: forrasFilter===f ? "#fff" : C.muted }}
                 >
                   {f==="Összes"?"Mind (forrás)":f==="Saját"?"Saját":`[${f}]`}
                 </button>
@@ -365,21 +337,20 @@ export default function Ugyfelek({ data, currentUser }) {
         </div>
       </div>
 
-      {/* Táblázat */}
-      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", overflow: "hidden" }}>
+      <div style={{ background: "#fff", borderRadius: 14, border: `1px solid ${C.border}`, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ background: "#F8FAFC", borderBottom: "2px solid #E2E8F0" }}>
+              <tr style={{ background: C.bg, borderBottom: `2px solid ${C.border}` }}>
                 {["Ügyfél", ...(canPartner?["Forrás"]:[]), "Típus", "Telefon", "E-mail", "Cím", "Státusz", "Projektek", ""].map(h => (
-                  <th key={h} style={{ padding: "11px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={h} style={{ padding: "11px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} style={{ padding: "48px", textAlign: "center", color: "#94A3B8" }}>
+                  <td colSpan={8} style={{ padding: "48px", textAlign: "center", color: C.muted }}>
                     <User size={36} style={{ opacity: 0.25, display: "block", margin: "0 auto 10px" }} />
                     {q ? "Nincs találat a keresésre" : "Még nincsenek ügyfelek"}
                   </td>
@@ -390,98 +361,89 @@ export default function Ugyfelek({ data, currentUser }) {
                 return (
                   <tr
                     key={c.id}
-                    style={{ borderBottom: "1px solid #F1F5F9", background: i % 2 === 0 ? "#fff" : "#FAFAFA", cursor: "pointer", transition: "background .1s" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#EFF6FF"}
+                    style={{ borderBottom: `1px solid ${C.bg}`, background: i % 2 === 0 ? "#fff" : "#FAFAFA", cursor: "pointer", transition: "background .1s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = C.accentLight}
                     onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? "#fff" : "#FAFAFA"}
                     onClick={() => handleEdit(c)}
                   >
-                    {/* Ügyfél */}
                     <td style={{ padding: "14px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#2563EB", fontSize: 14, flexShrink: 0 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: C.accentLight, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: C.accent, fontSize: 14, flexShrink: 0 }}>
                           {(c.name || "?")[0].toUpperCase()}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 600, color: "#0F172A" }}>{c.name}</div>
-                          {c.megjegyzes && <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 1, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.megjegyzes}</div>}
+                          <div style={{ fontWeight: 600, color: C.text }}>{c.name}</div>
+                          {c.megjegyzes && <div style={{ fontSize: 11, color: C.muted, marginTop: 1, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.megjegyzes}</div>}
                         </div>
                       </div>
                     </td>
-                    {/* Forrás (csak nem-Telepítő) */}
                     {canPartner && (
                       <td style={{ padding:"14px 16px" }}>
                         {c.forrás ? (() => {
                           const aktualis = resolveForrAs(c, fovallalkozok);
                           return (
                             <span style={{
-                              background: aktualis==="Saját"?"#ECFDF5":"#EFF6FF",
-                              color: aktualis==="Saját"?"#059669":"#2563EB",
+                              background: aktualis==="Saját" ? C.successLight : C.accentLight,
+                              color:      aktualis==="Saját" ? C.success      : C.accent,
                               borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:700, whiteSpace:"nowrap"
                             }}>
                               {aktualis==="Saját"?"Saját":`[${aktualis}]`}
                             </span>
                           );
-                        })() : <span style={{ color:"#CBD5E1", fontSize:12 }}>—</span>}
+                        })() : <span style={{ color: C.border, fontSize:12 }}>—</span>}
                       </td>
                     )}
-                    {/* Típus */}
                     <td style={{ padding: "14px 16px" }}>
-                      <span style={{ background: c.type === "Vállalkozás" ? "#FEF9C3" : "#F1F5F9", color: c.type === "Vállalkozás" ? "#854D0E" : "#475569", borderRadius: 6, padding: "3px 9px", fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ background: c.type === "Vállalkozás" ? "#FEF9C3" : C.bg, color: c.type === "Vállalkozás" ? "#854D0E" : C.muted, borderRadius: 6, padding: "3px 9px", fontSize: 11, fontWeight: 600 }}>
                         {c.type || "Magánszemély"}
                       </span>
                     </td>
-                    {/* Telefon */}
                     <td style={{ padding: "14px 16px" }}>
                       {c.phone ? (
-                        <a href={`tel:${c.phone}`} onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 5, color: "#475569", textDecoration: "none", fontSize: 13 }}>
-                          <Phone size={13} color="#94A3B8" /> {c.phone}
+                        <a href={`tel:${c.phone}`} onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 5, color: C.muted, textDecoration: "none", fontSize: 13 }}>
+                          <Phone size={13} color={C.muted} /> {c.phone}
                         </a>
-                      ) : <span style={{ color: "#CBD5E1" }}>—</span>}
+                      ) : <span style={{ color: C.border }}>—</span>}
                     </td>
-                    {/* E-mail */}
                     <td style={{ padding: "14px 16px" }}>
                       {c.email ? (
-                        <a href={`mailto:${c.email}`} onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 5, color: "#2563EB", textDecoration: "none", fontSize: 13 }}>
+                        <a href={`mailto:${c.email}`} onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 5, color: C.accent, textDecoration: "none", fontSize: 13 }}>
                           <Mail size={13} /> {c.email}
                         </a>
-                      ) : <span style={{ color: "#CBD5E1" }}>—</span>}
+                      ) : <span style={{ color: C.border }}>—</span>}
                     </td>
-                    {/* Cím */}
-                    <td style={{ padding: "14px 16px", color: "#475569", maxWidth: 200 }}>
+                    <td style={{ padding: "14px 16px", color: C.muted, maxWidth: 200 }}>
                       {c.address ? (
                         <div style={{ display: "flex", alignItems: "flex-start", gap: 5 }}>
-                          <MapPin size={13} color="#94A3B8" style={{ flexShrink: 0, marginTop: 1 }} />
+                          <MapPin size={13} color={C.muted} style={{ flexShrink: 0, marginTop: 1 }} />
                           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.address}</span>
                         </div>
-                      ) : <span style={{ color: "#CBD5E1" }}>—</span>}
+                      ) : <span style={{ color: C.border }}>—</span>}
                     </td>
-                    {/* Státusz */}
                     <td style={{ padding: "14px 16px" }}><StatuszBadge s={c.status || "Aktív"} /></td>
-                    {/* Projektek */}
                     <td style={{ padding: "14px 16px" }}>
                       {projektSzam > 0 ? (
                         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                          <FolderOpen size={13} color="#2563EB" />
-                          <span style={{ color: "#2563EB", fontWeight: 700, fontSize: 13 }}>{projektSzam} db</span>
+                          <FolderOpen size={13} color={C.accent} />
+                          <span style={{ color: C.accent, fontWeight: 700, fontSize: 13 }}>{projektSzam} db</span>
                         </div>
                       ) : (
-                        <span style={{ color: "#CBD5E1", fontSize: 12 }}>—</span>
+                        <span style={{ color: C.border, fontSize: 12 }}>—</span>
                       )}
                     </td>
-                    {/* Gombok */}
                     <td style={{ padding: "14px 16px" }} onClick={e => e.stopPropagation()}>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button
                           onClick={() => handleEdit(c)}
                           title="Szerkesztés"
-                          style={{ padding: "6px 10px", background: "#F1F5F9", color: "#475569", border: "none", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center" }}
+                          style={{ padding: "6px 10px", background: C.bg, color: C.muted, border: "none", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center" }}
                         >
                           <Pencil size={13} />
                         </button>
                         <button
                           onClick={() => setTorlesItem(c)}
                           title="Törlés"
-                          style={{ padding: "6px 10px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center" }}
+                          style={{ padding: "6px 10px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center" }}
                         >
                           <Trash2 size={13} />
                         </button>
@@ -493,15 +455,13 @@ export default function Ugyfelek({ data, currentUser }) {
             </tbody>
           </table>
         </div>
-        {/* Lábléc */}
-        <div style={{ padding: "10px 16px", borderTop: "1px solid #E2E8F0", background: "#F8FAFC" }}>
-          <p style={{ fontSize: 12, color: "#94A3B8", margin: 0 }}>
+        <div style={{ padding: "10px 16px", borderTop: `1px solid ${C.border}`, background: C.bg }}>
+          <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>
             {filtered.length} ügyfél megjelenítve · Kattints a sorra a szerkesztéshez
           </p>
         </div>
       </div>
 
-      {/* Form modal */}
       {formOpen && (
         <UgyfelForm
           ugyfel={editItem}
@@ -510,7 +470,6 @@ export default function Ugyfelek({ data, currentUser }) {
         />
       )}
 
-      {/* Törlés megerősítő */}
       {torlesItem && (
         <TorlesModal
           ugyfel={torlesItem}

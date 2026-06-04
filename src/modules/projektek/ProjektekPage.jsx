@@ -40,15 +40,12 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
 
   const filtered = projektek.filter(p => {
     const q2 = q.toLowerCase();
-
     const matchQ =
       !q ||
       p.nev?.toLowerCase().includes(q2) ||
       p.projektkod?.toLowerCase().includes(q2) ||
       p.clientNev?.toLowerCase().includes(q2);
-
     const matchT = tabFilter === "Összes" || p.status === tabFilter;
-
     return matchQ && matchT;
   });
 
@@ -72,10 +69,10 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
     <div style={{ padding: "16px max(16px, min(28px, 3vw))", fontFamily: FONT }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: "#0F172A", margin: "0 0 4px" }}>
+          <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>
             🏗️ Projektek
           </h1>
-          <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
+          <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
             {projektek.length} projekt · {aktiv} aktív · {kivFolyamat} kivitelezés alatt
           </p>
         </div>
@@ -86,18 +83,10 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
               <button
                 onClick={() => exportToExcel(filtered, [], { fajlnev: "projektek" })}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 5,
-                  padding: "8px 12px",
-                  background: "#F1F5F9",
-                  color: "#475569",
-                  border: "none",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  fontSize: 12,
-                  fontFamily: FONT,
+                  display: "flex", alignItems: "center", gap: 5,
+                  padding: "8px 12px", background: C.bg, color: C.muted,
+                  border: "none", borderRadius: 8, cursor: "pointer",
+                  fontWeight: 600, fontSize: 12, fontFamily: FONT,
                 }}
               >
                 <Download size={13} /> XLS
@@ -106,18 +95,10 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
               <button
                 onClick={() => exportToPDF(filtered, [], "Projektek összesítő")}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 5,
-                  padding: "8px 12px",
-                  background: "#F1F5F9",
-                  color: "#475569",
-                  border: "none",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  fontSize: 12,
-                  fontFamily: FONT,
+                  display: "flex", alignItems: "center", gap: 5,
+                  padding: "8px 12px", background: C.bg, color: C.muted,
+                  border: "none", borderRadius: 8, cursor: "pointer",
+                  fontWeight: 600, fontSize: 12, fontFamily: FONT,
                 }}
               >
                 <Download size={13} /> PDF
@@ -128,18 +109,10 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
           <button
             onClick={() => setUjOpen(true)}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 7,
-              padding: "9px 18px",
-              background: "#2563EB",
-              color: "#fff",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: 700,
-              fontSize: 14,
-              fontFamily: FONT,
+              display: "flex", alignItems: "center", gap: 7,
+              padding: "9px 18px", background: C.accent, color: "#fff",
+              border: "none", borderRadius: 10, cursor: "pointer",
+              fontWeight: 700, fontSize: 14, fontFamily: FONT,
             }}
           >
             <Plus size={15} /> Új projekt
@@ -150,7 +123,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
       <div style={{ position: "relative", marginBottom: 12 }}>
         <Search
           size={15}
-          color="#94A3B8"
+          color={C.muted}
           style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}
         />
         <input
@@ -158,15 +131,11 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
           onChange={e => setQ(e.target.value)}
           placeholder="Keresés név, kód, ügyfél szerint…"
           style={{
-            width: "100%",
-            boxSizing: "border-box",
+            width: "100%", boxSizing: "border-box",
             padding: "9px 12px 9px 34px",
-            border: "1.5px solid #E2E8F0",
-            borderRadius: 10,
-            fontSize: 13,
-            fontFamily: FONT,
-            outline: "none",
-            background: "#fff",
+            border: `1.5px solid ${C.border}`,
+            borderRadius: 10, fontSize: 13, fontFamily: FONT,
+            outline: "none", background: "#fff",
           }}
         />
       </div>
@@ -177,16 +146,11 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
             key={s}
             onClick={() => setTabFilter(s)}
             style={{
-              padding: "5px 12px",
-              borderRadius: 20,
-              border: "none",
-              cursor: "pointer",
-              fontFamily: FONT,
-              fontWeight: 600,
-              fontSize: 12,
-              whiteSpace: "nowrap",
-              background: tabFilter === s ? "#2563EB" : "#F1F5F9",
-              color: tabFilter === s ? "#fff" : "#64748B",
+              padding: "5px 12px", borderRadius: 20, border: "none",
+              cursor: "pointer", fontFamily: FONT, fontWeight: 600,
+              fontSize: 12, whiteSpace: "nowrap",
+              background: tabFilter === s ? C.accent : C.bg,
+              color:      tabFilter === s ? "#fff"    : C.muted,
             }}
           >
             {s} {s !== "Összes" && `(${projektek.filter(p => p.status === s).length})`}
