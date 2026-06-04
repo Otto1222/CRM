@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRM Napelem – Használati útmutató</title>
+  <style>
+    :root {
+      --accent: #2563EB;
+      --accent-light: #EFF6FF;
+      --sidebar: #1E293B;
+      --bg: #F8FAFC;
+      --text: #0F172A;
+      --muted: #64748B;
+      --border: #E2E8F0;
+      --success: #059669;
+      --danger: #DC2626;
+      --warning: #D97706;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+    /* ── Layout ── */
+    .layout { display: flex; min-height: 100vh; }
+    nav {
+      width: 260px;
+      background: var(--sidebar);
+      padding: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    nav .nav-header {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    nav .nav-header h1 { color: #fff; font-size: 16px; font-weight: 800; }
+    nav .nav-header p { color: #94A3B8; font-size: 12px; margin-top: 4px; }
+    nav ul { list-style: none; padding: 12px 0; }
+    nav ul li a {
+      display: block;
+      padding: 8px 20px;
+      color: #94A3B8;
+      text-decoration: none;
+      font-size: 13px;
+      border-left: 3px solid transparent;
+      transition: all 0.15s;
+    }
+    nav ul li a:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    nav ul li.section > a {
+      color: #CBD5E1;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding-top: 16px;
+      cursor: default;
+    }
+    nav ul li.section > a:hover { background: none; }
+    nav ul li.active > a { color: #fff; border-left-color: var(--accent); background: rgba(37,99,235,0.15); }
+    main { flex: 1; max-width: 900px; padding: 48px 40px; }
+
+    /* ── Typography ── */
+    h1 { font-size: 28px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+    h2 { font-size: 22px; font-weight: 800; color: var(--text); margin: 48px 0 16px; padding-top: 8px; border-top: 2px solid var(--border); }
+    h3 { font-size: 16px; font-weight: 700; color: var(--text); margin: 28px 0 10px; }
+    h4 { font-size: 14px; font-weight: 700; color: var(--muted); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+    p { margin-bottom: 12px; color: #334155; }
+    ul, ol { padding-left: 22px; margin-bottom: 14px; color: #334155; }
+    li { margin-bottom: 5px; }
+    strong { color: var(--text); }
+    code {
+      background: #F1F5F9;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 1px 7px;
+      font-size: 13px;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      color: #0F172A;
+    }
+
+    /* ── Step boxes ── */
+    .step {
+      display: flex;
+      gap: 20px;
+      background: #fff;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .step.step-1 { border-color: #DC2626; background: #FFF5F5; }
+    .step.step-2 { border-color: #D97706; background: #FFFBEB; }
+    .step.step-3 { border-color: #2563EB; background: #EFF6FF; }
+    .step.step-4 { border-color: #059669; background: #F0FDF4; }
+    .step-num {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 900;
+      flex-shrink: 0;
+      color: #fff;
+    }
+    .step-1 .step-num { background: #DC2626; }
+    .step-2 .step-num { background: #D97706; }
+    .step-3 .step-num { background: #2563EB; }
+    .step-4 .step-num { background: #059669; }
+    .step-body h3 { margin: 0 0 10px; font-size: 17px; }
+    .step-1 .step-body h3 { color: #991B1B; }
+    .step-2 .step-body h3 { color: #92400E; }
+    .step-3 .step-body h3 { color: #1E40AF; }
+    .step-4 .step-body h3 { color: #065F46; }
+    .step-body { flex: 1; }
+    .step-body p, .step-body li { font-size: 14px; }
+    .step-done {
+      position: absolute;
+      top: 12px; right: 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 10px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 700px) { .card-grid { grid-template-columns: 1fr; } }
+    .card-sm {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .card-sm h4 { margin: 0 0 8px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .card-sm p { margin: 0; font-size: 13.5px; color: #334155; }
+
+    /* ── Role badges ── */
+    .badge {
+      display: inline-block;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-admin { background: #DBEAFE; color: #1D4ED8; }
+    .badge-pm    { background: #FEF3C7; color: #92400E; }
+    .badge-iroda { background: #E0F2FE; color: #0369A1; }
+    .badge-telep { background: #DCFCE7; color: #15803D; }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-bottom: 20px; }
+    thead th { background: #F8FAFC; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; padding: 9px 12px; text-align: left; border-bottom: 2px solid var(--border); }
+    tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #F8FAFC; }
+    td code { font-size: 12px; }
+
+    /* ── Workflow ── */
+    .workflow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+      margin: 16px 0 24px;
+      align-items: center;
+    }
+    .wf-step {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+    .wf-box {
+      background: #EFF6FF;
+      border: 1.5px solid #BFDBFE;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1D4ED8;
+      white-space: nowrap;
+    }
+    .wf-arrow {
+      color: #94A3B8;
+      font-size: 18px;
+      padding: 0 4px;
+      font-weight: 300;
+    }
+
+    /* ── Alert ── */
+    .alert {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .alert-warn { background: #FFFBEB; border: 1.5px solid #FCD34D; }
+    .alert-warn .icon { color: #D97706; font-size: 18px; }
+    .alert-info { background: #EFF6FF; border: 1.5px solid #BFDBFE; }
+    .alert-info .icon { color: #2563EB; font-size: 18px; }
+    .alert-success { background: #F0FDF4; border: 1.5px solid #86EFAC; }
+    .alert-success .icon { color: #059669; font-size: 18px; }
+    .alert p { margin: 0; font-size: 13.5px; }
+    .alert strong { display: block; margin-bottom: 4px; }
+
+    /* ── Field list ── */
+    .field-list { display: grid; gap: 6px; margin-bottom: 16px; }
+    .field-row {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 12px;
+      padding: 7px 12px;
+      background: #F8FAFC;
+      border-radius: 7px;
+      font-size: 13.5px;
+      align-items: start;
+    }
+    .field-name { font-weight: 700; color: var(--text); }
+    .field-name.req::after { content: " *"; color: #DC2626; }
+    .field-desc { color: #334155; }
+
+    /* ── Status pills ── */
+    .status-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .status-pill {
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* ── Print bar ── */
+    .print-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+      background: #1E293B; color: #fff;
+      padding: 10px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+    .print-bar span { font-size: 13px; font-weight: 600; }
+    .print-bar button {
+      background: #2563EB; color: #fff; border: none; border-radius: 8px;
+      padding: 8px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .print-bar button:hover { background: #1D4ED8; }
+    .print-bar .inst-btn {
+      background: #059669;
+    }
+    .print-bar .inst-btn:hover { background: #047857; }
+    body.has-print-bar .layout { padding-top: 48px; }
+    @media print {
+      .print-bar { display: none !important; }
+      body.has-print-bar .layout { padding-top: 0; }
+    }
+
+    /* ── Print ── */
+    @media print {
+      nav { display: none; }
+      main { padding: 20px; max-width: 100%; }
+      h2 { page-break-before: always; }
+      .step, .card { page-break-inside: avoid; }
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+      border-radius: 16px;
+      padding: 32px 36px;
+      margin-bottom: 36px;
+      color: #fff;
+    }
+    .hero h1 { color: #fff; font-size: 26px; margin-bottom: 6px; }
+    .hero p { color: #94A3B8; font-size: 14px; margin: 0; }
+    .hero .version { display: inline-block; background: rgba(37,99,235,0.4); border: 1px solid rgba(37,99,235,0.6); border-radius: 20px; padding: 2px 12px; font-size: 12px; color: #93C5FD; margin-bottom: 12px; }
+
+    /* ── Toc ── */
+    .toc {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 36px;
+    }
+    .toc h3 { margin: 0 0 14px; font-size: 15px; }
+    .toc ol { margin: 0; padding-left: 20px; }
+    .toc li { font-size: 14px; margin-bottom: 6px; }
+    .toc a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .toc a:hover { text-decoration: underline; }
+    .toc li.sub { padding-left: 12px; font-size: 13px; font-weight: 400; list-style: disc; }
+    .toc li.sub a { font-weight: 400; color: var(--muted); }
+
+    hr { border: none; border-top: 2px solid var(--border); margin: 36px 0; }
+    .tag { display: inline-block; background: #F1F5F9; border: 1px solid var(--border); border-radius: 5px; padding: 1px 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+    .new-tag { background: #DCFCE7; border-color: #86EFAC; color: #15803D; }
+  </style>
+</head>
+<body class="has-print-bar">
+
+<!-- Print bar -->
+<div class="print-bar">
+  <span>📖 CRM Napelem – Teljes kézikönyv</span>
+  <div style="display:flex;gap:8px">
+    <button class="inst-btn" onclick="window.open('installer-guide.html','_blank')">📱 Telepítői útmutató</button>
+    <button onclick="window.print()">🖨️ PDF mentés / Nyomtatás</button>
+  </div>
+</div>
+
+<div class="layout">
+
+<!-- ══ NAVIGÁCIÓ ══════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-header">
+    <h1>☀️ CRM Napelem</h1>
+    <p>Használati útmutató</p>
+  </div>
+  <ul>
+    <li class="section"><a>Beállítás</a></li>
+    <li><a href="#gyors">⚡ Gyors beállítás (1–4)</a></li>
+    <li><a href="#bejelentkezes">🔐 Bejelentkezés</a></li>
+
+    <li class="section"><a>Alapfunkciók</a></li>
+    <li><a href="#ugyfelek">👤 Ügyfelek</a></li>
+    <li><a href="#projektek">📋 Projektek</a></li>
+    <li><a href="#munkalapok">🔧 Munkalapok</a></li>
+    <li><a href="#telepito">📱 Telepítő felület</a></li>
+    <li><a href="#telepito-felmeres" style="padding-left:32px;font-size:12px">└ Felmérési munkalap</a></li>
+    <li><a href="#telepito-kivitelez" style="padding-left:32px;font-size:12px">└ Kivitelezési munkalap</a></li>
+
+    <li class="section"><a>Pénzügyek</a></li>
+    <li><a href="#szamlak">🧾 Számlák</a></li>
+    <li><a href="#riportok">📊 Riportok</a></li>
+    <li><a href="#dashboard">📈 Dashboard</a></li>
+
+    <li class="section"><a>Szervezés</a></li>
+    <li><a href="#munkakiosztas">📅 Munkakiosztás</a></li>
+    <li><a href="#beallitasok">⚙️ Beállítások</a></li>
+    <li><a href="#drive">☁️ Drive szinkron</a></li>
+
+    <li class="section"><a>Referencia</a></li>
+    <li><a href="#szerepkorok">🛡️ Szerepkörök</a></li>
+    <li><a href="#statuszok">🏷️ Státuszok</a></li>
+    <li><a href="#workflow">🔄 Teljes folyamat</a></li>
+  </ul>
+</nav>
+
+<!-- ══ FŐTARTALOM ═════════════════════════════════════════════ -->
+<main>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="version">E.D.I. Solutions Kft.</div>
+    <h1>CRM Napelem – Használati útmutató</h1>
+    <p>Napelem projektek kezelése az ügyfél-felvételtől a számlázásig. Kövesd az 1–4 lépést és az első bejelentkezés után azonnal kész a rendszer éles használatra.</p>
+  </div>
+
+  <!-- TARTALOM -->
+  <div class="toc">
+    <h3>📖 Tartalom</h3>
+    <ol>
+      <li><a href="#gyors">Gyors beállítás – 4 kötelező lépés</a></li>
+      <li><a href="#bejelentkezes">Bejelentkezés és szerepkörök</a></li>
+      <li><a href="#ugyfelek">Ügyfelek kezelése</a></li>
+      <li><a href="#projektek">Projektek létrehozása és követése</a></li>
+      <li><a href="#munkalapok">Munkalapok</a></li>
+      <li><a href="#telepito">Telepítő felület (mobil)</a></li>
+      <li><a href="#szamlak">Számlázás</a></li>
+      <li><a href="#riportok">Riportok és kimutatások</a></li>
+      <li><a href="#dashboard">Dashboard – Pénzügyi áttekintő</a></li>
+      <li><a href="#munkakiosztas">Munkakiosztás</a></li>
+      <li><a href="#beallitasok">Beállítások</a></li>
+      <li><a href="#drive">Google Drive szinkron</a></li>
+      <li><a href="#szerepkorok">Szerepkörök és jogosultságok</a></li>
+      <li><a href="#statuszok">Státuszok listája</a></li>
+      <li><a href="#workflow">Teljes munkafolyamat A–Z</a></li>
+    </ol>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       1. GYORS BEÁLLÍTÁS
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="gyors">⚡ Gyors beállítás – 4 kötelező lépés</h2>
+  <p>Kövesd sorban az alábbi 4 lépést. Ha mindegyiken végigmentél, a rendszer éles használatra kész.</p>
+
+  <!-- LÉPÉS 1 -->
+  <div class="step step-1">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h3>🔐 Jelszavak megváltoztatása</h3>
+      <p><strong>Miért fontos?</strong> Az alapértelmezett jelszavak nyilvánosak — bárki be tud lépni, aki ismeri a kódot. Ez az egyetlen valódi biztonsági blocker.</p>
+      <ol>
+        <li>Lépj be az <code>edi</code> / <code>Napelem123</code> Admin fiókkal</li>
+        <li>Navigálj: <strong>Beállítások → Felhasználók (CRM Felhasználók fül)</strong></li>
+        <li>Minden felhasználónál kattints a <strong>ceruza ikonra</strong>, add meg az új jelszót, majd mentés</li>
+        <li>Opcionálisan: kattints a <strong>Generál</strong> gombra véletlenszerű erős jelszóhoz, majd a <strong>másolás</strong> gombbal mentsd el</li>
+      </ol>
+      <p><strong>Alapértelmezett fiókok (mind változtatandó):</strong></p>
+      <table>
+        <thead><tr><th>Felhasználónév</th><th>Alap jelszó</th><th>Szerepkör</th></tr></thead>
+        <tbody>
+          <tr><td><code>edi</code></td><td><code>Napelem123</code></td><td><span class="badge badge-admin">Admin</span></td></tr>
+          <tr><td><code>projekt</code></td><td><code>Projekt123</code></td><td><span class="badge badge-pm">Projektmenedzser</span></td></tr>
+          <tr><td><code>iroda</code></td><td><code>Iroda123</code></td><td><span class="badge badge-iroda">Iroda/Könyvelés</span></td></tr>
+          <tr><td><code>kutasi</code></td><td><code>Telepito123</code></td><td><span class="badge badge-telep">Telepítő</span></td></tr>
+          <tr><td><code>csapat2</code></td><td><code>Telepito123</code></td><td><span class="badge badge-telep">Telepítő</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <span class="step-done">1. LÉPÉS</span>
+  </div>
+
+  <!-- LÉPÉS 2 -->
+  <div class="step step-2">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h3>👥 Felhasználók és csapatok beállítása</h3>
+      <p><strong>Miért fontos?</strong> A rendszer csak akkor tud projekteket és munkalapokat hozzárendelni a valódi személyekhez, ha a nevek helyesek.</p>
+      <ol>
+        <li><strong>Beállítások → Felhasználók → CRM Felhasználók fül</strong></li>
+        <li>Módosítsd az előre létrehozott fiókokat: teljes név, felhasználónév, avatar szín</li>
+        <li>Adj hozzá új telepítőket az <strong>Új felhasználó / Csapat</strong> gombbal</li>
+        <li><strong>Beállítások → Felhasználók → Szerelő csapatok fül</strong></li>
+        <li>Hozd létre a szerelőcsapatokat (csapat neve, tagok, telefonszám) — ezek jelennek meg a projektek kiosztásánál</li>
+      </ol>
+      <div class="alert alert-info">
+        <span class="icon">ℹ️</span>
+        <p><strong>Szerepkörök röviden:</strong> Admin = teljes hozzáférés · Projektmenedzser = projektek + számlák + riportok · Iroda/Könyvelés = ugyanaz, Beállítások nélkül · Telepítő = csak Munkalapok</p>
+      </div>
+    </div>
+    <span class="step-done">2. LÉPÉS</span>
+  </div>
+
+  <!-- LÉPÉS 3 -->
+  <div class="step step-3">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h3>🏗️ Alapadatok felvitele</h3>
+      <p><strong>Miért fontos?</strong> A projektek létrehozásához szükséges a fővállalkozók, munkatípusok listája. Ezek nélkül a projekt-form nem tölthető ki rendesen.</p>
+      <p><strong>A) Fővállalkozók</strong> — Beállítások → Fővállalkozók &amp; Elszámolási szabályok</p>
+      <ul>
+        <li>Add hozzá a megrendelőket / fővállalkozókat (név, cím, kapcsolattartó)</li>
+        <li>Állítsd be az elszámolási szabályokat (km díj, panel alapú díj stb.)</li>
+      </ul>
+      <p><strong>B) Munkatípusok</strong> — Beállítások → Munkatípusok</p>
+      <ul>
+        <li>Pl. „Napelem telepítés", „Akkumulátor csere", „Szerviz"</li>
+        <li>Minden munkatípushoz megadható árazás és kategória</li>
+      </ul>
+      <p><strong>C) Első ügyfelek</strong> — Ügyfelek menü → Új ügyfél</p>
+      <ul>
+        <li>Legalább néhány teszt-ügyfelet érdemes felvenni a folyamat teszteléséhez</li>
+      </ul>
+    </div>
+    <span class="step-done">3. LÉPÉS</span>
+  </div>
+
+  <!-- LÉPÉS 4 -->
+  <div class="step step-4">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h3>☁️ Drive szinkron ellenőrzése</h3>
+      <p><strong>Miért fontos?</strong> A CRM adatai alapból a böngészőben (localStorage) tárolódnak. Ha a böngésző törli a cache-t, az adatok elveszhetnek — a Drive szinkron az egyetlen mentési megoldás.</p>
+      <ol>
+        <li>Navigálj: <strong>Beállítások → Drive szinkron állapot</strong></li>
+        <li>Kattints a <strong>Kapcsolat teszt</strong> gombra</li>
+        <li>Ha zöld ✅ „Drive kapcsolat OK" jelenik meg → minden rendben</li>
+        <li>Kattints az <strong>Összes mentése Drive-ra</strong> gombra az első teljes mentéshez</li>
+      </ol>
+      <div class="alert alert-success">
+        <span class="icon">✅</span>
+        <p><strong>A rendszer kész!</strong> Ha mind a 4 lépésen átmentél, az éles munka elkezdhető. Az adatok Google Drive-ra szinkronizálódnak, a felhasználók saját jelszóval lépnek be.</p>
+      </div>
+    </div>
+    <span class="step-done">4. LÉPÉS</span>
+  </div>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       BEJELENTKEZÉS
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="bejelentkezes">🔐 Bejelentkezés</h2>
+  <p>Az alkalmazás megnyitásakor a bejelentkezési képernyő jelenik meg.</p>
+  <div class="field-list">
+    <div class="field-row"><span class="field-name req">Felhasználónév</span><span class="field-desc">A bejelentkezési név (pl. <code>edi</code>, <code>projekt</code>)</span></div>
+    <div class="field-row"><span class="field-name req">Jelszó</span><span class="field-desc">Kis- és nagybetű érzékeny. A szem ikonnal megmutatható.</span></div>
+  </div>
+  <div class="alert alert-info">
+    <span class="icon">ℹ️</span>
+    <p>A munkamenet a <strong>böngésző bezárásáig</strong> él — lap frissítés után sem kell újra bejelentkezni, de új privát ablakban igen.</p>
+  </div>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       ÜGYFELEK
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="ugyfelek">👤 Ügyfelek</h2>
+  <p>Az <strong>Ügyfelek</strong> menüben tarthatod nyilván a megrendelőket. Az itt rögzített adatok automatikusan kitölthetők projekt és munkalap létrehozásakor.</p>
+
+  <h3>Új ügyfél létrehozása</h3>
+  <p>Kattints az <strong>Új ügyfél</strong> gombra. A megnyíló panelen töltsd ki az adatokat:</p>
+  <div class="field-list">
+    <div class="field-row"><span class="field-name req">Név</span><span class="field-desc">Természetes személy neve vagy cég neve</span></div>
+    <div class="field-row"><span class="field-name">Típus</span><span class="field-desc">Magánszemély / Vállalkozás</span></div>
+    <div class="field-row"><span class="field-name">Telefonszám</span><span class="field-desc">Mobil vagy vezetékes</span></div>
+    <div class="field-row"><span class="field-name">E-mail</span><span class="field-desc">Kapcsolattartási e-mail cím</span></div>
+    <div class="field-row"><span class="field-name">Cím</span><span class="field-desc">Lakcím vagy székhely</span></div>
+    <div class="field-row"><span class="field-name">Státusz</span><span class="field-desc">Aktív / Potenciális / Inaktív</span></div>
+    <div class="field-row"><span class="field-name">Megjegyzések</span><span class="field-desc">Szabad szöveges feljegyzés</span></div>
+  </div>
+  <p>Az ügyfél sorában a <strong>ceruza</strong> ikonnal szerkeszthető, a <strong>kuka</strong> ikonnal törölhető.</p>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       PROJEKTEK
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="projektek">📋 Projektek</h2>
+  <p>A projektek a napelem rendszer telepítési munkák fő egységei. Minden projekt tartalmaz ügyfél adatokat, műszaki paramétereket, pénzügyi tervet és munkalapokat.</p>
+
+  <h3>Új projekt létrehozása</h3>
+  <p>Kattints az <strong>Új projekt</strong> gombra a jobb felső sarokban. A form több szekcióból áll:</p>
+
+  <h4>Projekt alapadatok</h4>
+  <div class="field-list">
+    <div class="field-row"><span class="field-name req">Projekt neve</span><span class="field-desc">Egyedi azonosító névnek javasolt (pl. „Kovács – Pécs 2024")</span></div>
+    <div class="field-row"><span class="field-name">Külső azonosító</span><span class="field-desc">Fővállalkozó saját sorszáma, ha van</span></div>
+    <div class="field-row"><span class="field-name req">Munkatípus</span><span class="field-desc">Beállítások → Munkatípusok listájából választható</span></div>
+    <div class="field-row"><span class="field-name req">Státusz</span><span class="field-desc">14 státusz lépés közül (lásd Státuszok fejezet)</span></div>
+  </div>
+
+  <h4>Ügyfél adatok</h4>
+  <div class="field-list">
+    <div class="field-row"><span class="field-name">Ügyfél kiválasztása</span><span class="field-desc">Meglévő ügyfélből tölti ki automatikusan az adatokat</span></div>
+    <div class="field-row"><span class="field-name req">Ügyfél neve</span><span class="field-desc">Kézzel is megadható</span></div>
+    <div class="field-row"><span class="field-name">Megbízó cég neve</span><span class="field-desc">Ha a megrendelő nem az ügyfél</span></div>
+    <div class="field-row"><span class="field-name">Kapcsolattartó</span><span class="field-desc">A projekt felelős neve cégnél</span></div>
+    <div class="field-row"><span class="field-name">Telefonszám / E-mail</span><span class="field-desc">Elérhetőségek</span></div>
+    <div class="field-row"><span class="field-name">Ügyfél lakcíme</span><span class="field-desc">Cím keresővel, automatikus kiegészítéssel</span></div>
+    <div class="field-row"><span class="field-name">Telepítési cím</span><span class="field-desc">Ha eltér a lakcímtől</span></div>
+  </div>
+
+  <h4>Csapat</h4>
+  <div class="field-list">
+    <div class="field-row"><span class="field-name">Projektvezető</span><span class="field-desc">Admin vagy PM felhasználók közül</span></div>
+    <div class="field-row"><span class="field-name">Kivitelező csapat</span><span class="field-desc">Beállítások → Szerelő csapatokból</span></div>
+  </div>
+
+  <h4>Műszaki adatok</h4>
+  <div class="field-list">
+    <div class="field-row"><span class="field-name">Napelem darabszám</span><span class="field-desc">Telepített panelek száma (automatikusan szinkronizál a pénzügyihez)</span></div>
+    <div class="field-row"><span class="field-name">Inverter darabszám</span><span class="field-desc">Telepített inverterek száma</span></div>
+    <div class="field-row"><span class="field-name">Akkumulátor</span><span class="field-desc">Igen/Nem kapcsoló</span></div>
+    <div class="field-row"><span class="field-name">Okosmérő</span><span class="field-desc">Igen/Nem kapcsoló</span></div>
+    <div class="field-row"><span class="field-name">Elektromos autótöltő</span><span class="field-desc">Igen/Nem kapcsoló</span></div>
+  </div>
+
+  <h4>Pénzügyi konfiguráció</h4>
+  <div class="field-list">
+    <div class="field-row"><span class="field-name">Fővállalkozó</span><span class="field-desc">Megrendelő fővállalkozó kiválasztása</span></div>
+    <div class="field-row"><span class="field-name">Elszámolási db</span><span class="field-desc">Auto. szinkronizál a panel számlával</span></div>
+    <div class="field-row"><span class="field-name">Távolság km</span><span class="field-desc">Egyirányú távolság, Auto gombbal GPS-ből számítható</span></div>
+    <div class="field-row"><span class="field-name">Csapatlétszám</span><span class="field-desc">Telepítő személyek száma</span></div>
+    <div class="field-row"><span class="field-name">Munkanapok száma</span><span class="field-desc">Tervezett kivitelezési napok</span></div>
+    <div class="field-row"><span class="field-name">Emelőgép / Daru</span><span class="field-desc">Gépbérleti költség Ft-ban</span></div>
+    <div class="field-row"><span class="field-name">Szállás / Egyéb</span><span class="field-desc">Pluszkiadások Ft-ban</span></div>
+    <div class="field-row"><span class="field-name">Elfogadott ajánlat</span><span class="field-desc">A megrendelő által elfogadott bruttó összeg</span></div>
+  </div>
+
+  <h3>Projekt részletek – Fülek</h3>
+  <p>A projekt nevére kattintva megnyílik a részletes nézet, ahol 11 fül érhető el:</p>
+  <table>
+    <thead><tr><th>Fül</th><th>Tartalom</th></tr></thead>
+    <tbody>
+      <tr><td><strong>📊 Áttekintés</strong></td><td>Összes alapadat, ügyfél, csapat, műszaki összefoglaló, pénzügyi terv</td></tr>
+      <tr><td><strong>📋 Ajánlatok</strong></td><td>Árjavaslatok rögzítése és státusza</td></tr>
+      <tr><td><strong>🔧 Munkalapok</strong></td><td>Kapcsolt munkalapok listája + Új munkalap gomb</td></tr>
+      <tr><td><strong>💰 Költségek</strong></td><td>Tételes költségek, kalkulált profit, fedezeti vizsgálat</td></tr>
+      <tr><td><strong>📁 Dokumentumok</strong></td><td>Csatolt fájlok kezelése</td></tr>
+      <tr><td><strong>📅 Ütemezés</strong></td><td>Idővonal, mérföldkövek</td></tr>
+      <tr><td><strong>🧾 Számlázás</strong></td><td>Kapcsolt számlák és fizetési állapot</td></tr>
+      <tr><td><strong>💬 Kommunikáció</strong></td><td>Feljegyzések, belső üzenetek</td></tr>
+      <tr><td><strong>📝 Napló</strong></td><td>Automatikus változásnapló</td></tr>
+      <tr><td><strong>🛡️ LMRA</strong></td><td>Kockázatbecslési dokumentumok és aláírások</td></tr>
+      <tr><td><strong>🖨️ Riport / PDF</strong></td><td>PDF jelentés generálás</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Szűrés és keresés</h3>
+  <p>A projekt listában a fejlécen felül kereshetsz név, kód vagy ügyfél szerint. Az állapot szűrő tabokkal gyorsan szűrheted az aktív, kivitelezés alatt lévő, lezárt stb. projekteket.</p>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       MUNKALAPOK
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="munkalapok">🔧 Munkalapok</h2>
+  <p>A munkalap egy konkrét telepítési feladat dokumentuma. Egy projekthez több munkalap is tartozhat. A munkalapot a PM/Iroda/Admin hozza létre, a Telepítő tölti ki terepen.</p>
+
+  <h3>Új munkalap létrehozása</h3>
+  <p>Kattints az <strong>Új munkalap</strong> gombra, vagy a Projekt részletekben a <strong>Munkalapok fülön</strong> az „Új munkalap ehhez a projekthez" gombra.</p>
+
+  <div class="field-list">
+    <div class="field-row"><span class="field-name req">Ügyfél neve</span><span class="field-desc">Automatikus kitöltés meglévő ügyfélből</span></div>
+    <div class="field-row"><span class="field-name">Projekt kiválasztása</span><span class="field-desc">Kapcsolja a munkalapot egy projekthez</span></div>
+    <div class="field-row"><span class="field-name">Telefonszám / Cím</span><span class="field-desc">A telepítési helyszín adatai</span></div>
+  </div>
+
+  <h4>Eszköz szekciók (összecsukható)</h4>
+  <p>Minden kategóriához hozzáadható eszközök és mennyiségek:</p>
+  <div class="card-grid">
+    <div class="card-sm"><h4>⚡ Inverter</h4><p>Típus, darabszám</p></div>
+    <div class="card-sm"><h4>🔋 Akkumulátor</h4><p>Kapacitás, darabszám</p></div>
+    <div class="card-sm"><h4>🖥️ Akkumulátor vezérlő</h4><p>Típus, darabszám</p></div>
+    <div class="card-sm"><h4>📊 Energia mérő</h4><p>Típus, mennyiség</p></div>
+    <div class="card-sm"><h4>🏗️ Tartószerkezet elemek</h4><p>Profil típus, méter</p></div>
+    <div class="card-sm"><h4>🔌 AC eszközök</h4><p>Kábelek, megszakítók</p></div>
+    <div class="card-sm"><h4>⚡ DC eszközök</h4><p>String kábelek, csatlakozók</p></div>
+    <div class="card-sm"><h4>☀️ Napelem panel</h4><p>Típus, darabszám</p></div>
+    <div class="card-sm"><h4>📦 Egyéb anyagok</h4><p>Szabad kategória</p></div>
+  </div>
+
+  <h3>Munkalap státuszok</h3>
+  <div class="status-list">
+    <span class="status-pill" style="background:#EFF6FF;color:#1D4ED8">Kiosztásra vár</span>
+    <span class="status-pill" style="background:#FEF3C7;color:#92400E">Telepítőhöz kiosztva</span>
+    <span class="status-pill" style="background:#DBEAFE;color:#1E40AF">Folyamatban</span>
+    <span class="status-pill" style="background:#FEF9C3;color:#854D0E">Kitöltésre vár</span>
+    <span class="status-pill" style="background:#E0F2FE;color:#0369A1">Szállításra vár</span>
+    <span class="status-pill" style="background:#DCFCE7;color:#166534">Lezárva</span>
+  </div>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       TELEPÍTŐ FELÜLET
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="telepito">📱 Telepítő felület – Teljes útmutató</h2>
+  <p>A Telepítő szerepkörű felhasználók bejelentkezés után közvetlenül a saját munkalapjaikat látják. Más menü nem elérhető — kizárólag a hozzájuk rendelt feladatok jelennek meg.</p>
+
+  <div class="alert alert-info">
+    <span class="icon">ℹ️</span>
+    <p><strong>Fontos:</strong> A Telepítő nem látja az anyagok árát, a pénzügyi adatokat, a fővállalkozó nevét, és nem ér el más menüpontot. Csak a saját neve vagy csapata szerint kiosztott munkalapok látszanak.</p>
+  </div>
+
+  <!-- ── MUNKALAP LISTA ── -->
+  <h3>1. Munkalap lista</h3>
+  <p>Bejelentkezés után minden hozzárendelt, aktív munkalap kártyaként jelenik meg:</p>
+  <div class="card" style="font-family:monospace;font-size:13px;background:#1E293B;color:#E2E8F0;border-color:#334155;">
+    <div style="color:#94A3B8;margin-bottom:8px;">— Munkalap kártya —</div>
+    <div>☀️ &nbsp;<strong style="color:#fff">T003700</strong> &nbsp;&nbsp; 2024.12.15</div>
+    <div style="margin-top:4px"><span style="background:#FEF3C7;color:#92400E;border-radius:4px;padding:1px 7px;font-size:12px;">Megkezdésre vár</span></div>
+    <div style="margin-top:8px;color:#94A3B8">Napelem rendszer telepítése</div>
+    <div style="margin-top:4px"><strong style="color:#fff">Kovács Péter</strong></div>
+    <div style="color:#64748B;font-size:12px">1044 Budapest, Példa utca 12.</div>
+  </div>
+  <p>A kártyán látható adatok: telepítés típus ikonja, munkaszám, dátum, státusz, projekt megnevezés, ügyfél neve és címe.<br/>
+  A <strong>kereső ikonnal</strong> szűrhetsz munkaszámra, ügyfél névre vagy projekt kódra.</p>
+
+  <div class="alert alert-warn">
+    <span class="icon">⚠️</span>
+    <p>Befejezett, lezárt, számlázott munkalapok <strong>nem jelennek meg</strong> a listában — ez normális.</p>
+  </div>
+
+  <!-- ── KÉT MUNKATÍPUS ── -->
+  <h3>2. Kétféle munkatípus</h3>
+  <p>A rendszer automatikusan felismeri, hogy a munkalap <strong>Felmérés</strong> vagy <strong>Kivitelezés</strong> típusú, és más-más felületet nyit meg.</p>
+  <div class="card-grid">
+    <div class="card-sm" style="border-color:#0EA5E9;background:#F0F9FF;">
+      <h4 style="color:#0369A1">📋 Felmérés típusú munkalap</h4>
+      <p>Helyszíni felmérés dokumentálása: fotók (7 kategória), szöveges adatok, nyilatkozat és ügyfél aláírás. A lezárás után státusz: <strong>Befejezett Felmérés</strong>.</p>
+    </div>
+    <div class="card-sm" style="border-color:#059669;background:#F0FDF4;">
+      <h4 style="color:#065F46">⚙️ Kivitelezés típusú munkalap</h4>
+      <p>Telepítés elvégzése: LMRA kockázatbecslés → anyagok + sorozatszámok → VBF mérések → fotók (27 kategória) → ügyfél aláírás. A lezárás után státusz: <strong>Ellenőrzés alatt</strong>.</p>
+    </div>
+  </div>
+
+  <!-- ══ FELMÉRÉS ══ -->
+  <h3 id="telepito-felmeres" style="border-top:2px solid #E2E8F0;padding-top:24px;margin-top:32px;">📋 A – Felmérési munkalap lépései</h3>
+
+  <h4>A/1 – Fotók (7 kategória)</h4>
+  <p>Minden kategóriához <strong>legalább 1 fotót</strong> kell feltölteni, vagy ha nincs lehetőség, <strong>minimum 3 érdemi szavas magyarázatot</strong> kell írni.</p>
+  <table>
+    <thead><tr><th>#</th><th>Kategória</th><th>Mit kell fotózni?</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>🔌 Csatlakozási pont</td><td>Hova csatlakozik a rendszer — tábló, alhálózat stb.</td></tr>
+      <tr><td>2</td><td>⚡ Inverter fal, elhelyezés</td><td>Tervezett inverter helye — fal típusa, mérete</td></tr>
+      <tr><td>3</td><td>🔋 Akkumulátor elhelyezése</td><td>Tervezett akkumulátor elhelyezési hely</td></tr>
+      <tr><td>4</td><td>🏠 Tető típusa</td><td>Tető anyaga, szöge, iránya, akadályok</td></tr>
+      <tr><td>5</td><td>🏗️ Padlás</td><td>Padlástér állapota, járhatóság, kábelvezet lehetőség</td></tr>
+      <tr><td>6</td><td>⛈️ Villámhárító</td><td>Van-e villámhárító? Ha igen, típusa és állapota</td></tr>
+      <tr><td>7</td><td>📊 Mérőóra és kismegszakító</td><td>Mérőóra, kismegszakító típusa, kapacitás, elhelyezés</td></tr>
+    </tbody>
+  </table>
+
+  <h4>A/2 – Szöveges adatok (5 csoport)</h4>
+  <div class="field-list">
+    <div class="field-row"><span class="field-name">Csatlakozási pont</span><span class="field-desc">Csatl. pont állapota · AC kábel tervezett hossz (m) · AC védelem típus · Komm. kábel hossza (m)</span></div>
+    <div class="field-row"><span class="field-name">Inverter / Akkumulátor</span><span class="field-desc">Inverter fal leírása · Akkumulátor fal leírása · Akku kábel tervezett hossz (m)</span></div>
+    <div class="field-row"><span class="field-name">Tető / Szerkezet</span><span class="field-desc">Tető típus · Tetőszerkezet típus · Padlás · Villámhárító · Tartószerkezet típus · Pótcserép</span></div>
+    <div class="field-row"><span class="field-name">DC / Panel</span><span class="field-desc">DC kábel hossz (m) · DC kábel nyomvonal · DC védelem típus · Tűzeseti kapcsoló szükséges · Panel elrendezés</span></div>
+    <div class="field-row"><span class="field-name">Egyéb</span><span class="field-desc">Felhordó eszköz szükséges · Engedélyeztetés állapota · Visszwatt védelem · Megközelíthetőség, megjegyzés</span></div>
+  </div>
+
+  <h4>A/3 – Nyilatkozat és aláírás</h4>
+  <ol>
+    <li>Olvasd el a nyilatkozatot (az ügyfél és a kivitelező közötti előzetes egyeztetés megerősítése)</li>
+    <li>Pipáld be: <strong>„Elolvastam és elfogadom a fenti nyilatkozatot"</strong></li>
+    <li>Az ügyfél <strong>ujjával aláírja</strong> a képernyőn a felmérési lapot</li>
+    <li>Kattints: <strong>💾 Felmérés mentése</strong></li>
+    <li>Státusz automatikusan: <strong>Befejezett Felmérés</strong> → PM megkapja</li>
+  </ol>
+
+  <!-- ══ KIVITELEZÉS ══ -->
+  <h3 id="telepito-kivitelez" style="border-top:2px solid #E2E8F0;padding-top:24px;margin-top:32px;">⚙️ B – Kivitelezési munkalap lépései</h3>
+  <p>A kivitelezési munkalap 7 fülből áll. Az első 3 fül a munka megkezdése előtt is elérhető, a többi csak az LMRA aláírás után nyílik meg.</p>
+
+  <h4>B/1 – Info fül → LMRA + Munka megkezdése</h4>
+  <p>Az Info fülön láthatók a projekt adatai (megnevezés, feladat leírás, kapcsolattartó neve és telefonszáma).</p>
+  <div class="alert alert-warn">
+    <span class="icon">⚠️</span>
+    <p><strong>LMRA kötelező!</strong> A munka megkezdése előtt minden csapattagnak alá kell írnia a kockázatbecslést. Kattints a <strong>„🛡️ LMRA + Megkezdés →"</strong> gombra, töltsd ki a kockázatbecslési lapot, és minden csapattag írjon alá. Csak ezután nyílnak meg a 4–7. fülek.</p>
+  </div>
+
+  <h4>B/2 – Anyagok fül (olvasható)</h4>
+  <p>A PM által előre feltöltött anyaglista nézhető meg itt (eszköz neve, mennyiség, egység). Szerkeszteni nem lehet.</p>
+
+  <h4>B/3 – Felmérés fül (olvasható)</h4>
+  <p>Ha a projekthez korábban felmérési munkalap is tartozott, annak adatai itt olvashatók: csatlakozási pont, tető típus, kábel hosszak stb.</p>
+
+  <h4>B/4 – Felhasznált anyagok fül ⟵ <em>Csak munka megkezdése után!</em></h4>
+  <p>Rögzítsd a ténylegesen felhasznált anyagokat. <strong>Sorozatszámot igénylő eszközöknél</strong> minden darabhoz külön S/N mezőt kell kitölteni:</p>
+  <div class="status-list">
+    <span class="status-pill" style="background:#EFF6FF;color:#1D4ED8">Inverter</span>
+    <span class="status-pill" style="background:#EFF6FF;color:#1D4ED8">Akkumulátor</span>
+    <span class="status-pill" style="background:#EFF6FF;color:#1D4ED8">Optimalizáló</span>
+    <span class="status-pill" style="background:#EFF6FF;color:#1D4ED8">Okos Mérő</span>
+    <span class="status-pill" style="background:#EFF6FF;color:#1D4ED8">Napelem panel</span>
+  </div>
+  <p>Plusz anyagot az „<strong>+ Hozzáad</strong>" gombbal adhatsz hozzá. Ha sorozatszámot igénylő eszközt adsz hozzá, a rendszer automatikusan annyi S/N mezőt generál, amennyi a darabszám. Mentés: <strong>💾 Anyagok mentése</strong>.</p>
+
+  <h4>B/5 – VBF Protokoll fül (Villamos biztonsági felülvizsgálat)</h4>
+  <p>Töltsd ki a helyszíni mérési adatokat. Az üres mező = nem releváns, hagyhatod üresen. Ha nulla az érték, hagyd üresen!</p>
+  <table>
+    <thead><tr><th>Szekció</th><th>Mezők</th><th>Egység</th></tr></thead>
+    <tbody>
+      <tr><td>AC feszültség</td><td>L1, L2, L3</td><td>V</td></tr>
+      <tr><td>Kismegszakító – Inverternél</td><td>L1, L2, L3</td><td>A</td></tr>
+      <tr><td>Kismegszakító – Mérőhelynél</td><td>L1, L2, L3</td><td>A</td></tr>
+      <tr><td>Panelszám</td><td>ST1, ST2, ST3, ST4, ST5, ST6</td><td>db</td></tr>
+      <tr><td>DC feszültség</td><td>ST1, ST2, ST3, ST4, ST5, ST6</td><td>V</td></tr>
+      <tr><td>Hurokellenállás</td><td>L1, L2, L3</td><td>MΩ</td></tr>
+      <tr><td>Smart meter &amp; Akkumulátor</td><td>SM, AKKU</td><td>db</td></tr>
+      <tr><td>Betáplált DC teljesítmény</td><td>DC</td><td>Wp</td></tr>
+      <tr><td>Panel pontos adatok</td><td>Típus (szöveg), Voc, Vmp, Imp, Isc, Teljesítmény</td><td>V / A / Wp</td></tr>
+      <tr><td>Inverter pontos adatok</td><td>kVA</td><td>kVA</td></tr>
+      <tr><td>Tűzeseti adatok</td><td>A</td><td>A</td></tr>
+    </tbody>
+  </table>
+  <p>Mentés: <strong>💾 VBF mentése</strong> — az adatok automatikusan Drive-ra is feltöltődnek.</p>
+
+  <h4>B/6 – Fotók fül (27 kategória)</h4>
+  <p>Minden kategóriához <strong>legalább 1 fotót</strong> tölts fel. Ha nincs lehetőség fotózni, kötelező a három lehetőség egyikét kiválasztani:</p>
+  <div class="status-list">
+    <span class="status-pill" style="background:#FEF3C7;color:#92400E">Nincs ilyen eszköz</span>
+    <span class="status-pill" style="background:#FEF3C7;color:#92400E">Nem releváns a munkatípushoz</span>
+    <span class="status-pill" style="background:#FEF3C7;color:#92400E">Nem látható</span>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Kategória</th><th>Min. fotó</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>AC box (fedéllel és fedél nélkül)</td><td>3 db</td></tr>
+      <tr><td>2</td><td>Akkumulátor</td><td>2 db</td></tr>
+      <tr><td>3</td><td>Akkumulátor adattábla</td><td>1 db</td></tr>
+      <tr><td>4</td><td>Csatlakozási / rákötési pont</td><td>2 db</td></tr>
+      <tr><td>5</td><td>DC box (fedéllel és fedél nélkül)</td><td>3 db</td></tr>
+      <tr><td>6</td><td>EPH kötés</td><td>1 db</td></tr>
+      <tr><td>7</td><td>Egyéb dokumentáció</td><td>nyilatkozat, fővállalkozói doc.</td></tr>
+      <tr><td>8</td><td>Elrendezés + stringek</td><td>1 db</td></tr>
+      <tr><td>9</td><td>Figyelmeztető tábla</td><td>1 db</td></tr>
+      <tr><td>10</td><td>Füstérzékelő</td><td>1 db (beszerelve)</td></tr>
+      <tr><td>11</td><td>Inverter</td><td>2 db (elölnézet, csatlakozásokkal)</td></tr>
+      <tr><td>12</td><td>Inverter adattábla</td><td>1 db</td></tr>
+      <tr><td>13</td><td>Inverter beállítások</td><td>Visszatáplálás, SM, akku, üzemmód</td></tr>
+      <tr><td>14</td><td>Inverter működéséről</td><td>1 db (élő termelés)</td></tr>
+      <tr><td>15</td><td>Kábel nyomvonal (AC/DC)</td><td>kábel hossza alapján több db</td></tr>
+      <tr><td>16</td><td>Matricák, feliratok</td><td>min. 3 db (AC box, DC box, csatl. pont)</td></tr>
+      <tr><td>17</td><td>Mérés ellenőrzése</td><td>Fogyasztásmérés ellenőrzés</td></tr>
+      <tr><td>18</td><td>Mérőhelyről</td><td>3 db (teljesítmény, mérő, mérőhely)</td></tr>
+      <tr><td>19</td><td>Napelemek</td><td>min. 2 db (különböző szögekből)</td></tr>
+      <tr><td>20</td><td>Napelem SN számok</td><td>minden panel sorozatszáma olvasható</td></tr>
+      <tr><td>21</td><td>Optimalizáló</td><td>min. 1 db (felszerelve)</td></tr>
+      <tr><td>22</td><td>Plant létrehozás</td><td>1 db (online monitoring rendszer)</td></tr>
+      <tr><td>23</td><td>Pályázati tábla</td><td>3 db (közeli, 1-2 m, szemközti járdáról)</td></tr>
+      <tr><td>24</td><td>Smart mérő / mérés</td><td>2 db (mérési elrendezés, kommunikáció)</td></tr>
+      <tr><td>25</td><td>Tartószerkezet</td><td>min. 2 db (különböző szögekből)</td></tr>
+      <tr><td>26</td><td>Tető kivezetés</td><td>1 db (kábel tetőre kivezetése)</td></tr>
+      <tr><td>27</td><td>Tűzeseti leválasztó</td><td>1 db (csatlakoztatva)</td></tr>
+      <tr><td>28</td><td>Wifi Stick</td><td>1 db (adatok olvashatók)</td></tr>
+      <tr><td>29</td><td>Wifi beállítás</td><td>1 db (sikeres wifi csatlakozás)</td></tr>
+    </tbody>
+  </table>
+  <p>A feltöltött fotók automatikusan Drive-ra kerülnek. Zöld pipa jelzi a Drive-ra mentett fotókat.</p>
+
+  <h4>B/7 – Befejezés fül → Munka lezárása</h4>
+  <ol>
+    <li><strong>Megjegyzés</strong> (kötelező): Írd le röviden a telepítés menetét, esetleges eltéréseket</li>
+    <li>Ellenőrizd a <strong>Munka ellenőrzése</strong> listát — minden sor zöld pipa legyen:</li>
+  </ol>
+  <div class="card" style="font-size:13.5px;">
+    <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid #E2E8F0"><span style="color:#22C55E;font-size:16px">✓</span> <strong>VBF Jegyzőkönyv</strong> — kötelező mezők kitöltve</div>
+    <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid #E2E8F0"><span style="color:#22C55E;font-size:16px">✓</span> <strong>Fotók</strong> — minden kategória: fotó vagy indok megadva</div>
+    <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid #E2E8F0"><span style="color:#22C55E;font-size:16px">✓</span> <strong>Felhasznált anyagok</strong> — sorozatszámok kitöltve</div>
+    <div style="display:flex;gap:10px;padding:6px 0"><span style="color:#22C55E;font-size:16px">✓</span> <strong>Megjegyzés</strong> — legalább egy karakter</div>
+  </div>
+  <ol start="3">
+    <li>Ha minden zöld → kattints: <strong>✅ Munka befejezése és lezárása</strong></li>
+    <li>Az ügyfél <strong>aláírja</strong> a befejezési lapot a képernyőn</li>
+    <li>A rendszer feltölti az összes adatot Drive-ra (folyamatjelző sáv látható)</li>
+    <li>Státusz: <strong>Ellenőrzés alatt</strong> → a PM/Admin ellenőrzi és lezárja</li>
+  </ol>
+
+  <div class="alert alert-success">
+    <span class="icon">✅</span>
+    <p><strong>Lezárás után</strong> a munkalap <strong>zárolva</strong> van — módosítani csak Admin vagy PM tud. A Telepítőnél a lista automatikusan frissül és ez a munkalap eltűnik az aktív feladatok közül.</p>
+  </div>
+
+  <!-- ── ÖSSZEFOGLALÓ FLOW ── -->
+  <h3>Telepítő teljes munkafolyamat – összefoglaló</h3>
+  <div class="workflow">
+    <div class="wf-step"><div class="wf-box">1. Bejelentkezés</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">2. Munkalap kiválaszt.</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">3. LMRA aláírás</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">4. Anyagok + S/N</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">5. VBF mérések</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">6. Fotók (27 kat.)</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">7. Megjegyzés</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">8. Ügyfél aláírás</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">9. Lezárás ✅</div></div>
+  </div>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       SZÁMLÁK
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="szamlak">🧾 Számlázás</h2>
+  <p>A Számlák menüben kezelheted a kimenő (vevői) és bejövő (szállítói) számlákat egyaránt.</p>
+
+  <h3>Számla típusok</h3>
+  <div class="card-grid">
+    <div class="card-sm">
+      <h4>Kimenő számlák</h4>
+      <p>Ügyfeleknek kiállított számlák. Státuszok: Kiállítva → Részlegesen fizetve → Fizetve · Késedelmes · Sztornózva</p>
+    </div>
+    <div class="card-sm">
+      <h4>Bejövő számlák</h4>
+      <p>Szállítóktól érkezett számlák. Státuszok: Rögzítve → Fizetve · Késedelmes</p>
+    </div>
+  </div>
+
+  <h3>Új számla mezők</h3>
+  <div class="field-list">
+    <div class="field-row"><span class="field-name req">Típus</span><span class="field-desc">Kimenő / Bejövő</span></div>
+    <div class="field-row"><span class="field-name req">Számlaszám</span><span class="field-desc">Egyedi azonosító</span></div>
+    <div class="field-row"><span class="field-name req">Kiállítás dátuma</span><span class="field-desc">Dátum mező</span></div>
+    <div class="field-row"><span class="field-name">Teljesítés dátuma</span><span class="field-desc">Mikor teljesült a szolgáltatás</span></div>
+    <div class="field-row"><span class="field-name">Fizetési határidő</span><span class="field-desc">Lejárat dátuma</span></div>
+    <div class="field-row"><span class="field-name">Ügyfél / Szállító</span><span class="field-desc">Meglévő listából, vagy kézzel</span></div>
+    <div class="field-row"><span class="field-name">Adószám</span><span class="field-desc">ÁFA-s szükségű számlákhoz</span></div>
+    <div class="field-row"><span class="field-name">Projekt referencia</span><span class="field-desc">Melyik projekthez kapcsolódik</span></div>
+    <div class="field-row"><span class="field-name req">Nettó összeg</span><span class="field-desc">Alap érték Ft-ban</span></div>
+    <div class="field-row"><span class="field-name">ÁFA kulcs</span><span class="field-desc">0% / 5% / 18% / 27% — ÁFA és bruttó automatikusan számítódik</span></div>
+    <div class="field-row"><span class="field-name">Fizetett összeg</span><span class="field-desc">Amennyit már befizett az ügyfél</span></div>
+    <div class="field-row"><span class="field-name">Fizetett dátum</span><span class="field-desc">Banki jóváírás napja</span></div>
+    <div class="field-row"><span class="field-name">Megjegyzések</span><span class="field-desc">Szabad szöveges feljegyzés</span></div>
+  </div>
+
+  <h3>Összesítő kártyák</h3>
+  <p>A számlalista tetején mindig látható: összes számla · összes összeg · fizetett összeg · nyitott összeg · késedelmes összeg.</p>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       RIPORTOK
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="riportok">📊 Riportok</h2>
+  <p>A Riportok oldal pénzügyi és teljesítményi kimutatásokat biztosít. Csak Admin, PM és Iroda/Könyvelés szerepkörnek elérhető.</p>
+
+  <h3>Fővállalkozó elszámolás</h3>
+  <p>Fővállalkozónként összesített táblázat: projektek száma, telepített panelek, nettó bevétel, teljes költség, profit, fedezeti arány. A sorok kinyithatók a részletes projekt nézethez. A fedezeti arány szín-kódolt: ≥20% zöld · ≥10% narancssárga · &lt;10% piros.</p>
+
+  <h3>KPI kártyák</h3>
+  <ul>
+    <li>Projekt metrikák (összes, aktív, befejezett)</li>
+    <li>Pénzügyi metrikák (bevétel, kiadás, fedezet)</li>
+    <li>Csapat metrikák (kapacitás, terhelés)</li>
+    <li>Növekedési trendek</li>
+  </ul>
+
+  <h3>Exportálás</h3>
+  <p>Minden riport letölthető <strong>Excel (XLS)</strong> vagy <strong>PDF</strong> formátumban a letöltés ikonra kattintva.</p>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       DASHBOARD
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="dashboard">📈 Dashboard – Pénzügy</h2>
+  <p>A bejelentkezés után az Admin, PM és Iroda felhasználók a Dashboard-ra kerülnek. Ez az oldal összesített napi/heti/havi képet ad.</p>
+  <ul>
+    <li>Összes projekt száma és aktív projektek aránya</li>
+    <li>Folyamatban lévő munkalapok száma</li>
+    <li>Nyitott számlák száma és Ft értéke</li>
+    <li>Ma / ezen a héten kiosztott feladatok</li>
+    <li>Bevétel vs. kiadás összehasonlítás</li>
+    <li>Átlagos fedezeti arány</li>
+    <li>Lejárt határidejű számlák jelzése</li>
+  </ul>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       MUNKAKIOSZTÁS
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="munkakiosztas">📅 Munkakiosztás</h2>
+  <p>A Munkakiosztás oldal tömeges munkalap-kiosztást tesz lehetővé Excel fájlból, automatikusan. Csak Admin és PM látja.</p>
+
+  <h3>Használat</h3>
+  <ol>
+    <li>Készíts egy Excel fájlt a kiosztandó munkákkal (ügyfél, cím, csapat, dátum)</li>
+    <li>Húzd be a fájlt a feltöltési területre, vagy kattints a feltöltés gombra</li>
+    <li>A rendszer beolvassa és validálja az adatokat</li>
+    <li>Ellenőrizd a feldolgozott sorokat (napokra bontva, összecsuikható nézet)</li>
+    <li>Ha minden rendben, kattints a <strong>Kiosztás</strong> gombra — a munkalapok létrejönnek</li>
+    <li>Az eredmény Excel-be is letölthető</li>
+  </ol>
+
+  <h3>Kiosztási státuszok</h3>
+  <div class="status-list">
+    <span class="status-pill" style="background:#E0F9FF;color:#0369A1">Megkezdésre vár</span>
+    <span class="status-pill" style="background:#E0F2FE;color:#0284C7">Felmérés</span>
+    <span class="status-pill" style="background:#FEF3C7;color:#D97706">Kivitelezés</span>
+    <span class="status-pill" style="background:#EFF6FF;color:#2563EB">Folyamatban</span>
+    <span class="status-pill" style="background:#FFFBEB;color:#D97706">Ütemezett</span>
+  </div>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       BEÁLLÍTÁSOK
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="beallitasok">⚙️ Beállítások</h2>
+  <p>Admin és Projektmenedzser érheti el. A bal oldali listából választható szekciók:</p>
+
+  <table>
+    <thead><tr><th>Szekció</th><th>Mit lehet itt csinálni?</th><th>Hozzáférés</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Felhasználók</strong><br/>CRM Felhasználók / Szerelő csapatok</td><td>Jelszó, név, szerepkör, avatar szín módosítása. Csapatok létrehozása, tagok hozzáadása.</td><td><span class="badge badge-admin">Admin</span></td></tr>
+      <tr><td><strong>Fővállalkozók &amp; Elszámolási szabályok</strong></td><td>Megrendelők rögzítése, km és panel alapú elszámolási sablonok</td><td><span class="badge badge-admin">Admin</span> <span class="badge badge-pm">PM</span></td></tr>
+      <tr><td><strong>Munkatípusok</strong></td><td>Telepítési kategóriák, árazási logika</td><td><span class="badge badge-admin">Admin</span> <span class="badge badge-pm">PM</span></td></tr>
+      <tr><td><strong>Munkakiosztás beállítások</strong></td><td>Kiosztási szabályok, csapat kapacitás</td><td><span class="badge badge-admin">Admin</span> <span class="badge badge-pm">PM</span></td></tr>
+      <tr><td><strong>Dokumentum sablonok</strong></td><td>Word sablonok fejléc/lábléc szerkesztése</td><td><span class="badge badge-admin">Admin</span> <span class="badge badge-pm">PM</span></td></tr>
+      <tr><td><strong>Telepítő csapatok (LMRA)</strong></td><td>Aláírókhoz szükséges csapattagok listája, telefon</td><td><span class="badge badge-admin">Admin</span> <span class="badge badge-pm">PM</span></td></tr>
+      <tr><td><strong>LMRA – Kockázatbecslés</strong></td><td>Kockázati pontok szerkesztése, PDF sablon feltöltése</td><td><span class="badge badge-admin">Admin</span> <span class="badge badge-pm">PM</span></td></tr>
+      <tr><td><strong>VBF Sablon (.docx)</strong></td><td>Villámvédelmi biztonsági fejlap Word sablon feltöltése</td><td><span class="badge badge-admin">Admin</span> <span class="badge badge-pm">PM</span></td></tr>
+      <tr><td><strong>Biztonsági mentések</strong></td><td>Adatok JSON exportja, visszaállítása, manuális mentés Drive-ra</td><td><span class="badge badge-admin">Admin</span></td></tr>
+      <tr><td><strong>Drive szinkron állapot</strong></td><td>Kapcsolat teszt, kollekciónkénti szinkron napló, tárhelymonitor</td><td><span class="badge badge-admin">Admin</span> <span class="badge badge-pm">PM</span></td></tr>
+      <tr><td><strong>Oktató anyagok</strong></td><td>Google Drive mappa link Telepítőknek</td><td><span class="badge badge-admin">Admin</span></td></tr>
+      <tr><td><strong>Operatív adatok törlése</strong></td><td>Projektek, munkalapok stb. törlése (TÖRLÉS megerősítéssel)</td><td><span class="badge badge-admin">Admin</span></td></tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       DRIVE
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="drive">☁️ Google Drive szinkron</h2>
+  <p>Az alkalmazás adatai elsődlegesen a böngésző localStorage-ában tárolódnak. A Drive szinkron rendszeres biztonsági mentést biztosít Google Sheets / JSON formátumban.</p>
+
+  <div class="alert alert-warn">
+    <span class="icon">⚠️</span>
+    <p><strong>Fontos!</strong> Ha a böngésző cache-t töröl, az adatok elvesznek — kivéve, ha Drive-ra szinkronizáltál. Hetente legalább egyszer végezz teljes mentést.</p>
+  </div>
+
+  <h3>Drive szinkron állapot panel</h3>
+  <p>Beállítások → Drive szinkron állapot</p>
+  <ul>
+    <li><strong>Kapcsolat teszt</strong> — ellenőrzi, hogy a Google Apps Script elérhető-e (válaszidővel)</li>
+    <li><strong>Kollekciók szinkron naplója</strong> — minden adattípusnál látható az utolsó sikeres mentés időpontja</li>
+    <li><strong>Összes mentése Drive-ra</strong> — azonnali teljes mentés minden kollekcióból</li>
+    <li><strong>Helyi tárhely monitor</strong> — megmutatja a localStorage telítettségét (max ~5 MB)</li>
+  </ul>
+
+  <h3>Automatikus szinkron</h3>
+  <p>Az alkalmazás minden adatmentés után automatikusan megpróbálja szinkronizálni az érintett kollekciót. Ha nincs internet-kapcsolat, a következő online állapotnál szinkronizál.</p>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       SZEREPKÖRÖK
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="szerepkorok">🛡️ Szerepkörök és jogosultságok</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Oldal / Funkció</th>
+        <th><span class="badge badge-admin">Admin</span></th>
+        <th><span class="badge badge-pm">Projektmenedzser</span></th>
+        <th><span class="badge badge-iroda">Iroda/Könyvelés</span></th>
+        <th><span class="badge badge-telep">Telepítő</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Dashboard</td><td>✅</td><td>✅</td><td>✅</td><td>—</td></tr>
+      <tr><td>Projektek</td><td>✅</td><td>✅</td><td>✅ (olvasás)</td><td>—</td></tr>
+      <tr><td>Munkalapok</td><td>✅</td><td>✅</td><td>✅</td><td>✅ (saját)</td></tr>
+      <tr><td>Ügyfelek</td><td>✅</td><td>✅</td><td>✅</td><td>—</td></tr>
+      <tr><td>Számlák</td><td>✅</td><td>✅</td><td>✅</td><td>—</td></tr>
+      <tr><td>Riportok</td><td>✅</td><td>✅</td><td>✅</td><td>—</td></tr>
+      <tr><td>Munkakiosztás</td><td>✅</td><td>✅</td><td>—</td><td>—</td></tr>
+      <tr><td>Beállítások</td><td>✅ (teljes)</td><td>✅ (részleges)</td><td>—</td><td>—</td></tr>
+      <tr><td>Árak láthatósága</td><td>✅</td><td>✅</td><td>✅</td><td>—</td></tr>
+      <tr><td>Fővállalkozó neve</td><td>✅</td><td>✅</td><td>✅</td><td>—</td></tr>
+      <tr><td>Munkalap létrehozás</td><td>✅</td><td>✅</td><td>✅</td><td>—</td></tr>
+      <tr><td>Operatív adatok törlése</td><td>✅</td><td>—</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       STÁTUSZOK
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="statuszok">🏷️ Státuszok listája</h2>
+
+  <h3>Projekt státuszok (14 lépés)</h3>
+  <div class="status-list">
+    <span class="status-pill" style="background:#F1F5F9;color:#475569">Felmérésre vár</span>
+    <span class="status-pill" style="background:#E0F2FE;color:#0369A1">Felmérve</span>
+    <span class="status-pill" style="background:#FEF9C3;color:#854D0E">Ajánlat kiküldve</span>
+    <span class="status-pill" style="background:#FEE2E2;color:#991B1B">Elbukott projekt</span>
+    <span class="status-pill" style="background:#DCFCE7;color:#166534">Elfogadva</span>
+    <span class="status-pill" style="background:#FEF3C7;color:#92400E">Kivitelezésre vár</span>
+    <span class="status-pill" style="background:#DBEAFE;color:#1E40AF">Kivitelezés alatt</span>
+    <span class="status-pill" style="background:#BBF7D0;color:#14532D">Elkészült</span>
+    <span class="status-pill" style="background:#FDE68A;color:#78350F">Ellenőrzésre vár</span>
+    <span class="status-pill" style="background:#FED7AA;color:#9A3412">Hiánypótlás</span>
+    <span class="status-pill" style="background:#A7F3D0;color:#064E3B">Ellenőrizve, minden rendben</span>
+    <span class="status-pill" style="background:#A5F3FC;color:#164E63">Leszámlázva</span>
+    <span class="status-pill" style="background:#6EE7B7;color:#065F46">Kifizetve</span>
+    <span class="status-pill" style="background:#94A3B8;color:#fff">Lezárva</span>
+  </div>
+
+  <h3>Munkalap státuszok</h3>
+  <div class="status-list">
+    <span class="status-pill" style="background:#F1F5F9;color:#475569">Kiosztásra vár</span>
+    <span class="status-pill" style="background:#FEF3C7;color:#92400E">Telepítőhöz kiosztva</span>
+    <span class="status-pill" style="background:#DBEAFE;color:#1E40AF">Folyamatban</span>
+    <span class="status-pill" style="background:#FEF9C3;color:#854D0E">Kitöltésre vár</span>
+    <span class="status-pill" style="background:#E0F2FE;color:#0369A1">Szállításra vár</span>
+    <span class="status-pill" style="background:#DCFCE7;color:#166534">Lezárva</span>
+  </div>
+
+  <h3>Számla státuszok</h3>
+  <div class="card-grid">
+    <div class="card-sm">
+      <h4>Kimenő</h4>
+      <div class="status-list" style="margin:0">
+        <span class="status-pill" style="background:#EFF6FF;color:#1D4ED8">Kiállítva</span>
+        <span class="status-pill" style="background:#FEF9C3;color:#854D0E">Részlegesen fizetve</span>
+        <span class="status-pill" style="background:#DCFCE7;color:#166534">Fizetve</span>
+        <span class="status-pill" style="background:#FEE2E2;color:#991B1B">Késedelmes</span>
+        <span class="status-pill" style="background:#F1F5F9;color:#475569">Sztornózva</span>
+      </div>
+    </div>
+    <div class="card-sm">
+      <h4>Bejövő</h4>
+      <div class="status-list" style="margin:0">
+        <span class="status-pill" style="background:#F1F5F9;color:#475569">Rögzítve</span>
+        <span class="status-pill" style="background:#DCFCE7;color:#166534">Fizetve</span>
+        <span class="status-pill" style="background:#FEE2E2;color:#991B1B">Késedelmes</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>Ügyfél státuszok</h3>
+  <div class="status-list">
+    <span class="status-pill" style="background:#ECFDF5;color:#059669">Aktív</span>
+    <span class="status-pill" style="background:#EFF6FF;color:#2563EB">Potenciális</span>
+    <span class="status-pill" style="background:#F1F5F9;color:#64748B">Inaktív</span>
+  </div>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════
+       TELJES MUNKAFOLYAMAT
+  ══════════════════════════════════════════════════════════ -->
+  <h2 id="workflow">🔄 Teljes munkafolyamat – A beérkezéstől a számlázásig</h2>
+  <p>Ez a fejezet bemutatja az ideális folyamatot egy napelem projekt teljes életciklusa során.</p>
+
+  <div class="workflow">
+    <div class="wf-step"><div class="wf-box">1. Ügyfél felvétel</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">2. Projekt létrehozás</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">3. Felmérés</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">4. Ajánlat</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">5. Elfogadás</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">6. Munkalap</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">7. Kiosztás</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">8. Telepítés</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">9. PM ellenőrzés</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">10. Számlázás</div><div class="wf-arrow">→</div></div>
+    <div class="wf-step"><div class="wf-box">11. Lezárás</div></div>
+  </div>
+
+  <h3>1. Ügyfél felvétel</h3>
+  <p><span class="badge badge-pm">PM</span> <span class="badge badge-iroda">Iroda</span> — Ügyfelek menü → Új ügyfél → Kitöltés → Mentés</p>
+
+  <h3>2. Projekt létrehozás</h3>
+  <p><span class="badge badge-pm">PM</span> — Projektek → Új projekt → Alapadatok + Ügyfél + Műszaki adatok + Pénzügyi konfig → Mentés<br/>
+  Státusz: <strong>Felmérésre vár</strong></p>
+
+  <h3>3. Felmérés elvégzése</h3>
+  <p><span class="badge badge-pm">PM</span> <span class="badge badge-telep">Telepítő</span> — Munkalap létrehozása „Felmérés" típussal → Telepítő elvégzi → PM frissíti a projekt státuszát: <strong>Felmérve</strong></p>
+
+  <h3>4. Ajánlat küldése</h3>
+  <p><span class="badge badge-pm">PM</span> — Projekt → Ajánlatok fül → Árajánlat rögzítése → Státusz: <strong>Ajánlat kiküldve</strong></p>
+
+  <h3>5. Elfogadás</h3>
+  <p><span class="badge badge-pm">PM</span> — Projekt szerkesztés → Elfogadott ajánlat összeg megadása → Státusz: <strong>Elfogadva → Kivitelezésre vár</strong></p>
+
+  <h3>6. Munkalap létrehozása</h3>
+  <p><span class="badge badge-pm">PM</span> <span class="badge badge-iroda">Iroda</span> — Projekt → Munkalapok fül → Új munkalap → Eszközök hozzáadása → Mentés<br/>
+  Státusz: <strong>Kiosztásra vár</strong></p>
+
+  <h3>7. Kiosztás telepítőnek</h3>
+  <p><span class="badge badge-pm">PM</span> — Munkalapok listában a kiosztás ikonra kattintva telepítőhöz rendelhető, vagy Munkakiosztás menüből tömegesen<br/>
+  Státusz: <strong>Telepítőhöz kiosztva</strong></p>
+
+  <h3>8. Telepítés elvégzése</h3>
+  <p><span class="badge badge-telep">Telepítő</span></p>
+  <ol>
+    <li>Bejelentkezés Telepítő fiókkal</li>
+    <li>Munkalap megnyitása → <strong>Munka megkezdése</strong> gomb</li>
+    <li>Info, Anyagok, Felmérés, VBF, Fotók fülek kitöltése</li>
+    <li>Befejezés fül → <strong>Munka lezárása</strong></li>
+  </ol>
+  <p>Státusz: <strong>Kitöltésre vár</strong></p>
+
+  <h3>9. PM ellenőrzés</h3>
+  <p><span class="badge badge-pm">PM</span> <span class="badge badge-admin">Admin</span> — Munkalap megnyitása → tartalom ellenőrzése → Ha rendben: státusz → <strong>Lezárva</strong> → Projekt státusz → <strong>Ellenőrizve, minden rendben</strong></p>
+
+  <h3>10. Számlázás</h3>
+  <p><span class="badge badge-iroda">Iroda</span> <span class="badge badge-pm">PM</span> — Számlák → Új számla → Kimenő → Projekt referencia kiválasztása → Nettó összeg + ÁFA → Mentés<br/>
+  Projekt státusz → <strong>Leszámlázva</strong> → fizetés után → <strong>Kifizetve</strong></p>
+
+  <h3>11. Projekt lezárása</h3>
+  <p><span class="badge badge-pm">PM</span> <span class="badge badge-admin">Admin</span> — Projekt szerkesztés → Státusz: <strong>Lezárva</strong> → Drive mentés</p>
+
+  <hr />
+
+  <div class="alert alert-success">
+    <span class="icon">✅</span>
+    <p><strong>Gratulálunk!</strong> Ha eljutottál idáig, ismered a rendszer összes fő funkcióját. Kérdés esetén nézd meg a Beállítások → Oktató anyagok részben a feltöltött képzési anyagokat, vagy fordulj az Admin felhasználóhoz.</p>
+  </div>
+
+  <p style="text-align:center;color:var(--muted);font-size:12px;margin-top:40px;padding-top:20px;border-top:1px solid var(--border);">
+    CRM Napelem · E.D.I. Solutions Kft. · Használati útmutató
+  </p>
+
+</main>
+</div>
+
+<script>
+  if (new URLSearchParams(location.search).get('print') === '1') {
+    window.addEventListener('load', function() {
+      setTimeout(function() { window.print(); }, 800);
+    });
+  }
+</script>
+</body>
+</html>

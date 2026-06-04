@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import {
   ArrowLeft, Camera, Save, AlertTriangle, CheckCircle2,
-  X, FileText, Play, Phone, MapPin, Lock, Trash2, Hash, Shield, Users
+  X, FileText, Play, Phone, MapPin, Lock, Trash2, Hash, Shield, Users, BookOpen
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AlairasModal from "../components/AlairasModal";
@@ -687,6 +687,9 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
           <ArrowLeft size={18}/> Feladatok
         </button>
         <span style={{ fontWeight:800,fontSize:14,color:"#fff",flex:1 }}>{munkalapAzonosito}</span>
+        <button onClick={()=>window.open("/installer-guide.html","_blank")} title="Telepítői útmutató" style={{ border:"none",background:"rgba(255,255,255,0.12)",color:"#fff",cursor:"pointer",borderRadius:8,padding:"5px 8px",display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:600,fontFamily:FONT }}>
+          <BookOpen size={15}/> Útmutató
+        </button>
         {m.cimke&&<span style={{ background:m.cimkeSzin||C.accent,color:"#fff",borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700 }}>{m.cimke}</span>}
       </div>
       <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px 14px" }}>

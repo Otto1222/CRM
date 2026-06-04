@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telepítői kézikönyv – CRM Napelem</title>
+  <style>
+    :root {
+      --accent: #2563EB;
+      --green: #059669;
+      --orange: #D97706;
+      --red: #DC2626;
+      --text: #0F172A;
+      --muted: #64748B;
+      --border: #E2E8F0;
+      --bg: #F8FAFC;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; color: var(--text); background: #fff; font-size: 14px; line-height: 1.6; }
+    .page { max-width: 800px; margin: 0 auto; padding: 32px 28px; }
+
+    /* ── Print button (screen only) ── */
+    .print-bar {
+      position: sticky; top: 0; z-index: 100;
+      background: #1E293B; color: #fff;
+      padding: 10px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+    .print-bar span { font-size: 13px; font-weight: 600; }
+    .print-bar button {
+      background: #2563EB; color: #fff; border: none; border-radius: 8px;
+      padding: 8px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .print-bar button:hover { background: #1D4ED8; }
+    @media print { .print-bar { display: none; } }
+
+    /* ── Typography ── */
+    h1 { font-size: 24px; font-weight: 900; margin-bottom: 6px; }
+    h2 { font-size: 18px; font-weight: 800; margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--border); color: var(--text); }
+    h3 { font-size: 15px; font-weight: 700; margin: 22px 0 8px; color: var(--text); }
+    h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 16px 0 6px; }
+    p { margin-bottom: 10px; color: #334155; }
+    ul, ol { padding-left: 20px; margin-bottom: 12px; color: #334155; }
+    li { margin-bottom: 4px; }
+    strong { color: var(--text); }
+    code { background: #F1F5F9; border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-size: 12px; }
+    hr { border: none; border-top: 2px solid var(--border); margin: 28px 0; }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #1E293B 0%, #0C4A6E 100%);
+      border-radius: 14px; padding: 28px 32px; margin-bottom: 32px; color: #fff;
+    }
+    .hero .badge { background: rgba(37,99,235,0.4); border: 1px solid rgba(147,197,253,0.4); border-radius: 20px; padding: 3px 12px; font-size: 12px; color: #93C5FD; display: inline-block; margin-bottom: 10px; }
+    .hero h1 { color: #fff; font-size: 22px; }
+    .hero p { color: #94A3B8; font-size: 13px; margin: 6px 0 0; }
+
+    /* ── Steps ── */
+    .step { display: flex; gap: 16px; background: #fff; border: 2px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; }
+    .step.warn { border-color: #FCD34D; background: #FFFBEB; }
+    .step.danger { border-color: #FCA5A5; background: #FFF5F5; }
+    .step.success { border-color: #86EFAC; background: #F0FDF4; }
+    .step-n { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 900; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step.warn .step-n { background: var(--orange); }
+    .step.success .step-n { background: var(--green); }
+    .step-body h3 { margin: 0 0 6px; font-size: 14px; }
+    .step-body p, .step-body li { font-size: 13px; }
+    .step-body { flex: 1; }
+
+    /* ── Alert ── */
+    .alert { border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-size: 13px; border: 1.5px solid; }
+    .alert-warn { background: #FFFBEB; border-color: #FCD34D; color: #92400E; }
+    .alert-info { background: #EFF6FF; border-color: #BFDBFE; color: #1E40AF; }
+    .alert-success { background: #F0FDF4; border-color: #86EFAC; color: #065F46; }
+    .alert-danger { background: #FFF5F5; border-color: #FCA5A5; color: #991B1B; }
+    .alert strong { display: block; margin-bottom: 3px; }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+    thead th { background: var(--bg); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; padding: 8px 10px; text-align: left; border-bottom: 2px solid var(--border); }
+    tbody td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── Checklist ── */
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { display: flex; gap: 10px; padding: 7px 12px; background: var(--bg); border-radius: 8px; margin-bottom: 5px; font-size: 13px; align-items: flex-start; }
+    .checklist li::before { content: "☐"; font-size: 16px; flex-shrink: 0; line-height: 1.2; }
+
+    /* ── Workflow ── */
+    .flow { display: flex; flex-wrap: wrap; gap: 0; margin: 14px 0 20px; align-items: center; }
+    .flow-box { background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; color: #1D4ED8; white-space: nowrap; }
+    .flow-arrow { color: #94A3B8; font-size: 16px; padding: 0 3px; }
+
+    /* ── Photo grid ── */
+    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin-bottom: 14px; }
+    .photo-item { border: 1.5px solid var(--border); border-radius: 9px; padding: 10px 12px; font-size: 12.5px; background: #fff; }
+    .photo-item .num { font-weight: 700; color: var(--muted); font-size: 11px; }
+    .photo-item .name { font-weight: 700; color: var(--text); margin: 2px 0 3px; }
+    .photo-item .req { color: var(--muted); font-size: 11.5px; }
+
+    /* ── VBF table ── */
+    .vbf-table { width: 100%; font-size: 12.5px; margin-bottom: 14px; }
+    .vbf-table th { background: #EFF6FF; color: #1E40AF; font-size: 11px; padding: 6px 10px; text-align: left; border: 1px solid #BFDBFE; }
+    .vbf-table td { padding: 6px 10px; border: 1px solid var(--border); }
+    .vbf-table .unit { color: var(--muted); font-size: 11px; }
+    .vbf-table .input-box { display: inline-block; width: 50px; height: 20px; border: 1px solid #94A3B8; border-radius: 4px; background: #F8FAFC; }
+
+    /* ── Signatures section ── */
+    .sig-box { border: 2px dashed var(--border); border-radius: 10px; height: 70px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+
+    @media print {
+      .print-bar { display: none !important; }
+      body { font-size: 12px; }
+      h2 { page-break-before: always; margin-top: 0; }
+      h2:first-of-type { page-break-before: avoid; }
+      .step, .photo-item, table { page-break-inside: avoid; }
+      .photo-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Print bar (screen only) -->
+<div class="print-bar">
+  <span>📋 Telepítői kézikönyv – CRM Napelem</span>
+  <button onclick="window.print()">🖨️ PDF mentés / Nyomtatás</button>
+</div>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="badge">E.D.I. Solutions Kft.</div>
+    <h1>☀️ Telepítői kézikönyv</h1>
+    <p>Lépésről lépésre: felmérési és kivitelezési munkalapok kitöltése a CRM rendszerben</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       BEJELENTKEZÉS
+  ═══════════════════════════════════════════════ -->
+  <h2>🔐 1. Bejelentkezés</h2>
+  <ol>
+    <li>Nyisd meg a CRM alkalmazást a böngészőben</li>
+    <li>Add meg a felhasználóneved és jelszavadat</li>
+    <li>Bejelentkezés után közvetlenül a <strong>saját munkalapjaidat</strong> látod</li>
+  </ol>
+  <div class="alert alert-info">
+    <strong>Mit látsz?</strong>
+    Csak a hozzád (vagy csapatodhoz) rendelt, aktív munkalapok jelennek meg. A lezárt, befejezett munkák nem látszanak — ez normális.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       MUNKALAP LISTA
+  ═══════════════════════════════════════════════ -->
+  <h2>📋 2. Munkalap lista</h2>
+  <p>Minden hozzád rendelt munkalap kártyaként jelenik meg:</p>
+  <ul>
+    <li><strong>Ikon</strong> — ☀️ napelem vagy ⚡ EV töltő</li>
+    <li><strong>Munkaszám</strong> — pl. T003700</li>
+    <li><strong>Státusz</strong> — pl. Megkezdésre vár, Folyamatban</li>
+    <li><strong>Ügyfél neve és telepítési cím</strong></li>
+    <li><strong>Dátum</strong> — ütemezett nap</li>
+  </ul>
+  <p>A kereső ikonnal szűrhetsz munkaszámra, ügyfél névre vagy projektszámra.</p>
+
+  <div class="alert alert-warn">
+    <strong>Fontos!</strong>
+    A Telepítő NEM látja az anyagok árát, pénzügyi adatokat, fővállalkozói információkat. Csak a saját munkalapok láthatók.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       KÉTFÉLE MUNKATÍPUS
+  ═══════════════════════════════════════════════ -->
+  <h2>🗂️ 3. Kétféle munkatípus</h2>
+  <p>A rendszer automatikusan felismeri, hogy a munkalap <strong>Felmérés</strong> vagy <strong>Kivitelezés</strong> típusú:</p>
+  <table>
+    <thead><tr><th>Típus</th><th>Mikor?</th><th>Lezárás státusza</th></tr></thead>
+    <tbody>
+      <tr><td><strong>📋 Felmérés</strong></td><td>Telepítés előtti helyszínbejárás</td><td>Befejezett Felmérés</td></tr>
+      <tr><td><strong>⚙️ Kivitelezés</strong></td><td>Tényleges telepítési munkák</td><td>Ellenőrzés alatt</td></tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <!-- ═══════════════════════════════════════════════
+       A – FELMÉRÉSI MUNKALAP
+  ═══════════════════════════════════════════════ -->
+  <h2>📋 A – Felmérési munkalap</h2>
+
+  <div class="flow">
+    <div style="display:flex;align-items:center;gap:0">
+      <div class="flow-box">1. Megnyitás</div><div class="flow-arrow">→</div>
+      <div class="flow-box">2. Fotók (7 kat.)</div><div class="flow-arrow">→</div>
+      <div class="flow-box">3. Szöveges adatok</div><div class="flow-arrow">→</div>
+      <div class="flow-box">4. Nyilatkozat + aláírás</div><div class="flow-arrow">→</div>
+      <div class="flow-box">5. Mentés ✅</div>
+    </div>
+  </div>
+
+  <h3>A/1 – Fotók (7 kötelező kategória)</h3>
+  <p>Minden kategóriához <strong>legalább 1 fotót</strong> tölts fel. Ha fizikailag nem lehetséges, írj <strong>legalább 3 érdemi szavas magyarázatot</strong>.</p>
+
+  <table>
+    <thead><tr><th>#</th><th>Kategória</th><th>Mit kell fotózni / rögzíteni?</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1</strong></td><td>🔌 Csatlakozási pont</td><td>Hova csatlakozik a rendszer: tábló, alhálózat helye</td></tr>
+      <tr><td><strong>2</strong></td><td>⚡ Inverter fal, elhelyezés</td><td>Tervezett inverter helye: fal típusa, mérete, szabad felület</td></tr>
+      <tr><td><strong>3</strong></td><td>🔋 Akkumulátor elhelyezése</td><td>Tervezett akku helye: fal, padló, szabad tér</td></tr>
+      <tr><td><strong>4</strong></td><td>🏠 Tető típusa</td><td>Tető anyaga, szöge, égtáj irány, akadályok, árnyékoló elemek</td></tr>
+      <tr><td><strong>5</strong></td><td>🏗️ Padlás</td><td>Padlástér állapota, járhatóság, kábelvezet lehetőség</td></tr>
+      <tr><td><strong>6</strong></td><td>⛈️ Villámhárító</td><td>Van-e? Ha igen: típusa, állapota, elhelyezése</td></tr>
+      <tr><td><strong>7</strong></td><td>📊 Mérőóra és kismegszakító</td><td>Típusa, kapacitása, elhelyezése, hozzáférhetőség</td></tr>
+    </tbody>
+  </table>
+
+  <h3>A/2 – Szöveges adatok (5 csoport)</h3>
+  <table>
+    <thead><tr><th>Csoport</th><th>Kitöltendő mezők</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Csatlakozás</strong></td><td>Csatlakozási pont · Állapota · AC kábel hossz (m) · AC védelem típus · Komm. kábel hossz (m)</td></tr>
+      <tr><td><strong>Inverter / Akku</strong></td><td>Inverter fal leírása · Akkumulátor fal leírása · Akku kábel hossz (m)</td></tr>
+      <tr><td><strong>Tető / Szerkezet</strong></td><td>Tető típus · Tetőszerkezet típus · Padlás · Villámhárító · Tartószerkezet típus · Pótcserép</td></tr>
+      <tr><td><strong>DC / Panel</strong></td><td>DC kábel hossz (m) · DC nyomvonal · DC védelem típus · Tűzeseti kapcsoló · Panel elrendezés</td></tr>
+      <tr><td><strong>Egyéb</strong></td><td>Felhordó eszköz szükséges · Engedélyeztetés állapota · Visszwatt védelem · Megközelíthetőség / megjegyzés</td></tr>
+    </tbody>
+  </table>
+
+  <h3>A/3 – Nyilatkozat és ügyfél aláírás</h3>
+  <ol>
+    <li>Olvasd el az ügyfélnek a nyilatkozatot (kivitelezési egyeztetés megerősítése)</li>
+    <li>Pipáld be: <strong>„Elolvastam és elfogadom a fenti nyilatkozatot"</strong></li>
+    <li>Az ügyfél ujjával írja alá a képernyőn</li>
+    <li>Kattints: <strong>💾 Felmérés mentése</strong></li>
+  </ol>
+
+  <div class="alert alert-success">
+    <strong>Lezárva!</strong> Státusz automatikusan: <strong>Befejezett Felmérés</strong> — a PM megkapja az értesítést.
+  </div>
+
+  <hr />
+
+  <!-- ═══════════════════════════════════════════════
+       B – KIVITELEZÉSI MUNKALAP
+  ═══════════════════════════════════════════════ -->
+  <h2>⚙️ B – Kivitelezési munkalap</h2>
+
+  <div class="flow">
+    <div style="display:flex;align-items:center;gap:0;flex-wrap:wrap;">
+      <div class="flow-box">1. LMRA aláírás</div><div class="flow-arrow">→</div>
+      <div class="flow-box">2. Anyagok + S/N</div><div class="flow-arrow">→</div>
+      <div class="flow-box">3. VBF mérések</div><div class="flow-arrow">→</div>
+      <div class="flow-box">4. Fotók (29 kat.)</div><div class="flow-arrow">→</div>
+      <div class="flow-box">5. Megjegyzés</div><div class="flow-arrow">→</div>
+      <div class="flow-box">6. Ügyfél aláírás</div><div class="flow-arrow">→</div>
+      <div class="flow-box">7. Lezárás ✅</div>
+    </div>
+  </div>
+
+  <!-- B/1 LMRA -->
+  <h3>B/1 – LMRA kockázatbecslés (munka megkezdése előtt)</h3>
+  <div class="alert alert-danger">
+    <strong>⛔ Kötelező! Munka nem kezdhető meg LMRA nélkül.</strong>
+    Az Info fülön kattints a <strong>„🛡️ LMRA + Megkezdés →"</strong> gombra. Minden csapattag digitálisan aláírja a kockázatbecslési lapot. Csak ezután nyílnak meg a többi fülek.
+  </div>
+  <p>Az LMRA aláírás után az Info fülön megjelenik: <strong>„✅ Munka folyamatban"</strong> és az aláírók neve.</p>
+
+  <!-- B/2 Anyagok -->
+  <h3>B/2 – Felhasznált anyagok + sorozatszámok (4. fül)</h3>
+  <p>A ténylegesen felhasznált anyagokat itt rögzítsd. Az előre feltöltött lista csak a 2. fülön látható (olvasható, nem módosítható).</p>
+
+  <div class="alert alert-warn">
+    <strong>Sorozatszámot igénylő eszközök:</strong>
+    Inverter · Akkumulátor · Optimalizáló · Okos Mérő · Napelem panel<br/>
+    Minden egyes darabhoz külön S/N (sorozatszám) mezőt kell kitölteni!
+  </div>
+
+  <ul>
+    <li>Plusz anyag hozzáadása: <strong>+ Hozzáad</strong> gomb</li>
+    <li>Ha sorozatszámot igénylő eszközt adsz hozzá, a rendszer automatikusan generál annyi S/N mezőt, amennyi a mennyiség</li>
+    <li>Mentés: <strong>💾 Anyagok mentése</strong></li>
+  </ul>
+
+  <!-- B/3 VBF -->
+  <h3>B/3 – VBF Mérések (5. fül)</h3>
+  <p><strong>💡 Tipp: Üres mező = nem releváns. Ha nulla az érték, hagyd üresen!</strong></p>
+
+  <table class="vbf-table">
+    <thead>
+      <tr><th>Szekció</th><th>Mező</th><th>Egység</th></tr>
+    </thead>
+    <tbody>
+      <tr><td rowspan="3">AC feszültség</td><td>L1</td><td class="unit">V</td></tr>
+      <tr><td>L2</td><td class="unit">V</td></tr>
+      <tr><td>L3</td><td class="unit">V</td></tr>
+      <tr><td rowspan="3">Kismegszakító – Inverternél</td><td>L1</td><td class="unit">A</td></tr>
+      <tr><td>L2</td><td class="unit">A</td></tr>
+      <tr><td>L3</td><td class="unit">A</td></tr>
+      <tr><td rowspan="3">Kismegszakító – Mérőhelynél</td><td>L1</td><td class="unit">A</td></tr>
+      <tr><td>L2</td><td class="unit">A</td></tr>
+      <tr><td>L3</td><td class="unit">A</td></tr>
+      <tr><td rowspan="6">Panelszám</td><td>ST1</td><td class="unit">db</td></tr>
+      <tr><td>ST2</td><td class="unit">db</td></tr>
+      <tr><td>ST3–ST6</td><td class="unit">db</td></tr>
+      <tr><td rowspan="3">DC feszültség</td><td>ST1–ST6</td><td class="unit">V (stringenként)</td></tr>
+      <tr><td></td><td></td></tr>
+      <tr><td></td><td></td></tr>
+      <tr><td rowspan="3">Hurokellenállás</td><td>L1</td><td class="unit">MΩ</td></tr>
+      <tr><td>L2</td><td class="unit">MΩ</td></tr>
+      <tr><td>L3</td><td class="unit">MΩ</td></tr>
+      <tr><td>Smart meter &amp; AKKU</td><td>SM / AKKU db</td><td class="unit">db</td></tr>
+      <tr><td>Betáplált DC teljesítmény</td><td>DC</td><td class="unit">Wp</td></tr>
+      <tr><td>Panel pontos adatok</td><td>Típus · Voc · Vmp · Imp · Isc · Teljesítmény</td><td class="unit">szöveg / V / A / Wp</td></tr>
+      <tr><td>Inverter pontos adatok</td><td>kVA</td><td class="unit">kVA</td></tr>
+      <tr><td>Tűzeseti adatok</td><td>A</td><td class="unit">A</td></tr>
+    </tbody>
+  </table>
+  <p>Mentés: <strong>💾 VBF mentése</strong> — automatikusan Drive-ra is feltöltődik.</p>
+
+  <!-- B/4 Fotók -->
+  <h3>B/4 – Fotók (6. fül) — 29 kategória</h3>
+  <p>Minden kategóriához <strong>legalább 1 fotót</strong> tölts fel. Ha nem lehetséges, kötelező az alábbiak egyikét kiválasztani:</p>
+  <ul>
+    <li>Nincs ilyen eszköz</li>
+    <li>Nem releváns a munkatípushoz</li>
+    <li>Nem látható</li>
+  </ul>
+
+  <div class="photo-grid">
+    <div class="photo-item"><div class="num">01</div><div class="name">AC box</div><div class="req">3 fotó: fedél nélkül, nyitott, csukott</div></div>
+    <div class="photo-item"><div class="num">02</div><div class="name">Akkumulátor</div><div class="req">2 fotó: elhelyezés, bekötés</div></div>
+    <div class="photo-item"><div class="num">03</div><div class="name">Akkumulátor adattábla</div><div class="req">1 fotó: olvasható S/N</div></div>
+    <div class="photo-item"><div class="num">04</div><div class="name">Csatlakozási / rákötési pont</div><div class="req">2 fotó: fedél nélkül, fedéllel</div></div>
+    <div class="photo-item"><div class="num">05</div><div class="name">DC box</div><div class="req">3 fotó: fedél nélkül, nyitott, csukott</div></div>
+    <div class="photo-item"><div class="num">06</div><div class="name">EPH kötés</div><div class="req">Min. 1 fotó: tartószerkezeti rákötés</div></div>
+    <div class="photo-item"><div class="num">07</div><div class="name">Egyéb dokumentáció</div><div class="req">Nyilatkozatok, fővállalkozói dok.</div></div>
+    <div class="photo-item"><div class="num">08</div><div class="name">Elrendezés + stringek</div><div class="req">1 fotó: rajzolt elrendezés / QR kód</div></div>
+    <div class="photo-item"><div class="num">09</div><div class="name">Figyelmeztető tábla</div><div class="req">1 fotó: napelemes rendszer tábla</div></div>
+    <div class="photo-item"><div class="num">10</div><div class="name">Füstérzékelő</div><div class="req">1 fotó: felhelyezett állapotban</div></div>
+    <div class="photo-item"><div class="num">11</div><div class="name">Inverter</div><div class="req">2 fotó: szemből, bekötésekkel</div></div>
+    <div class="photo-item"><div class="num">12</div><div class="name">Inverter adattábla</div><div class="req">1 fotó: olvasható adattábla</div></div>
+    <div class="photo-item"><div class="num">13</div><div class="name">Inverter beállítások</div><div class="req">Visszwatt, SM, akku, üzemmód</div></div>
+    <div class="photo-item"><div class="num">14</div><div class="name">Inverter működéséről</div><div class="req">1 fotó: élő termelés</div></div>
+    <div class="photo-item"><div class="num">15</div><div class="name">Kábel nyomvonal (AC/DC)</div><div class="req">Kábelhossz függvényében több fotó</div></div>
+    <div class="photo-item"><div class="num">16</div><div class="name">Matricák, feliratok</div><div class="req">Min. 3: AC box, DC box, csatl. pont</div></div>
+    <div class="photo-item"><div class="num">17</div><div class="name">Mérés ellenőrzése</div><div class="req">Fogyasztásmérés ellenőrzés</div></div>
+    <div class="photo-item"><div class="num">18</div><div class="name">Mérőhelyről</div><div class="req">3 fotó: teljesítmény, mérő, teljesnézet</div></div>
+    <div class="photo-item"><div class="num">19</div><div class="name">Napelemek</div><div class="req">Min. 2 fotó: 2 irányból, minden panel számolható</div></div>
+    <div class="photo-item"><div class="num">20</div><div class="name">Napelem SN számok</div><div class="req">Összes panel S/N olvashatóan</div></div>
+    <div class="photo-item"><div class="num">21</div><div class="name">Optimalizáló</div><div class="req">Min. 1 fotó: tartószerkezetre rögzítve</div></div>
+    <div class="photo-item"><div class="num">22</div><div class="name">Plant létrehozás</div><div class="req">1 fotó: monitoring online állapot</div></div>
+    <div class="photo-item"><div class="num">23</div><div class="name">Pályázati tábla</div><div class="req">3 fotó: közelről, 1-2m, utca másik fele</div></div>
+    <div class="photo-item"><div class="num">24</div><div class="name">Smart mérő / mérés</div><div class="req">2 fotó: mérési elrendezés, kommunikáció</div></div>
+    <div class="photo-item"><div class="num">25</div><div class="name">Tartószerkezet</div><div class="req">Min. 2 fotó: 2 irányból</div></div>
+    <div class="photo-item"><div class="num">26</div><div class="name">Tető kivezetés</div><div class="req">1 fotó: kábel tetőre kivezetése</div></div>
+    <div class="photo-item"><div class="num">27</div><div class="name">Tűzeseti leválasztó</div><div class="req">1 fotó: megkötött állapotban</div></div>
+    <div class="photo-item"><div class="num">28</div><div class="name">Wifi Stick</div><div class="req">1 fotó: olvasható adatokkal</div></div>
+    <div class="photo-item"><div class="num">29</div><div class="name">Wifi beállítás</div><div class="req">1 fotó: sikeres wifi csatlakozás</div></div>
+  </div>
+
+  <p>A feltöltött fotók automatikusan Drive-ra kerülnek. <strong>Zöld pipa</strong> jelzi a Drive-ra mentett fotókat.</p>
+
+  <!-- B/5 Befejezés -->
+  <h3>B/5 – Megjegyzés és lezárás (7. fül)</h3>
+  <ol>
+    <li><strong>Megjegyzés</strong> (kötelező): Röviden írd le a telepítés menetét, eltéréseket</li>
+    <li>Ellenőrizd a <strong>Munka ellenőrzése</strong> listát — minden sor legyen zöld pipa:
+      <ul style="margin-top:6px">
+        <li>✓ VBF Jegyzőkönyv kitöltve</li>
+        <li>✓ Fotók (minden kategóriánál fotó vagy indok)</li>
+        <li>✓ Anyagok + sorozatszámok</li>
+        <li>✓ Megjegyzés megadva</li>
+      </ul>
+    </li>
+    <li>Ha minden zöld: kattints <strong>„✅ Munka befejezése és lezárása"</strong></li>
+    <li>Az ügyfél ujjával aláírja a képernyőn a befejezési lapot</li>
+    <li>A rendszer automatikusan feltölti az összes adatot Drive-ra (folyamatjelző sáv)</li>
+  </ol>
+
+  <div class="alert alert-success">
+    <strong>Lezárva!</strong> Státusz: <strong>Ellenőrzés alatt</strong> — a PM/Admin ellenőrzi és lezárja. A munkalap eltűnik az aktív listádból.
+  </div>
+
+  <hr />
+
+  <!-- ═══════════════════════════════════════════════
+       GYORS ELLENŐRZŐ LISTA
+  ═══════════════════════════════════════════════ -->
+  <h2>✅ Gyors ellenőrző lista — kivitelezés előtt</h2>
+  <ul class="checklist">
+    <li>Megkaptam a munkalapot és tudom a telepítési helyszínt</li>
+    <li>LMRA kockázatbecslést minden csapattag aláírta</li>
+    <li>Sorozatszámok előkészítve (inverter, akku, panelek)</li>
+    <li>VBF mérőeszköz kéznél van</li>
+    <li>Telefon / tablet feltöltve, kamera működik</li>
+    <li>Minden fotókategóriát lefotóztam (29 db)</li>
+    <li>VBF adatokat kitöltöttem és elmentettem</li>
+    <li>Megjegyzést megírtam</li>
+    <li>Ügyfél aláírta a befejezési lapot</li>
+    <li>Lezárás gomb megnyomva → státusz Ellenőrzés alatt</li>
+  </ul>
+
+  <hr />
+
+  <!-- ═══════════════════════════════════════════════
+       HIBAELHÁRÍTÁS
+  ═══════════════════════════════════════════════ -->
+  <h2>❓ Gyakori kérdések</h2>
+  <table>
+    <thead><tr><th>Probléma</th><th>Megoldás</th></tr></thead>
+    <tbody>
+      <tr><td>Nem találom a munkalapot</td><td>Keresőbe írd a munkaszámot vagy az ügyfél nevét. Ha még mindig nem látszik, a PM-et keresd — lehet nem lett hozzád rendelve.</td></tr>
+      <tr><td>A „Munka befejezése" gomb szürke</td><td>Valamelyik ellenőrző elem hiányzik (piros jelzés látható). Pótold a hiányzó fotót, sorozatszámot vagy megjegyzést.</td></tr>
+      <tr><td>Fotó feltöltése nem sikerül</td><td>Ellenőrizd az internet kapcsolatot. Az adatok helyi tárolóba is elmentődnek — ha van net, automatikusan Drive-ra kerülnek.</td></tr>
+      <tr><td>Véletlenül lezártam a munkalapot</td><td>Csak Admin vagy PM tudja visszanyitni — értesítsd a projektmenedzsert.</td></tr>
+      <tr><td>Elfelejtett jelszó</td><td>Adminisztrátortól kérj új jelszót (Beállítások → Felhasználók).</td></tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <p style="text-align:center;color:#94A3B8;font-size:11px;margin-top:24px;">
+    CRM Napelem · E.D.I. Solutions Kft. · Telepítői kézikönyv
+  </p>
+
+</div>
+
+<script>
+  // Auto-trigger print if ?print=1 in URL
+  if (new URLSearchParams(location.search).get('print') === '1') {
+    window.addEventListener('load', function() {
+      setTimeout(function() { window.print(); }, 600);
+    });
+  }
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Camera, Save, ArrowLeft, CheckCircle2, X, Loader2, AlertTriangle, Phone, MapPin } from "lucide-react";
+import { Camera, Save, ArrowLeft, CheckCircle2, X, Loader2, AlertTriangle, Phone, MapPin, BookOpen } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
 
@@ -399,6 +399,9 @@ export default function FelmeresTelepito({ m, data, onBack }) {
             <ArrowLeft size={18}/> Vissza
           </button>
           <span style={{fontWeight:800,fontSize:14,color:"#fff",flex:1}}>{m.id}</span>
+          <button onClick={()=>window.open("/installer-guide.html","_blank")} title="Telepítői útmutató" style={{border:"none",background:"rgba(255,255,255,0.12)",color:"#fff",cursor:"pointer",borderRadius:8,padding:"5px 8px",display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:600,fontFamily:FONT}}>
+            <BookOpen size={15}/> Útmutató
+          </button>
           <span style={{background:"#0EA5E9",color:"#fff",borderRadius:8,padding:"3px 10px",fontSize:11,fontWeight:700}}>📸 Felmérés</span>
         </div>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px 14px"}}>
