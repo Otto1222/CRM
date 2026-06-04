@@ -151,8 +151,17 @@ export async function drivePing() {
   if (!SCRIPT_URL) return { ok: false, offline: true };
   const t0  = Date.now();
   const res = await get({ action: "ping" });
-  if (res?.ok) return { ok: true, ts: res.ts, latencyMs: Date.now() - t0 };
-  return { ok: false, error: res?.error || "Ismeretlen hiba" };
+  if (res?.ok) return { ok: true, ts: res.ts, latencyMs: Date.now() - t0, driveFolder: res.driveFolder };
+  return { ok: false, error: res?.driveError || res?.error || "Ismeretlen hiba" };
+}
+
+/**
+ * Drive diagnosztika – melyik fiókként fut a script, elérhetők-e a mappák, van-e írási jog.
+ * @returns {{ ok, activeUser, dbFolder: {ok, name, error, writeTest}, munkaFolder: {ok, name, error} }}
+ */
+export async function driveDiagnose() {
+  if (!SCRIPT_URL) return { ok: false, offline: true, error: "VITE_APPS_SCRIPT_URL nincs beállítva" };
+  return get({ action: "diagnose" });
 }
 
 /**

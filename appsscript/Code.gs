@@ -55,6 +55,7 @@ function dispatch(p) {
   if (!action) return { ok: false, error: "Hiányzó action" };
 
   if (action === "ping")                 return ping();
+  if (action === "diagnose")             return diagnose();
   if (action === "saveJson")             return saveJson(p);
   if (action === "loadJson")             return loadJson(p);
   if (action === "saveFoto")             return saveFoto(p);
@@ -64,9 +65,74 @@ function dispatch(p) {
   return { ok: false, error: "Ismeretlen action: " + action };
 }
 
-// ─── ping ─────────────────────────────────────────────────────────
+// ─── ping – most már teszteli a Drive mappa elérhetőségét is ──────
 function ping() {
-  return { ok: true, ts: new Date().toISOString() };
+  var folderOk = false;
+  var folderError = null;
+  try {
+    var f = DriveApp.getFolderById(DB_FOLDER_ID);
+    f.getName(); // ha ez nem dob kivételt, elérhető
+    folderOk = true;
+  } catch(e) {
+    folderError = e.message;
+  }
+  return {
+    ok:          folderOk,
+    ts:          new Date().toISOString(),
+    driveFolder: folderOk ? "OK" : "HIBA",
+    driveError:  folderError,
+  };
+}
+
+// ─── diagnose – részletes Drive jogosultság ellenőrzés ────────────
+function diagnose() {
+  var result = {
+    ok:        true,
+    ts:        new Date().toISOString(),
+    activeUser: "",
+    dbFolder:  { id: DB_FOLDER_ID,    ok: false, name: null, error: null },
+    munkaFolder: { id: MUNKA_FOLDER_ID, ok: false, name: null, error: null },
+  };
+
+  // Melyik fiókként fut a script
+  try {
+    result.activeUser = Session.getEffectiveUser().getEmail();
+  } catch(e) {
+    result.activeUser = "ismeretlen (" + e.message + ")";
+  }
+
+  // DB_FOLDER (01_Adatbazis) ellenőrzés
+  try {
+    var dbF = DriveApp.getFolderById(DB_FOLDER_ID);
+    result.dbFolder.ok   = true;
+    result.dbFolder.name = dbF.getName();
+    // Próba fájl írás-olvasás
+    try {
+      var testFile = dbF.createFile("_diagnose_test_.tmp", "ok", MimeType.PLAIN_TEXT);
+      testFile.setTrashed(true);
+      result.dbFolder.writeTest = true;
+    } catch(we) {
+      result.dbFolder.writeTest = false;
+      result.dbFolder.writeError = we.message;
+    }
+  } catch(e) {
+    result.dbFolder.ok    = false;
+    result.dbFolder.error = e.message;
+    result.ok             = false;
+  }
+
+  // MUNKA_FOLDER (04_Fotok) ellenőrzés
+  try {
+    var mF = DriveApp.getFolderById(MUNKA_FOLDER_ID);
+    result.munkaFolder.ok   = true;
+    result.munkaFolder.name = mF.getName();
+  } catch(e) {
+    result.munkaFolder.ok    = false;
+    result.munkaFolder.error = e.message;
+    result.ok                = false;
+  }
+
+  return result;
 }
 
 // ─── JSON mentés (CRM_db mappába) ─────────────────────────────────
