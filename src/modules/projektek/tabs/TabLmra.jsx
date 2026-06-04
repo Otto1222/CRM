@@ -32,12 +32,12 @@ export default function TabLmra({ projekt, munkalapok, currentUser }) {
     <div style={{ padding: "4px 0 24px" }}>
       {/* Info banner */}
       <div style={{
-        background: "#FEF2F2", border: "1.5px solid #FECACA",
+        background: C.dangerLight, border: "1.5px solid #FECACA",
         borderRadius: 12, padding: "12px 16px", marginBottom: 18,
         display: "flex", gap: 10, alignItems: "flex-start",
       }}>
-        <Shield size={18} color="#DC2626" style={{ flexShrink: 0, marginTop: 2 }} />
-        <p style={{ margin: 0, fontSize: 13, color: "#991B1B", lineHeight: 1.6 }}>
+        <Shield size={18} color={C.danger} style={{ flexShrink: 0, marginTop: 2 }} />
+        <p style={{ margin: 0, fontSize: 13, color: C.danger, lineHeight: 1.6 }}>
           <strong>LMRA – Munkavégzést megelőző kockázatértékelés.</strong><br />
           Az Admin / PM előre kiválasztja a kockázatokat és megadja a megelőző intézkedéseket,
           majd „Lezárja Telepítőnek". A Telepítő a helyszínen csak hozzáad résztvevőket és aláír –
@@ -77,7 +77,7 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
   const isLocked  = rec.lockedForInstaller && rec.status !== "ujranyitva";
   const status    = rec.status || "draft";
   const label     = LMRA_STATUS_LABELS[status] || status;
-  const color     = LMRA_STATUS_COLORS[status] || "#94A3B8";
+  const color     = LMRA_STATUS_COLORS[status] || C.muted;
   const kivalDb   = (rec.kockazatok || []).filter(k => k.kivalasztva).length;
   const alairtDb  = (rec.resztvevok || []).filter(r => r.signed).length;
 
@@ -192,12 +192,12 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
           {kivalDb > 0 && (
-            <span style={{ fontSize: 11, fontWeight: 700, background: "#FEF2F2", color: "#DC2626", padding: "2px 8px", borderRadius: 10 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, background: C.dangerLight, color: C.danger, padding: "2px 8px", borderRadius: 10 }}>
               ⚠️ {kivalDb}
             </span>
           )}
           {alairtDb > 0 && (
-            <span style={{ fontSize: 11, fontWeight: 700, background: "#ECFDF5", color: "#059669", padding: "2px 8px", borderRadius: 10 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, background: C.successLight, color: C.success, padding: "2px 8px", borderRadius: 10 }}>
               ✓ {alairtDb}
             </span>
           )}
@@ -224,7 +224,7 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
                   disabled={!dirty}
                   style={{
                     padding: "7px 16px", border: "none", borderRadius: 8,
-                    background: dirty ? C.accent : "#E2E8F0",
+                    background: dirty ? C.accent : C.border,
                     color: dirty ? "#fff" : C.muted,
                     cursor: dirty ? "pointer" : "default",
                     fontWeight: 700, fontSize: 13, fontFamily: FONT,
@@ -237,7 +237,7 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
                   onClick={handleLock}
                   style={{
                     padding: "7px 16px", border: "none", borderRadius: 8,
-                    background: "#1e3a5c", color: "#fff",
+                    background: C.text, color: "#fff",
                     cursor: "pointer", fontWeight: 700, fontSize: 13,
                     fontFamily: FONT, display: "flex", alignItems: "center", gap: 6,
                   }}
@@ -247,7 +247,7 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
                 <button
                   onClick={handleAddEgyedi}
                   style={{
-                    padding: "7px 14px", background: "#F5F3FF", color: "#7C3AED",
+                    padding: "7px 14px", background: C.accentLight, color: C.accent,
                     border: "1px solid #DDD6FE", borderRadius: 8,
                     cursor: "pointer", fontWeight: 700, fontSize: 13,
                     fontFamily: FONT, display: "flex", alignItems: "center", gap: 6,
@@ -262,9 +262,9 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
                 onClick={handleReopen}
                 style={{
                   padding: "7px 14px",
-                  background: ["alairva", "exportalva"].includes(status) ? "#FEF2F2" : "#FFFBEB",
-                  color: ["alairva", "exportalva"].includes(status) ? "#DC2626" : "#D97706",
-                  border: `1px solid ${["alairva", "exportalva"].includes(status) ? "#FECACA" : "#FCD34D"}`,
+                  background: ["alairva", "exportalva"].includes(status) ? C.dangerLight : C.warningLight,
+                  color: ["alairva", "exportalva"].includes(status) ? C.danger : C.warning,
+                  border: `1px solid ${["alairva", "exportalva"].includes(status) ? C.danger : C.warning}`,
                   borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13,
                   fontFamily: FONT, display: "flex", alignItems: "center", gap: 6,
                 }}
@@ -276,7 +276,7 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
               <button
                 onClick={handleExport}
                 style={{
-                  padding: "7px 16px", background: "#7C3AED", color: "#fff",
+                  padding: "7px 16px", background: C.accent, color: "#fff",
                   border: "none", borderRadius: 8, cursor: "pointer",
                   fontWeight: 700, fontSize: 13, fontFamily: FONT,
                   display: "flex", alignItems: "center", gap: 6,
@@ -290,9 +290,9 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
           {/* Zárolt figyelmeztetés */}
           {isLocked && (
             <div style={{
-              background: "#EFF6FF", border: "1px solid #BFDBFE",
+              background: C.accentLight, border: "1px solid #BFDBFE",
               borderRadius: 9, padding: "9px 12px", marginBottom: 13,
-              fontSize: 12, color: "#1D4ED8",
+              fontSize: 12, color: C.accent,
               display: "flex", alignItems: "center", gap: 8,
             }}>
               <Lock size={13} />
@@ -331,10 +331,10 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
                   <div
                     key={r.id}
                     style={{
-                      background: r.signed ? "#ECFDF5" : "#FFFBEB",
-                      border: `1px solid ${r.signed ? "#86EFAC" : "#FCD34D"}`,
+                      background: r.signed ? C.successLight : C.warningLight,
+                      border: `1px solid ${r.signed ? C.success : C.warning}`,
                       borderRadius: 9, padding: "5px 12px", fontSize: 12,
-                      color: r.signed ? "#166534" : "#92400E", fontWeight: 600,
+                      color: r.signed ? C.success : C.warning, fontWeight: 600,
                     }}
                   >
                     {r.signed ? "✓" : "⏳"} {r.nev}
@@ -347,7 +347,7 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
                 ))}
               </div>
               {rec.lezarvaAt && (
-                <p style={{ fontSize: 12, color: "#059669", marginTop: 8 }}>
+                <p style={{ fontSize: 12, color: C.success, marginTop: 8 }}>
                   ✓ Lezárva: {new Date(rec.lezarvaAt).toLocaleString("hu-HU")}
                   {rec.lezartaBy ? ` · ${rec.lezartaBy}` : ""}
                 </p>
@@ -357,12 +357,12 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
 
           {/* Export napló */}
           {(rec.exportok || []).length > 0 && (
-            <div style={{ marginTop: 14, padding: "9px 12px", background: "#F5F3FF", borderRadius: 9, fontSize: 12 }}>
-              <p style={{ margin: "0 0 5px", fontWeight: 700, color: "#7C3AED", fontSize: 11, textTransform: "uppercase", letterSpacing: .5 }}>
+            <div style={{ marginTop: 14, padding: "9px 12px", background: C.accentLight, borderRadius: 9, fontSize: 12 }}>
+              <p style={{ margin: "0 0 5px", fontWeight: 700, color: C.accent, fontSize: 11, textTransform: "uppercase", letterSpacing: .5 }}>
                 PDF exportok
               </p>
               {rec.exportok.map((e, i) => (
-                <p key={i} style={{ margin: "2px 0", color: "#5B21B6", fontSize: 12 }}>
+                <p key={i} style={{ margin: "2px 0", color: C.accent, fontSize: 12 }}>
                   {new Date(e.exportedAt).toLocaleString("hu-HU")} · {e.exportedBy} · {e.fileName}
                 </p>
               ))}
@@ -379,8 +379,8 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
 function KockazatRow({ kockazat, locked, canEdit, onToggle, onMegelozChange, onRemoveEgyedi }) {
   return (
     <div style={{
-      background: kockazat.kivalasztva ? "#FEF2F2" : "#F8FAFC",
-      border: `1.5px solid ${kockazat.kivalasztva ? "#FECACA" : "#E2E8F0"}`,
+      background: kockazat.kivalasztva ? C.dangerLight : C.bg,
+      border: `1.5px solid ${kockazat.kivalasztva ? C.danger : C.border}`,
       borderRadius: 10, padding: "10px 12px",
       opacity: locked && !kockazat.kivalasztva ? 0.55 : 1,
     }}>
@@ -391,8 +391,8 @@ function KockazatRow({ kockazat, locked, canEdit, onToggle, onMegelozChange, onR
           disabled={locked || !canEdit}
           style={{
             width: 22, height: 22, borderRadius: 5, flexShrink: 0, marginTop: 2,
-            border: `2px solid ${kockazat.kivalasztva ? "#DC2626" : "#CBD5E1"}`,
-            background: kockazat.kivalasztva ? "#DC2626" : "#fff",
+            border: `2px solid ${kockazat.kivalasztva ? C.danger : C.border}`,
+            background: kockazat.kivalasztva ? C.danger : "#fff",
             cursor: !locked && canEdit ? "pointer" : "default",
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: 0,
@@ -406,11 +406,11 @@ function KockazatRow({ kockazat, locked, canEdit, onToggle, onMegelozChange, onR
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6 }}>
             <p style={{
               margin: 0, fontSize: 13, lineHeight: 1.4,
-              color: kockazat.kivalasztva ? "#991B1B" : C.textSub,
+              color: kockazat.kivalasztva ? C.danger : C.textSub,
               fontWeight: kockazat.kivalasztva ? 600 : 400,
             }}>
               {kockazat.egyedi && (
-                <span style={{ fontSize: 10, background: "#F5F3FF", color: "#7C3AED", padding: "1px 6px", borderRadius: 4, marginRight: 6, fontWeight: 700 }}>
+                <span style={{ fontSize: 10, background: C.accentLight, color: C.accent, padding: "1px 6px", borderRadius: 4, marginRight: 6, fontWeight: 700 }}>
                   Egyedi
                 </span>
               )}
@@ -428,7 +428,7 @@ function KockazatRow({ kockazat, locked, canEdit, onToggle, onMegelozChange, onR
 
           {kockazat.kivalasztva && (
             <div style={{ marginTop: 8 }}>
-              <p style={{ fontSize: 11, color: "#DC2626", margin: "0 0 4px", fontWeight: 700 }}>
+              <p style={{ fontSize: 11, color: C.danger, margin: "0 0 4px", fontWeight: 700 }}>
                 Megelőző intézkedés:
               </p>
               {locked ? (

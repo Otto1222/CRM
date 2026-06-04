@@ -37,7 +37,7 @@ function SearchSelect({ value, onChange, options, placeholder, renderOption, ren
     <div ref={ref} style={{ position: "relative" }}>
       <div
         onClick={() => { if (!disabled) { setOpen(o => !o); setQ(""); } }}
-        style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 12px", border:`1.5px solid ${open ? C.accent : C.border}`, borderRadius:9, background: disabled ? "#F8FAFC" : "#fff", cursor: disabled ? "default" : "pointer", fontSize:14, fontFamily:FONT, color: value ? C.text : C.muted, minHeight:42 }}
+        style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 12px", border:`1.5px solid ${open ? C.accent : C.border}`, borderRadius:9, background: disabled ? C.bg : "#fff", cursor: disabled ? "default" : "pointer", fontSize:14, fontFamily:FONT, color: value ? C.text : C.muted, minHeight:42 }}
       >
         <span style={{ flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
           {displayLabel || placeholder}
@@ -48,7 +48,7 @@ function SearchSelect({ value, onChange, options, placeholder, renderOption, ren
       {open && (
         <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0, zIndex:9000, background:"#fff", borderRadius:10, border:`1.5px solid ${C.border}`, boxShadow:"0 8px 24px rgba(0,0,0,.12)", maxHeight:280, display:"flex", flexDirection:"column" }}>
           <div style={{ padding:"8px 10px", borderBottom:`1px solid ${C.border}` }}>
-            <div style={{ display:"flex", alignItems:"center", gap:6, background:"#F8FAFC", borderRadius:7, padding:"6px 10px" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6, background:C.bg, borderRadius:7, padding:"6px 10px" }}>
               <Search size={13} color={C.muted} />
               <input
                 autoFocus
@@ -66,9 +66,9 @@ function SearchSelect({ value, onChange, options, placeholder, renderOption, ren
                   <div
                     key={o.id || o.value}
                     onClick={() => { onChange(o.id || o.value); setOpen(false); }}
-                    style={{ padding:"10px 14px", cursor:"pointer", background: (o.id || o.value) === value ? "#EFF6FF" : "transparent", borderBottom:`1px solid #F1F5F9`, transition:"background .1s" }}
-                    onMouseEnter={e => e.currentTarget.style.background = (o.id || o.value) === value ? "#EFF6FF" : "#F8FAFC"}
-                    onMouseLeave={e => e.currentTarget.style.background = (o.id || o.value) === value ? "#EFF6FF" : "transparent"}
+                    style={{ padding:"10px 14px", cursor:"pointer", background: (o.id || o.value) === value ? C.accentLight : "transparent", borderBottom:`1px solid #F1F5F9`, transition:"background .1s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = (o.id || o.value) === value ? C.accentLight : C.bg}
+                    onMouseLeave={e => e.currentTarget.style.background = (o.id || o.value) === value ? C.accentLight : "transparent"}
                   >
                     {renderOption ? renderOption(o) : <span style={{ fontSize:14, fontFamily:FONT }}>{o.label || o.nev}</span>}
                   </div>
@@ -84,10 +84,10 @@ function SearchSelect({ value, onChange, options, placeholder, renderOption, ren
 // ─── Státusz badge ────────────────────────────────────────────
 function StatusBadge({ status }) {
   const cfg = {
-    elfogadott:  { bg:"#F0FDF4", color:"#16A34A", label:"✅ Elfogadott" },
-    elutasitott: { bg:"#FEF2F2", color:"#DC2626", label:"❌ Elutasított" },
-    fuggoben:    { bg:"#FFFBEB", color:"#D97706", label:"⏳ Függőben" },
-  }[status] || { bg:"#FFFBEB", color:"#D97706", label:"⏳ Függőben" };
+    elfogadott:  { bg:C.successLight, color:C.success, label:"✅ Elfogadott" },
+    elutasitott: { bg:C.dangerLight, color:C.danger, label:"❌ Elutasított" },
+    fuggoben:    { bg:C.warningLight, color:C.warning, label:"⏳ Függőben" },
+  }[status] || { bg:C.warningLight, color:C.warning, label:"⏳ Függőben" };
   return (
     <span style={{ background:cfg.bg, color:cfg.color, padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:700 }}>
       {cfg.label}
@@ -98,10 +98,10 @@ function StatusBadge({ status }) {
 // ─── Felelős badge ────────────────────────────────────────────
 function FelelosBadge({ type, snapshot }) {
   const cfg = {
-    sajat_csapat: { bg:"#EFF6FF", color:"#2563EB", icon:"👥" },
-    alvallalkozo: { bg:"#FFF7ED", color:"#EA580C", icon:"🤝" },
-    egyeb:        { bg:"#F8FAFC", color:"#64748B", icon:"❓" },
-  }[type] || { bg:"#F8FAFC", color:"#64748B", icon:"❓" };
+    sajat_csapat: { bg:C.accentLight, color:C.accent, icon:"👥" },
+    alvallalkozo: { bg:C.warningLight, color:C.warning, icon:"🤝" },
+    egyeb:        { bg:C.bg, color:C.muted, icon:"❓" },
+  }[type] || { bg:C.bg, color:C.muted, icon:"❓" };
   return (
     <span style={{ background:cfg.bg, color:cfg.color, padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:700, display:"inline-flex", alignItems:"center", gap:4 }}>
       {cfg.icon} {snapshot || type}
@@ -275,9 +275,9 @@ export default function KarteritesekTab({ userRole, currentUser }) {
       {/* Összefoglaló */}
       <div style={{ display:"flex", gap:14, marginBottom:20 }}>
         {[
-          { label:"Elfogadott összeg",  value: ft(elfogadottOsszeg), color:"#16A34A", bg:"#F0FDF4" },
-          { label:"Függőben lévő",      value: ft(fuggobenOsszeg),   color:"#D97706", bg:"#FFFBEB" },
-          { label:"Összes tétel",        value: `${lista.length} db`, color:C.accent,  bg:"#EFF6FF" },
+          { label:"Elfogadott összeg",  value: ft(elfogadottOsszeg), color:C.success, bg:C.successLight },
+          { label:"Függőben lévő",      value: ft(fuggobenOsszeg),   color:C.warning, bg:C.warningLight },
+          { label:"Összes tétel",        value: `${lista.length} db`, color:C.accent,  bg:C.accentLight },
         ].map(s => (
           <div key={s.label} style={{ flex:1, background:s.bg, borderRadius:12, padding:"14px 16px", border:`1px solid ${s.color}30` }}>
             <p style={{ fontSize:11, fontWeight:700, color:s.color, marginBottom:4, textTransform:"uppercase", letterSpacing:.7 }}>{s.label}</p>
@@ -312,14 +312,14 @@ export default function KarteritesekTab({ userRole, currentUser }) {
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {szurtLista.map(k => {
             const st = getKarteritesStatus(k);
-            const borderColor = st === "elfogadott" ? "#86EFAC" : st === "elutasitott" ? "#FECACA" : C.border;
+            const borderColor = st === "elfogadott" ? C.success : st === "elutasitott" ? C.danger : C.border;
             return (
               <div key={k.id} style={{ background:"#fff", borderRadius:12, border:`1.5px solid ${borderColor}`, padding:"16px 20px" }}>
                 <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap", marginBottom:8 }}>
                       <StatusBadge status={st} />
-                      <span style={{ fontSize:18, fontWeight:800, color: st === "elutasitott" ? "#DC2626" : C.text }}>{ft(k.osszeg)}</span>
+                      <span style={{ fontSize:18, fontWeight:800, color: st === "elutasitott" ? C.danger : C.text }}>{ft(k.osszeg)}</span>
                       {k.responsibleType && <FelelosBadge type={k.responsibleType} snapshot={k.responsibleNameSnapshot} />}
                     </div>
                     <p style={{ fontWeight:700, fontSize:14, color:C.text, margin:"0 0 6px" }}>{k.ok}</p>
@@ -333,7 +333,7 @@ export default function KarteritesekTab({ userRole, currentUser }) {
                       <span style={{ fontSize:12, color:C.muted }}>👤 {k.createdBy || k.rogzitoSzemely}</span>
                     </div>
                     {(k.note || k.megjegyzes) && (
-                      <p style={{ fontSize:12, color:C.textSub, marginTop:6, background:"#F8FAFC", borderRadius:6, padding:"6px 8px" }}>
+                      <p style={{ fontSize:12, color:C.textSub, marginTop:6, background:C.bg, borderRadius:6, padding:"6px 8px" }}>
                         {k.note || k.megjegyzes}
                       </p>
                     )}
@@ -342,21 +342,21 @@ export default function KarteritesekTab({ userRole, currentUser }) {
                   {isAdmin && (
                     <div style={{ display:"flex", flexDirection:"column", gap:6, flexShrink:0 }}>
                       {st !== "elfogadott" && (
-                        <button onClick={() => handleDontse(k.id, "elfogadott")} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background:"#F0FDF4", color:"#16A34A", border:"1.5px solid #86EFAC", borderRadius:8, cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:FONT }}>
+                        <button onClick={() => handleDontse(k.id, "elfogadott")} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background:C.successLight, color:C.success, border:"1.5px solid #86EFAC", borderRadius:8, cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:FONT }}>
                           <CheckCircle2 size={13} /> Elfogad
                         </button>
                       )}
                       {st !== "elutasitott" && (
-                        <button onClick={() => handleDontse(k.id, "elutasitott")} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background:"#FEF2F2", color:"#DC2626", border:"1.5px solid #FECACA", borderRadius:8, cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:FONT }}>
+                        <button onClick={() => handleDontse(k.id, "elutasitott")} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background:C.dangerLight, color:C.danger, border:"1.5px solid #FECACA", borderRadius:8, cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:FONT }}>
                           <XCircle size={13} /> Elutasít
                         </button>
                       )}
                       {st === "elfogadott" && (
-                        <button onClick={() => handleDontse(k.id, "fuggoben")} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background:"#FFFBEB", color:"#D97706", border:"1.5px solid #FDE68A", borderRadius:8, cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:FONT }}>
+                        <button onClick={() => handleDontse(k.id, "fuggoben")} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background:C.warningLight, color:C.warning, border:"1.5px solid #FDE68A", borderRadius:8, cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:FONT }}>
                           ↩ Visszavon
                         </button>
                       )}
-                      <button onClick={() => handleDelete(k.id)} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background:"#F8FAFC", color:C.muted, border:`1px solid ${C.border}`, borderRadius:8, cursor:"pointer", fontSize:12, fontFamily:FONT }}>
+                      <button onClick={() => handleDelete(k.id)} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background:C.bg, color:C.muted, border:`1px solid ${C.border}`, borderRadius:8, cursor:"pointer", fontSize:12, fontFamily:FONT }}>
                         <Trash2 size={13} /> Töröl
                       </button>
                     </div>
@@ -388,7 +388,7 @@ export default function KarteritesekTab({ userRole, currentUser }) {
                     <div>
                       <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                         <span style={{ fontWeight:700, fontSize:13, color:C.text }}>{o.munkalapSzam}</span>
-                        {o.status && <span style={{ fontSize:11, background:"#F1F5F9", color:C.muted, borderRadius:10, padding:"1px 7px" }}>{o.status}</span>}
+                        {o.status && <span style={{ fontSize:11, background:C.bg, color:C.muted, borderRadius:10, padding:"1px 7px" }}>{o.status}</span>}
                       </div>
                       <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>
                         {[o.clientNev, o.cim, o.datum].filter(Boolean).join(" · ")}
@@ -397,7 +397,7 @@ export default function KarteritesekTab({ userRole, currentUser }) {
                   )}
                   renderValue={(o) => `${o.munkalapSzam}${o.clientNev ? ` – ${o.clientNev}` : ""}`}
                 />
-                {errors.workOrderId && <p style={{ color:"#DC2626", fontSize:11, margin:"4px 0 0" }}>{errors.workOrderId}</p>}
+                {errors.workOrderId && <p style={{ color:C.danger, fontSize:11, margin:"4px 0 0" }}>{errors.workOrderId}</p>}
               </div>
 
               {/* Összeg + Ok */}
@@ -406,8 +406,8 @@ export default function KarteritesekTab({ userRole, currentUser }) {
                   <label style={{ fontSize:12, fontWeight:700, color:C.muted, display:"block", marginBottom:4 }}>Összeg (Ft) *</label>
                   <input type="number" value={form.osszeg} placeholder="pl. 50000"
                     onChange={e => setF("osszeg", e.target.value)}
-                    style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${errors.osszeg ? "#DC2626" : C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none" }} />
-                  {errors.osszeg && <p style={{ color:"#DC2626", fontSize:11, margin:"4px 0 0" }}>{errors.osszeg}</p>}
+                    style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${errors.osszeg ? C.danger : C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none" }} />
+                  {errors.osszeg && <p style={{ color:C.danger, fontSize:11, margin:"4px 0 0" }}>{errors.osszeg}</p>}
                 </div>
                 <div>
                   <label style={{ fontSize:12, fontWeight:700, color:C.muted, display:"block", marginBottom:4 }}>Dátum</label>
@@ -420,8 +420,8 @@ export default function KarteritesekTab({ userRole, currentUser }) {
                 <label style={{ fontSize:12, fontWeight:700, color:C.muted, display:"block", marginBottom:4 }}>Kártérítés oka *</label>
                 <input value={form.ok} placeholder="pl. sérült panel cseréje, ügyfél kárpótlás…"
                   onChange={e => setF("ok", e.target.value)}
-                  style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${errors.ok ? "#DC2626" : C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none" }} />
-                {errors.ok && <p style={{ color:"#DC2626", fontSize:11, margin:"4px 0 0" }}>{errors.ok}</p>}
+                  style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${errors.ok ? C.danger : C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none" }} />
+                {errors.ok && <p style={{ color:C.danger, fontSize:11, margin:"4px 0 0" }}>{errors.ok}</p>}
               </div>
 
               {/* Felelős típusa */}
@@ -434,7 +434,7 @@ export default function KarteritesekTab({ userRole, currentUser }) {
                     { id:"egyeb",        icon:<HelpCircle size={15}/>, label:"Egyéb" },
                   ].map(t => (
                     <button key={t.id} type="button" onClick={() => setForm(p => ({ ...p, responsibleType:t.id, responsibleTeamId:"", responsibleWorkerId:"", responsibleSubcontractorId:"" }))}
-                      style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4, padding:"10px 8px", borderRadius:10, border:`2px solid ${form.responsibleType===t.id ? C.accent : C.border}`, background: form.responsibleType===t.id ? "#EFF6FF" : "#fff", cursor:"pointer", fontFamily:FONT, color: form.responsibleType===t.id ? C.accent : C.text, fontWeight:600, fontSize:12 }}>
+                      style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4, padding:"10px 8px", borderRadius:10, border:`2px solid ${form.responsibleType===t.id ? C.accent : C.border}`, background: form.responsibleType===t.id ? C.accentLight : "#fff", cursor:"pointer", fontFamily:FONT, color: form.responsibleType===t.id ? C.accent : C.text, fontWeight:600, fontSize:12 }}>
                       {t.icon}
                       {t.label}
                     </button>
@@ -444,9 +444,9 @@ export default function KarteritesekTab({ userRole, currentUser }) {
 
               {/* Saját csapat */}
               {form.responsibleType === "sajat_csapat" && (
-                <div style={{ background:"#EFF6FF", borderRadius:10, padding:"14px", display:"flex", flexDirection:"column", gap:10 }}>
+                <div style={{ background:C.accentLight, borderRadius:10, padding:"14px", display:"flex", flexDirection:"column", gap:10 }}>
                   <div>
-                    <label style={{ fontSize:12, fontWeight:700, color:"#2563EB", display:"block", marginBottom:4 }}>Csapat kiválasztása *</label>
+                    <label style={{ fontSize:12, fontWeight:700, color:C.accent, display:"block", marginBottom:4 }}>Csapat kiválasztása *</label>
                     <SearchSelect
                       value={form.responsibleTeamId}
                       onChange={handleTeamSelect}
@@ -455,11 +455,11 @@ export default function KarteritesekTab({ userRole, currentUser }) {
                       renderOption={(o) => <span style={{ fontSize:14, fontFamily:FONT }}>{o.nev}</span>}
                       renderValue={(o) => o.nev}
                     />
-                    {errors.responsibleTeamId && <p style={{ color:"#DC2626", fontSize:11, margin:"4px 0 0" }}>{errors.responsibleTeamId}</p>}
+                    {errors.responsibleTeamId && <p style={{ color:C.danger, fontSize:11, margin:"4px 0 0" }}>{errors.responsibleTeamId}</p>}
                   </div>
                   {tagok.length > 0 && (
                     <div>
-                      <label style={{ fontSize:12, fontWeight:700, color:"#2563EB", display:"block", marginBottom:4 }}>Konkrét dolgozó (opcionális)</label>
+                      <label style={{ fontSize:12, fontWeight:700, color:C.accent, display:"block", marginBottom:4 }}>Konkrét dolgozó (opcionális)</label>
                       <SearchSelect
                         value={form.responsibleWorkerId}
                         onChange={id => setF("responsibleWorkerId", id)}
@@ -475,8 +475,8 @@ export default function KarteritesekTab({ userRole, currentUser }) {
 
               {/* Alvállalkozó */}
               {form.responsibleType === "alvallalkozo" && (
-                <div style={{ background:"#FFF7ED", borderRadius:10, padding:"14px" }}>
-                  <label style={{ fontSize:12, fontWeight:700, color:"#EA580C", display:"block", marginBottom:4 }}>Alvállalkozó csapat kiválasztása *</label>
+                <div style={{ background:C.warningLight, borderRadius:10, padding:"14px" }}>
+                  <label style={{ fontSize:12, fontWeight:700, color:C.warning, display:"block", marginBottom:4 }}>Alvállalkozó csapat kiválasztása *</label>
                   <SearchSelect
                     value={form.responsibleSubcontractorId}
                     onChange={id => setF("responsibleSubcontractorId", id)}
@@ -485,19 +485,19 @@ export default function KarteritesekTab({ userRole, currentUser }) {
                     renderOption={(o) => <span style={{ fontSize:14, fontFamily:FONT }}>{o.nev}</span>}
                     renderValue={(o) => o.nev}
                   />
-                  {errors.responsibleSubcontractorId && <p style={{ color:"#DC2626", fontSize:11, margin:"4px 0 0" }}>{errors.responsibleSubcontractorId}</p>}
+                  {errors.responsibleSubcontractorId && <p style={{ color:C.danger, fontSize:11, margin:"4px 0 0" }}>{errors.responsibleSubcontractorId}</p>}
                 </div>
               )}
 
               {/* Egyéb */}
               {form.responsibleType === "egyeb" && (
-                <div style={{ background:"#F8FAFC", borderRadius:10, padding:"14px" }}>
+                <div style={{ background:C.bg, borderRadius:10, padding:"14px" }}>
                   <label style={{ fontSize:12, fontWeight:700, color:C.muted, display:"block", marginBottom:4 }}>Indoklás *</label>
                   <textarea value={form.egyebIndok} onChange={e => setF("egyebIndok", e.target.value)}
                     placeholder="Részletezd, ki/mi okozta a kárt…"
                     rows={3}
-                    style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${errors.egyebIndok ? "#DC2626" : C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none", resize:"vertical" }} />
-                  {errors.egyebIndok && <p style={{ color:"#DC2626", fontSize:11, margin:"4px 0 0" }}>{errors.egyebIndok}</p>}
+                    style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${errors.egyebIndok ? C.danger : C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none", resize:"vertical" }} />
+                  {errors.egyebIndok && <p style={{ color:C.danger, fontSize:11, margin:"4px 0 0" }}>{errors.egyebIndok}</p>}
                 </div>
               )}
 

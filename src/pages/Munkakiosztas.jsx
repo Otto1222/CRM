@@ -14,10 +14,10 @@ import Card from "../components/Card";
 // ─── Felmérési státuszok (Munkakiosztáshoz) ───────────────────
 const KIOSZT_STATUSZOK = [
   { id: "Megkezdésre Vár",  szin: "#38BDF8", bg: "#F0F9FF" },
-  { id: "Felmérés",         szin: "#0EA5E9", bg: "#E0F2FE" },
-  { id: "Kivitelezés",      szin: "#EA580C", bg: "#FFF7ED" },
-  { id: "Folyamatban",      szin: "#2563EB", bg: "#EFF6FF" },
-  { id: "Ütemezett",        szin: "#D97706", bg: "#FFFBEB" },
+  { id: "Felmérés",         szin: "#0EA5E9", bg: C.accentLight },
+  { id: "Kivitelezés",      szin: C.warning, bg: C.warningLight },
+  { id: "Folyamatban",      szin: C.accent, bg: C.accentLight },
+  { id: "Ütemezett",        szin: C.warning, bg: C.warningLight },
 ];
 
 // ─── Segéd: Badge ─────────────────────────────────────────────
@@ -187,7 +187,7 @@ export default function Munkakiosztas() {
         status:            getStatus(sor._id),
         statusSzin:        KIOSZT_STATUSZOK.find(s => s.id === getStatus(sor._id))?.szin || "#38BDF8",
         cimke:             sor.egyeb?.["Cimke"] || sor.egyeb?.["cimke"] || "Junior Vital",
-        cimkeSzin:         "#2563EB",
+        cimkeSzin:         C.accent,
         projektMegnevezes: sor.egyeb?.["Projekt"] || sor.egyeb?.["projekt"] || "",
         feladat:           sor.munkatipus || "",
         description:       sor.munkatipus || "",
@@ -256,7 +256,7 @@ export default function Munkakiosztas() {
               <button onClick={handleExport} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 16px", background:C.success, color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
                 <Download size={15} /> Excel export
               </button>
-              <button onClick={handleMunkalapokMentese} disabled={mentesFolyamat} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 16px", background: mentesFolyamat ? C.muted : "#7C3AED", color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+              <button onClick={handleMunkalapokMentese} disabled={mentesFolyamat} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 16px", background: mentesFolyamat ? C.muted : C.accent, color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
                 {mentesFolyamat ? <Loader2 size={15} style={{ animation:"spin 1s linear infinite" }}/> : <Save size={15}/>}
                 {mentveDb > 0 ? `${mentveDb} munkalap mentve ✓` : "Mentés CRM-be"}
               </button>
@@ -272,7 +272,7 @@ export default function Munkakiosztas() {
 
       {/* Hibaüzenetek */}
       {hibak.length > 0 && (
-        <div style={{ background:"#FEF2F2", border:`1px solid #FECACA`, borderRadius:12, padding:"12px 16px", marginBottom:20 }}>
+        <div style={{ background:C.dangerLight, border:`1px solid #FECACA`, borderRadius:12, padding:"12px 16px", marginBottom:20 }}>
           {hibak.map((h, i) => <p key={i} style={{ fontSize:13, color:C.danger, display:"flex", alignItems:"center", gap:8 }}><AlertCircle size={14} />{h}</p>)}
         </div>
       )}
@@ -370,7 +370,7 @@ export default function Munkakiosztas() {
             <Stat label="Összes munka" value={statok.osszes}    icon={FileSpreadsheet} color={C.accent} />
             <Stat label="Kiosztott"    value={statok.kiosztott} icon={CheckCircle2}    color={C.success} />
             <Stat label="Kiosztás nélkül" value={statok.hiany} icon={AlertCircle}     color={statok.hiany > 0 ? C.danger : C.muted} />
-            <Stat label="Munkanapok"   value={statok.napok}     icon={Clock}           color="#9333EA" />
+            <Stat label="Munkanapok"   value={statok.napok}     icon={Clock}           color={C.accent} />
           </div>
 
           {/* Vissza gomb */}
@@ -446,7 +446,7 @@ export default function Munkakiosztas() {
 
                           {/* Felmérés info */}
                           {st === "Felmérés" && (
-                            <div style={{ marginTop:8, marginLeft:38, padding:"7px 12px", background:"#E0F2FE", borderRadius:8, fontSize:12, color:"#0369A1", display:"flex", alignItems:"center", gap:6 }}>
+                            <div style={{ marginTop:8, marginLeft:38, padding:"7px 12px", background:C.accentLight, borderRadius:8, fontSize:12, color:C.accent, display:"flex", alignItems:"center", gap:6 }}>
                               📸 A telepítő előbb felmérési fotókat tölt fel, mielőtt kivitelezésre kerül sor.
                             </div>
                           )}

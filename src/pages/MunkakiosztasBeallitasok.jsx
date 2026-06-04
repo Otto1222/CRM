@@ -25,7 +25,7 @@ function Field({ label, value, onChange, type="text", placeholder }) {
       <input
         type={type} value={value} onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:13, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}
+        style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:13, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }}
       />
     </div>
   );
@@ -77,7 +77,7 @@ export default function MunkakiosztasBeallitasok() {
   function addCsapat() {
     const next = [...settings.csapatok, {
       id: `cs_${Date.now()}`, nev: "Új csapat", telephely: "",
-      lat: 47.4979, lon: 19.0402, szin: "#64748B",
+      lat: 47.4979, lon: 19.0402, szin: C.muted,
       hetvegen: false,
       munkatipusok: [],
       maxNapiMunka: {},
@@ -117,7 +117,7 @@ export default function MunkakiosztasBeallitasok() {
 
   // ─── Munkatípus kezelés ─────────────────────────────────
   function addTipus() {
-    setSettings(p => ({ ...p, munkatipusok: [...p.munkatipusok, { id:`mt_${Date.now()}`, nev:"Új típus", szin:"#64748B" }] }));
+    setSettings(p => ({ ...p, munkatipusok: [...p.munkatipusok, { id:`mt_${Date.now()}`, nev:"Új típus", szin:C.muted }] }));
   }
   function delTipus(id) {
     setSettings(p => ({ ...p, munkatipusok: p.munkatipusok.filter(t => t.id !== id) }));
@@ -273,7 +273,7 @@ export default function MunkakiosztasBeallitasok() {
             <p style={{ fontSize:13, color:C.accent, fontWeight:600, marginBottom:4 }}>💡 Ingyenes mód (Google Maps API kulcs nélkül)</p>
             <p style={{ fontSize:12, color:C.textSub }}>OpenStreetMap geocoding + OSRM útvonaltervezés – valódi útvonal távolságot számít, API kulcs nélkül.</p>
           </div>
-          <div style={{ background:"#FFFBEB", borderRadius:10, padding:"12px 16px", marginTop:10 }}>
+          <div style={{ background:C.warningLight, borderRadius:10, padding:"12px 16px", marginTop:10 }}>
             <p style={{ fontSize:13, color:C.warning, fontWeight:600, marginBottom:4 }}>⚠️ Google Maps API kulccsal (pontosabb)</p>
             <p style={{ fontSize:12, color:C.textSub }}>Pontosabb eredmény, de számlázható. Ha megadsz API kulcsot, azt használja az ingyenes OSRM helyett.</p>
           </div>
@@ -286,13 +286,13 @@ export default function MunkakiosztasBeallitasok() {
 // ─── Export: Eszköz kategória beállítások ────────────────────
 const LS_ESZKOZ = "crm_eszkoz_kategoriak";
 const DEFAULT_ESZKOZ_KAT = [
-  { id:"inverter",  label:"Inverter",              icon:"⚡", szin:"#2563EB" },
-  { id:"akku",      label:"Akkumulátor",            icon:"🔋", szin:"#059669" },
+  { id:"inverter",  label:"Inverter",              icon:"⚡", szin:C.accent },
+  { id:"akku",      label:"Akkumulátor",            icon:"🔋", szin:C.success },
   { id:"akku_vez",  label:"Akkumulátor vezérlő",    icon:"🖥️", szin:"#9333EA" },
-  { id:"energia_m", label:"Energia mérő",           icon:"📊", szin:"#D97706" },
+  { id:"energia_m", label:"Energia mérő",           icon:"📊", szin:C.warning },
   { id:"tarto",     label:"Tartószerkezet elemek",  icon:"🏗️", szin:"#0891B2" },
-  { id:"ac_eszkoz", label:"AC eszközök",            icon:"🔌", szin:"#DC2626" },
+  { id:"ac_eszkoz", label:"AC eszközök",            icon:"🔌", szin:C.danger },
   { id:"dc_eszkoz", label:"DC eszközök",            icon:"⚡", szin:"#7C3AED" },
   { id:"panel",     label:"Napelem panel",          icon:"☀️", szin:"#CA8A04" },
-  { id:"egyeb",     label:"Egyéb anyagok",          icon:"📦", szin:"#64748B" },
+  { id:"egyeb",     label:"Egyéb anyagok",          icon:"📦", szin:C.muted },
 ];

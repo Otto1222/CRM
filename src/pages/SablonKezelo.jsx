@@ -26,12 +26,12 @@ function RTToolbar({ onCommand, betutipus, setBetutipus, betuMeret, setBetuMeret
   const btn = (cmd,label,title) => (
     <button key={cmd} onMouseDown={e=>{ e.preventDefault(); onCommand(cmd); }}
       title={title||label}
-      style={{padding:"4px 8px",border:`1px solid ${C.border}`,borderRadius:5,background:"#F8FAFC",cursor:"pointer",fontSize:13,fontFamily:FONT,lineHeight:1}}>
+      style={{padding:"4px 8px",border:`1px solid ${C.border}`,borderRadius:5,background:C.bg,cursor:"pointer",fontSize:13,fontFamily:FONT,lineHeight:1}}>
       {label}
     </button>
   );
   return (
-    <div style={{ display:"flex",flexWrap:"wrap",gap:4,padding:"8px",borderBottom:`1px solid ${C.border}`,background:"#FAFAFA" }}>
+    <div style={{ display:"flex",flexWrap:"wrap",gap:4,padding:"8px",borderBottom:`1px solid ${C.border}`,background:C.bg }}>
       {/* Betűtípus */}
       <select value={betutipus} onChange={e=>{setBetutipus(e.target.value);onCommand("fontName",e.target.value);}}
         style={{padding:"4px 6px",border:`1px solid ${C.border}`,borderRadius:5,fontSize:12,fontFamily:FONT,cursor:"pointer"}}>
@@ -59,7 +59,7 @@ function RTToolbar({ onCommand, betutipus, setBetutipus, betuMeret, setBetuMeret
       <button onMouseDown={e=>{e.preventDefault();
         const tbl=`<table border="1" style="border-collapse:collapse;width:100%"><tr><td style="padding:4px">Cella 1</td><td style="padding:4px">Cella 2</td></tr><tr><td style="padding:4px">Cella 3</td><td style="padding:4px">Cella 4</td></tr></table>`;
         onCommand("insertHTML",tbl);}}
-        title="Táblázat" style={{padding:"4px 8px",border:`1px solid ${C.border}`,borderRadius:5,background:"#F8FAFC",cursor:"pointer",fontSize:12}}>
+        title="Táblázat" style={{padding:"4px 8px",border:`1px solid ${C.border}`,borderRadius:5,background:C.bg,cursor:"pointer",fontSize:12}}>
         ⊞ Táblázat
       </button>
     </div>
@@ -109,8 +109,8 @@ function SablonSzerkeszto({ sablon, onSave, onClose }) {
 
   const tabStyle = (t) => ({
     padding:"8px 16px",border:"none",cursor:"pointer",fontFamily:FONT,fontWeight:600,fontSize:13,
-    background: aktivTab===t?"#1E3A5F":"#F8FAFC",
-    color:       aktivTab===t?"#fff":"#64748B",
+    background: aktivTab===t?C.text:C.bg,
+    color:       aktivTab===t?"#fff":C.muted,
     borderRadius:"8px 8px 0 0",
   });
 
@@ -167,11 +167,11 @@ function SablonSzerkeszto({ sablon, onSave, onClose }) {
               <p style={{fontSize:13,color:C.muted,marginBottom:12}}>Töltj fel fejléc képet (JPG/PNG). Ez jelenik meg minden dokumentum tetején.</p>
               <input ref={fejlecRef} type="file" accept="image/jpeg,image/png" style={{display:"none"}}
                 onChange={e=>handleKepFeltoltes(e,setFejlec)}/>
-              <button onClick={()=>fejlecRef.current?.click()} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",background:"#EFF6FF",color:"#2563EB",border:"1.5px solid #BFDBFE",borderRadius:9,cursor:"pointer",fontWeight:600,fontFamily:FONT}}>
+              <button onClick={()=>fejlecRef.current?.click()} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",background:C.accentLight,color:C.accent,border:"1.5px solid #BFDBFE",borderRadius:9,cursor:"pointer",fontWeight:600,fontFamily:FONT}}>
                 <Upload size={16}/> Fejléc kép feltöltése
               </button>
               {fejlec && <img src={fejlec} alt="Fejléc" style={{display:"block",marginTop:12,maxHeight:120,border:`1px solid ${C.border}`,borderRadius:8}}/>}
-              {fejlec && <button onClick={()=>setFejlec(null)} style={{marginTop:8,fontSize:12,color:"#DC2626",border:"none",background:"none",cursor:"pointer"}}>Törlés</button>}
+              {fejlec && <button onClick={()=>setFejlec(null)} style={{marginTop:8,fontSize:12,color:C.danger,border:"none",background:"none",cursor:"pointer"}}>Törlés</button>}
             </div>
           )}
 
@@ -181,18 +181,18 @@ function SablonSzerkeszto({ sablon, onSave, onClose }) {
               <p style={{fontSize:13,color:C.muted,marginBottom:12}}>Töltj fel lábléc képet (JPG/PNG). Ez jelenik meg minden dokumentum alján.</p>
               <input ref={lablecRef} type="file" accept="image/jpeg,image/png" style={{display:"none"}}
                 onChange={e=>handleKepFeltoltes(e,setLabléc)}/>
-              <button onClick={()=>lablecRef.current?.click()} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",background:"#EFF6FF",color:"#2563EB",border:"1.5px solid #BFDBFE",borderRadius:9,cursor:"pointer",fontWeight:600,fontFamily:FONT}}>
+              <button onClick={()=>lablecRef.current?.click()} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",background:C.accentLight,color:C.accent,border:"1.5px solid #BFDBFE",borderRadius:9,cursor:"pointer",fontWeight:600,fontFamily:FONT}}>
                 <Upload size={16}/> Lábléc kép feltöltése
               </button>
               {labléc && <img src={labléc} alt="Lábléc" style={{display:"block",marginTop:12,maxHeight:80,border:`1px solid ${C.border}`,borderRadius:8}}/>}
-              {labléc && <button onClick={()=>setLabléc(null)} style={{marginTop:8,fontSize:12,color:"#DC2626",border:"none",background:"none",cursor:"pointer"}}>Törlés</button>}
+              {labléc && <button onClick={()=>setLabléc(null)} style={{marginTop:8,fontSize:12,color:C.danger,border:"none",background:"none",cursor:"pointer"}}>Törlés</button>}
             </div>
           )}
         </div>
 
         <div style={{padding:"14px 24px",borderTop:`1px solid ${C.border}`,display:"flex",gap:10,justifyContent:"flex-end"}}>
           <button onClick={onClose} style={{padding:"9px 18px",borderRadius:9,border:`1.5px solid ${C.border}`,background:"#fff",fontWeight:600,fontSize:13,cursor:"pointer",fontFamily:FONT}}>Mégse</button>
-          <button onClick={handleSave} disabled={!nev.trim()} style={{display:"flex",alignItems:"center",gap:7,padding:"9px 22px",background:nev.trim()?"#059669":"#CBD5E1",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:14,fontFamily:FONT}}>
+          <button onClick={handleSave} disabled={!nev.trim()} style={{display:"flex",alignItems:"center",gap:7,padding:"9px 22px",background:nev.trim()?C.success:C.border,color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:14,fontFamily:FONT}}>
             <Save size={15}/> Sablon mentése
           </button>
         </div>
@@ -274,14 +274,14 @@ export default function SablonKezelo({ userRole }) {
                   </p>
                 </div>
                 <div style={{display:"flex",gap:8,flexShrink:0}}>
-                  <button onClick={()=>handlePreview(s)} title="Előnézet" style={{padding:"7px 12px",background:"#F1F5F9",color:C.textSub,border:"none",borderRadius:8,cursor:"pointer",fontFamily:FONT,fontSize:12,display:"flex",alignItems:"center",gap:5}}>
+                  <button onClick={()=>handlePreview(s)} title="Előnézet" style={{padding:"7px 12px",background:C.bg,color:C.textSub,border:"none",borderRadius:8,cursor:"pointer",fontFamily:FONT,fontSize:12,display:"flex",alignItems:"center",gap:5}}>
                     <Eye size={13}/> Előnézet
                   </button>
                   {isAdmin && <>
-                    <button onClick={()=>setSzerkeszt(s)} title="Szerkesztés" style={{padding:"7px 12px",background:"#EFF6FF",color:"#2563EB",border:"none",borderRadius:8,cursor:"pointer",fontFamily:FONT,fontSize:12,display:"flex",alignItems:"center",gap:5}}>
+                    <button onClick={()=>setSzerkeszt(s)} title="Szerkesztés" style={{padding:"7px 12px",background:C.accentLight,color:C.accent,border:"none",borderRadius:8,cursor:"pointer",fontFamily:FONT,fontSize:12,display:"flex",alignItems:"center",gap:5}}>
                       <Edit3 size={13}/> Szerkesztés
                     </button>
-                    <button onClick={()=>handleDelete(s.id)} title="Törlés" style={{padding:"7px 12px",background:"#FEF2F2",color:"#DC2626",border:"none",borderRadius:8,cursor:"pointer",fontFamily:FONT,fontSize:12,display:"flex",alignItems:"center",gap:5}}>
+                    <button onClick={()=>handleDelete(s.id)} title="Törlés" style={{padding:"7px 12px",background:C.dangerLight,color:C.danger,border:"none",borderRadius:8,cursor:"pointer",fontFamily:FONT,fontSize:12,display:"flex",alignItems:"center",gap:5}}>
                       <Trash2 size={13}/> Törlés
                     </button>
                   </>}

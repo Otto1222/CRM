@@ -11,11 +11,11 @@ import { createSzamla, updateSzamla } from "./szamla.service";
 const inp = {
   width: "100%", boxSizing: "border-box", padding: "9px 12px",
   border: "1.5px solid #E2E8F0", borderRadius: 9,
-  fontSize: 13, fontFamily: "inherit", outline: "none", background: "#FAFAFA",
+  fontSize: 13, fontFamily: "inherit", outline: "none", background: C.bg,
 };
 const Field = ({ label, children, half }) => (
   <div style={{ gridColumn: half ? "span 1" : "span 2" }}>
-    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block",
+    <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block",
       marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>
       {label}
     </label>
@@ -153,18 +153,18 @@ export default function SzamlaForm({ szamla, onClose, onSaved, currentUser }) {
           padding: "18px 24px 14px", borderBottom: "1px solid #E2E8F0",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>
             {isNew ? "Új számla" : "Számla szerkesztése"}
           </h2>
-          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: "#94A3B8" }}>
+          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: C.muted }}>
             <X size={22} />
           </button>
         </div>
 
         <div style={{ padding: "20px 24px 24px" }}>
           {hiba && (
-            <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10,
-              padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#DC2626" }}>
+            <div style={{ background: C.dangerLight, border: "1.5px solid #FECACA", borderRadius: 10,
+              padding: "10px 14px", marginBottom: 16, fontSize: 13, color: C.danger }}>
               ⚠️ {hiba}
             </div>
           )}
@@ -180,9 +180,9 @@ export default function SzamlaForm({ szamla, onClose, onSaved, currentUser }) {
                     upd("status", t === "bejovo" ? "Befogadva" : "Kiállítva");
                   }} style={{
                     flex: 1, padding: "9px", borderRadius: 9, cursor: "pointer",
-                    border: `2px solid ${form.tipus === t ? "#2563EB" : "#E2E8F0"}`,
-                    background: form.tipus === t ? "#EFF6FF" : "#fff",
-                    color: form.tipus === t ? "#2563EB" : "#64748B",
+                    border: `2px solid ${form.tipus === t ? C.accent : C.border}`,
+                    background: form.tipus === t ? C.accentLight : "#fff",
+                    color: form.tipus === t ? C.accent : C.muted,
                     fontWeight: form.tipus === t ? 700 : 400, fontSize: 13, fontFamily: FONT,
                   }}>
                     {t === "kimeno" ? "📤 Kimenő" : "📥 Bejövő"}
@@ -276,8 +276,8 @@ export default function SzamlaForm({ szamla, onClose, onSaved, currentUser }) {
             {/* Bruttó (readonly, auto) */}
             <Field label="Bruttó összeg (auto)">
               <div style={{
-                padding: "9px 12px", borderRadius: 9, background: "#F1F5F9",
-                fontSize: 15, fontWeight: 700, color: "#0F172A",
+                padding: "9px 12px", borderRadius: 9, background: C.bg,
+                fontSize: 15, fontWeight: 700, color: C.text,
                 border: "1.5px solid #E2E8F0",
               }}>
                 {new Intl.NumberFormat("hu-HU", { style: "currency", currency: "HUF", maximumFractionDigits: 0 }).format(form.bruttoOsszeg || 0)}
@@ -311,7 +311,7 @@ export default function SzamlaForm({ szamla, onClose, onSaved, currentUser }) {
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
             <button onClick={onClose} style={{
               padding: "10px 20px", borderRadius: 10, border: "1.5px solid #E2E8F0",
-              background: "#fff", color: "#475569", cursor: "pointer",
+              background: "#fff", color: C.muted, cursor: "pointer",
               fontWeight: 600, fontSize: 14, fontFamily: FONT,
             }}>
               Mégsem
@@ -319,7 +319,7 @@ export default function SzamlaForm({ szamla, onClose, onSaved, currentUser }) {
             <button onClick={handleSave} disabled={saving} style={{
               display: "flex", alignItems: "center", gap: 7,
               padding: "10px 22px", borderRadius: 10, border: "none",
-              background: saving ? "#94A3B8" : "#2563EB", color: "#fff",
+              background: saving ? C.muted : C.accent, color: "#fff",
               cursor: saving ? "wait" : "pointer",
               fontWeight: 700, fontSize: 14, fontFamily: FONT,
             }}>

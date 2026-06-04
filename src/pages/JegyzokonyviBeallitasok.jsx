@@ -180,7 +180,7 @@ export default function JegyzokonyviBeallitasok() {
               </div>
 
               {/* Változók tájékoztató */}
-              <div style={{ background:"#EFF6FF", border:`1px solid #BFDBFE`, borderRadius:10, padding:"12px 14px", marginBottom:14 }}>
+              <div style={{ background:C.accentLight, border:`1px solid #BFDBFE`, borderRadius:10, padding:"12px 14px", marginBottom:14 }}>
                 <p style={{ fontSize:12, fontWeight:700, color:C.accent, marginBottom:8 }}>💡 Elérhető változók — ezeket automatikusan behelyettesíti a rendszer:</p>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                   {VALTOZOK.map(v => (
@@ -200,7 +200,7 @@ export default function JegyzokonyviBeallitasok() {
                 value={aktivSablon.szoveg}
                 onChange={e=>updSablon(aktivSablon.id,"szoveg",e.target.value)}
                 rows={20}
-                style={{ width:"100%", padding:"12px 14px", border:`1.5px solid ${C.border}`, borderRadius:10, fontSize:13, fontFamily:"monospace", color:C.text, outline:"none", resize:"vertical", lineHeight:1.7, background:"#FAFAFA" }}
+                style={{ width:"100%", padding:"12px 14px", border:`1.5px solid ${C.border}`, borderRadius:10, fontSize:13, fontFamily:"monospace", color:C.text, outline:"none", resize:"vertical", lineHeight:1.7, background:C.bg }}
               />
             </div>
           )}
@@ -222,7 +222,7 @@ export default function JegyzokonyviBeallitasok() {
                 </button>
               </div>
             ) : (
-              <button onClick={()=>fejlecRef.current?.click()} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 18px", border:`2px dashed ${C.border}`, borderRadius:12, background:"#F8FAFC", cursor:"pointer", fontSize:14, color:C.textSub, fontFamily:FONT }}>
+              <button onClick={()=>fejlecRef.current?.click()} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 18px", border:`2px dashed ${C.border}`, borderRadius:12, background:C.bg, cursor:"pointer", fontSize:14, color:C.textSub, fontFamily:FONT }}>
                 <Image size={18} color={C.muted}/>Fejléc kép feltöltése (PNG/JPG)
               </button>
             )}
@@ -241,7 +241,7 @@ export default function JegyzokonyviBeallitasok() {
                 </button>
               </div>
             ) : (
-              <button onClick={()=>labRef.current?.click()} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 18px", border:`2px dashed ${C.border}`, borderRadius:12, background:"#F8FAFC", cursor:"pointer", fontSize:14, color:C.textSub, fontFamily:FONT }}>
+              <button onClick={()=>labRef.current?.click()} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 18px", border:`2px dashed ${C.border}`, borderRadius:12, background:C.bg, cursor:"pointer", fontSize:14, color:C.textSub, fontFamily:FONT }}>
                 <Image size={18} color={C.muted}/>Lábléc kép feltöltése (PNG/JPG)
               </button>
             )}
@@ -262,7 +262,7 @@ export default function JegyzokonyviBeallitasok() {
           ].map(([label, key, placeholder]) => (
             <div key={key} style={{ marginBottom:14 }}>
               <label style={{ fontSize:12, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:.8, display:"block", marginBottom:6 }}>{label}</label>
-              <input value={b[key]||""} onChange={e=>upd(key,e.target.value)} placeholder={placeholder} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none", background:"#F8FAFC" }}/>
+              <input value={b[key]||""} onChange={e=>upd(key,e.target.value)} placeholder={placeholder} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none", background:C.bg }}/>
             </div>
           ))}
         </div>

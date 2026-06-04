@@ -32,7 +32,7 @@ function ReadOnlyField({ label, value }) {
   return (
     <div style={{ marginBottom:10 }}>
       <p style={{ fontSize:11, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:.7, marginBottom:4 }}>{label}</p>
-      <div style={{ background:"#F1F5F9", borderRadius:8, padding:"9px 12px", fontSize:14, color:C.text, border:`1px solid ${C.border}` }}>
+      <div style={{ background:C.bg, borderRadius:8, padding:"9px 12px", fontSize:14, color:C.text, border:`1px solid ${C.border}` }}>
         {String(value)}
       </div>
     </div>
@@ -174,7 +174,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
             <div>
               {/* Hibajelzések */}
               {Object.keys(errors).length > 0 && (
-                <div style={{ background:"#FEF2F2", border:`1px solid #FECACA`, borderRadius:10, padding:"10px 14px", marginBottom:16 }}>
+                <div style={{ background:C.dangerLight, border:`1px solid #FECACA`, borderRadius:10, padding:"10px 14px", marginBottom:16 }}>
                   {Object.values(errors).map((e,i) => (
                     <p key={i} style={{ fontSize:13, color:C.danger, display:"flex", alignItems:"center", gap:6 }}>
                       <AlertTriangle size={13}/>{e}
@@ -189,7 +189,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
                   <Calendar size={14}/> Új dátum
                 </label>
                 <input type="date" value={datum} onChange={e=>setDatum(e.target.value)}
-                  style={{ width:"100%", padding:"11px 14px", border:`1.5px solid ${errors.datum?C.danger:C.border}`, borderRadius:10, fontSize:14, fontFamily:FONT, outline:"none", background:"#F8FAFC" }}/>
+                  style={{ width:"100%", padding:"11px 14px", border:`1.5px solid ${errors.datum?C.danger:C.border}`, borderRadius:10, fontSize:14, fontFamily:FONT, outline:"none", background:C.bg }}/>
               </div>
 
               {/* Csapat */}
@@ -223,13 +223,13 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
                 <textarea value={indoklas} onChange={e=>setIndoklas(e.target.value)}
                   placeholder="Pl. csapat betegség, dátumütközés…"
                   rows={3}
-                  style={{ width:"100%", padding:"11px 14px", border:`1.5px solid ${errors.indoklas?C.danger:C.border}`, borderRadius:10, fontSize:14, fontFamily:FONT, outline:"none", resize:"vertical", background:"#F8FAFC" }}/>
+                  style={{ width:"100%", padding:"11px 14px", border:`1.5px solid ${errors.indoklas?C.danger:C.border}`, borderRadius:10, fontSize:14, fontFamily:FONT, outline:"none", resize:"vertical", background:C.bg }}/>
                 <p style={{ fontSize:11, color:C.muted, marginTop:4 }}>{indoklas.length} karakter (min. 3)</p>
                 {errors.indoklas && <p style={{ fontSize:12, color:C.danger }}>{errors.indoklas}</p>}
               </div>
 
               {/* Figyelmeztetés */}
-              <div style={{ background:"#FFFBEB", border:`1px solid #FDE68A`, borderRadius:10, padding:"12px 14px", marginBottom:4 }}>
+              <div style={{ background:C.warningLight, border:`1px solid #FDE68A`, borderRadius:10, padding:"12px 14px", marginBottom:4 }}>
                 <p style={{ fontSize:13, color:C.warning, fontWeight:600, marginBottom:4 }}>⚠️ Újrakiosztás hatása</p>
                 <p style={{ fontSize:12, color:C.textSub }}>A státusz "Megkezdésre Vár"-ra változik. Az eredeti VBF adatok és fotók megmaradnak, csak az időbélyeg és státusz törlődik.</p>
               </div>
@@ -239,7 +239,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
           {/* ── EREDETI ADATOK TAB ── */}
           {activeTab==="eredeti" && (
             <div>
-              <div style={{ background:"#F1F5F9", borderRadius:12, padding:"12px 14px", marginBottom:16, fontSize:13, color:C.muted, fontStyle:"italic" }}>
+              <div style={{ background:C.bg, borderRadius:12, padding:"12px 14px", marginBottom:16, fontSize:13, color:C.muted, fontStyle:"italic" }}>
                 📋 Csak olvasható — ezek az adatok nem módosíthatók
               </div>
               <ReadOnlyField label="Munkaszám" value={m.id}/>
@@ -251,14 +251,14 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
               <ReadOnlyField label="Jelenlegi csapat" value={m.assigneeNev}/>
               <ReadOnlyField label="Értékesítő" value={m.ertekesito}/>
               {m.megkezdesIdopont && (
-                <div style={{ background:"#EFF6FF", borderRadius:10, padding:"12px 14px", marginTop:12, border:"1px solid #BFDBFE" }}>
-                  <p style={{ fontSize:12, fontWeight:700, color:"#0369A1", marginBottom:10, textTransform:"uppercase", letterSpacing:.7 }}>⏱ Munkaidő adatok</p>
+                <div style={{ background:C.accentLight, borderRadius:10, padding:"12px 14px", marginTop:12, border:"1px solid #BFDBFE" }}>
+                  <p style={{ fontSize:12, fontWeight:700, color:C.accent, marginBottom:10, textTransform:"uppercase", letterSpacing:.7 }}>⏱ Munkaidő adatok</p>
                   <ReadOnlyField label="Megkezdés időpontja" value={m.megkezdesIdopont ? new Date(m.megkezdesIdopont).toLocaleString("hu-HU", {year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}) : null}/>
                   <ReadOnlyField label="Befejezés időpontja" value={m.befejezesIdopont ? new Date(m.befejezesIdopont).toLocaleString("hu-HU", {year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "Még folyamatban"}/>
                   {m.megkezdesIdopont && (
                     <div style={{ marginTop:8 }}>
-                      <p style={{ fontSize:11, color:"#64748B", fontWeight:600, textTransform:"uppercase", letterSpacing:.7, marginBottom:4 }}>Eltelt munkaidő</p>
-                      <div style={{ background:"#fff", borderRadius:8, padding:"9px 12px", fontSize:14, color:"#0369A1", fontWeight:800, fontFamily:"monospace", border:"1px solid #BAE6FD" }}>
+                      <p style={{ fontSize:11, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:.7, marginBottom:4 }}>Eltelt munkaidő</p>
+                      <div style={{ background:"#fff", borderRadius:8, padding:"9px 12px", fontSize:14, color:C.accent, fontWeight:800, fontFamily:"monospace", border:"1px solid #BAE6FD" }}>
                         {(() => {
                           const start = new Date(m.megkezdesIdopont);
                           const end   = m.befejezesIdopont ? new Date(m.befejezesIdopont) : new Date();
@@ -277,7 +277,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
                 <div>
                   <p style={{ fontSize:12, color:C.muted, fontWeight:700, textTransform:"uppercase", letterSpacing:.7, marginBottom:10, marginTop:16 }}>Anyagok ({m.anyagok.length} tétel)</p>
                   {m.anyagok.map((a,i) => (
-                    <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"8px 12px", background:"#F8FAFC", borderRadius:8, marginBottom:6, fontSize:13 }}>
+                    <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"8px 12px", background:C.bg, borderRadius:8, marginBottom:6, fontSize:13 }}>
                       <span style={{ color:C.text, fontWeight:600 }}>{a.nev}</span>
                       <span style={{ color:C.muted }}>{a.menny} {a.egyseg}</span>
                     </div>
@@ -295,7 +295,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
               </p>
 
               {errors.serial && (
-                <div style={{ background:"#FEF2F2", border:`1px solid #FECACA`, borderRadius:10, padding:"10px 14px", marginBottom:14, fontSize:13, color:C.danger }}>
+                <div style={{ background:C.dangerLight, border:`1px solid #FECACA`, borderRadius:10, padding:"10px 14px", marginBottom:14, fontSize:13, color:C.danger }}>
                   ⚠️ {errors.serial}
                 </div>
               )}
@@ -315,13 +315,13 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
                       <label style={{ fontSize:11, color:C.accent, fontWeight:700, textTransform:"uppercase", letterSpacing:.7 }}>Sorozatszám (kötelező)</label>
                       <input value={a.sorozatszam||""} onChange={e=>updSerial(a.id,e.target.value)}
                         placeholder="SN-..."
-                        style={{ width:"100%", marginTop:6, padding:"9px 12px", border:`1.5px solid ${!a.sorozatszam?C.accent:C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none", background:!a.sorozatszam?"#EFF6FF":"#F8FAFC" }}/>
+                        style={{ width:"100%", marginTop:6, padding:"9px 12px", border:`1.5px solid ${!a.sorozatszam?C.accent:C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none", background:!a.sorozatszam?C.accentLight:C.bg }}/>
                     </div>
                   )}
                 </div>
               ))}
 
-              <div style={{ border:`1.5px dashed ${C.border}`, borderRadius:12, padding:14, background:"#F8FAFC" }}>
+              <div style={{ border:`1.5px dashed ${C.border}`, borderRadius:12, padding:14, background:C.bg }}>
                 <p style={{ fontSize:12, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.7, marginBottom:10 }}>Plusz tétel hozzáadása</p>
                 <input value={ujNev} onChange={e=>setUjNev(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addAnyag()}
                   placeholder="Anyag / eszköz neve…"
@@ -357,7 +357,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
                       <div><p style={{ fontSize:11, color:C.muted }}>Eredeti dátum</p><p style={{ fontSize:13, fontWeight:600, color:C.text }}>{u.eredetiDatum}</p></div>
                       <div><p style={{ fontSize:11, color:C.muted }}>Új dátum</p><p style={{ fontSize:13, fontWeight:600, color:C.accent }}>{u.ujDatum}</p></div>
                     </div>
-                    <div style={{ background:"#F8FAFC", borderRadius:8, padding:"8px 12px" }}>
+                    <div style={{ background:C.bg, borderRadius:8, padding:"8px 12px" }}>
                       <p style={{ fontSize:11, color:C.muted, marginBottom:4 }}>Indoklás</p>
                       <p style={{ fontSize:13, color:C.text }}>{u.indoklas}</p>
                     </div>
@@ -377,7 +377,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
             <Save size={18}/>✅ Megerősítem az újrakiosztást
           </button>
         ) : (
-          <div style={{ width:"100%", padding:"14px", borderRadius:12, background:"#F0FDF4", border:`1px solid #A7F3D0`, textAlign:"center", fontSize:15, fontWeight:700, color:C.success }}>
+          <div style={{ width:"100%", padding:"14px", borderRadius:12, background:C.successLight, border:`1px solid #A7F3D0`, textAlign:"center", fontSize:15, fontWeight:700, color:C.success }}>
             ⏳ Mentés folyamatban…
           </div>
         )}
