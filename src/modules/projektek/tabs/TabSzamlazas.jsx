@@ -6,12 +6,12 @@ import { ft } from "../../../lib/helpers.js";
 
 function StatusBadge({ statusz }) {
   const cfg = {
-    "Kiállítva":    { bg: "#FFFBEB", color: "#D97706" },
-    "Fizetésre vár":{ bg: "#EFF6FF", color: "#2563EB" },
-    "Fizetve":      { bg: "#ECFDF5", color: "#059669" },
-    "Késedelmes":   { bg: "#FEF2F2", color: "#DC2626" },
-    "Sztornó":      { bg: "#F8FAFC", color: "#94A3B8" },
-  }[statusz] || { bg: "#F8FAFC", color: "#64748B" };
+    "Kiállítva":    { bg: C.warningLight, color: C.warning },
+    "Fizetésre vár":{ bg: C.accentLight, color: C.accent },
+    "Fizetve":      { bg: C.successLight, color: C.success },
+    "Késedelmes":   { bg: C.dangerLight, color: C.danger },
+    "Sztornó":      { bg: C.bg, color: C.muted },
+  }[statusz] || { bg: C.bg, color: C.muted };
   return (
     <span style={{ background: cfg.bg, color: cfg.color, borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>
       {statusz}
@@ -64,9 +64,9 @@ export default function TabSzamlazas({ projekt, currentUser }) {
       {szamlak.length > 0 && (
         <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
           {[
-            { label: "Kimenő számlák", value: ft(osszesBrutto), color: C.success,  bg: "#ECFDF5" },
-            { label: "Fizetve",        value: ft(fizetve),       color: "#0369A1",  bg: "#F0F9FF" },
-            { label: "Várakozik",      value: ft(varakozik),     color: C.warning,  bg: "#FFFBEB" },
+            { label: "Kimenő számlák", value: ft(osszesBrutto), color: C.success,  bg: C.successLight },
+            { label: "Fizetve",        value: ft(fizetve),       color: C.accent,  bg: "#F0F9FF" },
+            { label: "Várakozik",      value: ft(varakozik),     color: C.warning,  bg: C.warningLight },
           ].map(k => (
             <div key={k.label} style={{ background: k.bg, borderRadius: 12, padding: "12px 16px", flex: 1, minWidth: 140, border: `1px solid ${k.color}30` }}>
               <p style={{ fontSize: 10, fontWeight: 700, color: k.color, textTransform: "uppercase", letterSpacing: .7, margin: "0 0 4px" }}>{k.label}</p>

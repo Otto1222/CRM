@@ -10,19 +10,19 @@ import { ft } from "../../../lib/helpers";
 
 function StatusBadge({ status }) {
   const cfg = {
-    elfogadott:  { bg:"#F0FDF4", color:"#16A34A", label:"✅ Elfogadott" },
-    elutasitott: { bg:"#FEF2F2", color:"#DC2626", label:"❌ Elutasított" },
-    fuggoben:    { bg:"#FFFBEB", color:"#D97706", label:"⏳ Függőben" },
-  }[status] || { bg:"#FFFBEB", color:"#D97706", label:"⏳ Függőben" };
+    elfogadott:  { bg:C.successLight, color:C.success, label:"✅ Elfogadott" },
+    elutasitott: { bg:C.dangerLight, color:C.danger, label:"❌ Elutasított" },
+    fuggoben:    { bg:C.warningLight, color:C.warning, label:"⏳ Függőben" },
+  }[status] || { bg:C.warningLight, color:C.warning, label:"⏳ Függőben" };
   return <span style={{ background:cfg.bg, color:cfg.color, padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:700 }}>{cfg.label}</span>;
 }
 
 function FelelosBadge({ type, snapshot }) {
   const cfg = {
-    sajat_csapat: { bg:"#EFF6FF", color:"#2563EB", icon:"👥" },
-    alvallalkozo: { bg:"#FFF7ED", color:"#EA580C", icon:"🤝" },
-    egyeb:        { bg:"#F8FAFC", color:"#64748B", icon:"❓" },
-  }[type] || { bg:"#F8FAFC", color:"#64748B", icon:"❓" };
+    sajat_csapat: { bg:C.accentLight, color:C.accent, icon:"👥" },
+    alvallalkozo: { bg:C.warningLight, color:"#EA580C", icon:"🤝" },
+    egyeb:        { bg:C.bg, color:C.muted, icon:"❓" },
+  }[type] || { bg:C.bg, color:C.muted, icon:"❓" };
   return (
     <span style={{ background:cfg.bg, color:cfg.color, padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:700 }}>
       {cfg.icon} {snapshot || type}
@@ -129,9 +129,9 @@ export default function TabKarteritesek({ projekt, munkalapok, currentUser }) {
       {lista.length > 0 && (
         <div style={{ display:"flex", gap:12, marginBottom:20 }}>
           {[
-            { label:"Elfogadott",  value: ft(elfOsszeg), color:"#16A34A", bg:"#F0FDF4" },
-            { label:"Függőben",    value: ft(fugOsszeg), color:"#D97706", bg:"#FFFBEB" },
-            { label:"Összes tétel",value: `${lista.length} db`, color:C.accent, bg:"#EFF6FF" },
+            { label:"Elfogadott",  value: ft(elfOsszeg), color:C.success, bg:C.successLight },
+            { label:"Függőben",    value: ft(fugOsszeg), color:C.warning, bg:C.warningLight },
+            { label:"Összes tétel",value: `${lista.length} db`, color:C.accent, bg:C.accentLight },
           ].map(s => (
             <div key={s.label} style={{ flex:1, background:s.bg, borderRadius:10, padding:"12px 14px", border:`1px solid ${s.color}30` }}>
               <p style={{ fontSize:10, fontWeight:700, color:s.color, marginBottom:2, textTransform:"uppercase" }}>{s.label}</p>
@@ -152,7 +152,7 @@ export default function TabKarteritesek({ projekt, munkalapok, currentUser }) {
 
       {/* Lista */}
       {lista.length === 0 ? (
-        <div style={{ textAlign:"center", padding:"40px 0", color:C.muted, background:"#F8FAFC", borderRadius:12 }}>
+        <div style={{ textAlign:"center", padding:"40px 0", color:C.muted, background:C.bg, borderRadius:12 }}>
           <p style={{ fontSize:14 }}>Nincs kártérítés ehhez a projekthez</p>
         </div>
       ) : (
@@ -160,7 +160,7 @@ export default function TabKarteritesek({ projekt, munkalapok, currentUser }) {
           {lista.map(k => {
             const st = getKarteritesStatus(k);
             return (
-              <div key={k.id} style={{ background:"#fff", borderRadius:10, border:`1.5px solid ${st==="elfogadott"?"#86EFAC":st==="elutasitott"?"#FECACA":C.border}`, padding:"14px 16px" }}>
+              <div key={k.id} style={{ background:"#fff", borderRadius:10, border:`1.5px solid ${st==="elfogadott"?C.success:st==="elutasitott"?C.dangerLight:C.border}`, padding:"14px 16px" }}>
                 <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:10 }}>
                   <div style={{ flex:1 }}>
                     <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center", marginBottom:6 }}>
@@ -174,13 +174,13 @@ export default function TabKarteritesek({ projekt, munkalapok, currentUser }) {
                       <span>📅 {k.datum}</span>
                       <span>👤 {k.createdBy || k.rogzitoSzemely}</span>
                     </div>
-                    {(k.note || k.megjegyzes) && <p style={{ fontSize:12, color:C.textSub, marginTop:4, background:"#F8FAFC", borderRadius:6, padding:"5px 8px" }}>{k.note || k.megjegyzes}</p>}
+                    {(k.note || k.megjegyzes) && <p style={{ fontSize:12, color:C.textSub, marginTop:4, background:C.bg, borderRadius:6, padding:"5px 8px" }}>{k.note || k.megjegyzes}</p>}
                   </div>
                   <div style={{ display:"flex", flexDirection:"column", gap:5, flexShrink:0 }}>
-                    {st !== "elfogadott"  && <button onClick={() => handleDontse(k.id,"elfogadott")}  style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 10px", background:"#F0FDF4", color:"#16A34A", border:"1.5px solid #86EFAC", borderRadius:7, cursor:"pointer", fontSize:11, fontWeight:700, fontFamily:FONT }}><CheckCircle2 size={12}/> Elfogad</button>}
-                    {st !== "elutasitott" && <button onClick={() => handleDontse(k.id,"elutasitott")} style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 10px", background:"#FEF2F2", color:"#DC2626", border:"1.5px solid #FECACA", borderRadius:7, cursor:"pointer", fontSize:11, fontWeight:700, fontFamily:FONT }}><XCircle size={12}/> Elutasít</button>}
-                    {st === "elfogadott"  && <button onClick={() => handleDontse(k.id,"fuggoben")}    style={{ padding:"5px 10px", background:"#FFFBEB", color:"#D97706", border:"1.5px solid #FDE68A", borderRadius:7, cursor:"pointer", fontSize:11, fontWeight:700, fontFamily:FONT }}>↩ Vissza</button>}
-                    <button onClick={() => handleDelete(k.id)} style={{ padding:"5px 10px", background:"#F8FAFC", color:C.muted, border:`1px solid ${C.border}`, borderRadius:7, cursor:"pointer", fontSize:11, fontFamily:FONT }}><Trash2 size={12}/></button>
+                    {st !== "elfogadott"  && <button onClick={() => handleDontse(k.id,"elfogadott")}  style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 10px", background:C.successLight, color:C.success, border:"1.5px solid #86EFAC", borderRadius:7, cursor:"pointer", fontSize:11, fontWeight:700, fontFamily:FONT }}><CheckCircle2 size={12}/> Elfogad</button>}
+                    {st !== "elutasitott" && <button onClick={() => handleDontse(k.id,"elutasitott")} style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 10px", background:C.dangerLight, color:C.danger, border:"1.5px solid #FECACA", borderRadius:7, cursor:"pointer", fontSize:11, fontWeight:700, fontFamily:FONT }}><XCircle size={12}/> Elutasít</button>}
+                    {st === "elfogadott"  && <button onClick={() => handleDontse(k.id,"fuggoben")}    style={{ padding:"5px 10px", background:C.warningLight, color:C.warning, border:"1.5px solid #FDE68A", borderRadius:7, cursor:"pointer", fontSize:11, fontWeight:700, fontFamily:FONT }}>↩ Vissza</button>}
+                    <button onClick={() => handleDelete(k.id)} style={{ padding:"5px 10px", background:C.bg, color:C.muted, border:`1px solid ${C.border}`, borderRadius:7, cursor:"pointer", fontSize:11, fontFamily:FONT }}><Trash2 size={12}/></button>
                   </div>
                 </div>
               </div>
@@ -212,8 +212,8 @@ export default function TabKarteritesek({ projekt, munkalapok, currentUser }) {
                 <div>
                   <label style={{ fontSize:12, fontWeight:700, color:C.muted, display:"block", marginBottom:4 }}>Összeg (Ft) *</label>
                   <input type="number" value={form.osszeg} placeholder="50000" onChange={e => setF("osszeg", e.target.value)}
-                    style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${errors.osszeg?"#DC2626":C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none" }} />
-                  {errors.osszeg && <p style={{ color:"#DC2626", fontSize:11, margin:"3px 0 0" }}>{errors.osszeg}</p>}
+                    style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${errors.osszeg?C.danger:C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none" }} />
+                  {errors.osszeg && <p style={{ color:C.danger, fontSize:11, margin:"3px 0 0" }}>{errors.osszeg}</p>}
                 </div>
                 <div>
                   <label style={{ fontSize:12, fontWeight:700, color:C.muted, display:"block", marginBottom:4 }}>Dátum</label>
@@ -225,8 +225,8 @@ export default function TabKarteritesek({ projekt, munkalapok, currentUser }) {
               <div>
                 <label style={{ fontSize:12, fontWeight:700, color:C.muted, display:"block", marginBottom:4 }}>Kártérítés oka *</label>
                 <input value={form.ok} placeholder="pl. sérült panel cseréje" onChange={e => setF("ok", e.target.value)}
-                  style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${errors.ok?"#DC2626":C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none" }} />
-                {errors.ok && <p style={{ color:"#DC2626", fontSize:11, margin:"3px 0 0" }}>{errors.ok}</p>}
+                  style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${errors.ok?C.danger:C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none" }} />
+                {errors.ok && <p style={{ color:C.danger, fontSize:11, margin:"3px 0 0" }}>{errors.ok}</p>}
               </div>
 
               {/* Felelős */}
@@ -240,7 +240,7 @@ export default function TabKarteritesek({ projekt, munkalapok, currentUser }) {
                   ].map(t => (
                     <button key={t.id} type="button"
                       onClick={() => setForm(p => ({ ...p, responsibleType:t.id, responsibleTeamId:"", responsibleWorkerId:"", responsibleSubcontractorId:"" }))}
-                      style={{ flex:1, padding:"8px 6px", borderRadius:8, border:`2px solid ${form.responsibleType===t.id?C.accent:C.border}`, background:form.responsibleType===t.id?"#EFF6FF":"#fff", cursor:"pointer", fontFamily:FONT, color:form.responsibleType===t.id?C.accent:C.text, fontWeight:600, fontSize:11 }}>
+                      style={{ flex:1, padding:"8px 6px", borderRadius:8, border:`2px solid ${form.responsibleType===t.id?C.accent:C.border}`, background:form.responsibleType===t.id?C.accentLight:"#fff", cursor:"pointer", fontFamily:FONT, color:form.responsibleType===t.id?C.accent:C.text, fontWeight:600, fontSize:11 }}>
                       {t.label}
                     </button>
                   ))}
@@ -248,19 +248,19 @@ export default function TabKarteritesek({ projekt, munkalapok, currentUser }) {
               </div>
 
               {form.responsibleType === "sajat_csapat" && (
-                <div style={{ background:"#EFF6FF", borderRadius:9, padding:"12px", display:"flex", flexDirection:"column", gap:8 }}>
+                <div style={{ background:C.accentLight, borderRadius:9, padding:"12px", display:"flex", flexDirection:"column", gap:8 }}>
                   <div>
-                    <label style={{ fontSize:12, fontWeight:700, color:"#2563EB", display:"block", marginBottom:4 }}>Csapat *</label>
+                    <label style={{ fontSize:12, fontWeight:700, color:C.accent, display:"block", marginBottom:4 }}>Csapat *</label>
                     <select value={form.responsibleTeamId} onChange={e => { setF("responsibleTeamId", e.target.value); setF("responsibleWorkerId",""); }}
-                      style={{ width:"100%", padding:"9px 11px", border:`1.5px solid ${errors.responsibleTeamId?"#DC2626":"#BFDBFE"}`, borderRadius:8, fontSize:13, fontFamily:FONT, outline:"none", background:"#fff" }}>
+                      style={{ width:"100%", padding:"9px 11px", border:`1.5px solid ${errors.responsibleTeamId?C.danger:C.accentLight}`, borderRadius:8, fontSize:13, fontFamily:FONT, outline:"none", background:"#fff" }}>
                       <option value="">– Válassz csapatot –</option>
                       {sajatCs.map(c => <option key={c.id} value={c.id}>{c.nev}</option>)}
                     </select>
-                    {errors.responsibleTeamId && <p style={{ color:"#DC2626", fontSize:11, margin:"3px 0 0" }}>{errors.responsibleTeamId}</p>}
+                    {errors.responsibleTeamId && <p style={{ color:C.danger, fontSize:11, margin:"3px 0 0" }}>{errors.responsibleTeamId}</p>}
                   </div>
                   {tagok.length > 0 && (
                     <div>
-                      <label style={{ fontSize:12, fontWeight:700, color:"#2563EB", display:"block", marginBottom:4 }}>Konkrét dolgozó (opcionális)</label>
+                      <label style={{ fontSize:12, fontWeight:700, color:C.accent, display:"block", marginBottom:4 }}>Konkrét dolgozó (opcionális)</label>
                       <select value={form.responsibleWorkerId} onChange={e => setF("responsibleWorkerId", e.target.value)}
                         style={{ width:"100%", padding:"9px 11px", border:"1.5px solid #BFDBFE", borderRadius:8, fontSize:13, fontFamily:FONT, outline:"none", background:"#fff" }}>
                         <option value="">– Nincs megjelölve –</option>
@@ -272,14 +272,14 @@ export default function TabKarteritesek({ projekt, munkalapok, currentUser }) {
               )}
 
               {form.responsibleType === "alvallalkozo" && (
-                <div style={{ background:"#FFF7ED", borderRadius:9, padding:"12px" }}>
+                <div style={{ background:C.warningLight, borderRadius:9, padding:"12px" }}>
                   <label style={{ fontSize:12, fontWeight:700, color:"#EA580C", display:"block", marginBottom:4 }}>Alvállalkozó *</label>
                   <select value={form.responsibleSubcontractorId} onChange={e => setF("responsibleSubcontractorId", e.target.value)}
-                    style={{ width:"100%", padding:"9px 11px", border:`1.5px solid ${errors.responsibleSubcontractorId?"#DC2626":"#FED7AA"}`, borderRadius:8, fontSize:13, fontFamily:FONT, outline:"none", background:"#fff" }}>
+                    style={{ width:"100%", padding:"9px 11px", border:`1.5px solid ${errors.responsibleSubcontractorId?C.danger:"#FED7AA"}`, borderRadius:8, fontSize:13, fontFamily:FONT, outline:"none", background:"#fff" }}>
                     <option value="">– Válassz alvállalkozót –</option>
                     {avCs.map(c => <option key={c.id} value={c.id}>{c.nev}</option>)}
                   </select>
-                  {errors.responsibleSubcontractorId && <p style={{ color:"#DC2626", fontSize:11, margin:"3px 0 0" }}>{errors.responsibleSubcontractorId}</p>}
+                  {errors.responsibleSubcontractorId && <p style={{ color:C.danger, fontSize:11, margin:"3px 0 0" }}>{errors.responsibleSubcontractorId}</p>}
                 </div>
               )}
 
@@ -288,8 +288,8 @@ export default function TabKarteritesek({ projekt, munkalapok, currentUser }) {
                   <label style={{ fontSize:12, fontWeight:700, color:C.muted, display:"block", marginBottom:4 }}>Indoklás *</label>
                   <textarea value={form.egyebIndok} onChange={e => setF("egyebIndok", e.target.value)} rows={2}
                     placeholder="Ki/mi okozta a kárt?"
-                    style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${errors.egyebIndok?"#DC2626":C.border}`, borderRadius:9, fontSize:13, fontFamily:FONT, outline:"none", resize:"vertical" }} />
-                  {errors.egyebIndok && <p style={{ color:"#DC2626", fontSize:11, margin:"3px 0 0" }}>{errors.egyebIndok}</p>}
+                    style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${errors.egyebIndok?C.danger:C.border}`, borderRadius:9, fontSize:13, fontFamily:FONT, outline:"none", resize:"vertical" }} />
+                  {errors.egyebIndok && <p style={{ color:C.danger, fontSize:11, margin:"3px 0 0" }}>{errors.egyebIndok}</p>}
                 </div>
               )}
 

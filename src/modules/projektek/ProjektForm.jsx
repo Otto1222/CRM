@@ -25,7 +25,7 @@ const Field = ({ label, children, half }) => (
       style={{
         fontSize: 11,
         fontWeight: 700,
-        color: "#64748B",
+        color: C.muted,
         display: "block",
         marginBottom: 4,
         textTransform: "uppercase",
@@ -342,7 +342,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               border: "none",
               background: "none",
               cursor: "pointer",
-              color: "#94A3B8",
+              color: C.muted,
             }}
           >
             <X size={22} />
@@ -352,13 +352,13 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
           {hiba && (
             <div
               style={{
-                background: "#FEF2F2",
+                background: C.dangerLight,
                 border: "1.5px solid #FECACA",
                 borderRadius: 9,
                 padding: "9px 12px",
                 marginBottom: 14,
                 fontSize: 13,
-                color: "#DC2626",
+                color: C.danger,
                 fontWeight: 600,
               }}
             >
@@ -367,7 +367,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
           )}
           {/* ── Projekt forrása (kötelező) ── */}
           <div style={{ marginBottom: 16 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>
               Projekt forrása *
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -375,13 +375,13 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 const active = form.forrás === f.id;
                 return (
                   <button key={f.id} type="button" onClick={() => upd("forrás", f.id)}
-                    style={{ padding: "8px 16px", borderRadius: 9, border: `2px solid ${active ? f.color : "#E2E8F0"}`, background: active ? f.bg : "#fff", color: active ? f.color : "#64748B", fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer", fontFamily: FONT, transition: "all .15s" }}>
+                    style={{ padding: "8px 16px", borderRadius: 9, border: `2px solid ${active ? f.color : C.border}`, background: active ? f.bg : "#fff", color: active ? f.color : C.muted, fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer", fontFamily: FONT, transition: "all .15s" }}>
                     {f.label}
                   </button>
                 );
               })}
             </div>
-            {!form.forrás && hiba && <p style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>A projekt forrásának megadása kötelező</p>}
+            {!form.forrás && hiba && <p style={{ fontSize: 11, color: C.danger, marginTop: 4 }}>A projekt forrásának megadása kötelező</p>}
           </div>
 
           <div
@@ -425,7 +425,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               </select>
             </Field>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Ügyfél adatok
               </p>
             </div>
@@ -436,7 +436,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                   <option key={u.id} value={u.id}>{u.name}{u.address ? ` – ${u.address}` : ""}</option>
                 ))}
               </select>
-              {form.clientId && <p style={{ fontSize: 10, color: "#059669", marginTop: 3 }}>✅ Adatok automatikusan betöltve</p>}
+              {form.clientId && <p style={{ fontSize: 10, color: C.success, marginTop: 3 }}>✅ Adatok automatikusan betöltve</p>}
             </Field>
             <Field label="Ügyfél neve *" half>
               <input value={form.clientNev} onChange={e => upd("clientNev", e.target.value)} placeholder="Kovács János" style={inp} />
@@ -475,7 +475,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               />
             </Field>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Csapat
               </p>
             </div>
@@ -499,11 +499,11 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 ))}
               </select>
               {csapatok.length === 0 && (
-                <p style={{ fontSize: 10, color: "#D97706", marginTop: 3 }}>⚠️ Még nincs létrehozva csapat — előbb add hozzá a Csapat menüben</p>
+                <p style={{ fontSize: 10, color: C.warning, marginTop: 3 }}>⚠️ Még nincs létrehozva csapat — előbb add hozzá a Csapat menüben</p>
               )}
             </Field>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Műszaki adatok
               </p>
             </div>
@@ -526,14 +526,14 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <Field label="Elektromos autótöltő" half>
               <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:14, fontWeight:500, color:"#334155", userSelect:"none", paddingTop:4 }}>
                 <div onClick={() => upd("autoTolto", !form.autoTolto)}
-                  style={{ width:44, height:24, borderRadius:12, position:"relative", cursor:"pointer", background:form.autoTolto?"#2563EB":"#CBD5E1", transition:"background .2s" }}>
+                  style={{ width:44, height:24, borderRadius:12, position:"relative", cursor:"pointer", background:form.autoTolto?C.accent:C.border, transition:"background .2s" }}>
                   <div style={{ position:"absolute", top:3, left:form.autoTolto?23:3, width:18, height:18, borderRadius:"50%", background:"#fff", transition:"left .2s", boxShadow:"0 1px 3px rgba(0,0,0,.2)" }}/>
                 </div>
-                <span style={{ color:form.autoTolto?"#059669":"#94A3B8", fontWeight:700 }}>{form.autoTolto?"Van":"Nincs"}</span>
+                <span style={{ color:form.autoTolto?C.success:C.muted, fontWeight:700 }}>{form.autoTolto?"Van":"Nincs"}</span>
               </label>
             </Field>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Ütemezés
               </p>
             </div>
@@ -544,7 +544,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               <input type="date" value={form.tervezettBefejezes} onChange={e => upd("tervezettBefejezes", e.target.value)} style={inp} />
             </Field>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 💰 Pénzügyi konfiguráció
               </p>
             </div>
@@ -557,8 +557,8 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                   </option>
                 ))}
               </select>
-              {form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: "#059669", marginTop: 3 }}>✅ Elszámolási szabály automatikusan betöltve</p>}
-              {form.penzugy.fovallalkoziId && !form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: "#D97706", marginTop: 3 }}>⚠️ Nincs aktív szabály ehhez a munkatípushoz</p>}
+              {form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: C.success, marginTop: 3 }}>✅ Elszámolási szabály automatikusan betöltve</p>}
+              {form.penzugy.fovallalkoziId && !form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: C.warning, marginTop: 3 }}>⚠️ Nincs aktív szabály ehhez a munkatípushoz</p>}
             </Field>
             {/* Fővállalkozói extra mezők */}
             {form.forrás === "fővállalkozói" && <>
@@ -574,18 +574,18 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             </>}
             <Field label="Elszámolási db (auto: panel db)" half>
               <input type="number" value={form.penzugy.darabszam || form.napelemDb || 1} onChange={e => updPenz("darabszam", e.target.value)} placeholder="1" style={inp} />
-              <p style={{ fontSize: 10, color: "#64748B", marginTop: 3 }}>Szinkronizálva a Műszaki adatok panel db-vel</p>
+              <p style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>Szinkronizálva a Műszaki adatok panel db-vel</p>
             </Field>
             <Field label="Távolság (km, oda)" half>
               <div style={{ display: "flex", gap: 6 }}>
                 <input type="number" value={form.penzugy.tavKm || ""} onChange={e => updPenz("tavKm", e.target.value)} placeholder="0" style={{ ...inp, flex: 1 }} />
                 <button type="button" onClick={handleKmAutoCalc} disabled={kmCalc}
                   title="Automatikus km-számítás a csapat telephely → telepítési cím alapján (OSRM)"
-                  style={{ padding: "0 10px", background: kmCalc ? "#94A3B8" : "#2563EB", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, fontFamily: FONT }}>
+                  style={{ padding: "0 10px", background: kmCalc ? C.muted : C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, fontFamily: FONT }}>
                   <Navigation size={13}/>{kmCalc ? "…" : "Auto"}
                 </button>
               </div>
-              <p style={{ fontSize: 10, color: "#64748B", marginTop: 3 }}>Oda km – az elszámolás oda-vissza számolja</p>
+              <p style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>Oda km – az elszámolás oda-vissza számolja</p>
             </Field>
             <Field label="Csapatlétszám (fő)" half>
               <input type="number" value={form.penzugy.csapatLetszam || 1} onChange={e => updPenz("csapatLetszam", e.target.value)} placeholder="1" style={inp} />
@@ -630,28 +630,28 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 const kalk = calcProjektElszamolas(mockProj, []);
                 if (kalk.autoBevitel > 0 || kalk.beveteliTetelek.length > 0) {
                   return (
-                    <div style={{ gridColumn:"span 2", background:"#F0FDF4", border:"1.5px solid #86EFAC", borderRadius:10, padding:"12px 16px", marginTop:4 }}>
+                    <div style={{ gridColumn:"span 2", background:C.successLight, border:"1.5px solid #86EFAC", borderRadius:10, padding:"12px 16px", marginTop:4 }}>
                       <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:8 }}>
-                        <TrendingUp size={15} color="#059669"/>
-                        <span style={{ fontSize:12, fontWeight:700, color:"#166534", textTransform:"uppercase", letterSpacing:.5 }}>Várható fővállalkozói bevétel</span>
+                        <TrendingUp size={15} color={C.success}/>
+                        <span style={{ fontSize:12, fontWeight:700, color:C.success, textTransform:"uppercase", letterSpacing:.5 }}>Várható fővállalkozói bevétel</span>
                       </div>
                       {kalk.beveteliTetelek.map((t, i) => (
-                        <div key={i} style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#374151", marginBottom:3 }}>
+                        <div key={i} style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:C.textSub, marginBottom:3 }}>
                           <span>{t.megnevezes}</span>
-                          <span style={{ fontWeight:700, color:"#059669" }}>{t.autoNetto.toLocaleString("hu-HU")} Ft</span>
+                          <span style={{ fontWeight:700, color:C.success }}>{t.autoNetto.toLocaleString("hu-HU")} Ft</span>
                         </div>
                       ))}
                       {kalk.beveteliTetelek.length > 1 && (
-                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, fontWeight:800, color:"#059669", borderTop:"1px solid #86EFAC", paddingTop:6, marginTop:4 }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, fontWeight:800, color:C.success, borderTop:"1px solid #86EFAC", paddingTop:6, marginTop:4 }}>
                           <span>Összesen</span>
                           <span>{kalk.autoBevitel.toLocaleString("hu-HU")} Ft</span>
                         </div>
                       )}
                       {kalk.autoBevitel === 0 && kalk.beveteliTetelek.some(t=>t.hiany) && (
-                        <p style={{ fontSize:11, color:"#D97706", margin:"4px 0 0" }}>⚠️ A sávos szabály nem találja a darabszám tartományát – ellenőrizd a szabályokat.</p>
+                        <p style={{ fontSize:11, color:C.warning, margin:"4px 0 0" }}>⚠️ A sávos szabály nem találja a darabszám tartományát – ellenőrizd a szabályokat.</p>
                       )}
                       {kalk.beveteliTetelek.length === 0 && (
-                        <p style={{ fontSize:11, color:"#D97706", margin:0 }}>Nincs aktív szabály ehhez a munkatípushoz – add meg a Beállítások → Fővállalkozók menüben.</p>
+                        <p style={{ fontSize:11, color:C.warning, margin:0 }}>Nincs aktív szabály ehhez a munkatípushoz – add meg a Beállítások → Fővállalkozók menüben.</p>
                       )}
                     </div>
                   );
@@ -665,7 +665,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
           <button type="button" onClick={onClose} style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #E2E8F0", background: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
             Mégse
           </button>
-          <button type="button" onClick={handleSave} disabled={saving} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 22px", background: saving ? "#94A3B8" : "#2563EB", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
+          <button type="button" onClick={handleSave} disabled={saving} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 22px", background: saving ? C.muted : C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
             <Save size={15} />
             {saving ? "Mentés…" : isNew ? "Projekt létrehozása" : "Mentés"}
           </button>

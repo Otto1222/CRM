@@ -25,11 +25,11 @@ function OsszCard({ cim, ertek, szin, ikon }) {
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         {ikon}
-        <span style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7 }}>
           {cim}
         </span>
       </div>
-      <p style={{ fontSize: 18, fontWeight: 800, color: szin || "#0F172A", margin: 0 }}>{ertek}</p>
+      <p style={{ fontSize: 18, fontWeight: 800, color: szin || C.text, margin: 0 }}>{ertek}</p>
     </div>
   );
 }
@@ -105,14 +105,14 @@ export default function SzamlakPage({ currentUser }) {
       {/* Fejléc */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: "#0F172A", margin: "0 0 4px" }}>
+          <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>
             🧾 Számlák
           </h1>
-          <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
+          <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
             {szamlak.filter(s => s.tipus === "kimeno").length} kimenő ·{" "}
             {szamlak.filter(s => s.tipus === "bejovo").length} bejövő ·{" "}
             {szamlak.filter(s => isKesedelmes(s)).length > 0 && (
-              <span style={{ color: "#DC2626", fontWeight: 700 }}>
+              <span style={{ color: C.danger, fontWeight: 700 }}>
                 {szamlak.filter(s => isKesedelmes(s)).length} késedelmes!
               </span>
             )}
@@ -126,7 +126,7 @@ export default function SzamlakPage({ currentUser }) {
             style={{
               display: "flex", alignItems: "center", gap: 6,
               padding: "9px 14px", borderRadius: 9, border: "1.5px solid #E2E8F0",
-              background: "#F1F5F9", color: "#475569", cursor: "pointer",
+              background: C.bg, color: C.muted, cursor: "pointer",
               fontWeight: 600, fontSize: 13, fontFamily: FONT,
             }}
           >
@@ -156,7 +156,7 @@ export default function SzamlakPage({ currentUser }) {
               style={{
                 display: "flex", alignItems: "center", gap: 7,
                 padding: "9px 18px", borderRadius: 10, border: "none",
-                background: "#2563EB", color: "#fff", cursor: "pointer",
+                background: C.accent, color: "#fff", cursor: "pointer",
                 fontWeight: 700, fontSize: 14, fontFamily: FONT,
               }}
             >
@@ -176,14 +176,14 @@ export default function SzamlakPage({ currentUser }) {
 
       {/* Összesítő kártyák */}
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        <OsszCard cim="Kimenő – összes"  ertek={ft(ossz.kimenoOssz)}    szin="#2563EB" ikon={<TrendingUp size={16} color="#2563EB"/>} />
-        <OsszCard cim="Kimenő – befizetve" ertek={ft(ossz.kimenoFizetve)} szin="#059669" ikon={<CheckCircle2 size={16} color="#059669"/>} />
-        <OsszCard cim="Kimenő – nyitott"  ertek={ft(ossz.kimenoNyitott)} szin={ossz.kimenoNyitott > 0 ? "#D97706" : "#059669"} ikon={<Clock size={16} color="#D97706"/>} />
+        <OsszCard cim="Kimenő – összes"  ertek={ft(ossz.kimenoOssz)}    szin={C.accent} ikon={<TrendingUp size={16} color={C.accent}/>} />
+        <OsszCard cim="Kimenő – befizetve" ertek={ft(ossz.kimenoFizetve)} szin={C.success} ikon={<CheckCircle2 size={16} color={C.success}/>} />
+        <OsszCard cim="Kimenő – nyitott"  ertek={ft(ossz.kimenoNyitott)} szin={ossz.kimenoNyitott > 0 ? C.warning : C.success} ikon={<Clock size={16} color={C.warning}/>} />
         {ossz.kimenoKeses > 0 && (
-          <OsszCard cim="Késedelmes"  ertek={`${ossz.kimenoKeses} db`} szin="#DC2626" ikon={<AlertCircle size={16} color="#DC2626"/>} />
+          <OsszCard cim="Késedelmes"  ertek={`${ossz.kimenoKeses} db`} szin={C.danger} ikon={<AlertCircle size={16} color={C.danger}/>} />
         )}
-        <OsszCard cim="Bejövő – összes"  ertek={ft(ossz.bejovOssz)}    szin="#7C3AED" ikon={<TrendingDown size={16} color="#7C3AED"/>} />
-        <OsszCard cim="Bejövő – nyitott" ertek={ft(ossz.bejovNyitott)} szin={ossz.bejovNyitott > 0 ? "#D97706" : "#059669"} ikon={<Clock size={16} color="#D97706"/>} />
+        <OsszCard cim="Bejövő – összes"  ertek={ft(ossz.bejovOssz)}    szin={C.accent} ikon={<TrendingDown size={16} color={C.accent}/>} />
+        <OsszCard cim="Bejövő – nyitott" ertek={ft(ossz.bejovNyitott)} szin={ossz.bejovNyitott > 0 ? C.warning : C.success} ikon={<Clock size={16} color={C.warning}/>} />
       </div>
 
       {/* Szűrők */}
@@ -193,13 +193,13 @@ export default function SzamlakPage({ currentUser }) {
         display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center",
       }}>
         {/* Típus tab */}
-        <div style={{ display: "flex", background: "#F1F5F9", borderRadius: 8, padding: 3, gap: 2 }}>
+        <div style={{ display: "flex", background: C.bg, borderRadius: 8, padding: 3, gap: 2 }}>
           {[["kimeno", "📤 Kimenő"], ["bejovo", "📥 Bejövő"]].map(([t, label]) => (
             <button key={t} onClick={() => { setTipus(t); setStatusSzuro(""); }} style={{
               padding: "6px 14px", borderRadius: 6, border: "none", cursor: "pointer",
               fontFamily: FONT, fontWeight: 600, fontSize: 13,
               background: tipus === t ? "#fff" : "transparent",
-              color: tipus === t ? "#0F172A" : "#64748B",
+              color: tipus === t ? C.text : C.muted,
               boxShadow: tipus === t ? "0 1px 4px rgba(0,0,0,.1)" : "none",
             }}>
               {label}
@@ -220,14 +220,14 @@ export default function SzamlakPage({ currentUser }) {
         <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{
           padding: "7px 10px", borderRadius: 9, border: "1.5px solid #E2E8F0", fontSize: 13, fontFamily: FONT, outline: "none",
         }} title="Kezdő dátum" />
-        <span style={{ color: "#94A3B8", fontSize: 13 }}>–</span>
+        <span style={{ color: C.muted, fontSize: 13 }}>–</span>
         <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{
           padding: "7px 10px", borderRadius: 9, border: "1.5px solid #E2E8F0", fontSize: 13, fontFamily: FONT, outline: "none",
         }} title="Záró dátum" />
 
         {/* Keresés */}
         <div style={{ position: "relative", flex: 1, minWidth: 180 }}>
-          <Search size={14} color="#94A3B8" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+          <Search size={14} color={C.muted} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
           <input value={q} onChange={e => setQ(e.target.value)}
             placeholder="Számlaszám, ügyfél, projekt…"
             style={{
@@ -236,7 +236,7 @@ export default function SzamlakPage({ currentUser }) {
             }} />
         </div>
 
-        <span style={{ fontSize: 12, color: "#94A3B8", whiteSpace: "nowrap" }}>
+        <span style={{ fontSize: 12, color: C.muted, whiteSpace: "nowrap" }}>
           {szurt.length} találat
         </span>
       </div>
@@ -249,7 +249,7 @@ export default function SzamlakPage({ currentUser }) {
             <p style={{ fontWeight: 700, fontSize: 14, color: "#4338CA", margin: 0 }}>
               📥 PEASE import – {importLista.length} számla importálható
             </p>
-            <button onClick={() => setImportLista(null)} style={{ border: "none", background: "none", cursor: "pointer", color: "#64748B" }}>
+            <button onClick={() => setImportLista(null)} style={{ border: "none", background: "none", cursor: "pointer", color: C.muted }}>
               ✕
             </button>
           </div>
@@ -258,14 +258,14 @@ export default function SzamlakPage({ currentUser }) {
               marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
               <div>
                 <p style={{ fontWeight: 700, fontSize: 13, margin: 0 }}>{s.szamlaszam || s.peaseId}</p>
-                <p style={{ fontSize: 11, color: "#64748B", margin: "2px 0 0" }}>
+                <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 0" }}>
                   {s.ugyfelNev} · {s.kiallitasDatuma} · {new Intl.NumberFormat("hu-HU", { style: "currency", currency: "HUF", maximumFractionDigits: 0 }).format(s.bruttoOsszeg || 0)}
                 </p>
               </div>
               <button onClick={() => handleImportJovahagyvas(s)} style={{
                 padding: "6px 14px", borderRadius: 8, border: "none",
-                background: szamlak.find(x => x.peaseId === s.peaseId) ? "#F1F5F9" : "#2563EB",
-                color: szamlak.find(x => x.peaseId === s.peaseId) ? "#94A3B8" : "#fff",
+                background: szamlak.find(x => x.peaseId === s.peaseId) ? C.bg : C.accent,
+                color: szamlak.find(x => x.peaseId === s.peaseId) ? C.muted : "#fff",
                 cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: FONT,
               }}>
                 {szamlak.find(x => x.peaseId === s.peaseId) ? "✓ Importálva" : "Importálás"}
@@ -282,7 +282,7 @@ export default function SzamlakPage({ currentUser }) {
 
       {/* Táblázat */}
       {szurt.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "60px 0", color: "#94A3B8" }}>
+        <div style={{ textAlign: "center", padding: "60px 0", color: C.muted }}>
           <p style={{ fontSize: 32, marginBottom: 12 }}>🧾</p>
           <p style={{ fontSize: 15, fontWeight: 600 }}>Nincs számla</p>
           <p style={{ fontSize: 13, marginTop: 6 }}>
@@ -293,10 +293,10 @@ export default function SzamlakPage({ currentUser }) {
         <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT }}>
             <thead>
-              <tr style={{ background: "#F8FAFC" }}>
+              <tr style={{ background: C.bg }}>
                 {["Számlaszám", "Partner", "Projekt", "Kiállítva", "Határidő", "Státusz", "Bruttó", ""].map(h => (
                   <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11,
-                    fontWeight: 700, color: "#64748B", textTransform: "uppercase",
+                    fontWeight: 700, color: C.muted, textTransform: "uppercase",
                     letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>
                     {h}
                   </th>
@@ -319,17 +319,17 @@ export default function SzamlakPage({ currentUser }) {
                           <span style={{ fontSize: 10, color: "#6366F1" }}>PEASE</span>
                         )}
                       </td>
-                      <td style={{ padding: "11px 14px", fontSize: 13, color: "#0F172A" }}>
+                      <td style={{ padding: "11px 14px", fontSize: 13, color: C.text }}>
                         {partner || "—"}
                       </td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: "#64748B" }}>
+                      <td style={{ padding: "11px 14px", fontSize: 12, color: C.muted }}>
                         {s.projektKod || "—"}
                       </td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: "#64748B" }}>
+                      <td style={{ padding: "11px 14px", fontSize: 12, color: C.muted }}>
                         {s.kiallitasDatuma || "—"}
                       </td>
                       <td style={{ padding: "11px 14px", fontSize: 12,
-                        color: keses ? "#DC2626" : "#64748B",
+                        color: keses ? C.danger : C.muted,
                         fontWeight: keses ? 700 : 400 }}>
                         {s.fizetesiHatarido || "—"}
                         {keses && " ⚠️"}
@@ -343,7 +343,7 @@ export default function SzamlakPage({ currentUser }) {
                           {s.status}
                         </span>
                       </td>
-                      <td style={{ padding: "11px 14px", fontWeight: 700, fontSize: 13, color: "#0F172A" }}>
+                      <td style={{ padding: "11px 14px", fontWeight: 700, fontSize: 13, color: C.text }}>
                         {new Intl.NumberFormat("hu-HU", { style: "currency", currency: "HUF", maximumFractionDigits: 0 }).format(s.bruttoOsszeg || 0)}
                       </td>
                       <td style={{ padding: "11px 14px" }}>
@@ -351,21 +351,21 @@ export default function SzamlakPage({ currentUser }) {
                           <button
                             onClick={() => printSzamla(s, beallitasok)}
                             title="PDF nyomtatás"
-                            style={{ border: "none", background: "#F1F5F9", borderRadius: 7, padding: "6px 8px", cursor: "pointer" }}
+                            style={{ border: "none", background: C.bg, borderRadius: 7, padding: "6px 8px", cursor: "pointer" }}
                           >
-                            <Printer size={13} color="#475569" />
+                            <Printer size={13} color={C.muted} />
                           </button>
                           {canEdit && (
                             <>
                               <button onClick={() => { setEditSzamla(s); setFormOpen(true); }}
                                 title="Szerkesztés"
-                                style={{ border: "none", background: "#EFF6FF", borderRadius: 7, padding: "6px 8px", cursor: "pointer" }}>
-                                <Pencil size={13} color="#2563EB" />
+                                style={{ border: "none", background: C.accentLight, borderRadius: 7, padding: "6px 8px", cursor: "pointer" }}>
+                                <Pencil size={13} color={C.accent} />
                               </button>
                               <button onClick={() => setTorlesId(s.id)}
                                 title="Törlés"
-                                style={{ border: "none", background: "#FEF2F2", borderRadius: 7, padding: "6px 8px", cursor: "pointer" }}>
-                                <Trash2 size={13} color="#DC2626" />
+                                style={{ border: "none", background: C.dangerLight, borderRadius: 7, padding: "6px 8px", cursor: "pointer" }}>
+                                <Trash2 size={13} color={C.danger} />
                               </button>
                             </>
                           )}
@@ -390,7 +390,7 @@ export default function SzamlakPage({ currentUser }) {
             boxShadow: "0 20px 60px rgba(0,0,0,.25)", fontFamily: FONT,
           }}>
             <p style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>🗑️ Számla törlése</p>
-            <p style={{ fontSize: 14, color: "#64748B", marginBottom: 20 }}>
+            <p style={{ fontSize: 14, color: C.muted, marginBottom: 20 }}>
               Biztosan törlöd? Ez a művelet nem visszavonható.
             </p>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
@@ -400,7 +400,7 @@ export default function SzamlakPage({ currentUser }) {
               }}>Mégsem</button>
               <button onClick={() => { deleteSzamla(torlesId); setTorlesId(null); }} style={{
                 padding: "9px 18px", borderRadius: 9, border: "none",
-                background: "#DC2626", color: "#fff", cursor: "pointer",
+                background: C.danger, color: "#fff", cursor: "pointer",
                 fontWeight: 700, fontSize: 13, fontFamily: FONT,
               }}>Törlés</button>
             </div>

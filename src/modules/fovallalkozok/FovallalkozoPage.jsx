@@ -18,7 +18,7 @@ const inp = {
 };
 const FL = ({ label, children, half, full }) => (
   <div style={{ gridColumn: full ? "span 2" : half ? "span 1" : "span 2" }}>
-    <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>
+    <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>
       {label}
     </label>
     {children}
@@ -43,13 +43,13 @@ function SavokSzerkeszto({ savok, onChange }) {
   return (
     <div>
       {savok.length === 0 && (
-        <p style={{ fontSize: 12, color: "#94A3B8", fontStyle: "italic", margin: "4px 0 8px" }}>
+        <p style={{ fontSize: 12, color: C.muted, fontStyle: "italic", margin: "4px 0 8px" }}>
           Nincs sáv – add hozzá az alábbi gombbal
         </p>
       )}
       {savok.map((sav, i) => (
         <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-          <span style={{ fontSize: 11, color: "#64748B", minWidth: 20, textAlign: "right" }}>{i + 1}.</span>
+          <span style={{ fontSize: 11, color: C.muted, minWidth: 20, textAlign: "right" }}>{i + 1}.</span>
           <div style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
             <input
               type="number" min={0} placeholder="tól"
@@ -57,30 +57,30 @@ function SavokSzerkeszto({ savok, onChange }) {
               onChange={e => updateSav(i, "tol", e.target.value)}
               style={{ ...inp, width: 72, textAlign: "center" }}
             />
-            <span style={{ fontSize: 11, color: "#94A3B8" }}>db  –</span>
+            <span style={{ fontSize: 11, color: C.muted }}>db  –</span>
             <input
               type="number" min={0} placeholder="ig (üres=∞)"
               value={sav.ig}
               onChange={e => updateSav(i, "ig", e.target.value)}
               style={{ ...inp, width: 88, textAlign: "center" }}
             />
-            <span style={{ fontSize: 11, color: "#94A3B8" }}>db  =</span>
+            <span style={{ fontSize: 11, color: C.muted }}>db  =</span>
             <input
               type="number" min={0} placeholder="összeg"
               value={sav.osszeg}
               onChange={e => updateSav(i, "osszeg", e.target.value)}
               style={{ ...inp, flex: 1, textAlign: "right" }}
             />
-            <span style={{ fontSize: 11, color: "#94A3B8" }}>Ft</span>
+            <span style={{ fontSize: 11, color: C.muted }}>Ft</span>
           </div>
           <button onClick={() => removeSav(i)}
-            style={{ padding: "4px 6px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 6, cursor: "pointer" }}>
+            style={{ padding: "4px 6px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 6, cursor: "pointer" }}>
             <X size={11} />
           </button>
         </div>
       ))}
       <button onClick={addSav}
-        style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", border: "1.5px dashed #CBD5E1", borderRadius: 7, background: "#F8FAFC", cursor: "pointer", fontSize: 12, color: "#475569", fontFamily: FONT, marginTop: 4 }}>
+        style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", border: "1.5px dashed #CBD5E1", borderRadius: 7, background: C.bg, cursor: "pointer", fontSize: 12, color: C.muted, fontFamily: FONT, marginTop: 4 }}>
         <Plus size={12} /> Új sáv hozzáadása
       </button>
     </div>
@@ -99,26 +99,26 @@ function KalkulacioTesztelo({ szabaly }) {
   const eredmeny = calcSzabalyOsszeg(szabaly, { darabszam: db, tavKm: km });
 
   return (
-    <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "12px 14px", marginTop: 12 }}>
+    <div style={{ background: C.successLight, border: "1px solid #86EFAC", borderRadius: 10, padding: "12px 14px", marginTop: 12 }}>
       <p style={{ fontSize: 11, fontWeight: 700, color: "#065F46", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 5 }}>
         <Calculator size={13} /> Tesztelő – próba input
       </p>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         {needsDb && (
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#374151" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textSub }}>
             Darabszám:
             <input type="number" min={0} value={db} onChange={e => setDb(Number(e.target.value))}
               style={{ ...inp, width: 72, padding: "5px 8px" }} />
           </label>
         )}
         {needsKm && (
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#374151" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textSub }}>
             Egyirányú km:
             <input type="number" min={0} value={km} onChange={e => setKm(Number(e.target.value))}
               style={{ ...inp, width: 80, padding: "5px 8px" }} />
           </label>
         )}
-        <span style={{ fontSize: 16, fontWeight: 800, color: eredmeny > 0 ? "#059669" : "#94A3B8", marginLeft: 8 }}>
+        <span style={{ fontSize: 16, fontWeight: 800, color: eredmeny > 0 ? C.success : C.muted, marginLeft: 8 }}>
           = {ft(eredmeny)}
         </span>
         {szabaly.mod === "savos" && (() => {
@@ -128,11 +128,11 @@ function KalkulacioTesztelo({ szabaly }) {
             return db >= tol && db <= ig;
           });
           return s
-            ? <span style={{ fontSize: 11, color: "#059669" }}>(sáv: {s.tol}–{s.ig || "∞"} db)</span>
-            : <span style={{ fontSize: 11, color: "#DC2626" }}>(nincs egyező sáv!)</span>;
+            ? <span style={{ fontSize: 11, color: C.success }}>(sáv: {s.tol}–{s.ig || "∞"} db)</span>
+            : <span style={{ fontSize: 11, color: C.danger }}>(nincs egyező sáv!)</span>;
         })()}
-        {szabaly.mod === "fix" && <span style={{ fontSize: 11, color: "#64748B" }}>(fix összeg, inputtól független)</span>}
-        {szabaly.mod === "fix_kiszallas" && <span style={{ fontSize: 11, color: "#64748B" }}>(fix, km-tól független)</span>}
+        {szabaly.mod === "fix" && <span style={{ fontSize: 11, color: C.muted }}>(fix összeg, inputtól független)</span>}
+        {szabaly.mod === "fix_kiszallas" && <span style={{ fontSize: 11, color: C.muted }}>(fix, km-tól független)</span>}
       </div>
     </div>
   );
@@ -168,7 +168,7 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
           <h3 style={{ fontFamily: FONT_HEADING, fontSize: 16, fontWeight: 800, margin: 0 }}>
             {isNew ? "Új elszámolási szabály" : "Szabály szerkesztése"}
           </h3>
-          <button onClick={onClose} style={{ padding: "4px 8px", border: "none", background: "none", cursor: "pointer", color: "#94A3B8" }}>
+          <button onClick={onClose} style={{ padding: "4px 8px", border: "none", background: "none", cursor: "pointer", color: C.muted }}>
             <X size={16} />
           </button>
         </div>
@@ -189,8 +189,8 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
           <FL label="Állapot" half>
             <label style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 8, cursor: "pointer" }}>
               <input type="checkbox" checked={f.aktiv} onChange={e => u("aktiv", e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: "#2563EB" }} />
-              <span style={{ fontSize: 13, color: f.aktiv ? "#059669" : "#94A3B8", fontWeight: 600 }}>
+                style={{ width: 16, height: 16, accentColor: C.accent }} />
+              <span style={{ fontSize: 13, color: f.aktiv ? C.success : C.muted, fontWeight: 600 }}>
                 {f.aktiv ? "Aktív" : "Inaktív"}
               </span>
             </label>
@@ -204,7 +204,7 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
               ))}
             </select>
             {modInfo?.hint && (
-              <p style={{ fontSize: 11, color: "#64748B", margin: "4px 0 0" }}>{modInfo.hint}</p>
+              <p style={{ fontSize: 11, color: C.muted, margin: "4px 0 0" }}>{modInfo.hint}</p>
             )}
           </FL>
 
@@ -244,10 +244,10 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
           {/* Sávos szerkesztő */}
           {f.mod === "savos" && (
             <FL label="Sávos díjazás – korlátlan sáv (darabszám tól–ig = összeg)">
-              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 9, padding: "12px 14px", marginTop: 4 }}>
+              <div style={{ background: C.bg, border: "1px solid #E2E8F0", borderRadius: 9, padding: "12px 14px", marginTop: 4 }}>
                 <SavokSzerkeszto savok={f.savok} onChange={v => u("savok", v)} />
               </div>
-              <p style={{ fontSize: 11, color: "#64748B", margin: "5px 0 0" }}>
+              <p style={{ fontSize: 11, color: C.muted, margin: "5px 0 0" }}>
                 Az „ig" mező üresen hagyható → az a sáv a legfelső korlát nélküli sávot jelenti (∞).
               </p>
             </FL>
@@ -270,7 +270,7 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
             Mégse
           </button>
           <button onClick={() => onSave(f)}
-            style={{ padding: "8px 20px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
+            style={{ padding: "8px 20px", background: C.accent, color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
             {isNew ? "Létrehozás" : "Mentés"}
           </button>
         </div>
@@ -288,33 +288,33 @@ function SzabalyKartya({ sz, onEdit, onDelete, onToggle }) {
 
   return (
     <div style={{
-      background: sz.aktiv ? "#F8FAFC" : "#F1F5F9",
-      border: `1px solid ${sz.aktiv ? "#E2E8F0" : "#CBD5E1"}`,
-      borderLeft: `3px solid ${sz.aktiv ? "#2563EB" : "#94A3B8"}`,
+      background: sz.aktiv ? C.bg : C.bg,
+      border: `1px solid ${sz.aktiv ? C.border : C.border}`,
+      borderLeft: `3px solid ${sz.aktiv ? C.accent : C.muted}`,
       borderRadius: 9, padding: "10px 14px", marginBottom: 6,
       display: "flex", alignItems: "flex-start", gap: 10,
       opacity: sz.aktiv ? 1 : 0.65,
     }}>
       <div style={{ flex: 1 }}>
         <div style={{ display: "flex", gap: 7, alignItems: "center", marginBottom: 4, flexWrap: "wrap" }}>
-          <span style={{ fontWeight: 700, fontSize: 13, color: "#0F172A" }}>
+          <span style={{ fontWeight: 700, fontSize: 13, color: C.text }}>
             {sz.munkatipus || "Általános (minden típusra)"}
           </span>
-          <span style={{ fontSize: 11, background: "#EFF6FF", color: "#2563EB", padding: "1px 8px", borderRadius: 20, fontWeight: 700 }}>
+          <span style={{ fontSize: 11, background: C.accentLight, color: C.accent, padding: "1px 8px", borderRadius: 20, fontWeight: 700 }}>
             {modInfo?.label || sz.mod}
           </span>
-          {!sz.aktiv && <span style={{ fontSize: 10, background: "#F1F5F9", color: "#94A3B8", padding: "1px 7px", borderRadius: 20 }}>Inaktív</span>}
+          {!sz.aktiv && <span style={{ fontSize: 10, background: C.bg, color: C.muted, padding: "1px 7px", borderRadius: 20 }}>Inaktív</span>}
         </div>
-        <div style={{ fontSize: 12, color: "#475569", display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <span style={{ fontWeight: 600, color: "#059669" }}>{leiras}</span>
+        <div style={{ fontSize: 12, color: C.muted, display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ fontWeight: 600, color: C.success }}>{leiras}</span>
           {savokDb !== null && <span>{savokDb} sáv</span>}
-          {sz.megjegyzes && <span style={{ color: "#94A3B8" }}>{sz.megjegyzes}</span>}
+          {sz.megjegyzes && <span style={{ color: C.muted }}>{sz.megjegyzes}</span>}
         </div>
         {/* Sávok összefoglalás */}
         {sz.mod === "savos" && (sz.savok || []).length > 0 && (
           <div style={{ marginTop: 6, display: "flex", gap: 4, flexWrap: "wrap" }}>
             {(sz.savok || []).map((s, i) => (
-              <span key={i} style={{ fontSize: 10, background: "#DBEAFE", color: "#1D4ED8", padding: "2px 7px", borderRadius: 20, fontWeight: 600 }}>
+              <span key={i} style={{ fontSize: 10, background: C.accentLight, color: C.accent, padding: "2px 7px", borderRadius: 20, fontWeight: 600 }}>
                 {s.tol}–{s.ig || "∞"} db: {Number(s.osszeg || 0).toLocaleString("hu-HU")} Ft
               </span>
             ))}
@@ -323,15 +323,15 @@ function SzabalyKartya({ sz, onEdit, onDelete, onToggle }) {
       </div>
       <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
         <button onClick={onToggle} title={sz.aktiv ? "Inaktiválás" : "Aktiválás"}
-          style={{ padding: "4px 8px", background: sz.aktiv ? "#FFFBEB" : "#ECFDF5", color: sz.aktiv ? "#D97706" : "#059669", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 10, fontWeight: 700, fontFamily: FONT }}>
+          style={{ padding: "4px 8px", background: sz.aktiv ? C.warningLight : C.successLight, color: sz.aktiv ? C.warning : C.success, border: "none", borderRadius: 6, cursor: "pointer", fontSize: 10, fontWeight: 700, fontFamily: FONT }}>
           {sz.aktiv ? "Inakt." : "Aktív"}
         </button>
         <button onClick={onEdit}
-          style={{ padding: "4px 8px", background: "#EFF6FF", color: "#2563EB", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 11 }}>
+          style={{ padding: "4px 8px", background: C.accentLight, color: C.accent, border: "none", borderRadius: 6, cursor: "pointer", fontSize: 11 }}>
           <Pencil size={11} />
         </button>
         <button onClick={onDelete}
-          style={{ padding: "4px 7px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 6, cursor: "pointer" }}>
+          style={{ padding: "4px 7px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 6, cursor: "pointer" }}>
           <Trash2 size={11} />
         </button>
       </div>
@@ -362,28 +362,28 @@ function FvSor({ fv, onUpdate, onDelete }) {
   const aktivSzabaly = szabalyok.filter(s => s.aktiv !== false).length;
 
   return (
-    <div style={{ background: "#fff", border: `1.5px solid ${open ? "#2563EB" : C.border}`, borderRadius: 12, marginBottom: 10, overflow: "hidden", opacity: fv.aktiv ? 1 : .6 }}>
+    <div style={{ background: "#fff", border: `1.5px solid ${open ? C.accent : C.border}`, borderRadius: 12, marginBottom: 10, overflow: "hidden", opacity: fv.aktiv ? 1 : .6 }}>
 
       {/* Fejléc */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", cursor: "pointer" }}
         onClick={() => setOpen(o => !o)}>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 700, fontSize: 15, color: "#0F172A" }}>{fv.nev}</span>
+            <span style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{fv.nev}</span>
             {fv.rovidites && (
-              <span style={{ fontSize: 11, background: "#EFF6FF", color: "#2563EB", padding: "2px 9px", borderRadius: 20, fontWeight: 700 }}>
+              <span style={{ fontSize: 11, background: C.accentLight, color: C.accent, padding: "2px 9px", borderRadius: 20, fontWeight: 700 }}>
                 [{fv.rovidites}]
               </span>
             )}
-            <span style={{ fontSize: 11, background: fv.aktiv ? "#DCFCE7" : "#F1F5F9", color: fv.aktiv ? "#166534" : "#94A3B8", padding: "2px 9px", borderRadius: 20, fontWeight: 600 }}>
+            <span style={{ fontSize: 11, background: fv.aktiv ? C.successLight : C.bg, color: fv.aktiv ? C.success : C.muted, padding: "2px 9px", borderRadius: 20, fontWeight: 600 }}>
               {fv.aktiv ? "Aktív" : "Inaktív"}
             </span>
-            <span style={{ fontSize: 12, color: "#64748B" }}>
+            <span style={{ fontSize: 12, color: C.muted }}>
               {aktivSzabaly} aktív szabály
             </span>
           </div>
           {fv.megjegyzes && (
-            <p style={{ fontSize: 11, color: "#94A3B8", margin: "2px 0 0" }}>{fv.megjegyzes}</p>
+            <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 0" }}>{fv.megjegyzes}</p>
           )}
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
@@ -392,30 +392,30 @@ function FvSor({ fv, onUpdate, onDelete }) {
             {fv.aktiv ? "Inaktivál" : "Aktivál"}
           </button>
           <button onClick={() => setEditFv(true)}
-            style={{ padding: "5px 10px", border: "none", background: "#EFF6FF", color: "#2563EB", borderRadius: 7, cursor: "pointer", fontSize: 11, fontFamily: FONT }}>
+            style={{ padding: "5px 10px", border: "none", background: C.accentLight, color: C.accent, borderRadius: 7, cursor: "pointer", fontSize: 11, fontFamily: FONT }}>
             Szerkeszt
           </button>
           <button onClick={() => onDelete(fv.id)}
-            style={{ padding: "5px 8px", border: "none", background: "#FEF2F2", color: "#DC2626", borderRadius: 7, cursor: "pointer" }}>
+            style={{ padding: "5px 8px", border: "none", background: C.dangerLight, color: C.danger, borderRadius: 7, cursor: "pointer" }}>
             <Trash2 size={13} />
           </button>
         </div>
-        {open ? <ChevronUp size={16} color="#94A3B8" /> : <ChevronDown size={16} color="#94A3B8" />}
+        {open ? <ChevronUp size={16} color={C.muted} /> : <ChevronDown size={16} color={C.muted} />}
       </div>
 
       {/* FV szerkesztő */}
       {editFv && (
-        <div style={{ borderTop: "1px solid #F1F5F9", padding: "14px 18px", background: "#F8FAFC", display: "grid", gridTemplateColumns: "2fr 0.7fr 2fr", gap: 10 }}>
+        <div style={{ borderTop: "1px solid #F1F5F9", padding: "14px 18px", background: C.bg, display: "grid", gridTemplateColumns: "2fr 0.7fr 2fr", gap: 10 }}>
           <div>
-            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Név</label>
+            <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3 }}>Név</label>
             <input value={fvForm.nev} onChange={e => setFvForm(p => ({ ...p, nev: e.target.value }))} style={inp} />
           </div>
           <div>
-            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Rövidítés (max 4)</label>
+            <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3 }}>Rövidítés (max 4)</label>
             <input value={fvForm.rovidites} onChange={e => setFvForm(p => ({ ...p, rovidites: e.target.value.toUpperCase().slice(0, 4) }))} maxLength={4} style={inp} />
           </div>
           <div>
-            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Megjegyzés</label>
+            <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3 }}>Megjegyzés</label>
             <input value={fvForm.megjegyzes} onChange={e => setFvForm(p => ({ ...p, megjegyzes: e.target.value }))} style={inp} />
           </div>
           <div style={{ gridColumn: "span 3", display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -424,7 +424,7 @@ function FvSor({ fv, onUpdate, onDelete }) {
               Mégse
             </button>
             <button type="button" onClick={() => { onUpdate(fv.id, fvForm); setEditFv(false); }}
-              style={{ padding: "7px 14px", background: "#059669", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
+              style={{ padding: "7px 14px", background: C.success, color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
               Mentés
             </button>
           </div>
@@ -436,19 +436,19 @@ function FvSor({ fv, onUpdate, onDelete }) {
         <div style={{ borderTop: "1px solid #F1F5F9", padding: "14px 18px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>Elszámolási szabályok</span>
-              <span style={{ fontSize: 12, color: "#64748B", marginLeft: 6 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: C.textSub }}>Elszámolási szabályok</span>
+              <span style={{ fontSize: 12, color: C.muted, marginLeft: 6 }}>
                 ({szabalyok.length} db — egy szabály = egy munkatípus + egy elszámolási mód)
               </span>
             </div>
             <button onClick={() => setUjSz(true)}
-              style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: FONT }}>
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", background: C.accent, color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: FONT }}>
               <Plus size={12} /> Új szabály
             </button>
           </div>
 
           {szabalyok.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "20px 0", color: "#94A3B8" }}>
+            <div style={{ textAlign: "center", padding: "20px 0", color: C.muted }}>
               <p style={{ fontSize: 13, fontWeight: 600 }}>Még nincs szabály</p>
               <p style={{ fontSize: 12, marginTop: 4 }}>Add hozzá az „Új szabály" gombbal</p>
             </div>
@@ -465,7 +465,7 @@ function FvSor({ fv, onUpdate, onDelete }) {
           )}
 
           {/* Súgó */}
-          <div style={{ marginTop: 12, padding: "10px 14px", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 9, fontSize: 12, color: "#1E40AF" }}>
+          <div style={{ marginTop: 12, padding: "10px 14px", background: C.accentLight, border: "1px solid #BFDBFE", borderRadius: 9, fontSize: 12, color: "#1E40AF" }}>
             <strong>Több szabály is lehet ugyanahhoz a munkatípushoz</strong> – pl. egy sávos díj + egy fix kiszállási díj.
             Mindkettő összeadódik a projekt kalkulációban.
             Ha van pontos munkatípus egyezés, az általános szabályok nem lépnek életbe.
@@ -519,13 +519,13 @@ export default function FovallalkozoPage({ userRole }) {
           <h1 style={{ fontFamily: FONT_HEADING, fontSize: 22, fontWeight: 800, margin: "0 0 4px" }}>
             Fővállalkozók & Elszámolási szabályok
           </h1>
-          <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
+          <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
             Szabályalapú elszámolási motor – Fix, Darabszám×Ft, Sávos, Km, Fix kiszállás
           </p>
         </div>
         {isAdmin && (
           <button onClick={() => setUjOpen(true)}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: C.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
             <Plus size={15} /> Új fővállalkozó
           </button>
         )}
@@ -534,14 +534,14 @@ export default function FovallalkozoPage({ userRole }) {
       {/* Mód leírás */}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
         {ELSZAMOLASI_MODOK.map(m => (
-          <span key={m.id} style={{ fontSize: 11, background: "#F1F5F9", color: "#475569", padding: "4px 10px", borderRadius: 20, fontWeight: 600 }}>
+          <span key={m.id} style={{ fontSize: 11, background: C.bg, color: C.muted, padding: "4px 10px", borderRadius: 20, fontWeight: 600 }}>
             {m.label}
           </span>
         ))}
       </div>
 
       {fvk.length === 0 && !ujOpen && (
-        <div style={{ textAlign: "center", padding: "60px 0", color: "#94A3B8" }}>
+        <div style={{ textAlign: "center", padding: "60px 0", color: C.muted }}>
           <p style={{ fontSize: 15, fontWeight: 600 }}>Még nincs fővállalkozó</p>
           <p style={{ fontSize: 13, marginTop: 6 }}>Az „Új fővállalkozó" gombbal hozd létre az elsőt</p>
         </div>
@@ -560,15 +560,15 @@ export default function FovallalkozoPage({ userRole }) {
           <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Új fővállalkozó adatai</p>
           <div style={{ display: "grid", gridTemplateColumns: "2fr 0.7fr 2fr", gap: 10, marginBottom: 12 }}>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Név *</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3 }}>Név *</label>
               <input value={ujForm.nev} onChange={e => setUjForm(p => ({ ...p, nev: e.target.value }))} placeholder="pl. Green-Home Kft." style={inp} />
             </div>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Rövidítés</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3 }}>Rövidítés</label>
               <input value={ujForm.rovidites} onChange={e => setUjForm(p => ({ ...p, rovidites: e.target.value.toUpperCase().slice(0, 4) }))} maxLength={4} style={inp} />
             </div>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Megjegyzés</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3 }}>Megjegyzés</label>
               <input value={ujForm.megjegyzes} onChange={e => setUjForm(p => ({ ...p, megjegyzes: e.target.value }))} style={inp} />
             </div>
           </div>
@@ -578,7 +578,7 @@ export default function FovallalkozoPage({ userRole }) {
               Mégse
             </button>
             <button type="button" onClick={handleCreate} disabled={!ujForm.nev.trim()}
-              style={{ padding: "8px 18px", background: ujForm.nev.trim() ? "#2563EB" : "#CBD5E1", color: "#fff", border: "none", borderRadius: 8, cursor: ujForm.nev.trim() ? "pointer" : "default", fontWeight: 700, fontFamily: FONT }}>
+              style={{ padding: "8px 18px", background: ujForm.nev.trim() ? C.accent : C.border, color: "#fff", border: "none", borderRadius: 8, cursor: ujForm.nev.trim() ? "pointer" : "default", fontWeight: 700, fontFamily: FONT }}>
               Létrehozás
             </button>
           </div>

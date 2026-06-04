@@ -42,28 +42,28 @@ export default function TabDokumentumok({ projekt }) {
       {/* Drive mappa státusz kártya */}
       <div style={{
         background: "#fff",
-        border: `1.5px solid ${mappaAllapot === "kérve" ? "#86EFAC" : "#E2E8F0"}`,
+        border: `1.5px solid ${mappaAllapot === "kérve" ? C.success : C.border}`,
         borderRadius: 14, padding: "18px 20px", marginBottom: 20,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 10, background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <FolderOpen size={22} color="#2563EB" />
+          <div style={{ width: 42, height: 42, borderRadius: 10, background: C.accentLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <FolderOpen size={22} color={C.accent} />
           </div>
           <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 700, fontSize: 15, color: "#0F172A", margin: 0 }}>
+            <p style={{ fontWeight: 700, fontSize: 15, color: C.text, margin: 0 }}>
               Google Drive projekt mappa
             </p>
-            <p style={{ fontSize: 12, color: "#64748B", margin: "2px 0 0" }}>
+            <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>
               {projekt.projektkod}{projekt.clientNev ? ` – ${projekt.clientNev}` : ""}
             </p>
           </div>
           {mappaAllapot === "kérve" && (
-            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#16A34A", fontWeight: 700 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: C.success, fontWeight: 700 }}>
               <CheckCircle2 size={15} /> Létrehozva
             </div>
           )}
           {!mappaAllapot && (
-            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#94A3B8", fontWeight: 600 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: C.muted, fontWeight: 600 }}>
               <Clock size={14} /> Nincs mappa
             </div>
           )}
@@ -79,7 +79,7 @@ export default function TabDokumentumok({ projekt }) {
               style={{
                 display: "flex", alignItems: "center", gap: 6,
                 padding: "9px 14px", borderRadius: 9,
-                background: "#2563EB", color: "#fff",
+                background: C.accent, color: "#fff",
                 border: "none", textDecoration: "none",
                 fontWeight: 700, fontSize: 13, fontFamily: FONT,
               }}
@@ -94,7 +94,7 @@ export default function TabDokumentumok({ projekt }) {
             style={{
               display: "flex", alignItems: "center", gap: 6,
               padding: "9px 14px", borderRadius: 9,
-              background: "#F1F5F9", color: "#475569",
+              background: C.bg, color: C.muted,
               border: "1.5px solid #E2E8F0", textDecoration: "none",
               fontWeight: 600, fontSize: 13, fontFamily: FONT,
             }}
@@ -109,9 +109,9 @@ export default function TabDokumentumok({ projekt }) {
               style={{
                 display: "flex", alignItems: "center", gap: 6,
                 padding: "9px 14px", borderRadius: 9,
-                background: mappaAllapot ? "#F1F5F9" : "#ECFDF5",
-                color: mappaAllapot ? "#475569" : "#059669",
-                border: `1.5px solid ${mappaAllapot ? "#E2E8F0" : "#86EFAC"}`,
+                background: mappaAllapot ? C.bg : C.successLight,
+                color: mappaAllapot ? C.muted : C.success,
+                border: `1.5px solid ${mappaAllapot ? C.border : C.success}`,
                 cursor: loading ? "wait" : "pointer",
                 fontWeight: 600, fontSize: 13, fontFamily: FONT,
               }}
@@ -126,24 +126,24 @@ export default function TabDokumentumok({ projekt }) {
         </div>
 
         {feedback === "ok" && (
-          <p style={{ fontSize: 12, color: "#16A34A", fontWeight: 700, marginTop: 10 }}>
+          <p style={{ fontSize: 12, color: C.success, fontWeight: 700, marginTop: 10 }}>
             ✅ Mappa létrehozás elküldve! Pár másodperc múlva elérhető Drive-ban.
           </p>
         )}
         {feedback === "hiba" && (
-          <p style={{ fontSize: 12, color: "#DC2626", fontWeight: 700, marginTop: 10 }}>
+          <p style={{ fontSize: 12, color: C.danger, fontWeight: 700, marginTop: 10 }}>
             ⚠️ Hiba a Drive kapcsolatban. Ellenőrizd a VITE_APPS_SCRIPT_URL beállítást.
           </p>
         )}
         {!driveErheto && (
-          <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 10 }}>
+          <p style={{ fontSize: 12, color: C.muted, marginTop: 10 }}>
             Drive szinkron nincs beállítva (VITE_APPS_SCRIPT_URL hiányzik).
           </p>
         )}
       </div>
 
       {/* Mappastruktúra */}
-      <p style={{ fontSize: 12, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
         Mappastruktúra
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
@@ -155,8 +155,8 @@ export default function TabDokumentumok({ projekt }) {
           }}>
             <span style={{ fontSize: 22, lineHeight: 1, marginTop: 1 }}>{f.icon}</span>
             <div>
-              <p style={{ fontWeight: 700, fontSize: 13, color: "#0F172A", margin: 0 }}>{f.nev}</p>
-              <p style={{ fontSize: 11, color: "#64748B", margin: "3px 0 0", lineHeight: 1.5 }}>{f.leiras}</p>
+              <p style={{ fontWeight: 700, fontSize: 13, color: C.text, margin: 0 }}>{f.nev}</p>
+              <p style={{ fontSize: 11, color: C.muted, margin: "3px 0 0", lineHeight: 1.5 }}>{f.leiras}</p>
             </div>
           </div>
         ))}
@@ -166,7 +166,7 @@ export default function TabDokumentumok({ projekt }) {
       <div style={{
         background: "#F0F9FF", border: "1.5px solid #BAE6FD",
         borderRadius: 10, padding: "12px 16px",
-        fontSize: 12, color: "#0369A1", lineHeight: 1.7,
+        fontSize: 12, color: C.accent, lineHeight: 1.7,
       }}>
         <strong>💡 Hogyan működik:</strong><br />
         Új projekt mentésekor automatikusan létrejön a projekt mappa Drive-ban.<br />

@@ -16,8 +16,8 @@ import {
 import AddressSearch from "../../components/AddressSearch.jsx";
 
 const SZINEK = [
-  "#2563EB", "#059669", "#9333EA", "#EA580C",
-  "#0891B2", "#B45309", "#DC2626", "#475569",
+  C.accent, C.success, C.accent, "#EA580C",
+  "#0891B2", C.warning, C.danger, C.muted,
 ];
 
 const inp = {
@@ -33,7 +33,7 @@ function Toggle({ value, onChange, label }) {
         onClick={() => onChange(!value)}
         style={{
           width: 44, height: 24, borderRadius: 12, position: "relative", cursor: "pointer",
-          background: value ? "#2563EB" : "#CBD5E1", transition: "background .2s", flexShrink: 0,
+          background: value ? C.accent : C.border, transition: "background .2s", flexShrink: 0,
         }}
       >
         <div style={{
@@ -50,13 +50,13 @@ function TorlesModal({ csapat, onConfirm, onCancel }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div style={{ background: "#fff", borderRadius: 14, padding: 24, maxWidth: 380, width: "100%", fontFamily: FONT }}>
-        <h3 style={{ fontFamily: FONT_HEADING, fontSize: 16, fontWeight: 800, color: "#DC2626", margin: "0 0 10px" }}>Csapat törlése</h3>
-        <p style={{ fontSize: 14, color: "#475569", margin: "0 0 20px" }}>
+        <h3 style={{ fontFamily: FONT_HEADING, fontSize: 16, fontWeight: 800, color: C.danger, margin: "0 0 10px" }}>Csapat törlése</h3>
+        <p style={{ fontSize: 14, color: C.muted, margin: "0 0 20px" }}>
           Biztosan törlöd a <strong>"{csapat.nev}"</strong> csapatot? Ez nem vonható vissza.
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button onClick={onCancel} style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #E2E8F0", background: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>Mégse</button>
-          <button onClick={onConfirm} style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: "#DC2626", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>Törlés</button>
+          <button onClick={onConfirm} style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: C.danger, color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>Törlés</button>
         </div>
       </div>
     </div>
@@ -77,7 +77,7 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
     nev:      csapat?.nev      || "",
     tipus:    csapat?.tipus    || "sajat",
     telephely: csapat?.telephely || "",
-    szin:     csapat?.szin     || "#2563EB",
+    szin:     csapat?.szin     || C.accent,
     tagok:    csapat?.tagok    || [],
     tagNevek: csapat?.tagNevek || [],
     kapacitas: csapat?.kapacitas ?? 2,
@@ -133,23 +133,23 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
           <h2 style={{ fontFamily: FONT_HEADING, fontSize: 18, fontWeight: 800, margin: 0 }}>
             {isNew ? "Új csapat" : "Csapat szerkesztése"}
           </h2>
-          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: "#94A3B8" }}><X size={22} /></button>
+          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: C.muted }}><X size={22} /></button>
         </div>
 
         <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
           {hiba && (
-            <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 9, padding: "9px 12px", fontSize: 13, color: "#DC2626", fontWeight: 600 }}>{hiba}</div>
+            <div style={{ background: C.dangerLight, border: "1.5px solid #FECACA", borderRadius: 9, padding: "9px 12px", fontSize: 13, color: C.danger, fontWeight: 600 }}>{hiba}</div>
           )}
 
           {/* Csapat neve */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>Csapat neve *</label>
+            <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>Csapat neve *</label>
             <input value={form.nev} onChange={e => upd("nev", e.target.value)} placeholder="pl. Budapest Csapat A" style={{ ...inp, border: "2px solid #2563EB", fontWeight: 600 }} />
           </div>
 
           {/* Csapat típusa */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.7 }}>Csapat típusa</label>
+            <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.7 }}>Csapat típusa</label>
             <div style={{ display: "flex", gap: 8 }}>
               {CSAPAT_TIPUSOK.map(t => (
                 <button
@@ -159,9 +159,9 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
                   style={{
                     flex: 1, padding: "9px 12px", borderRadius: 9, cursor: "pointer", fontFamily: FONT,
                     fontSize: 13, fontWeight: 700, transition: "all .15s",
-                    background: form.tipus === t.id ? (t.id === "sajat" ? "#EFF6FF" : "#FFF7ED") : "#F8FAFC",
-                    color:      form.tipus === t.id ? (t.id === "sajat" ? "#1D4ED8" : "#C2410C") : "#64748B",
-                    border: `2px solid ${form.tipus === t.id ? (t.id === "sajat" ? "#BFDBFE" : "#FED7AA") : "#E2E8F0"}`,
+                    background: form.tipus === t.id ? (t.id === "sajat" ? C.accentLight : C.warningLight) : C.bg,
+                    color:      form.tipus === t.id ? (t.id === "sajat" ? C.accent : "#C2410C") : C.muted,
+                    border: `2px solid ${form.tipus === t.id ? (t.id === "sajat" ? C.accentLight : "#FED7AA") : C.border}`,
                   }}
                 >
                   {t.id === "sajat" ? "🏢 " : "🤝 "}{t.label}
@@ -172,7 +172,7 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
 
           {/* Telephely */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>Indulási telephely *</label>
+            <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>Indulási telephely *</label>
             <AddressSearch
               value={form.telephely}
               onChange={v => upd("telephely", v)}
@@ -184,11 +184,11 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px" }}>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>Napi kapacitás (db munka)</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>Napi kapacitás (db munka)</label>
               <input type="number" min="1" max="20" value={form.kapacitas} onChange={e => upd("kapacitas", Number(e.target.value))} style={inp} />
             </div>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>Csapat színe</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>Csapat színe</label>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingTop: 4 }}>
                 {SZINEK.map(sz => (
                   <div key={sz} onClick={() => upd("szin", sz)} style={{
@@ -205,13 +205,13 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
 
           {/* CRM felhasználók hozzárendelése */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.7 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.7 }}>
               CRM felhasználók ({form.tagok.length} kiválasztva)
             </label>
-            <p style={{ fontSize: 11, color: "#94A3B8", margin: "0 0 6px" }}>Opcionális: CRM-es felhasználók hozzákapcsolása. A tényleges csapattagokat a Csapat kártyán a "Tagok" panelben kezeld.</p>
+            <p style={{ fontSize: 11, color: C.muted, margin: "0 0 6px" }}>Opcionális: CRM-es felhasználók hozzákapcsolása. A tényleges csapattagokat a Csapat kártyán a "Tagok" panelben kezeld.</p>
             <div style={{ border: "1.5px solid #E2E8F0", borderRadius: 10, overflow: "hidden" }}>
               {allUsers.length === 0 ? (
-                <p style={{ padding: 14, fontSize: 13, color: "#94A3B8", margin: 0 }}>Nincs elérhető felhasználó</p>
+                <p style={{ padding: 14, fontSize: 13, color: C.muted, margin: 0 }}>Nincs elérhető felhasználó</p>
               ) : (
                 allUsers.map(u => {
                   const selected = form.tagok.includes(u.id);
@@ -222,20 +222,20 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
                       style={{
                         display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
                         cursor: "pointer", borderBottom: "1px solid #F1F5F9",
-                        background: selected ? "#EFF6FF" : "#fff", transition: "background .1s",
+                        background: selected ? C.accentLight : "#fff", transition: "background .1s",
                       }}
                     >
                       <div style={{
                         width: 18, height: 18, borderRadius: 5, flexShrink: 0,
-                        background: selected ? "#2563EB" : "#fff",
-                        border: `2px solid ${selected ? "#2563EB" : "#CBD5E1"}`,
+                        background: selected ? C.accent : "#fff",
+                        border: `2px solid ${selected ? C.accent : C.border}`,
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}>
                         {selected && <span style={{ color: "#fff", fontSize: 11, fontWeight: 700 }}>✓</span>}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: "#0F172A" }}>{u.name}</p>
-                        <p style={{ margin: 0, fontSize: 11, color: "#64748B" }}>{u.role}</p>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: C.text }}>{u.name}</p>
+                        <p style={{ margin: 0, fontSize: 11, color: C.muted }}>{u.role}</p>
                       </div>
                     </div>
                   );
@@ -248,15 +248,15 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
           <div style={{ borderTop: "2px solid #E2E8F0", paddingTop: 16, marginTop: 4 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <DollarSign size={16} color={form.elszamolasAktiv ? "#059669" : "#94A3B8"} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7 }}>
+                <DollarSign size={16} color={form.elszamolasAktiv ? C.success : C.muted} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7 }}>
                   Alvállalkozói elszámolás
                 </span>
               </div>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <div onClick={() => upd("elszamolasAktiv", !form.elszamolasAktiv)}
                   style={{ width: 40, height: 22, borderRadius: 11, position: "relative", cursor: "pointer",
-                    background: form.elszamolasAktiv ? "#059669" : "#CBD5E1", transition: "background .2s", flexShrink: 0 }}>
+                    background: form.elszamolasAktiv ? C.success : C.border, transition: "background .2s", flexShrink: 0 }}>
                   <div style={{ position: "absolute", top: 2, left: form.elszamolasAktiv ? 20 : 2, width: 18, height: 18,
                     borderRadius: "50%", background: "#fff", transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
                 </div>
@@ -267,17 +267,17 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
             </div>
 
             {form.elszamolasAktiv && (
-              <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ background: C.successLight, border: "1px solid #86EFAC", borderRadius: 10, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
-                    <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>Elszámolás típusa</label>
+                    <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>Elszámolás típusa</label>
                     <select value={form.dijTipus} onChange={e => upd("dijTipus", e.target.value)}
                       style={{ ...inp, background: "#fff" }}>
                       {CSAPAT_ELSZAMOLAS_TIPUSOK.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>
+                    <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>
                       {form.dijTipus === "%" ? "Mérték (%)" : form.dijTipus === "darab" ? "Egységár (Ft/db)" : "Összeg (Ft)"}
                     </label>
                     <input type="number" min="0"
@@ -287,18 +287,18 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
                   </div>
                 </div>
                 <div>
-                  <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>Megjegyzés</label>
+                  <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>Megjegyzés</label>
                   <input value={form.elszamolasInfo} onChange={e => upd("elszamolasInfo", e.target.value)}
                     placeholder="pl. Szóbeli megállapodás, 2026.01.01-től érvényes"
                     style={{ ...inp, background: "#fff" }} />
                 </div>
                 <div style={{ borderTop: "1px solid #BBF7D0", paddingTop: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#166534" }}>🚗 Km elszámolás (alvállalkozói oldal)</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: C.success }}>🚗 Km elszámolás (alvállalkozói oldal)</span>
                     <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                       <div onClick={() => upd("kmElszamolasAktiv", !form.kmElszamolasAktiv)}
                         style={{ width: 34, height: 18, borderRadius: 9, position: "relative", cursor: "pointer",
-                          background: form.kmElszamolasAktiv ? "#059669" : "#CBD5E1", transition: "background .2s" }}>
+                          background: form.kmElszamolasAktiv ? C.success : C.border, transition: "background .2s" }}>
                         <div style={{ position: "absolute", top: 1, left: form.kmElszamolasAktiv ? 17 : 1, width: 16, height: 16,
                           borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
                       </div>
@@ -308,13 +308,13 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
                   {form.kmElszamolasAktiv && (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                       <div>
-                        <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Ft/km díj</label>
+                        <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3 }}>Ft/km díj</label>
                         <input type="number" min="0" value={form.kmDijFtKm}
                           onChange={e => upd("kmDijFtKm", Number(e.target.value))}
                           placeholder="pl. 150" style={{ ...inp, background: "#fff" }} />
                       </div>
                       <div>
-                        <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3 }}>Küszöb (km) – ez alatt 0 Ft</label>
+                        <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3 }}>Küszöb (km) – ez alatt 0 Ft</label>
                         <input type="number" min="0" value={form.kmKuszobKm}
                           onChange={e => upd("kmKuszobKm", Number(e.target.value))}
                           placeholder="pl. 50" style={{ ...inp, background: "#fff" }} />
@@ -329,7 +329,7 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
 
         <div style={{ padding: "14px 24px", borderTop: "1px solid #E2E8F0", display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button onClick={onClose} style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #E2E8F0", background: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>Mégse</button>
-          <button onClick={handleSave} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 22px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
+          <button onClick={handleSave} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 22px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
             <Save size={15} />{isNew ? "Csapat létrehozása" : "Mentés"}
           </button>
         </div>
@@ -366,19 +366,19 @@ function CsapatTagForm({ tag, csapatId, onSave, onClose }) {
           <h3 style={{ fontFamily: FONT_HEADING, fontSize: 15, fontWeight: 800, margin: 0 }}>
             {isNew ? "Új csapattag" : "Tag szerkesztése"}
           </h3>
-          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: "#94A3B8" }}><X size={15}/></button>
+          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: C.muted }}><X size={15}/></button>
         </div>
 
-        {hiba && <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 7, padding: "7px 10px", fontSize: 12, color: "#DC2626", marginBottom: 10 }}>{hiba}</div>}
+        {hiba && <div style={{ background: C.dangerLight, border: "1px solid #FECACA", borderRadius: 7, padding: "7px 10px", fontSize: 12, color: C.danger, marginBottom: 10 }}>{hiba}</div>}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div>
-            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Teljes név *</label>
+            <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Teljes név *</label>
             <input value={f.nev} onChange={e => u("nev", e.target.value)} placeholder="pl. Kovács Béla" style={inpF} />
           </div>
 
           <div>
-            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Szerepkör</label>
+            <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Szerepkör</label>
             <select value={f.szerep} onChange={e => u("szerep", e.target.value)} style={inpF}>
               {CSAPAT_TAG_SZEREPEK.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -386,20 +386,20 @@ function CsapatTagForm({ tag, csapatId, onSave, onClose }) {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Napi bér (Ft/nap)</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Napi bér (Ft/nap)</label>
               <input type="number" min="0" value={f.napiBer} onChange={e => u("napiBer", Number(e.target.value))} placeholder="0" style={inpF} />
             </div>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Óradíj (Ft/h)</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Óradíj (Ft/h)</label>
               <input type="number" min="0" value={f.oradij} onChange={e => u("oradij", Number(e.target.value))} placeholder="0" style={inpF} />
-              <p style={{ fontSize: 10, color: "#94A3B8", margin: "3px 0 0" }}>Ha napi bér is van, az az elsődleges</p>
+              <p style={{ fontSize: 10, color: C.muted, margin: "3px 0 0" }}>Ha napi bér is van, az az elsődleges</p>
             </div>
           </div>
 
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
             <div onClick={() => u("aktiv", !f.aktiv)}
               style={{ width: 36, height: 20, borderRadius: 10, position: "relative", cursor: "pointer",
-                background: f.aktiv ? "#059669" : "#CBD5E1", transition: "background .2s", flexShrink: 0 }}>
+                background: f.aktiv ? C.success : C.border, transition: "background .2s", flexShrink: 0 }}>
               <div style={{ position: "absolute", top: 2, left: f.aktiv ? 18 : 2, width: 16, height: 16,
                 borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
             </div>
@@ -409,7 +409,7 @@ function CsapatTagForm({ tag, csapatId, onSave, onClose }) {
 
         <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
           <button onClick={onClose} style={{ padding: "7px 14px", border: "1.5px solid #E2E8F0", borderRadius: 7, background: "#fff", cursor: "pointer", fontFamily: FONT }}>Mégse</button>
-          <button onClick={handleSave} style={{ padding: "7px 18px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
+          <button onClick={handleSave} style={{ padding: "7px 18px", background: C.accent, color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
             {isNew ? "Hozzáadás" : "Mentés"}
           </button>
         </div>
@@ -440,51 +440,51 @@ function CsapatTagPanel({ csapatId }) {
   return (
     <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #F1F5F9" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: .7, margin: 0, display: "flex", alignItems: "center", gap: 5 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .7, margin: 0, display: "flex", alignItems: "center", gap: 5 }}>
           <UserCheck size={12} /> Csapattagok ({tagok.length} db)
         </p>
         <button onClick={() => setUjForm(true)}
-          style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "#059669", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: FONT }}>
+          style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: C.success, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: FONT }}>
           <Plus size={10}/> Új tag
         </button>
       </div>
 
       {tagok.length === 0 ? (
-        <p style={{ fontSize: 12, color: "#94A3B8", fontStyle: "italic", margin: "4px 0 8px" }}>
+        <p style={{ fontSize: 12, color: C.muted, fontStyle: "italic", margin: "4px 0 8px" }}>
           Még nincs csapattag rögzítve. Add hozzá a dolgozókat a jelenléti és LMRA rendszerhez.
         </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {tagok.map(tag => (
             <div key={tag.id} style={{
-              background: "#F8FAFC", border: "1px solid #E2E8F0",
+              background: C.bg, border: "1px solid #E2E8F0",
               borderRadius: 8, padding: "8px 12px",
               display: "flex", alignItems: "center", gap: 8,
               opacity: tag.aktiv === false ? .55 : 1,
             }}>
               <div style={{
-                width: 30, height: 30, borderRadius: "50%", background: "#DBEAFE",
+                width: 30, height: 30, borderRadius: "50%", background: C.accentLight,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 12, fontWeight: 800, color: "#2563EB", flexShrink: 0,
+                fontSize: 12, fontWeight: 800, color: C.accent, flexShrink: 0,
               }}>
                 {(tag.nev || "?").charAt(0).toUpperCase()}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: "#0F172A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tag.nev}</p>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tag.nev}</p>
                 <div style={{ display: "flex", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 10, background: "#EFF6FF", color: "#2563EB", padding: "1px 6px", borderRadius: 20, fontWeight: 600 }}>{tag.szerep || "—"}</span>
-                  {tag.napiBer > 0 && <span style={{ fontSize: 10, color: "#059669", fontWeight: 600 }}>{Number(tag.napiBer).toLocaleString("hu-HU")} Ft/nap</span>}
-                  {tag.oradij > 0 && !tag.napiBer && <span style={{ fontSize: 10, color: "#059669", fontWeight: 600 }}>{Number(tag.oradij).toLocaleString("hu-HU")} Ft/h</span>}
-                  {tag.aktiv === false && <span style={{ fontSize: 10, color: "#94A3B8" }}>Inaktív</span>}
+                  <span style={{ fontSize: 10, background: C.accentLight, color: C.accent, padding: "1px 6px", borderRadius: 20, fontWeight: 600 }}>{tag.szerep || "—"}</span>
+                  {tag.napiBer > 0 && <span style={{ fontSize: 10, color: C.success, fontWeight: 600 }}>{Number(tag.napiBer).toLocaleString("hu-HU")} Ft/nap</span>}
+                  {tag.oradij > 0 && !tag.napiBer && <span style={{ fontSize: 10, color: C.success, fontWeight: 600 }}>{Number(tag.oradij).toLocaleString("hu-HU")} Ft/h</span>}
+                  {tag.aktiv === false && <span style={{ fontSize: 10, color: C.muted }}>Inaktív</span>}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
                 <button onClick={() => { updateCsapatTag(tag.id, { aktiv: !tag.aktiv }); refresh(); }}
-                  style={{ padding: "3px 7px", background: tag.aktiv !== false ? "#FFFBEB" : "#ECFDF5", color: tag.aktiv !== false ? "#D97706" : "#059669", border: "none", borderRadius: 5, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>
+                  style={{ padding: "3px 7px", background: tag.aktiv !== false ? C.warningLight : C.successLight, color: tag.aktiv !== false ? C.warning : C.success, border: "none", borderRadius: 5, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>
                   {tag.aktiv !== false ? "Inakt." : "Aktív"}
                 </button>
-                <button onClick={() => setSzerk(tag)} style={{ padding: "3px 6px", background: "#EFF6FF", color: "#2563EB", border: "none", borderRadius: 5, cursor: "pointer" }}><Pencil size={10}/></button>
-                <button onClick={() => { if (window.confirm(`Törlöd: ${tag.nev}?`)) { deleteCsapatTag(tag.id); refresh(); } }} style={{ padding: "3px 5px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 5, cursor: "pointer" }}><Trash2 size={10}/></button>
+                <button onClick={() => setSzerk(tag)} style={{ padding: "3px 6px", background: C.accentLight, color: C.accent, border: "none", borderRadius: 5, cursor: "pointer" }}><Pencil size={10}/></button>
+                <button onClick={() => { if (window.confirm(`Törlöd: ${tag.nev}?`)) { deleteCsapatTag(tag.id); refresh(); } }} style={{ padding: "3px 5px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 5, cursor: "pointer" }}><Trash2 size={10}/></button>
               </div>
             </div>
           ))}
@@ -518,24 +518,24 @@ function AvSavokSzerkeszto({ savok, onChange }) {
     <div>
       {savok.map((sav, i) => (
         <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
-          <span style={{ fontSize: 10, color: "#94A3B8", minWidth: 16 }}>{i + 1}.</span>
+          <span style={{ fontSize: 10, color: C.muted, minWidth: 16 }}>{i + 1}.</span>
           <input type="number" value={sav.tol} onChange={e => updSav(i, "tol", e.target.value)}
             placeholder="tól" style={{ ...inpS, width: 65, textAlign: "center" }} />
-          <span style={{ fontSize: 10, color: "#94A3B8" }}>–</span>
+          <span style={{ fontSize: 10, color: C.muted }}>–</span>
           <input type="number" value={sav.ig} onChange={e => updSav(i, "ig", e.target.value)}
             placeholder="ig(∞)" style={{ ...inpS, width: 75, textAlign: "center" }} />
-          <span style={{ fontSize: 10, color: "#94A3B8" }}>db =</span>
+          <span style={{ fontSize: 10, color: C.muted }}>db =</span>
           <input type="number" value={sav.osszeg} onChange={e => updSav(i, "osszeg", e.target.value)}
             placeholder="Ft" style={{ ...inpS, flex: 1, textAlign: "right" }} />
-          <span style={{ fontSize: 10, color: "#94A3B8" }}>Ft</span>
+          <span style={{ fontSize: 10, color: C.muted }}>Ft</span>
           <button onClick={() => removeSav(i)}
-            style={{ padding: "3px 5px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 5, cursor: "pointer" }}>
+            style={{ padding: "3px 5px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 5, cursor: "pointer" }}>
             <X size={10} />
           </button>
         </div>
       ))}
       <button onClick={addSav}
-        style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", border: "1.5px dashed #CBD5E1", borderRadius: 6, background: "#F8FAFC", cursor: "pointer", fontSize: 11, color: "#475569", fontFamily: FONT, marginTop: 4 }}>
+        style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", border: "1.5px dashed #CBD5E1", borderRadius: 6, background: C.bg, cursor: "pointer", fontSize: 11, color: C.muted, fontFamily: FONT, marginTop: 4 }}>
         <Plus size={10} /> Új sáv
       </button>
     </div>
@@ -574,66 +574,66 @@ function AvSzabalyForm({ szabaly, csapatId, onSave, onClose }) {
           <h3 style={{ fontFamily: FONT_HEADING, fontSize: 15, fontWeight: 800, margin: 0 }}>
             {isNew ? "Új AV szabály" : "Szabály szerkesztése"}
           </h3>
-          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: "#94A3B8" }}><X size={15}/></button>
+          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: C.muted }}><X size={15}/></button>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 12px" }}>
           <div style={{ gridColumn: "span 2" }}>
-            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Munkatípus</label>
+            <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Munkatípus</label>
             <select value={f.munkatipus} onChange={e => u("munkatipus", e.target.value)} style={inpF}>
               <option value="">— Minden munkatípusra (általános) —</option>
               {ELSZAMOLASI_MUNKATIPUSOK.map(mt => <option key={mt} value={mt}>{mt}</option>)}
             </select>
           </div>
           <div style={{ gridColumn: "span 2" }}>
-            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Elszámolási mód</label>
+            <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Elszámolási mód</label>
             <select value={f.mod} onChange={e => u("mod", e.target.value)} style={{ ...inpF, fontWeight: 600 }}>
               {ELSZAMOLASI_MODOK.map(m => <option key={m.id} value={m.id}>{m.label} – {m.hint}</option>)}
             </select>
           </div>
           {f.mod === "fix" && (
             <div style={{ gridColumn: "span 2" }}>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Fix összeg (Ft)</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Fix összeg (Ft)</label>
               <input type="number" min={0} value={f.fixOsszeg} onChange={e => u("fixOsszeg", Number(e.target.value))} style={inpF}/>
             </div>
           )}
           {f.mod === "darab" && (
             <div style={{ gridColumn: "span 2" }}>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Egységár (Ft/db)</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Egységár (Ft/db)</label>
               <input type="number" min={0} value={f.darabEgysegAr} onChange={e => u("darabEgysegAr", Number(e.target.value))} style={inpF}/>
             </div>
           )}
           {f.mod === "km" && (<>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Ft/km díj</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Ft/km díj</label>
               <input type="number" min={0} value={f.kmDijFtKm} onChange={e => u("kmDijFtKm", Number(e.target.value))} style={inpF}/>
             </div>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Küszöb km</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Küszöb km</label>
               <input type="number" min={0} value={f.kmKuszobKm} onChange={e => u("kmKuszobKm", Number(e.target.value))} placeholder="0" style={inpF}/>
             </div>
           </>)}
           {f.mod === "fix_kiszallas" && (
             <div style={{ gridColumn: "span 2" }}>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Fix kiszállási díj (Ft)</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Fix kiszállási díj (Ft)</label>
               <input type="number" min={0} value={f.kiszallasiDij} onChange={e => u("kiszallasiDij", Number(e.target.value))} style={inpF}/>
             </div>
           )}
           {f.mod === "savos" && (
             <div style={{ gridColumn: "span 2" }}>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Sávos díjazás</label>
-              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 8, padding: "10px 12px" }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Sávos díjazás</label>
+              <div style={{ background: C.bg, border: "1px solid #E2E8F0", borderRadius: 8, padding: "10px 12px" }}>
                 <AvSavokSzerkeszto savok={f.savok} onChange={v => u("savok", v)} />
               </div>
             </div>
           )}
           <div style={{ gridColumn: "span 2" }}>
-            <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Megjegyzés</label>
+            <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Megjegyzés</label>
             <input value={f.megjegyzes} onChange={e => u("megjegyzes", e.target.value)} placeholder="opcionális" style={inpF}/>
           </div>
         </div>
 
-        <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 9, padding: "10px 12px", marginTop: 12 }}>
+        <div style={{ background: C.successLight, border: "1px solid #86EFAC", borderRadius: 9, padding: "10px 12px", marginTop: 12 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: "#065F46", margin: "0 0 7px", display: "flex", alignItems: "center", gap: 4 }}>
             <Calculator size={12}/> Tesztelő
           </p>
@@ -650,7 +650,7 @@ function AvSzabalyForm({ szabaly, csapatId, onSave, onClose }) {
                   style={{ width: 65, padding: "4px 7px", border: "1.5px solid #BBF7D0", borderRadius: 6, fontSize: 12, fontFamily: FONT }}/>
               </label>
             )}
-            <span style={{ fontSize: 15, fontWeight: 800, color: eredmeny > 0 ? "#059669" : "#94A3B8" }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: eredmeny > 0 ? C.success : C.muted }}>
               = {ft(eredmeny)}
             </span>
           </div>
@@ -658,7 +658,7 @@ function AvSzabalyForm({ szabaly, csapatId, onSave, onClose }) {
 
         <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
           <button onClick={onClose} style={{ padding: "7px 14px", border: "1.5px solid #E2E8F0", borderRadius: 7, background: "#fff", cursor: "pointer", fontFamily: FONT }}>Mégse</button>
-          <button onClick={() => onSave(f)} style={{ padding: "7px 18px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
+          <button onClick={() => onSave(f)} style={{ padding: "7px 18px", background: C.accent, color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
             {isNew ? "Létrehozás" : "Mentés"}
           </button>
         </div>
@@ -683,35 +683,35 @@ function AvSzabalyPanel({ csapatId }) {
   return (
     <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #F1F5F9" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: .7, margin: 0 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .7, margin: 0 }}>
           Elszámolási szabályok ({szabalyok.length} db)
         </p>
         <button onClick={() => setUjForm(true)}
-          style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "#7C3AED", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: FONT }}>
+          style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: C.accent, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: FONT }}>
           <Plus size={10}/> Új szabály
         </button>
       </div>
 
       {szabalyok.length === 0 ? (
-        <p style={{ fontSize: 12, color: "#94A3B8", fontStyle: "italic", margin: "4px 0" }}>
+        <p style={{ fontSize: 12, color: C.muted, fontStyle: "italic", margin: "4px 0" }}>
           Még nincs alvállalkozói szabály
         </p>
       ) : (
         szabalyok.map(sz => {
           const modInfo = ELSZAMOLASI_MODOK.find(m => m.id === sz.mod);
           return (
-            <div key={sz.id} style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderLeft: "3px solid #7C3AED", borderRadius: 8, padding: "8px 12px", marginBottom: 5, display: "flex", alignItems: "flex-start", gap: 8, opacity: sz.aktiv === false ? .6 : 1 }}>
+            <div key={sz.id} style={{ background: C.bg, border: "1px solid #E2E8F0", borderLeft: "3px solid #7C3AED", borderRadius: 8, padding: "8px 12px", marginBottom: 5, display: "flex", alignItems: "flex-start", gap: 8, opacity: sz.aktiv === false ? .6 : 1 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 2, flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 700, fontSize: 12, color: "#0F172A" }}>{sz.munkatipus || "Általános"}</span>
-                  <span style={{ fontSize: 10, background: "#F3E8FF", color: "#7C3AED", padding: "1px 7px", borderRadius: 20, fontWeight: 700 }}>{modInfo?.label || sz.mod}</span>
-                  {sz.aktiv === false && <span style={{ fontSize: 10, color: "#94A3B8" }}>Inaktív</span>}
+                  <span style={{ fontWeight: 700, fontSize: 12, color: C.text }}>{sz.munkatipus || "Általános"}</span>
+                  <span style={{ fontSize: 10, background: "#F3E8FF", color: C.accent, padding: "1px 7px", borderRadius: 20, fontWeight: 700 }}>{modInfo?.label || sz.mod}</span>
+                  {sz.aktiv === false && <span style={{ fontSize: 10, color: C.muted }}>Inaktív</span>}
                 </div>
-                <div style={{ fontSize: 11, color: "#059669", fontWeight: 600 }}>{szabalyLeiras(sz)}</div>
+                <div style={{ fontSize: 11, color: C.success, fontWeight: 600 }}>{szabalyLeiras(sz)}</div>
                 {sz.mod === "savos" && (sz.savok || []).length > 0 && (
                   <div style={{ marginTop: 4, display: "flex", gap: 3, flexWrap: "wrap" }}>
                     {(sz.savok || []).map((s, i) => (
-                      <span key={i} style={{ fontSize: 10, background: "#EDE9FE", color: "#6D28D9", padding: "1px 6px", borderRadius: 20 }}>
+                      <span key={i} style={{ fontSize: 10, background: C.accentLight, color: "#6D28D9", padding: "1px 6px", borderRadius: 20 }}>
                         {s.tol}–{s.ig || "∞"}: {Number(s.osszeg || 0).toLocaleString("hu-HU")} Ft
                       </span>
                     ))}
@@ -720,11 +720,11 @@ function AvSzabalyPanel({ csapatId }) {
               </div>
               <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
                 <button onClick={() => { updateAvSzabaly(sz.id, { aktiv: !sz.aktiv }); refresh(); }}
-                  style={{ padding: "3px 7px", background: sz.aktiv !== false ? "#FFFBEB" : "#ECFDF5", color: sz.aktiv !== false ? "#D97706" : "#059669", border: "none", borderRadius: 5, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>
+                  style={{ padding: "3px 7px", background: sz.aktiv !== false ? C.warningLight : C.successLight, color: sz.aktiv !== false ? C.warning : C.success, border: "none", borderRadius: 5, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>
                   {sz.aktiv !== false ? "Inakt." : "Aktív"}
                 </button>
-                <button onClick={() => setSzerkSz(sz)} style={{ padding: "3px 6px", background: "#EFF6FF", color: "#2563EB", border: "none", borderRadius: 5, cursor: "pointer" }}><Pencil size={10}/></button>
-                <button onClick={() => { if (window.confirm("Törlöd?")) { deleteAvSzabaly(sz.id); refresh(); } }} style={{ padding: "3px 5px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 5, cursor: "pointer" }}><Trash2 size={10}/></button>
+                <button onClick={() => setSzerkSz(sz)} style={{ padding: "3px 6px", background: C.accentLight, color: C.accent, border: "none", borderRadius: 5, cursor: "pointer" }}><Pencil size={10}/></button>
+                <button onClick={() => { if (window.confirm("Törlöd?")) { deleteAvSzabaly(sz.id); refresh(); } }} style={{ padding: "3px 5px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 5, cursor: "pointer" }}><Trash2 size={10}/></button>
               </div>
             </div>
           );
@@ -746,41 +746,41 @@ function AvSzabalyPanel({ csapatId }) {
 function CsapatKartya({ csapat, onEdit, onDelete }) {
   const [expanded, setExpanded] = useState(false);
   const tipusInfo = csapat.tipus === "alvallalkozo"
-    ? { label: "Alvállalkozó", bg: "#FFF7ED", color: "#C2410C", border: "#FED7AA" }
-    : { label: "Saját csapat", bg: "#EFF6FF", color: "#1D4ED8", border: "#BFDBFE" };
+    ? { label: "Alvállalkozó", bg: C.warningLight, color: "#C2410C", border: "#FED7AA" }
+    : { label: "Saját csapat", bg: C.accentLight, color: C.accent, border: C.accentLight };
 
   const tagok = getCsapatTagok(csapat.id);
 
   return (
     <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
-      <div style={{ borderLeft: `4px solid ${csapat.szin || "#2563EB"}`, padding: "16px 20px" }}>
+      <div style={{ borderLeft: `4px solid ${csapat.szin || C.accent}`, padding: "16px 20px" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
-              <div style={{ width: 12, height: 12, borderRadius: "50%", background: csapat.szin || "#2563EB", flexShrink: 0 }} />
-              <h3 style={{ fontFamily: FONT_HEADING, fontSize: 16, fontWeight: 800, color: "#0F172A", margin: 0 }}>{csapat.nev}</h3>
+              <div style={{ width: 12, height: 12, borderRadius: "50%", background: csapat.szin || C.accent, flexShrink: 0 }} />
+              <h3 style={{ fontFamily: FONT_HEADING, fontSize: 16, fontWeight: 800, color: C.text, margin: 0 }}>{csapat.nev}</h3>
               <span style={{ fontSize: 10, fontWeight: 700, background: tipusInfo.bg, color: tipusInfo.color, border: `1px solid ${tipusInfo.border}`, borderRadius: 20, padding: "2px 8px" }}>
                 {tipusInfo.label}
               </span>
               {!csapat.aktiv && (
-                <span style={{ fontSize: 10, fontWeight: 700, background: "#F1F5F9", color: "#64748B", borderRadius: 20, padding: "2px 8px" }}>Inaktív</span>
+                <span style={{ fontSize: 10, fontWeight: 700, background: C.bg, color: C.muted, borderRadius: 20, padding: "2px 8px" }}>Inaktív</span>
               )}
             </div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#64748B" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: C.muted }}>
                 <MapPin size={12} />{csapat.telephely || "—"}
               </span>
-              <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#64748B" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: C.muted }}>
                 <Users size={12} />{tagok.filter(t => t.aktiv !== false).length} tag
               </span>
-              <span style={{ fontSize: 12, color: "#64748B" }}>
+              <span style={{ fontSize: 12, color: C.muted }}>
                 Kapacitás: <strong>{csapat.kapacitas || 2} munka/nap</strong>
               </span>
               {csapat.hetvegen && (
-                <span style={{ fontSize: 11, fontWeight: 700, background: "#EFF6FF", color: "#2563EB", borderRadius: 20, padding: "2px 8px" }}>Hétvégén is</span>
+                <span style={{ fontSize: 11, fontWeight: 700, background: C.accentLight, color: C.accent, borderRadius: 20, padding: "2px 8px" }}>Hétvégén is</span>
               )}
               {csapat.elszamolasAktiv && (
-                <span style={{ fontSize: 11, fontWeight: 700, background: "#ECFDF5", color: "#059669", borderRadius: 20, padding: "2px 8px" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, background: C.successLight, color: C.success, borderRadius: 20, padding: "2px 8px" }}>
                   💰 Alvállalkozói díj
                 </span>
               )}
@@ -790,14 +790,14 @@ function CsapatKartya({ csapat, onEdit, onDelete }) {
           <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
             <button
               onClick={() => setExpanded(e => !e)}
-              style={{ padding: "6px 10px", borderRadius: 8, border: "1.5px solid #E2E8F0", background: expanded ? "#EFF6FF" : "#fff", cursor: "pointer", fontSize: 12, fontFamily: FONT, display: "flex", alignItems: "center", gap: 4, color: expanded ? "#2563EB" : "#64748B" }}
+              style={{ padding: "6px 10px", borderRadius: 8, border: "1.5px solid #E2E8F0", background: expanded ? C.accentLight : "#fff", cursor: "pointer", fontSize: 12, fontFamily: FONT, display: "flex", alignItems: "center", gap: 4, color: expanded ? C.accent : C.muted }}
             >
               Tagok & Szabályok <ChevronDown size={13} style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
             </button>
-            <button onClick={() => onEdit(csapat)} style={{ padding: "7px 12px", borderRadius: 8, border: "1.5px solid #E2E8F0", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontFamily: FONT, color: "#475569" }}>
+            <button onClick={() => onEdit(csapat)} style={{ padding: "7px 12px", borderRadius: 8, border: "1.5px solid #E2E8F0", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontFamily: FONT, color: C.muted }}>
               <Pencil size={13} /> Szerkesztés
             </button>
-            <button onClick={() => onDelete(csapat)} style={{ padding: "7px 10px", borderRadius: 8, border: "none", background: "#FEF2F2", cursor: "pointer", display: "flex", alignItems: "center", color: "#DC2626" }}>
+            <button onClick={() => onDelete(csapat)} style={{ padding: "7px 10px", borderRadius: 8, border: "none", background: C.dangerLight, cursor: "pointer", display: "flex", alignItems: "center", color: C.danger }}>
               <Trash2 size={14} />
             </button>
           </div>
@@ -839,17 +839,17 @@ export default function CsapatokPage({ currentUser }) {
     <div style={{ padding: "24px 28px", fontFamily: FONT }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: "#0F172A", margin: "0 0 4px" }}>
+          <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>
             👷 Csapatok
           </h1>
-          <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
+          <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
             {csapatok.length} csapat · {aktiv} aktív · {sajat} saját · {alv} alvállalkozó
           </p>
         </div>
         {isAdmin && (
           <button
             onClick={handleNew}
-            style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: C.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}
           >
             <Plus size={15} /> Új csapat
           </button>
@@ -858,11 +858,11 @@ export default function CsapatokPage({ currentUser }) {
 
       {csapatok.length === 0 ? (
         <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", padding: "60px 24px", textAlign: "center" }}>
-          <Users size={40} color="#CBD5E1" style={{ marginBottom: 12 }} />
-          <p style={{ fontSize: 15, fontWeight: 700, color: "#94A3B8", margin: "0 0 6px" }}>Még nincsenek csapatok</p>
-          <p style={{ fontSize: 13, color: "#CBD5E1", margin: "0 0 16px" }}>Hozd létre az első csapatot a gombbal</p>
+          <Users size={40} color={C.border} style={{ marginBottom: 12 }} />
+          <p style={{ fontSize: 15, fontWeight: 700, color: C.muted, margin: "0 0 6px" }}>Még nincsenek csapatok</p>
+          <p style={{ fontSize: 13, color: C.border, margin: "0 0 16px" }}>Hozd létre az első csapatot a gombbal</p>
           {isAdmin && (
-            <button onClick={handleNew} style={{ padding: "9px 20px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
+            <button onClick={handleNew} style={{ padding: "9px 20px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
               + Új csapat
             </button>
           )}

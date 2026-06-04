@@ -24,33 +24,33 @@ export default function TabAjanlatok({ projekt }) {
           </div>
         )}
         {projekt?.forrás && (
-          <div style={{ background: projekt.forrás === "fővállalkozói" ? "#F5F3FF" : "#EFF6FF", border: `1.5px solid ${projekt.forrás === "fővállalkozói" ? "#C4B5FD" : "#BFDBFE"}`, borderRadius: 10, padding: "10px 16px" }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: projekt.forrás === "fővállalkozói" ? "#7C3AED" : "#2563EB", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Projekt típusa</p>
-            <p style={{ fontSize: 15, fontWeight: 700, color: projekt.forrás === "fővállalkozói" ? "#7C3AED" : "#2563EB", margin: 0 }}>{getProjektTipus(projekt.forrás)}</p>
+          <div style={{ background: projekt.forrás === "fővállalkozói" ? C.accentLight : C.accentLight, border: `1.5px solid ${projekt.forrás === "fővállalkozói" ? "#C4B5FD" : C.accentLight}`, borderRadius: 10, padding: "10px 16px" }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: projekt.forrás === "fővállalkozói" ? C.accent : C.accent, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Projekt típusa</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: projekt.forrás === "fővállalkozói" ? C.accent : C.accent, margin: 0 }}>{getProjektTipus(projekt.forrás)}</p>
           </div>
         )}
       </div>
 
       {/* Fővállalkozói extra adatok */}
       {projekt?.forrás === "fővállalkozói" && (projekt.fovKapcsolattarto || projekt.fovFizetesiHatarido || projekt.fovMegjegyzes) && (
-        <div style={{ background: "#F5F3FF", border: "1.5px solid #C4B5FD", borderRadius: 12, padding: "16px 20px", marginBottom: 20 }}>
+        <div style={{ background: C.accentLight, border: "1.5px solid #C4B5FD", borderRadius: 12, padding: "16px 20px", marginBottom: 20 }}>
           <p style={{ fontFamily: FONT_HEADING, fontSize: 14, fontWeight: 800, color: "#6D28D9", margin: "0 0 12px" }}>Fővállalkozói adatok</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {projekt.fovKapcsolattarto && (
               <div>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "#7C3AED", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Kapcsolattartó</p>
+                <p style={{ fontSize: 10, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Kapcsolattartó</p>
                 <p style={{ fontSize: 14, fontWeight: 600, color: "#1E1B4B", margin: 0 }}>{projekt.fovKapcsolattarto}</p>
               </div>
             )}
             {projekt.fovFizetesiHatarido && (
               <div>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "#7C3AED", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Fizetési határidő</p>
+                <p style={{ fontSize: 10, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Fizetési határidő</p>
                 <p style={{ fontSize: 14, fontWeight: 600, color: "#1E1B4B", margin: 0 }}>{projekt.fovFizetesiHatarido}</p>
               </div>
             )}
             {projekt.fovMegjegyzes && (
               <div style={{ gridColumn: "span 2" }}>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "#7C3AED", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Megjegyzés</p>
+                <p style={{ fontSize: 10, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Megjegyzés</p>
                 <p style={{ fontSize: 14, color: "#1E1B4B", margin: 0 }}>{projekt.fovMegjegyzes}</p>
               </div>
             )}
@@ -61,10 +61,10 @@ export default function TabAjanlatok({ projekt }) {
       {/* Linked ajánlat */}
       {ajanlat ? (
         <div style={{ background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 12, overflow: "hidden" }}>
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid #E2E8F0", background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #E2E8F0", background: C.bg, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <p style={{ fontFamily: FONT_HEADING, fontSize: 15, fontWeight: 800, color: "#0F172A", margin: 0 }}>Kapcsolódó ajánlat</p>
-              <p style={{ fontSize: 12, color: "#64748B", margin: "2px 0 0" }}>{ajanlat.ajanlatkod}</p>
+              <p style={{ fontFamily: FONT_HEADING, fontSize: 15, fontWeight: 800, color: C.text, margin: 0 }}>Kapcsolódó ajánlat</p>
+              <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>{ajanlat.ajanlatkod}</p>
             </div>
             {(() => {
               const cfg = getAjanlatStatusConfig(ajanlat.status);
@@ -73,39 +73,39 @@ export default function TabAjanlatok({ projekt }) {
           </div>
           <div style={{ padding: "16px 20px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14 }}>
             <div>
-              <p style={{ fontSize: 10, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Ügyfél</p>
-              <p style={{ fontSize: 14, fontWeight: 600, color: "#0F172A", margin: 0 }}>{ajanlat.clientNev || "—"}</p>
+              <p style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Ügyfél</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>{ajanlat.clientNev || "—"}</p>
             </div>
             <div>
-              <p style={{ fontSize: 10, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Ajánlott összeg</p>
-              <p style={{ fontSize: 14, fontWeight: 700, color: "#059669", margin: 0 }}>{ajanlat.osszeg ? ft(Number(ajanlat.osszeg)) : "—"}</p>
+              <p style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Ajánlott összeg</p>
+              <p style={{ fontSize: 14, fontWeight: 700, color: C.success, margin: 0 }}>{ajanlat.osszeg ? ft(Number(ajanlat.osszeg)) : "—"}</p>
             </div>
             {ajanlat.ervenyesseg && (
               <div>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Érvényesség</p>
-                <p style={{ fontSize: 14, color: "#0F172A", margin: 0 }}>{ajanlat.ervenyesseg}</p>
+                <p style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Érvényesség</p>
+                <p style={{ fontSize: 14, color: C.text, margin: 0 }}>{ajanlat.ervenyesseg}</p>
               </div>
             )}
             {ajanlat.megjegyzes && (
               <div style={{ gridColumn: "span 2" }}>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Megjegyzés</p>
-                <p style={{ fontSize: 14, color: "#0F172A", margin: 0 }}>{ajanlat.megjegyzes}</p>
+                <p style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>Megjegyzés</p>
+                <p style={{ fontSize: 14, color: C.text, margin: 0 }}>{ajanlat.megjegyzes}</p>
               </div>
             )}
           </div>
         </div>
       ) : projekt?.forrás === "saját_ügyfél" ? (
-        <div style={{ background: "#FFFBEB", border: "1.5px solid #FCD34D", borderRadius: 10, padding: "14px 18px", color: "#92400E", fontSize: 13 }}>
+        <div style={{ background: C.warningLight, border: "1.5px solid #FCD34D", borderRadius: 10, padding: "14px 18px", color: C.warning, fontSize: 13 }}>
           ℹ️ Ez a projekt elfogadott árajánlatból jött létre, de az ajánlat hivatkozás nincs beállítva. Az ajánlatot az <strong>Árajánlatok</strong> modulban találod.
         </div>
       ) : !projekt?.forrás ? (
-        <div style={{ textAlign: "center", padding: "48px 0", color: "#94A3B8" }}>
+        <div style={{ textAlign: "center", padding: "48px 0", color: C.muted }}>
           <p style={{ fontSize: 24, marginBottom: 12 }}>📋</p>
           <p style={{ fontSize: 15, fontWeight: 600, margin: "0 0 6px" }}>Nincs megadva projekt forrás</p>
           <p style={{ fontSize: 13, margin: 0 }}>Szerkeszd a projektet és add meg a forrását (Saját ügyfél / Fővállalkozói / Garanciális / Javítási).</p>
         </div>
       ) : (
-        <div style={{ background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "16px 20px", color: "#64748B", fontSize: 13 }}>
+        <div style={{ background: C.bg, border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "16px 20px", color: C.muted, fontSize: 13 }}>
           Ehhez a projekttípushoz ({forrásConfig?.label || projekt.forrás}) nem tartozik árajánlat.
         </div>
       )}

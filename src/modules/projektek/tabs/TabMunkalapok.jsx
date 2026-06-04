@@ -26,7 +26,7 @@ function CsapatKiosztasPanel({ munkalap }) {
       id:         `kio_${Date.now()}`,
       csapatId:   ujCsapatId,
       csapatNev:  cs?.nev || "",
-      csapatSzin: cs?.szin || "#2563EB",
+      csapatSzin: cs?.szin || C.accent,
       tipus:      ujTipus,
       datumTol:   ujDatumTol,
       datumIg:    ujDatumIg,
@@ -56,33 +56,33 @@ function CsapatKiosztasPanel({ munkalap }) {
 
   return (
     <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #F1F5F9" }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: .7, margin: "0 0 8px", display: "flex", alignItems: "center", gap: 5 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .7, margin: "0 0 8px", display: "flex", alignItems: "center", gap: 5 }}>
         <Users size={12} /> Kiosztott csapatok ({kiosztasok.length} db)
       </p>
 
       {/* Meglévő kiosztások */}
       {kiosztasok.map(k => (
-        <div key={k.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderLeft: `3px solid ${k.csapatSzin || "#2563EB"}`, borderRadius: 8, marginBottom: 5 }}>
+        <div key={k.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: C.bg, border: "1px solid #E2E8F0", borderLeft: `3px solid ${k.csapatSzin || C.accent}`, borderRadius: 8, marginBottom: 5 }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ fontWeight: 700, fontSize: 13, color: "#0F172A" }}>{k.csapatNev || k.csapatId}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, background: k.tipus === "focsapat" ? "#EFF6FF" : "#F0FDF4", color: k.tipus === "focsapat" ? "#1D4ED8" : "#059669", padding: "1px 7px", borderRadius: 20 }}>
+              <span style={{ fontWeight: 700, fontSize: 13, color: C.text }}>{k.csapatNev || k.csapatId}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, background: k.tipus === "focsapat" ? C.accentLight : C.successLight, color: k.tipus === "focsapat" ? C.accent : C.success, padding: "1px 7px", borderRadius: 20 }}>
                 {k.tipus === "focsapat" ? "Főcsapat" : "Segítő csapat"}
               </span>
               {k.datumTol && (
-                <span style={{ fontSize: 10, color: "#64748B" }}>{k.datumTol}{k.datumIg ? ` – ${k.datumIg}` : ""}</span>
+                <span style={{ fontSize: 10, color: C.muted }}>{k.datumTol}{k.datumIg ? ` – ${k.datumIg}` : ""}</span>
               )}
             </div>
-            {k.megjegyzes && <p style={{ margin: "2px 0 0", fontSize: 11, color: "#94A3B8", fontStyle: "italic" }}>{k.megjegyzes}</p>}
+            {k.megjegyzes && <p style={{ margin: "2px 0 0", fontSize: 11, color: C.muted, fontStyle: "italic" }}>{k.megjegyzes}</p>}
           </div>
-          <button onClick={() => handleRemove(k.id)} style={{ padding: "3px 5px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 5, cursor: "pointer" }}>
+          <button onClick={() => handleRemove(k.id)} style={{ padding: "3px 5px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 5, cursor: "pointer" }}>
             <X size={11} />
           </button>
         </div>
       ))}
 
       {/* Új kiosztás form */}
-      <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 12px", marginTop: 8 }}>
+      <div style={{ background: C.successLight, border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 12px", marginTop: 8 }}>
         <p style={{ fontSize: 11, fontWeight: 700, color: "#065F46", margin: "0 0 8px" }}>Új csapat kiosztása</p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 6 }}>
           <select value={ujCsapatId} onChange={e => setUjCsapatId(e.target.value)} style={{ ...inpS, gridColumn: "span 2" }}>
@@ -103,11 +103,11 @@ function CsapatKiosztasPanel({ munkalap }) {
         </div>
         <div style={{ display: "flex", gap: 7 }}>
           <button onClick={handleAdd} disabled={!ujCsapatId}
-            style={{ flex: 1, padding: "7px 12px", background: ujCsapatId ? "#059669" : "#E2E8F0", color: "#fff", border: "none", borderRadius: 7, cursor: ujCsapatId ? "pointer" : "default", fontWeight: 700, fontSize: 12, fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+            style={{ flex: 1, padding: "7px 12px", background: ujCsapatId ? C.success : C.border, color: "#fff", border: "none", borderRadius: 7, cursor: ujCsapatId ? "pointer" : "default", fontWeight: 700, fontSize: 12, fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
             <Plus size={11} /> Hozzáadás
           </button>
           <button onClick={handleSave}
-            style={{ flex: 1, padding: "7px 12px", background: mentve ? "#059669" : "#2563EB", color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+            style={{ flex: 1, padding: "7px 12px", background: mentve ? C.success : C.accent, color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
             <Save size={11} /> {mentve ? "Mentve ✓" : "Mentés"}
           </button>
         </div>
@@ -136,38 +136,38 @@ export default function TabMunkalapok({ projekt, munkalapok, onNavigate, onNewMu
   return (
     <div style={{ paddingTop: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
-        <p style={{ fontWeight: 700, fontSize: 15, color: "#0F172A" }}>
+        <p style={{ fontWeight: 700, fontSize: 15, color: C.text }}>
           Kapcsolódó munkalapok ({linked.length} db)
         </p>
         <div style={{ display: "flex", gap: 8 }}>
           {onNewMunkalap && (
             <button onClick={onNewMunkalap}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: "#059669", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: C.success, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
               <FilePlus size={14} /> Új munkalap
             </button>
           )}
           <button onClick={() => setShowLink(s => !s)}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: showLink ? "#F1F5F9" : "#fff", color: "#2563EB", border: "1.5px solid #2563EB", borderRadius: 9, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: showLink ? C.bg : "#fff", color: C.accent, border: "1.5px solid #2563EB", borderRadius: 9, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
             <Plus size={14} /> Meglévő hozzárendelése
           </button>
         </div>
       </div>
 
       {showLink && unlinked.length > 0 && (
-        <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 12, padding: 14, marginBottom: 14 }}>
-          <p style={{ fontSize: 12, fontWeight: 700, color: "#64748B", marginBottom: 10 }}>Szabad munkalapok (kattints a hozzárendeléshez):</p>
+        <div style={{ background: C.bg, border: "1px solid #E2E8F0", borderRadius: 12, padding: 14, marginBottom: 14 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 10 }}>Szabad munkalapok (kattints a hozzárendeléshez):</p>
           {unlinked.slice(0, 20).map((m) => (
             <div key={m.id} onClick={() => { linkMunkalap(projekt.id, m.id); setShowLink(false); }}
               style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderRadius: 8, background: "#fff", border: "1px solid #E2E8F0", marginBottom: 6, cursor: "pointer" }}>
               <span style={{ fontWeight: 600, fontSize: 13 }}>{getMunkalapAzonosito(m)}</span>
-              <span style={{ fontSize: 12, color: "#64748B" }}>{m.clientNev || "—"} · {m.status}</span>
+              <span style={{ fontSize: 12, color: C.muted }}>{m.clientNev || "—"} · {m.status}</span>
             </div>
           ))}
         </div>
       )}
 
       {linked.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px 0", color: "#94A3B8" }}>
+        <div style={{ textAlign: "center", padding: "40px 0", color: C.muted }}>
           <p>Még nincs hozzárendelt munkalap</p>
         </div>
       ) : (
@@ -180,16 +180,16 @@ export default function TabMunkalapok({ projekt, munkalapok, onNavigate, onNewMu
                 <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                      <span style={{ fontWeight: 700, color: "#2563EB", fontSize: 13 }}>{getMunkalapAzonosito(m)}</span>
-                      <span style={{ fontSize: 11, background: "#F1F5F9", color: "#64748B", padding: "2px 8px", borderRadius: 20, fontWeight: 600 }}>{m.status}</span>
-                      {m.munkalapTipus && <span style={{ fontSize: 11, color: "#94A3B8" }}>{m.munkalapTipus}</span>}
+                      <span style={{ fontWeight: 700, color: C.accent, fontSize: 13 }}>{getMunkalapAzonosito(m)}</span>
+                      <span style={{ fontSize: 11, background: C.bg, color: C.muted, padding: "2px 8px", borderRadius: 20, fontWeight: 600 }}>{m.status}</span>
+                      {m.munkalapTipus && <span style={{ fontSize: 11, color: C.muted }}>{m.munkalapTipus}</span>}
                       {kiosztasDb > 0 && (
-                        <span style={{ fontSize: 11, background: "#EFF6FF", color: "#1D4ED8", padding: "2px 8px", borderRadius: 20, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
+                        <span style={{ fontSize: 11, background: C.accentLight, color: C.accent, padding: "2px 8px", borderRadius: 20, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
                           <Users size={10} /> {kiosztasDb} csapat
                         </span>
                       )}
                     </div>
-                    <p style={{ fontSize: 12, color: "#64748B", margin: "4px 0 0" }}>
+                    <p style={{ fontSize: 12, color: C.muted, margin: "4px 0 0" }}>
                       {m.clientNev || "—"} · {m.assigneeNev || "—"} · {m.date || m.datum || "—"}
                     </p>
                   </div>
@@ -197,19 +197,19 @@ export default function TabMunkalapok({ projekt, munkalapok, onNavigate, onNewMu
                   <div style={{ display: "flex", gap: 6 }}>
                     <button onClick={() => setExpandedId(isExpanded ? null : m.id)}
                       title="Csapatok kiosztása"
-                      style={{ padding: "6px 10px", background: isExpanded ? "#EFF6FF" : "#F8FAFC", color: isExpanded ? "#2563EB" : "#64748B", border: "1.5px solid #E2E8F0", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontFamily: FONT }}>
+                      style={{ padding: "6px 10px", background: isExpanded ? C.accentLight : C.bg, color: isExpanded ? C.accent : C.muted, border: "1.5px solid #E2E8F0", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontFamily: FONT }}>
                       <Users size={13} />
                       Csapatok
                       <ChevronDown size={11} style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
                     </button>
                     {onNavigate && (
                       <button onClick={() => onNavigate(m)}
-                        style={{ padding: "6px 10px", background: "#EFF6FF", color: "#2563EB", border: "none", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
+                        style={{ padding: "6px 10px", background: C.accentLight, color: C.accent, border: "none", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
                         <ExternalLink size={13} /> Megnyit
                       </button>
                     )}
                     <button onClick={() => unlinkMunkalap(projekt.id, m.id)}
-                      style={{ padding: "6px 10px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 7, cursor: "pointer", fontSize: 12 }}>
+                      style={{ padding: "6px 10px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 7, cursor: "pointer", fontSize: 12 }}>
                       Leválaszt
                     </button>
                   </div>

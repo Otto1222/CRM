@@ -16,9 +16,9 @@ const HONAPOK = ["Január","Február","Március","Április","Május","Június",
                  "Július","Augusztus","Szeptember","Október","November","December"];
 
 const SYNC_COLORS = {
-  idle:    { bg: "rgba(255,255,255,0.08)", color: C?.muted || "#94A3B8" },
-  syncing: { bg: "#1D4ED8",               color: "#fff" },
-  ok:      { bg: "#15803D",               color: "#fff" },
+  idle:    { bg: "rgba(255,255,255,0.08)", color: C?.muted || C.muted },
+  syncing: { bg: C.accent,               color: "#fff" },
+  ok:      { bg: C.success,               color: "#fff" },
   error:   { bg: "#B91C1C",               color: "#fff" },
 };
 
@@ -68,7 +68,7 @@ function NewEventModal({ defaultDate, onSave, onClose }) {
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <input type="color" value={form.color} onChange={e => F("color", e.target.value)}
                 style={{ width: 44, height: 36, borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, cursor: "pointer", padding: 3 }} />
-              {["#8B5CF6","#2563EB","#059669","#D97706","#DC2626","#0891B2"].map(c => (
+              {["#8B5CF6",C.accent,C.success,C.warning,C.danger,"#0891B2"].map(c => (
                 <button key={c} onClick={() => F("color", c)}
                   style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: form.color === c ? "3px solid #fff" : "2px solid transparent", cursor: "pointer" }} />
               ))}
@@ -124,7 +124,7 @@ function EventModal({ ev, onClose, onNavigate, onDelete }) {
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
           {ev.type === "manual" && onDelete && (
-            <button onClick={() => onDelete(ev.id)} style={{ ...BTN_SECONDARY, color: "#EF4444", borderColor: "#EF4444" }}>
+            <button onClick={() => onDelete(ev.id)} style={{ ...BTN_SECONDARY, color: C.danger, borderColor: C.danger }}>
               Töröl
             </button>
           )}
@@ -318,7 +318,7 @@ export default function NaptarPage({ data, currentUser, onNavigate }) {
           flexShrink: 0,
           boxShadow: liveActive ? "0 0 0 3px #34D39930" : "none",
         }} />
-        <span style={{ color: liveActive ? "#6EE7B7" : C.muted }}>
+        <span style={{ color: liveActive ? C.success : C.muted }}>
           {liveActive
             ? "Live Google Calendar szinkron: aktív – minden mentéskor automatikusan frissül"
             : "Live Google Calendar szinkron: nincs beállítva – kattints a ⚙️ gombra"}
@@ -507,7 +507,7 @@ export default function NaptarPage({ data, currentUser, onNavigate }) {
                     )}
                     {ev.type === "manual" && (
                       <button onClick={() => handleDeleteEvent(ev.id)}
-                        style={{ fontSize: 11, padding: "3px 10px", background: "#EF444422", color: "#EF4444", border: `1px solid #EF444440`, borderRadius: 6, cursor: "pointer" }}>
+                        style={{ fontSize: 11, padding: "3px 10px", background: "#EF444422", color: C.danger, border: `1px solid #EF444440`, borderRadius: 6, cursor: "pointer" }}>
                         Töröl
                       </button>
                     )}
@@ -522,8 +522,8 @@ export default function NaptarPage({ data, currentUser, onNavigate }) {
       {/* ── Jelmagyarázat ───────────────────────── */}
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 14, fontSize: 12, color: C.muted }}>
         {[
-          { color: "#2563EB", label: "Projekt" },
-          { color: "#0EA5E9", label: "Munkalap" },
+          { color: C.accent, label: "Projekt" },
+          { color: C.accent, label: "Munkalap" },
           { color: "#8B5CF6", label: "Kézi esemény" },
         ].map(({ color, label }) => (
           <span key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -590,7 +590,7 @@ const OVERLAY = {
 };
 
 const MODAL_BOX = {
-  background: C?.bg || "#0F172A", borderRadius: 16,
+  background: C?.bg || C.text, borderRadius: 16,
   padding: 24, width: "100%",
   boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
   maxHeight: "90vh", overflowY: "auto",
@@ -602,27 +602,27 @@ const MODAL_HEAD = {
 
 const ICON_BTN = {
   background: "none", border: "none", cursor: "pointer",
-  color: C?.muted || "#94A3B8", display: "flex", alignItems: "center",
+  color: C?.muted || C.muted, display: "flex", alignItems: "center",
   padding: 4, borderRadius: 6,
 };
 
 const INPUT_STYLE = {
   width: "100%", padding: "8px 12px", borderRadius: 9,
   border: `1px solid ${C?.border || "#1E293B"}`,
-  background: C?.card || "#1E293B", color: C?.text || "#F1F5F9",
+  background: C?.card || "#1E293B", color: C?.text || C.bg,
   fontSize: 14, boxSizing: "border-box", fontFamily: "system-ui, sans-serif",
 };
 
 const BTN_PRIMARY = {
   padding: "8px 16px", borderRadius: 9, border: "none",
-  background: C?.accent || "#2563EB", color: "#fff",
+  background: C?.accent || C.accent, color: "#fff",
   cursor: "pointer", fontWeight: 700, fontSize: 13,
 };
 
 const BTN_SECONDARY = {
   padding: "8px 14px", borderRadius: 9,
   border: `1px solid ${C?.border || "#1E293B"}`,
-  background: C?.card || "#1E293B", color: C?.text || "#F1F5F9",
+  background: C?.card || "#1E293B", color: C?.text || C.bg,
   cursor: "pointer", fontSize: 13,
 };
 
@@ -630,6 +630,6 @@ const NAV_BTN = {
   background: C?.card || "#1E293B",
   border: `1px solid ${C?.border || "#1E293B"}`,
   borderRadius: 8, padding: "6px 10px",
-  cursor: "pointer", color: C?.text || "#F1F5F9",
+  cursor: "pointer", color: C?.text || C.bg,
   display: "flex", alignItems: "center",
 };
