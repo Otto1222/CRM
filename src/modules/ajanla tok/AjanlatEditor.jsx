@@ -10,7 +10,7 @@ import { loadAjanlatSablonok, createAjanlatSablon } from "./ajanlat_sablon.servi
 import { ANYAG_EGYSEGEK, AFA_KULCSOK } from "./anyagtorzs.schema.js";
 import ProjektForm from "../projektek/ProjektForm.jsx";
 
-const inp = { width: "100%", boxSizing: "border-box", padding: "7px 10px", border: "1.5px solid #E2E8F0", borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", background: "#FAFAFA" };
+const inp = { width: "100%", boxSizing: "border-box", padding: "7px 10px", border: "1.5px solid #E2E8F0", borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", background: C.bg };
 const inpSm = { ...inp, padding: "5px 7px", fontSize: 12 };
 
 // ── Anyagtörzs kereső modal ────────────────────────────────────
@@ -39,14 +39,14 @@ function AnyagtorzsKereső({ anyagtorzs, filterKategoriak, onSelect, onClose }) 
       <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)" }} onClick={onClose} />
       <div style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 14, width: "100%", maxWidth: 580, maxHeight: "82vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,.25)", fontFamily: FONT }}>
         <div style={{ padding: "14px 16px", borderBottom: "1px solid #E2E8F0" }}>
-          <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: 14, color: "#0F172A" }}>Anyagtörzs keresés</p>
+          <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: 14, color: C.text }}>Anyagtörzs keresés</p>
           {filterKategoriak?.length > 0 && (
-            <p style={{ margin: "0 0 8px", fontSize: 11, color: "#64748B" }}>
+            <p style={{ margin: "0 0 8px", fontSize: 11, color: C.muted }}>
               Elsődlegesen: {filterKategoriak.join(", ")}
             </p>
           )}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "8px 12px" }}>
-            <Search size={15} color="#94A3B8" />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: C.bg, border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "8px 12px" }}>
+            <Search size={15} color={C.muted} />
             <input autoFocus value={q} onChange={e => setQ(e.target.value)}
               placeholder="Keresés: megnevezés, cikkszám, kategória…"
               style={{ border: "none", outline: "none", fontSize: 13, fontFamily: FONT, background: "transparent", flex: 1 }} />
@@ -54,18 +54,18 @@ function AnyagtorzsKereső({ anyagtorzs, filterKategoriak, onSelect, onClose }) 
         </div>
         <div style={{ overflowY: "auto", flex: 1 }}>
           {filtered.length === 0 && (
-            <p style={{ padding: "24px", textAlign: "center", color: "#94A3B8", fontSize: 13 }}>Nincs találat</p>
+            <p style={{ padding: "24px", textAlign: "center", color: C.muted, fontSize: 13 }}>Nincs találat</p>
           )}
           {filtered.map(a => (
             <button key={a.id} onClick={() => { onSelect(a); onClose(); }}
               style={{ width: "100%", padding: "10px 16px", border: "none", borderBottom: "1px solid #F1F5F9", background: "#fff", cursor: "pointer", textAlign: "left", fontFamily: FONT, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontWeight: 600, color: "#0F172A", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.megnevezes}</p>
-                <p style={{ margin: 0, fontSize: 11, color: "#64748B" }}>{a.cikkszam} · {a.kategoria} · {a.egyseg}</p>
+                <p style={{ margin: 0, fontWeight: 600, color: C.text, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.megnevezes}</p>
+                <p style={{ margin: 0, fontSize: 11, color: C.muted }}>{a.cikkszam} · {a.kategoria} · {a.egyseg}</p>
               </div>
               <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#059669" }}>{ft(a.ajanlatiNetto)}</p>
-                <p style={{ margin: 0, fontSize: 10, color: "#94A3B8" }}>/{a.egyseg}</p>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: C.success }}>{ft(a.ajanlatiNetto)}</p>
+                <p style={{ margin: 0, fontSize: 10, color: C.muted }}>/{a.egyseg}</p>
               </div>
             </button>
           ))}
@@ -80,13 +80,13 @@ function TételRow({ t, idx, onUpdate, onDelete, onAnyagtorzsOpen }) {
   const { nettoOsszesen, brutto } = calcTetel(t);
   return (
     <tr style={{ borderBottom: "1px solid #F1F5F9", verticalAlign: "middle" }}>
-      <td style={{ padding: "5px 6px", color: "#94A3B8", fontSize: 11, width: 28, textAlign: "center" }}>{idx + 1}</td>
+      <td style={{ padding: "5px 6px", color: C.muted, fontSize: 11, width: 28, textAlign: "center" }}>{idx + 1}</td>
       <td style={{ padding: "4px 5px", minWidth: 200 }}>
         <div style={{ display: "flex", gap: 4 }}>
           <input value={t.megnevezes} onChange={e => onUpdate("megnevezes", e.target.value)}
             placeholder="Megnevezés…" style={{ ...inpSm, flex: 1 }} />
           <button type="button" onClick={onAnyagtorzsOpen} title="Választás anyagtörzsből"
-            style={{ padding: "5px 7px", background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 7, cursor: "pointer", flexShrink: 0, color: "#2563EB" }}>
+            style={{ padding: "5px 7px", background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 7, cursor: "pointer", flexShrink: 0, color: C.accent }}>
             <Search size={12} />
           </button>
         </div>
@@ -117,12 +117,12 @@ function TételRow({ t, idx, onUpdate, onDelete, onAnyagtorzsOpen }) {
         </select>
       </td>
       <td style={{ padding: "4px 8px", width: 115, textAlign: "right" }}>
-        <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: "#0F172A" }}>{nettoOsszesen > 0 ? ft(nettoOsszesen) : "—"}</p>
-        <p style={{ margin: 0, fontSize: 10, color: "#94A3B8" }}>br: {brutto > 0 ? ft(brutto) : "—"}</p>
+        <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: C.text }}>{nettoOsszesen > 0 ? ft(nettoOsszesen) : "—"}</p>
+        <p style={{ margin: 0, fontSize: 10, color: C.muted }}>br: {brutto > 0 ? ft(brutto) : "—"}</p>
       </td>
       <td style={{ padding: "4px 6px", width: 32 }}>
         <button type="button" onClick={onDelete}
-          style={{ padding: "4px 6px", background: "#FEF2F2", border: "none", borderRadius: 6, cursor: "pointer", color: "#DC2626" }}>
+          style={{ padding: "4px 6px", background: C.dangerLight, border: "none", borderRadius: 6, cursor: "pointer", color: C.danger }}>
           <Trash2 size={13} />
         </button>
       </td>
@@ -149,7 +149,7 @@ function SzakaszPanel({ szakasz, tetelek, onAddTetel, onUpdateTetel, onDeleteTet
             ? <ChevronDown size={16} color={szakasz.szin} />
             : <ChevronRight size={16} color={szakasz.szin} />}
           <span style={{ fontWeight: 700, fontSize: 14, color: szakasz.szin }}>{szakasz.label}</span>
-          <span style={{ fontSize: 12, color: "#64748B", fontWeight: 400 }}>
+          <span style={{ fontSize: 12, color: C.muted, fontWeight: 400 }}>
             {tetelek.length > 0 ? `${tetelek.length} tétel` : "üres"}
           </span>
         </button>
@@ -170,9 +170,9 @@ function SzakaszPanel({ szakasz, tetelek, onAddTetel, onUpdateTetel, onDeleteTet
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
-                  <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
+                  <tr style={{ background: C.bg, borderBottom: "1px solid #E2E8F0" }}>
                     {["#", "Megnevezés", "Menny.", "Egység", "Nettó egységár", "Ked.%", "ÁFA", "Nettó össz.", ""].map(h => (
-                      <th key={h} style={{ padding: "7px 6px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap" }}>{h}</th>
+                      <th key={h} style={{ padding: "7px 6px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -188,7 +188,7 @@ function SzakaszPanel({ szakasz, tetelek, onAddTetel, onUpdateTetel, onDeleteTet
               </table>
             </div>
           ) : (
-            <p style={{ padding: "14px 20px", color: "#94A3B8", fontSize: 13, margin: 0 }}>
+            <p style={{ padding: "14px 20px", color: C.muted, fontSize: 13, margin: 0 }}>
               Még nincs tétel ebben a szakaszban. Kattints a <strong>+ Tétel</strong> gombra.
             </p>
           )}
@@ -471,50 +471,50 @@ export default function AjanlatEditor({ ajanlat, onClose, onSaved, currentUser }
   }
 
   return (
-    <div style={{ background: "#F8FAFC", minHeight: "100vh", fontFamily: FONT }}>
+    <div style={{ background: C.bg, minHeight: "100vh", fontFamily: FONT }}>
 
       {/* ── Sticky fejléc sáv ── */}
       <div style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button type="button" onClick={onClose}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", border: "1.5px solid #E2E8F0", borderRadius: 8, background: "#fff", cursor: "pointer", fontFamily: FONT, fontWeight: 600, color: "#475569", fontSize: 13 }}>
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", border: "1.5px solid #E2E8F0", borderRadius: 8, background: "#fff", cursor: "pointer", fontFamily: FONT, fontWeight: 600, color: C.muted, fontSize: 13 }}>
             <ArrowLeft size={15} /> Vissza
           </button>
           <div>
-            <p style={{ margin: 0, fontFamily: FONT_HEADING, fontSize: 16, fontWeight: 800, color: "#0F172A" }}>
+            <p style={{ margin: 0, fontFamily: FONT_HEADING, fontSize: 16, fontWeight: 800, color: C.text }}>
               {isNew ? "Új árajánlat" : (ajanlat?.ajanlatkod || "Szerkesztés")}
             </p>
-            {!isNew && <p style={{ margin: 0, fontSize: 11, color: "#64748B" }}>{form.clientNev}</p>}
+            {!isNew && <p style={{ margin: 0, fontSize: 11, color: C.muted }}>{form.clientNev}</p>}
           </div>
           <span style={{ background: cfg.bg, color: cfg.szin, borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{form.status}</span>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {form.tetelek.length > 0 && (
             <button type="button" onClick={() => { setSablonNev(form.nev || ""); setShowSablonMent(true); }}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", border: "1.5px solid #C4B5FD", borderRadius: 8, background: "#F5F3FF", cursor: "pointer", fontFamily: FONT, fontWeight: 600, color: "#7C3AED", fontSize: 12 }}>
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", border: "1.5px solid #C4B5FD", borderRadius: 8, background: C.accentLight, cursor: "pointer", fontFamily: FONT, fontWeight: 600, color: C.accent, fontSize: 12 }}>
               <Save size={13} /> Sablon
             </button>
           )}
           {sablonok.length > 0 && (
             <button type="button" onClick={() => setShowSablonPicker(true)}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", border: "1.5px solid #E2E8F0", borderRadius: 8, background: "#fff", cursor: "pointer", fontFamily: FONT, fontWeight: 600, color: "#374151", fontSize: 12 }}>
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", border: "1.5px solid #E2E8F0", borderRadius: 8, background: "#fff", cursor: "pointer", fontFamily: FONT, fontWeight: 600, color: C.textSub, fontSize: 12 }}>
               <ChevronDown size={13} /> Sablon betöltése
             </button>
           )}
           {!isNew && (
             <button type="button" onClick={() => printAjanlat({ ...ajanlat, ...form }, anyagtorzs)}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", border: "1.5px solid #E2E8F0", borderRadius: 9, background: "#fff", cursor: "pointer", fontFamily: FONT, fontWeight: 600, color: "#374151", fontSize: 13 }}>
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", border: "1.5px solid #E2E8F0", borderRadius: 9, background: "#fff", cursor: "pointer", fontFamily: FONT, fontWeight: 600, color: C.textSub, fontSize: 13 }}>
               <Printer size={14} /> PDF
             </button>
           )}
           {!isNew && form.status === "Elfogadva" && !ajanlat?.projektId && (
             <button type="button" onClick={() => setShowProjektForm(true)}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: "#ECFDF5", color: "#059669", border: "1.5px solid #86EFAC", borderRadius: 9, cursor: "pointer", fontFamily: FONT, fontWeight: 700, fontSize: 13 }}>
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: C.successLight, color: C.success, border: "1.5px solid #86EFAC", borderRadius: 9, cursor: "pointer", fontFamily: FONT, fontWeight: 700, fontSize: 13 }}>
               <Building2 size={14} /> Projekt
             </button>
           )}
           <button type="button" onClick={handleSave} disabled={saving}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 9, cursor: saving ? "default" : "pointer", fontFamily: FONT, fontWeight: 700, fontSize: 13, opacity: saving ? 0.7 : 1 }}>
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: saving ? "default" : "pointer", fontFamily: FONT, fontWeight: 700, fontSize: 13, opacity: saving ? 0.7 : 1 }}>
             <Save size={14} /> {saving ? "Mentés…" : "Mentés"}
           </button>
         </div>
@@ -522,21 +522,21 @@ export default function AjanlatEditor({ ajanlat, onClose, onSaved, currentUser }
 
       <div style={{ padding: "20px 24px", maxWidth: 1280, margin: "0 auto" }}>
         {hiba && (
-          <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 9, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#DC2626", fontWeight: 600 }}>{hiba}</div>
+          <div style={{ background: C.dangerLight, border: "1.5px solid #FECACA", borderRadius: 9, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: C.danger, fontWeight: 600 }}>{hiba}</div>
         )}
 
         {/* ── FEJLÉC ── */}
         <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", padding: "20px 24px", marginBottom: 20 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 14px" }}>Ajánlat fejléc</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 14px" }}>Ajánlat fejléc</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "12px 16px" }}>
             <div style={{ gridColumn: "span 2" }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Ajánlat tárgya / megnevezése *</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Ajánlat tárgya / megnevezése *</label>
               <input value={form.nev} onChange={e => upd("nev", e.target.value)}
                 placeholder="pl. 10 kWp napelem rendszer telepítése"
                 style={{ ...inp, border: "2px solid #2563EB", fontWeight: 600, fontSize: 14 }} />
             </div>
             <div style={{ gridColumn: "span 2" }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Ügyfél kiválasztása (opcionális)</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Ügyfél kiválasztása (opcionális)</label>
               <select value={form.clientId} onChange={handleUgyfélValaszt} style={inp}>
                 <option value="">— Válassz a listából —</option>
                 {ugyfelek.map(u => <option key={u.id} value={u.id}>{u.name}{u.address ? ` – ${u.address}` : ""}</option>)}
@@ -550,37 +550,37 @@ export default function AjanlatEditor({ ajanlat, onClose, onSaved, currentUser }
               { k: "clientTel",      label: "Telefon",            placeholder: "+36..." },
             ].map(f => (
               <div key={f.k}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>{f.label}</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>{f.label}</label>
                 <input value={form[f.k]} onChange={e => upd(f.k, e.target.value)} placeholder={f.placeholder} style={inp} />
               </div>
             ))}
             <div>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Ajánlat dátuma</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Ajánlat dátuma</label>
               <input type="date" value={form.datum} onChange={e => upd("datum", e.target.value)} style={inp} />
             </div>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Érvényesség</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Érvényesség</label>
               <input type="date" value={form.ervenyesseg} onChange={e => upd("ervenyesseg", e.target.value)} style={inp} />
             </div>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Státusz</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Státusz</label>
               <select value={form.status} onChange={e => upd("status", e.target.value)} style={inp}>
                 {AJANLAT_STATUSZOK.map(s => <option key={s.id}>{s.id}</option>)}
               </select>
             </div>
             <div style={{ gridColumn: "span 2" }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Fizetési feltételek</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Fizetési feltételek</label>
               <input value={form.fizetesifelteletek} onChange={e => upd("fizetesifelteletek", e.target.value)} placeholder="pl. 30 napos átutalás…" style={inp} />
             </div>
             <div style={{ gridColumn: "span 2" }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Megjegyzés</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Megjegyzés</label>
               <textarea value={form.megjegyzes} onChange={e => upd("megjegyzes", e.target.value)} placeholder="Egyéb megjegyzések…" rows={2} style={{ ...inp, resize: "vertical" }} />
             </div>
           </div>
         </div>
 
         {/* ── TÉTELSOROK SZAKASZOK SZERINT ── */}
-        <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 12px" }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 12px" }}>
           Tételsorok szakaszok szerint — kattints egy szakaszra a megnyitáshoz, majd nyomj <strong>+ Tétel</strong> gombot
         </p>
         {AJANLAT_SZAKASZOK.map(sz => (
@@ -598,33 +598,33 @@ export default function AjanlatEditor({ ajanlat, onClose, onSaved, currentUser }
         {/* ── ÖSSZESÍTÉS ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16, alignItems: "start", marginTop: 16 }}>
           <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", padding: "16px 20px" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 10px" }}>Megoszlás szakaszok szerint</p>
+            <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 10px" }}>Megoszlás szakaszok szerint</p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {AJANLAT_SZAKASZOK.filter(sz => (ossz.szakaszTotalok?.[sz.id] || 0) > 0).map(sz => (
                 <div key={sz.id} style={{ background: sz.bg, borderRadius: 10, padding: "8px 12px", border: `1px solid ${sz.szin}40`, flex: "1 1 120px" }}>
                   <p style={{ fontSize: 9, fontWeight: 700, color: sz.szin, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 2px" }}>{sz.label}</p>
-                  <p style={{ fontSize: 14, fontWeight: 800, color: "#0F172A", margin: 0 }}>{ft(ossz.szakaszTotalok[sz.id])}</p>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: C.text, margin: 0 }}>{ft(ossz.szakaszTotalok[sz.id])}</p>
                 </div>
               ))}
               {!AJANLAT_SZAKASZOK.some(sz => (ossz.szakaszTotalok?.[sz.id] || 0) > 0) && (
-                <p style={{ color: "#94A3B8", fontSize: 13, margin: 0 }}>Még nincsenek tételek.</p>
+                <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>Még nincsenek tételek.</p>
               )}
             </div>
             {ossz.haszon !== 0 && (
               <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-                <div style={{ background: ossz.haszon >= 0 ? "#ECFDF5" : "#FEF2F2", borderRadius: 10, padding: "10px 14px", border: `1px solid ${ossz.haszon >= 0 ? "#86EFAC" : "#FECACA"}`, flex: 1 }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: ossz.haszon >= 0 ? "#059669" : "#DC2626", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 3px" }}>Becsült haszon</p>
-                  <p style={{ fontSize: 16, fontWeight: 800, color: ossz.haszon >= 0 ? "#059669" : "#DC2626", margin: 0 }}>{ft(ossz.haszon)}</p>
+                <div style={{ background: ossz.haszon >= 0 ? C.successLight : C.dangerLight, borderRadius: 10, padding: "10px 14px", border: `1px solid ${ossz.haszon >= 0 ? C.success : C.danger}`, flex: 1 }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: ossz.haszon >= 0 ? C.success : C.danger, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 3px" }}>Becsült haszon</p>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: ossz.haszon >= 0 ? C.success : C.danger, margin: 0 }}>{ft(ossz.haszon)}</p>
                 </div>
-                <div style={{ background: "#F8FAFC", borderRadius: 10, padding: "10px 14px", border: "1px solid #E2E8F0", flex: 1 }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 3px" }}>Fedezet</p>
-                  <p style={{ fontSize: 16, fontWeight: 800, color: "#0F172A", margin: 0 }}>{ossz.fedezetPct}%</p>
+                <div style={{ background: C.bg, borderRadius: 10, padding: "10px 14px", border: "1px solid #E2E8F0", flex: 1 }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 3px" }}>Fedezet</p>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: C.text, margin: 0 }}>{ossz.fedezetPct}%</p>
                 </div>
               </div>
             )}
           </div>
           <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", padding: "16px 20px" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 10px" }}>Végösszeg</p>
+            <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 10px" }}>Végösszeg</p>
             {[
               { label: "Nettó anyag",    value: ossz.nettoAnyag,  muted: true },
               { label: "Nettó munkadíj", value: ossz.nettoMunka,  muted: true },
@@ -632,13 +632,13 @@ export default function AjanlatEditor({ ajanlat, onClose, onSaved, currentUser }
               { label: "ÁFA",            value: ossz.osszesAfa,   muted: true },
             ].map(r => (
               <div key={r.label} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #F1F5F9" }}>
-                <span style={{ fontSize: 12, color: r.muted ? "#64748B" : "#0F172A", fontWeight: r.bold ? 700 : 400 }}>{r.label}</span>
-                <span style={{ fontSize: 12, fontWeight: r.bold ? 700 : 400, color: r.muted ? "#64748B" : "#0F172A" }}>{ft(r.value)}</span>
+                <span style={{ fontSize: 12, color: r.muted ? C.muted : C.text, fontWeight: r.bold ? 700 : 400 }}>{r.label}</span>
+                <span style={{ fontSize: 12, fontWeight: r.bold ? 700 : 400, color: r.muted ? C.muted : C.text }}>{ft(r.value)}</span>
               </div>
             ))}
             <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 4px", borderTop: "2px solid #2563EB", marginTop: 4 }}>
-              <span style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>Bruttó végösszeg</span>
-              <span style={{ fontSize: 15, fontWeight: 800, color: "#2563EB" }}>{ft(ossz.brutto)}</span>
+              <span style={{ fontSize: 15, fontWeight: 800, color: C.text }}>Bruttó végösszeg</span>
+              <span style={{ fontSize: 15, fontWeight: 800, color: C.accent }}>{ft(ossz.brutto)}</span>
             </div>
           </div>
         </div>
@@ -661,17 +661,17 @@ export default function AjanlatEditor({ ajanlat, onClose, onSaved, currentUser }
           <div style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 14, width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,.25)", fontFamily: FONT }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p style={{ fontFamily: FONT_HEADING, fontSize: 16, fontWeight: 800, margin: 0 }}>Sablon betöltése</p>
-              <button onClick={() => setShowSablonPicker(false)} style={{ border: "none", background: "none", cursor: "pointer", color: "#94A3B8", fontSize: 22, lineHeight: 1 }}>×</button>
+              <button onClick={() => setShowSablonPicker(false)} style={{ border: "none", background: "none", cursor: "pointer", color: C.muted, fontSize: 22, lineHeight: 1 }}>×</button>
             </div>
             <div style={{ padding: 8, maxHeight: "60vh", overflowY: "auto" }}>
               {sablonok.map(s => (
                 <button key={s.id} onClick={() => handleSablonBetolt(s)}
                   style={{ width: "100%", padding: "10px 14px", border: "none", borderRadius: 8, background: "#fff", cursor: "pointer", textAlign: "left", fontFamily: FONT, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 2 }}>
                   <div>
-                    <p style={{ margin: 0, fontWeight: 600, color: "#0F172A", fontSize: 14 }}>{s.nev}</p>
-                    {s.leiras && <p style={{ margin: 0, fontSize: 12, color: "#64748B" }}>{s.leiras}</p>}
+                    <p style={{ margin: 0, fontWeight: 600, color: C.text, fontSize: 14 }}>{s.nev}</p>
+                    {s.leiras && <p style={{ margin: 0, fontSize: 12, color: C.muted }}>{s.leiras}</p>}
                   </div>
-                  <span style={{ fontSize: 11, color: "#64748B", flexShrink: 0 }}>{(s.tetelek || []).length} tétel</span>
+                  <span style={{ fontSize: 11, color: C.muted, flexShrink: 0 }}>{(s.tetelek || []).length} tétel</span>
                 </button>
               ))}
             </div>
@@ -686,11 +686,11 @@ export default function AjanlatEditor({ ajanlat, onClose, onSaved, currentUser }
           <div style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 14, width: "100%", maxWidth: 400, boxShadow: "0 20px 60px rgba(0,0,0,.25)", fontFamily: FONT }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid #E2E8F0" }}>
               <p style={{ fontFamily: FONT_HEADING, fontSize: 16, fontWeight: 800, margin: 0 }}>Mentés sablonként</p>
-              <p style={{ fontSize: 12, color: "#64748B", margin: "4px 0 0" }}>A jelenlegi {form.tetelek.length} tételsor lesz elmentve.</p>
+              <p style={{ fontSize: 12, color: C.muted, margin: "4px 0 0" }}>A jelenlegi {form.tetelek.length} tételsor lesz elmentve.</p>
             </div>
             <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>Sablon neve *</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.7 }}>Sablon neve *</label>
                 <input autoFocus value={sablonNev} onChange={e => setSablonNev(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter" && sablonNev.trim()) { createAjanlatSablon({ nev: sablonNev.trim(), leiras: "", tetelek: form.tetelek }); setShowSablonMent(false); } }}
                   placeholder="pl. 10 kWp standard csomag"
@@ -701,7 +701,7 @@ export default function AjanlatEditor({ ajanlat, onClose, onSaved, currentUser }
                   style={{ flex: 1, padding: "10px", border: "1.5px solid #E2E8F0", borderRadius: 9, background: "#fff", cursor: "pointer", fontFamily: FONT, fontWeight: 600 }}>Mégse</button>
                 <button type="button" disabled={!sablonNev.trim()}
                   onClick={() => { createAjanlatSablon({ nev: sablonNev.trim(), leiras: "", tetelek: form.tetelek }); setShowSablonMent(false); }}
-                  style={{ flex: 2, padding: "10px", background: sablonNev.trim() ? "#7C3AED" : "#E2E8F0", color: sablonNev.trim() ? "#fff" : "#94A3B8", border: "none", borderRadius: 9, cursor: sablonNev.trim() ? "pointer" : "default", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
+                  style={{ flex: 2, padding: "10px", background: sablonNev.trim() ? C.accent : C.border, color: sablonNev.trim() ? "#fff" : C.muted, border: "none", borderRadius: 9, cursor: sablonNev.trim() ? "pointer" : "default", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
                   Sablon mentése
                 </button>
               </div>
