@@ -70,8 +70,8 @@ function FotoKategoria({ kat, photos, onChange, munkalapId }) {
   }
 
   return (
-    <div style={{ marginBottom:10, borderRadius:12, overflow:"hidden", border:`1.5px solid ${hiany?"#FCA5A5":ok&&photos.length>0?"#86EFAC":C.border}` }}>
-      <button onClick={() => setOpen(p=>!p)} style={{ width:"100%", display:"flex", alignItems:"center", gap:12, padding:"13px 16px", background: ok&&photos.length>0?"#F0FDF4":hiany?C.dangerLight:C.bg, border:"none", cursor:"pointer", fontFamily:FONT }}>
+    <div style={{ marginBottom:10, borderRadius:12, overflow:"hidden", border:`1.5px solid ${hiany?C.danger:ok&&photos.length>0?C.success:C.border}` }}>
+      <button onClick={() => setOpen(p=>!p)} style={{ width:"100%", display:"flex", alignItems:"center", gap:12, padding:"13px 16px", background: ok&&photos.length>0?C.successLight:hiany?C.dangerLight:C.bg, border:"none", cursor:"pointer", fontFamily:FONT }}>
         <div style={{ width:36, height:36, borderRadius:9, background: ok&&photos.length>0?C.success:hiany?C.danger:C.border, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
           <Camera size={18} color="#fff"/>
         </div>

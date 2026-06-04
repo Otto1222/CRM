@@ -21,7 +21,7 @@ function StatCard({ label, value, sub, color, bg, icon: Icon }) {
 }
 
 function StatusBadge({ s }) {
-  const cfg = STATUS_CFG[s] || { bg:"#F2F5F4", text:C.muted, dot:C.muted };
+  const cfg = STATUS_CFG[s] || { bg:C.bg, text:C.muted, dot:C.muted };
   return (
     <span style={{ background:cfg.bg, color:cfg.text, borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:700, whiteSpace:"nowrap" }}>
       {s}

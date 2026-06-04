@@ -582,12 +582,12 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
               <div>
                 <label style={{ fontSize:12, fontWeight:700, color:C.muted, display:"block", marginBottom:5 }}>Fővállalkozói azonosító</label>
-                <input value={alap.fovallalkoiAzonosito||""} onChange={e=>updAlap("fovallalkoiAzonosito",e.target.value)} placeholder="pl. FŐV-2026-145" style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:"1.5px solid #E2E8F0", borderRadius:9, fontSize:14, fontFamily:"inherit", outline:"none" }} />
+                <input value={alap.fovallalkoiAzonosito||""} onChange={e=>updAlap("fovallalkoiAzonosito",e.target.value)} placeholder="pl. FŐV-2026-145" style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:"1.5px solid "+C.border, borderRadius:9, fontSize:14, fontFamily:"inherit", outline:"none" }} />
                 <p style={{ fontSize:10, color:C.muted, marginTop:3 }}>EDI sorszám (E.D.I. 001) mentéskor kap</p>
               </div>
               <div>
                 <label style={{ fontSize:12, fontWeight:700, color:C.muted, display:"block", marginBottom:5 }}>Munkalap típusa</label>
-                <select value={alap.munkalapTipus||"Első kivitelezés"} onChange={e=>updAlap("munkalapTipus",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:"1.5px solid #E2E8F0", borderRadius:9, fontSize:14, fontFamily:"inherit", color:"#0F172A", outline:"none", background:C.bg }}>
+                <select value={alap.munkalapTipus||"Első kivitelezés"} onChange={e=>updAlap("munkalapTipus",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:"1.5px solid "+C.border, borderRadius:9, fontSize:14, fontFamily:"inherit", color:C.text, outline:"none", background:C.bg }}>
                   {MUNKALAP_TIPUSOK.map(t=><option key={t}>{t}</option>)}
                 </select>
               </div>

@@ -28,8 +28,8 @@ const MENU_ITEMS = [
     label: "Felhasználók & Szerelő csapatok",
     desc: "CRM login felhasználók, jelszavak, szerepkörök + szerelő csapatok kezelése",
     icon: Users,
-    color: "#2563EB",
-    bg: "#EFF6FF",
+    color: C.accent,
+    bg: C.accentLight,
   },
   {
     id: "fovallalkozok",
@@ -37,7 +37,7 @@ const MENU_ITEMS = [
     desc: "Fővállalkozók, km-elszámolás, díjtételek",
     icon: Building2,
     color: C.success,
-    bg: "#ECFDF5",
+    bg: C.successLight,
   },
   {
     id: "munkatipusok",
@@ -45,15 +45,15 @@ const MENU_ITEMS = [
     desc: "Munkatípus definíciók, bevételi tételek, árlogika",
     icon: Wrench,
     color: C.accent,
-    bg: "#F5F3FF",
+    bg: C.accentLight,
   },
   {
     id: "munkakiosztas",
     label: "Munkakiosztás beállítások",
     desc: "Kiosztási szabályok, csapat kapacitás",
     icon: Settings,
-    color: "#D97706",
-    bg: "#FFFBEB",
+    color: C.warning,
+    bg: C.warningLight,
   },
   {
     id: "jegyzokonyv",
@@ -61,7 +61,7 @@ const MENU_ITEMS = [
     desc: "VBF és átadási jegyzőkönyv konfigurációja",
     icon: FileText,
     color: C.accent,
-    bg: "#ECFEFF",
+    bg: C.accentLight,
   },
   {
     id: "sablonok",
@@ -69,7 +69,7 @@ const MENU_ITEMS = [
     desc: "Word-szerű sablonszerkesztő, fejléc/lábléc kezelés",
     icon: FileText,
     color: C.danger,
-    bg: "#FEF2F2",
+    bg: C.dangerLight,
   },
   {
     id: "telepito_csapatok",
@@ -77,7 +77,7 @@ const MENU_ITEMS = [
     desc: "LMRA aláíráshoz: telepítő csapatok és tagjaik kezelése",
     icon: HardHat,
     color: C.success,
-    bg: "#ECFDF5",
+    bg: C.successLight,
   },
   {
     id: "lmra",
@@ -85,7 +85,7 @@ const MENU_ITEMS = [
     desc: "Last Minute Risk Assessment kockázati pontok szerkesztése",
     icon: Shield,
     color: C.danger,
-    bg: "#FEF2F2",
+    bg: C.dangerLight,
   },
   {
     id: "mentes",
@@ -93,7 +93,7 @@ const MENU_ITEMS = [
     desc: "Adatok mentése, visszaállítás, export JSON",
     icon: Shield,
     color: C.muted,
-    bg: "#F8FAFC",
+    bg: C.bg,
   },
   {
     id: "drive_status",
@@ -101,7 +101,7 @@ const MENU_ITEMS = [
     desc: "Kapcsolat teszt, kollekciónkénti szinkron napló, teljes Drive mentés",
     icon: Shield,
     color: C.accent,
-    bg: "#ECFEFF",
+    bg: C.accentLight,
   },
   {
     id: "oktatoanyagok",
@@ -109,7 +109,7 @@ const MENU_ITEMS = [
     desc: "Telepítők számára elérhető Google Drive mappa URL-je",
     icon: BookOpen,
     color: C.accent,
-    bg: "#ECFEFF",
+    bg: C.accentLight,
   },
   {
     id: "vbfpdfsablon",
@@ -117,7 +117,7 @@ const MENU_ITEMS = [
     desc: "VBF PDF sablon feltöltése – adatlap az eredeti nyomtatványra",
     icon: Upload,
     color: C.danger,
-    bg: "#FEF2F2",
+    bg: C.dangerLight,
   },
   {
     id: "kezikonyvek",
@@ -125,7 +125,7 @@ const MENU_ITEMS = [
     desc: "Teljes rendszer-kézikönyv PDF-ben · Telepítői útmutató letöltése",
     icon: BookOpen,
     color: C.accent,
-    bg: "#ECFEFF",
+    bg: C.accentLight,
   },
   {
     id: "anyagtorzs",
@@ -133,7 +133,7 @@ const MENU_ITEMS = [
     desc: "Anyag- és eszközkatalógus, árjegyzék az árajánlatokhoz",
     icon: Package,
     color: C.success,
-    bg: "#ECFDF5",
+    bg: C.successLight,
   },
   {
     id: "ajanlat_sablonok",
@@ -141,7 +141,7 @@ const MENU_ITEMS = [
     desc: "Elmentett tételsor-sablonok az árajánlat-készítőhöz",
     icon: BookTemplate,
     color: C.accent,
-    bg: "#F5F3FF",
+    bg: C.accentLight,
   },
 ];
 
@@ -291,7 +291,7 @@ export default function BeallitasokPage({ currentUser }) {
       <h1 style={{ fontFamily: FONT_HEADING, fontSize: 22, fontWeight: 800, color: C.text, margin: "0 0 6px" }}>
         ⚙️ Beállítások
       </h1>
-      <p style={{ fontSize: 13, color: "#64748B", marginBottom: 24 }}>
+      <p style={{ fontSize: 13, color: C.muted, marginBottom: 24 }}>
         Rendszer konfigurációja, felhasználók, elszámolási szabályok
       </p>
 
@@ -329,11 +329,11 @@ export default function BeallitasokPage({ currentUser }) {
                 <p style={{ fontWeight: 700, fontSize: 14, color: C.text, margin: "0 0 3px", lineHeight: 1.3 }}>
                   {item.label}
                 </p>
-                <p style={{ fontSize: 12, color: "#64748B", margin: 0, lineHeight: 1.4 }}>
+                <p style={{ fontSize: 12, color: C.muted, margin: 0, lineHeight: 1.4 }}>
                   {item.desc}
                 </p>
               </div>
-              <ChevronRight size={16} color="#CBD5E1" style={{ flexShrink: 0 }} />
+              <ChevronRight size={16} color={C.border} style={{ flexShrink: 0 }} />
             </button>
           );
         })}
@@ -416,12 +416,12 @@ function AdatTorlesPanel() {
         <Trash2 size={20} color={C.danger} />
         <span style={{ fontWeight: 800, fontSize: 15, color: C.danger }}>Operatív adatok törlése</span>
       </div>
-      <p style={{ fontSize: 13, color: "#7F1D1D", marginBottom: 12, lineHeight: 1.6 }}>
+      <p style={{ fontSize: 13, color: C.danger, marginBottom: 12, lineHeight: 1.6 }}>
         Ez a funkció törli az összes ügyfelet, munkalapot, projektet, számlát és kártérítést a böngészőből.
         A beállítások, felhasználók, fővállalkozók és munkatípusok <strong>megmaradnak</strong>.<br />
         A Drive-on tárolt adatokat ez nem törli — ott manuálisan kell.
       </p>
-      <p style={{ fontSize: 12, color: "#64748B", marginBottom: 8 }}>
+      <p style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>
         Törlendő: {TORLENDO.map(t => t.label).join(", ")}
       </p>
       {done ? (
@@ -668,14 +668,14 @@ function OktatoAnyagokBeallitas() {
         </p>
       </div>
 
-      <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.7 }}>
+      <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.7 }}>
         Google Drive mappa URL
       </label>
       <input
         value={url}
         onChange={e => setUrl(e.target.value)}
         placeholder="https://drive.google.com/drive/folders/..."
-        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none", background: "#FAFAFA", marginBottom: 12 }}
+        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none", background: C.bg, marginBottom: 12 }}
       />
 
       {url && (
@@ -691,7 +691,7 @@ function OktatoAnyagokBeallitas() {
 
       <button
         onClick={handleMent}
-        style={{ padding: "10px 24px", background: mentve ? "#059669" : "#0891B2", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}
+        style={{ padding: "10px 24px", background: mentve ? C.success : C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}
       >
         {mentve ? "✓ Mentve!" : "Mentés"}
       </button>
@@ -715,7 +715,7 @@ function BackBtn({ onClick, label }) {
       <button onClick={onClick} style={{
         display: "flex", alignItems: "center", gap: 6,
         border: "none", background: "none", cursor: "pointer",
-        fontSize: 13, color: "#64748B", fontFamily: FONT, fontWeight: 600, padding: 0,
+        fontSize: 13, color: C.muted, fontFamily: FONT, fontWeight: 600, padding: 0,
       }}>
         ← Beállítások
       </button>
@@ -766,8 +766,8 @@ function LmraBeallitasok() {
       <div style={{ background: C.dangerLight, border: `1.5px solid ${C.danger}50`, borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", gap: 10 }}>
         <Shield size={18} color={C.danger} style={{ flexShrink: 0, marginTop: 1 }} />
         <div>
-          <p style={{ fontWeight: 700, fontSize: 13, color: "#991B1B", margin: 0 }}>LMRA – Munkavégzést megelőző kockázatértékelés</p>
-          <p style={{ fontSize: 12, color: "#991B1B", margin: "3px 0 0" }}>
+          <p style={{ fontWeight: 700, fontSize: 13, color: C.danger, margin: 0 }}>LMRA – Munkavégzést megelőző kockázatértékelés</p>
+          <p style={{ fontSize: 12, color: C.danger, margin: "3px 0 0" }}>
             Töltsd fel az eredeti, rögzített LMRA nyomtatványt PDF formátumban.
             Helyszínen a telepítők megtekinthetik és mellette kitöltik a digitális verziót, majd aláírnak.
           </p>
@@ -795,22 +795,22 @@ function LmraBeallitasok() {
       {/* Feltöltés gomb */}
       <input ref={fileRef} type="file" accept=".pdf,.docx" style={{ display: "none" }} onChange={handleFeltoltes} />
       <button onClick={() => fileRef.current?.click()} disabled={loading}
-        style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 22px", background: loading ? "#E2E8F0" : "#DC2626", color: "#fff", border: "none", borderRadius: 10, cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, marginBottom: 28 }}>
+        style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 22px", background: loading ? C.border : C.danger, color: "#fff", border: "none", borderRadius: 10, cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, marginBottom: 28 }}>
         <Upload size={16} />
         {loading ? "Feltöltés..." : van ? "Nyomtatvány cseréje (.pdf / .docx)" : "LMRA nyomtatvány feltöltése (.pdf / .docx)"}
       </button>
 
       {/* Kockázat lista tájékoztató */}
       <div style={{ background: C.bg, border: "1px solid #E2E8F0", borderRadius: 12, padding: "14px 16px" }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: .7, margin: "0 0 10px" }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .7, margin: "0 0 10px" }}>
           Digitális kockázati pontok ({LMRA_KOCKAZATOK.length} db) – rögzített lista
         </p>
-        <p style={{ fontSize: 12, color: "#64748B", margin: "0 0 10px" }}>
+        <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px" }}>
           Ezek a pontok az eredeti nyomtatványból kerültek be. Igen/Nem értékelést adnak róluk helyszínen.
         </p>
         {LMRA_KOCKAZATOK.map((k, i) => (
-          <div key={k.id} style={{ fontSize: 12, color: "#374151", padding: "4px 0", borderBottom: "1px solid #F1F5F9", display: "flex", gap: 8 }}>
-            <span style={{ color: "#94A3B8", fontWeight: 700, minWidth: 20 }}>{i + 1}.</span>
+          <div key={k.id} style={{ fontSize: 12, color: C.textSub, padding: "4px 0", borderBottom: "1px solid #F1F5F9", display: "flex", gap: 8 }}>
+            <span style={{ color: C.muted, fontWeight: 700, minWidth: 20 }}>{i + 1}.</span>
             {k.szoveg}
           </div>
         ))}
@@ -877,7 +877,7 @@ function TelepitoCsapatokBeallitas() {
         <button
           onClick={handleAddCsapat}
           disabled={!ujCsapatNev.trim()}
-          style={{ padding: "10px 20px", background: ujCsapatNev.trim() ? "#059669" : "#E2E8F0", color: "#fff", border: "none", borderRadius: 9, cursor: ujCsapatNev.trim() ? "pointer" : "default", fontWeight: 700, fontSize: 14, fontFamily: FONT, display: "flex", alignItems: "center", gap: 6 }}
+          style={{ padding: "10px 20px", background: ujCsapatNev.trim() ? C.success : C.border, color: "#fff", border: "none", borderRadius: 9, cursor: ujCsapatNev.trim() ? "pointer" : "default", fontWeight: 700, fontSize: 14, fontFamily: FONT, display: "flex", alignItems: "center", gap: 6 }}
         >
           <UserPlus size={15} /> Új csapat
         </button>
@@ -894,8 +894,8 @@ function TelepitoCsapatokBeallitas() {
         <div key={cs.id} style={{ background: "#fff", border: `1.5px solid ${openId === cs.id ? C.accent : C.border}`, borderRadius: 12, marginBottom: 10, overflow: "hidden" }}>
           {/* Csapat fejléc */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px" }}>
-            <div style={{ width: 34, height: 34, borderRadius: 8, background: cs.aktiv !== false ? "#ECFDF5" : "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <HardHat size={17} color={cs.aktiv !== false ? "#059669" : "#94A3B8"} />
+            <div style={{ width: 34, height: 34, borderRadius: 8, background: cs.aktiv !== false ? C.successLight : C.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <HardHat size={17} color={cs.aktiv !== false ? C.success : C.muted} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               {szerkesztId === cs.id ? (
@@ -918,7 +918,7 @@ function TelepitoCsapatokBeallitas() {
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: cs.aktiv !== false ? C.text : C.muted }}>
                     {cs.nev}
-                    {cs.aktiv === false && <span style={{ fontSize: 11, marginLeft: 7, color: "#94A3B8" }}>(inaktív)</span>}
+                    {cs.aktiv === false && <span style={{ fontSize: 11, marginLeft: 7, color: C.muted }}>(inaktív)</span>}
                   </p>
                   <button onClick={() => { setSzerkesztId(cs.id); setSzerkesztNev(cs.nev); }} style={{ padding: "2px 6px", background: "none", border: "none", cursor: "pointer", color: C.muted }}>
                     <Pencil size={12} />
@@ -932,7 +932,7 @@ function TelepitoCsapatokBeallitas() {
               </span>
               <button
                 onClick={() => handleToggleAktiv(cs.id, cs.aktiv !== false)}
-                style={{ fontSize: 11, padding: "3px 10px", borderRadius: 7, border: `1px solid ${cs.aktiv !== false ? "#FCD34D" : "#86EFAC"}`, background: cs.aktiv !== false ? "#FFFBEB" : "#ECFDF5", color: cs.aktiv !== false ? "#D97706" : "#059669", cursor: "pointer", fontWeight: 600 }}
+                style={{ fontSize: 11, padding: "3px 10px", borderRadius: 7, border: `1px solid ${cs.aktiv !== false ? C.warning : C.success}`, background: cs.aktiv !== false ? C.warningLight : C.successLight, color: cs.aktiv !== false ? C.warning : C.success, cursor: "pointer", fontWeight: 600 }}
               >
                 {cs.aktiv !== false ? "Inaktiválás" : "Aktiválás"}
               </button>
@@ -1029,7 +1029,7 @@ function TelepitoCsapatTagok({ csapatId }) {
         </p>
       )}
       {loadTeleppTagok().filter(t => t.csapatId === csapatId).map(t => (
-        <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "7px 10px", background: t.aktiv !== false ? "#FAFAFA" : "#F1F5F9", borderRadius: 8, marginBottom: 5, border: `1px solid ${C.border}`, opacity: t.aktiv !== false ? 1 : 0.6 }}>
+        <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "7px 10px", background: t.aktiv !== false ? C.bg : C.bg, borderRadius: 8, marginBottom: 5, border: `1px solid ${C.border}`, opacity: t.aktiv !== false ? 1 : 0.6 }}>
           {szerkesztId === t.id ? (
             <div style={{ flex: 1, display: "flex", gap: 6 }}>
               <input value={szerkesztNev} onChange={e => setSzNev(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSaveNev(t.id)} autoFocus
@@ -1047,7 +1047,7 @@ function TelepitoCsapatTagok({ csapatId }) {
           {szerkesztId !== t.id && (
             <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
               <button onClick={() => { setSzId(t.id); setSzNev(t.nev); }} style={{ padding: "3px 6px", background: "none", border: "none", cursor: "pointer", color: C.muted }}><Pencil size={12} /></button>
-              <button onClick={() => handleToggleAktivTag(t.id, t.aktiv !== false)} style={{ fontSize: 10, padding: "2px 7px", border: "none", background: t.aktiv !== false ? "#FFFBEB" : "#ECFDF5", color: t.aktiv !== false ? "#D97706" : "#059669", borderRadius: 5, cursor: "pointer", fontWeight: 600 }}>
+              <button onClick={() => handleToggleAktivTag(t.id, t.aktiv !== false)} style={{ fontSize: 10, padding: "2px 7px", border: "none", background: t.aktiv !== false ? C.warningLight : C.successLight, color: t.aktiv !== false ? C.warning : C.success, borderRadius: 5, cursor: "pointer", fontWeight: 600 }}>
                 {t.aktiv !== false ? "Inakt." : "Aktív"}
               </button>
               <button onClick={() => handleDelete(t.id)} style={{ padding: "3px 6px", background: C.dangerLight, border: "none", borderRadius: 5, cursor: "pointer", color: C.danger }}><Trash2 size={12} /></button>
@@ -1065,7 +1065,7 @@ function TelepitoCsapatTagok({ csapatId }) {
           placeholder="Telefon (opcionális)"
           style={{ flex: 2, padding: "8px 10px", border: `1.5px dashed ${C.border}`, borderRadius: 7, fontSize: 13, fontFamily: FONT, outline: "none", background: C.bg }} />
         <button onClick={handleAdd} disabled={!ujNev.trim()}
-          style={{ padding: "8px 16px", background: ujNev.trim() ? "#059669" : "#E2E8F0", color: "#fff", border: "none", borderRadius: 7, cursor: ujNev.trim() ? "pointer" : "default", fontWeight: 700, fontSize: 14, fontFamily: FONT, display: "flex", alignItems: "center", gap: 5 }}>
+          style={{ padding: "8px 16px", background: ujNev.trim() ? C.success : C.border, color: "#fff", border: "none", borderRadius: 7, cursor: ujNev.trim() ? "pointer" : "default", fontWeight: 700, fontSize: 14, fontFamily: FONT, display: "flex", alignItems: "center", gap: 5 }}>
           <UserPlus size={14} /> Hozzáad
         </button>
       </div>
@@ -1113,15 +1113,15 @@ function VbfPdfSablonBeallitas() {
       <div style={{ background: C.dangerLight, border: `1.5px solid ${C.danger}50`, borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", gap: 10, alignItems: "flex-start" }}>
         <Upload size={18} color={C.danger} style={{ flexShrink: 0, marginTop: 1 }} />
         <div>
-          <p style={{ fontWeight: 700, fontSize: 13, color: "#991B1B", margin: 0 }}>VBF – Villamos Biztonsági Felülvizsgálati Jegyzőkönyv (PDF sablon)</p>
-          <p style={{ fontSize: 12, color: "#991B1B", margin: "3px 0 0" }}>
+          <p style={{ fontWeight: 700, fontSize: 13, color: C.danger, margin: 0 }}>VBF – Villamos Biztonsági Felülvizsgálati Jegyzőkönyv (PDF sablon)</p>
+          <p style={{ fontSize: 12, color: C.danger, margin: "3px 0 0" }}>
             Töltsd fel az eredeti VBF nyomtatványt PDF formátumban. A letöltött dokumentum az eredeti sablont
             tartalmazza + az utolsó oldalon a kitöltött mérési adatokat.
           </p>
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, padding: "12px 16px", background: van ? C.successLight : C.warningLight, border: `1px solid ${van ? "#86EFAC" : "#FCD34D"}`, borderRadius: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, padding: "12px 16px", background: van ? C.successLight : C.warningLight, border: `1px solid ${van ? C.success : C.warning}`, borderRadius: 10 }}>
         <div style={{ flex: 1 }}>
           <p style={{ fontWeight: 700, fontSize: 14, color: van ? C.success : C.warning, margin: 0 }}>
             {van ? `✓ VBF PDF sablon feltöltve (${meta?.kb ?? "?"} KB)` : "Nincs PDF sablon feltöltve"}
@@ -1141,14 +1141,14 @@ function VbfPdfSablonBeallitas() {
       <button
         onClick={() => fileRef.current?.click()}
         disabled={loading}
-        style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 22px", background: loading ? "#E2E8F0" : "#DC2626", color: "#fff", border: "none", borderRadius: 10, cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, marginBottom: 16 }}
+        style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 22px", background: loading ? C.border : C.danger, color: "#fff", border: "none", borderRadius: 10, cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, marginBottom: 16 }}
       >
         <Upload size={16} />
         {loading ? "Feltöltés..." : van ? "PDF sablon cseréje" : "VBF PDF sablon feltöltése (.pdf)"}
       </button>
 
       <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px" }}>
-        <p style={{ fontSize: 12, color: "#374151", margin: 0, lineHeight: 1.7 }}>
+        <p style={{ fontSize: 12, color: C.textSub, margin: 0, lineHeight: 1.7 }}>
           <strong>Hogyan működik:</strong><br />
           1. Töltsd fel az eredeti VBF nyomtatvány PDF-jét itt.<br />
           2. A Telepítő kitölti a VBF méréssort a munkalap nézetben.<br />
@@ -1165,7 +1165,7 @@ function VbfPdfSablonBeallitas() {
 
 // ─── Anyagtörzs kezelése ──────────────────────────────────────
 
-const _inp = { width: "100%", boxSizing: "border-box", padding: "8px 10px", border: "1.5px solid #E2E8F0", borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", background: "#FAFAFA" };
+const _inp = { width: "100%", boxSizing: "border-box", padding: "8px 10px", border: "1.5px solid #E2E8F0", borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", background: C.bg };
 
 function AnyagtorzsBeallitas() {
   const [tetelek, setTetelek] = useState(() => loadAnyagtorzs());
@@ -1283,22 +1283,22 @@ function AnyagtorzsBeallitas() {
       </div>
 
       {/* ── Google Sheets CSV import ── */}
-      <div style={{ background: "#F0F9FF", border: "1.5px solid #7DD3FC", borderRadius: 12, marginBottom: 14, overflow: "hidden" }}>
+      <div style={{ background: C.accentLight, border: "1.5px solid #7DD3FC", borderRadius: 12, marginBottom: 14, overflow: "hidden" }}>
         <button type="button" onClick={() => setShowCsvImport(o => !o)}
           style={{ width: "100%", padding: "11px 16px", background: "none", border: "none", cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Upload size={15} color="#0284C7" />
-            <span style={{ fontWeight: 700, fontSize: 13, color: "#0284C7" }}>Google Sheets CSV import</span>
-            <span style={{ fontSize: 12, color: "#64748B" }}>— havi árfrissítés cikkszám szerint</span>
+            <Upload size={15} color={C.accent} />
+            <span style={{ fontWeight: 700, fontSize: 13, color: C.accent }}>Google Sheets CSV import</span>
+            <span style={{ fontSize: 12, color: C.muted }}>— havi árfrissítés cikkszám szerint</span>
           </div>
-          <ChevronRight size={15} style={{ transform: showCsvImport ? "rotate(90deg)" : "none", transition: "transform .2s", color: "#0284C7" }} />
+          <ChevronRight size={15} style={{ transform: showCsvImport ? "rotate(90deg)" : "none", transition: "transform .2s", color: C.accent }} />
         </button>
         {showCsvImport && (
           <div style={{ padding: "0 16px 16px", borderTop: "1px solid #BAE6FD" }}>
-            <div style={{ background: "#E0F2FE", borderRadius: 9, padding: "10px 14px", margin: "12px 0 12px", fontSize: 12, color: "#075985", lineHeight: 1.7 }}>
+            <div style={{ background: C.accentLight, borderRadius: 9, padding: "10px 14px", margin: "12px 0 12px", fontSize: 12, color: C.accent, lineHeight: 1.7 }}>
               <strong>Hogyan készítsd elő a Google Sheet-et:</strong><br />
               1. A Sheet első sora fejlécek:{" "}
-              <code style={{ background: "#BAE6FD", padding: "1px 5px", borderRadius: 4 }}>
+              <code style={{ background: C.accent, padding: "1px 5px", borderRadius: 4 }}>
                 cikkszam, megnevezes, kategoria, egyseg, nettoBeszerzesiAr, ajanlatiNetto, afaKulcs
               </code><br />
               2. Fájl → Letöltés → <strong>Vesszővel tagolt értékek (.csv)</strong><br />
@@ -1307,7 +1307,7 @@ function AnyagtorzsBeallitas() {
             <input ref={csvFileRef} type="file" accept=".csv,text/csv" style={{ display: "none" }} onChange={handleCsvFile} />
             {!csvPreview ? (
               <button type="button" onClick={() => csvFileRef.current?.click()}
-                style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#0284C7", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontFamily: FONT, fontWeight: 700, fontSize: 13 }}>
+                style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontFamily: FONT, fontWeight: 700, fontSize: 13 }}>
                 <Upload size={14} /> CSV fájl kiválasztása
               </button>
             ) : (
@@ -1318,17 +1318,17 @@ function AnyagtorzsBeallitas() {
                     <p style={{ fontSize: 20, fontWeight: 800, color: C.success, margin: 0 }}>{csvPreview.news.length}</p>
                   </div>
                   <div style={{ background: C.warningLight, borderRadius: 9, padding: "8px 14px", flex: 1, textAlign: "center" }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, color: "#D97706", textTransform: "uppercase", margin: "0 0 2px" }}>Frissítendő</p>
-                    <p style={{ fontSize: 20, fontWeight: 800, color: "#D97706", margin: 0 }}>{csvPreview.updates.length}</p>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: C.warning, textTransform: "uppercase", margin: "0 0 2px" }}>Frissítendő</p>
+                    <p style={{ fontSize: 20, fontWeight: 800, color: C.warning, margin: 0 }}>{csvPreview.updates.length}</p>
                   </div>
                   <div style={{ background: C.bg, borderRadius: 9, padding: "8px 14px", flex: 1, textAlign: "center" }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, color: "#64748B", textTransform: "uppercase", margin: "0 0 2px" }}>Összesen</p>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", margin: "0 0 2px" }}>Összesen</p>
                     <p style={{ fontSize: 20, fontWeight: 800, color: C.text, margin: 0 }}>{csvPreview.rows.length}</p>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button type="button" onClick={handleCsvImport}
-                    style={{ flex: 2, padding: "10px", background: "#0284C7", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
+                    style={{ flex: 2, padding: "10px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
                     Import indítása
                   </button>
                   <button type="button" onClick={() => setCsvPreview(null)}
@@ -1344,10 +1344,10 @@ function AnyagtorzsBeallitas() {
 
       <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "7px 12px", minWidth: 200 }}>
-          <Search size={15} color="#94A3B8" />
+          <Search size={15} color={C.muted} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Keresés megnevezésre, cikkszámra…"
             style={{ border: "none", outline: "none", fontSize: 13, fontFamily: FONT, background: "transparent", flex: 1 }} />
-          {search && <button onClick={() => setSearch("")} style={{ border: "none", background: "none", cursor: "pointer", color: "#94A3B8", padding: 0 }}><X size={14} /></button>}
+          {search && <button onClick={() => setSearch("")} style={{ border: "none", background: "none", cursor: "pointer", color: C.muted, padding: 0 }}><X size={14} /></button>}
         </div>
         <button onClick={() => setEditItem({})}
           style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", background: C.success, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT, whiteSpace: "nowrap" }}>
@@ -1359,9 +1359,9 @@ function AnyagtorzsBeallitas() {
         {["Mind", ...ANYAGTORZS_KATEGORIAK].map(k => (
           <button key={k} onClick={() => setKatFilter(k)}
             style={{ padding: "5px 12px", borderRadius: 18, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
-              background: katFilter === k ? "#059669" : "#fff",
-              color:      katFilter === k ? "#fff"    : "#64748B",
-              border:    `1.5px solid ${katFilter === k ? "#059669" : "#E2E8F0"}` }}>
+              background: katFilter === k ? C.success : "#fff",
+              color:      katFilter === k ? "#fff"    : C.muted,
+              border:    `1.5px solid ${katFilter === k ? C.success : C.border}` }}>
             {k}
           </button>
         ))}
@@ -1373,41 +1373,41 @@ function AnyagtorzsBeallitas() {
             <thead>
               <tr style={{ background: C.bg, borderBottom: "2px solid #E2E8F0" }}>
                 {["Cikkszám", "Megnevezés", "Kategória", "Egység", "Bszerz. ár", "Ajánlati ár", "ÁFA", "Fedezet", "Állapot", ""].map(h => (
-                  <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={10} style={{ padding: "36px", textAlign: "center", color: "#94A3B8", fontSize: 13 }}>
+                <tr><td colSpan={10} style={{ padding: "36px", textAlign: "center", color: C.muted, fontSize: 13 }}>
                   Nincs találat.
                 </td></tr>
               )}
               {filtered.map((a, i) => (
-                <tr key={a.id} style={{ borderBottom: "1px solid #F1F5F9", background: i % 2 === 0 ? "#fff" : "#FAFAFA", opacity: a.aktiv === false ? 0.55 : 1 }}>
-                  <td style={{ padding: "10px 12px", fontSize: 12, color: "#64748B", fontFamily: "monospace" }}>{a.cikkszam || "—"}</td>
+                <tr key={a.id} style={{ borderBottom: "1px solid #F1F5F9", background: i % 2 === 0 ? "#fff" : C.bg, opacity: a.aktiv === false ? 0.55 : 1 }}>
+                  <td style={{ padding: "10px 12px", fontSize: 12, color: C.muted, fontFamily: "monospace" }}>{a.cikkszam || "—"}</td>
                   <td style={{ padding: "10px 12px", fontWeight: 600, color: C.text }}>{a.megnevezes}</td>
                   <td style={{ padding: "10px 12px", color: C.muted, fontSize: 12 }}>{a.kategoria || "—"}</td>
                   <td style={{ padding: "10px 12px", color: C.muted, textAlign: "center" }}>{a.egyseg}</td>
-                  <td style={{ padding: "10px 12px", color: "#64748B", textAlign: "right", whiteSpace: "nowrap" }}>
+                  <td style={{ padding: "10px 12px", color: C.muted, textAlign: "right", whiteSpace: "nowrap" }}>
                     {a.nettoBeszerzesiAr > 0 ? ft(a.nettoBeszerzesiAr) : <span style={{ color: C.border }}>—</span>}
                   </td>
                   <td style={{ padding: "10px 12px", fontWeight: 700, color: C.success, textAlign: "right", whiteSpace: "nowrap" }}>{ft(a.ajanlatiNetto)}</td>
                   <td style={{ padding: "10px 12px", textAlign: "center", color: C.muted }}>{a.afaKulcs}%</td>
                   <td style={{ padding: "10px 12px", textAlign: "center" }}>
-                    <span style={{ fontWeight: 700, color: (a.arresPct || 0) >= 0 ? "#059669" : "#DC2626" }}>{a.arresPct || 0}%</span>
+                    <span style={{ fontWeight: 700, color: (a.arresPct || 0) >= 0 ? C.success : C.danger }}>{a.arresPct || 0}%</span>
                   </td>
                   <td style={{ padding: "10px 12px", textAlign: "center" }}>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 8,
-                      background: a.aktiv !== false ? "#ECFDF5" : "#F1F5F9",
-                      color: a.aktiv !== false ? "#059669" : "#94A3B8" }}>
+                      background: a.aktiv !== false ? C.successLight : C.bg,
+                      color: a.aktiv !== false ? C.success : C.muted }}>
                       {a.aktiv !== false ? "Aktív" : "Inaktív"}
                     </span>
                   </td>
                   <td style={{ padding: "10px 12px" }}>
                     <div style={{ display: "flex", gap: 5 }}>
                       <button onClick={() => setEditItem(a)}
-                        style={{ padding: "4px 8px", background: "#F1F5F9", border: "none", borderRadius: 6, cursor: "pointer", color: C.muted }} title="Szerkesztés">
+                        style={{ padding: "4px 8px", background: C.bg, border: "none", borderRadius: 6, cursor: "pointer", color: C.muted }} title="Szerkesztés">
                         <Pencil size={13} />
                       </button>
                       <button onClick={() => handleDelete(a.id)}
@@ -1422,7 +1422,7 @@ function AnyagtorzsBeallitas() {
           </table>
         </div>
         <div style={{ padding: "8px 14px", borderTop: "1px solid #E2E8F0", background: C.bg }}>
-          <p style={{ fontSize: 12, color: "#64748B", margin: 0 }}>{filtered.length} / {tetelek.length} tétel</p>
+          <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>{filtered.length} / {tetelek.length} tétel</p>
         </div>
       </div>
 
@@ -1465,63 +1465,63 @@ function AnyagtorzsFormModal({ item, onClose, onSave }) {
       <div style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "0 24px 60px rgba(0,0,0,.25)", fontFamily: FONT }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #E2E8F0" }}>
           <h2 style={{ fontFamily: FONT_HEADING, fontSize: 17, fontWeight: 800, margin: 0 }}>{isNew ? "Új anyagtörzs tétel" : "Tétel szerkesztése"}</h2>
-          <button type="button" onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: "#94A3B8" }}><X size={20} /></button>
+          <button type="button" onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: C.muted }}><X size={20} /></button>
         </div>
         <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
           {hiba && <div style={{ background: C.dangerLight, border: `1.5px solid ${C.danger}50`, borderRadius: 8, padding: "8px 12px", fontSize: 13, color: C.danger, fontWeight: 600 }}>{hiba}</div>}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 12px" }}>
             <div style={{ gridColumn: "span 2" }}>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Megnevezés *</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Megnevezés *</label>
               <input value={form.megnevezes} onChange={e => upd("megnevezes", e.target.value)} placeholder="Napelem panel 400 W…" style={_inp} />
             </div>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Cikkszám</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Cikkszám</label>
               <input value={form.cikkszam} onChange={e => upd("cikkszam", e.target.value)} placeholder="NP-400W" style={_inp} />
             </div>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Kategória</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Kategória</label>
               <select value={form.kategoria} onChange={e => upd("kategoria", e.target.value)} style={_inp}>
                 {ANYAGTORZS_KATEGORIAK.map(k => <option key={k}>{k}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Egység</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Egység</label>
               <select value={form.egyseg} onChange={e => upd("egyseg", e.target.value)} style={_inp}>
                 {ANYAG_EGYSEGEK.map(e => <option key={e}>{e}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>ÁFA kulcs</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>ÁFA kulcs</label>
               <select value={form.afaKulcs} onChange={e => upd("afaKulcs", Number(e.target.value))} style={_inp}>
                 {AFA_KULCSOK.map(k => <option key={k} value={k}>{k}%</option>)}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Nettó bszerz. ár (Ft)</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Nettó bszerz. ár (Ft)</label>
               <input type="number" min="0" value={form.nettoBeszerzesiAr} onChange={e => upd("nettoBeszerzesiAr", Number(e.target.value))} style={_inp} />
             </div>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Ajánlati nettó ár (Ft) *</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Ajánlati nettó ár (Ft) *</label>
               <input type="number" min="0" value={form.ajanlatiNetto} onChange={e => upd("ajanlatiNetto", Number(e.target.value))} style={_inp} />
             </div>
             <div style={{ gridColumn: "span 2", display: "flex", alignItems: "center", gap: 8 }}>
               <input type="checkbox" id="at-aktiv" checked={form.aktiv} onChange={e => upd("aktiv", e.target.checked)} style={{ width: 16, height: 16, cursor: "pointer" }} />
-              <label htmlFor="at-aktiv" style={{ fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>Aktív (elérhető az ajánlatokban)</label>
+              <label htmlFor="at-aktiv" style={{ fontSize: 13, fontWeight: 600, color: C.textSub, cursor: "pointer" }}>Aktív (elérhető az ajánlatokban)</label>
             </div>
             <div style={{ gridColumn: "span 2" }}>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Megjegyzés</label>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.7 }}>Megjegyzés</label>
               <textarea value={form.megjegyzes} onChange={e => upd("megjegyzes", e.target.value)} rows={2} style={{ ..._inp, resize: "vertical" }} />
             </div>
           </div>
           {fedezetPct !== null && (
-            <div style={{ background: fedezetPct >= 0 ? "#F0FDF4" : "#FEF2F2", border: `1px solid ${fedezetPct >= 0 ? "#86EFAC" : "#FECACA"}`, borderRadius: 8, padding: "8px 12px", display: "flex", gap: 20 }}>
+            <div style={{ background: fedezetPct >= 0 ? C.successLight : C.dangerLight, border: `1px solid ${fedezetPct >= 0 ? C.success : C.danger}`, borderRadius: 8, padding: "8px 12px", display: "flex", gap: 20 }}>
               <div>
-                <p style={{ fontSize: 10, color: fedezetPct >= 0 ? "#059669" : "#DC2626", fontWeight: 700, margin: "0 0 2px" }}>FEDEZET</p>
-                <p style={{ fontSize: 15, fontWeight: 800, color: fedezetPct >= 0 ? "#059669" : "#DC2626", margin: 0 }}>{fedezetPct}%</p>
+                <p style={{ fontSize: 10, color: fedezetPct >= 0 ? C.success : C.danger, fontWeight: 700, margin: "0 0 2px" }}>FEDEZET</p>
+                <p style={{ fontSize: 15, fontWeight: 800, color: fedezetPct >= 0 ? C.success : C.danger, margin: 0 }}>{fedezetPct}%</p>
               </div>
               <div>
-                <p style={{ fontSize: 10, color: fedezetPct >= 0 ? "#059669" : "#DC2626", fontWeight: 700, margin: "0 0 2px" }}>HASZON/EGYSÉG</p>
-                <p style={{ fontSize: 15, fontWeight: 800, color: fedezetPct >= 0 ? "#059669" : "#DC2626", margin: 0 }}>{ft(form.ajanlatiNetto - form.nettoBeszerzesiAr)}</p>
+                <p style={{ fontSize: 10, color: fedezetPct >= 0 ? C.success : C.danger, fontWeight: 700, margin: "0 0 2px" }}>HASZON/EGYSÉG</p>
+                <p style={{ fontSize: 15, fontWeight: 800, color: fedezetPct >= 0 ? C.success : C.danger, margin: 0 }}>{ft(form.ajanlatiNetto - form.nettoBeszerzesiAr)}</p>
               </div>
             </div>
           )}
@@ -1566,10 +1566,10 @@ function AjanlatSablonokBeallitas() {
   return (
     <div style={{ padding: "20px 24px", fontFamily: FONT, maxWidth: 780 }}>
       <div style={{ background: C.accentLight, border: "1.5px solid #C4B5FD", borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", gap: 10 }}>
-        <BookTemplate size={18} color="#7C3AED" style={{ flexShrink: 0, marginTop: 1 }} />
+        <BookTemplate size={18} color={C.accent} style={{ flexShrink: 0, marginTop: 1 }} />
         <div>
-          <p style={{ margin: 0, fontSize: 13, color: "#4C1D95", fontWeight: 700 }}>Ajánlati sablonok</p>
-          <p style={{ margin: "3px 0 0", fontSize: 12, color: "#6D28D9", lineHeight: 1.6 }}>
+          <p style={{ margin: 0, fontSize: 13, color: C.accent, fontWeight: 700 }}>Ajánlati sablonok</p>
+          <p style={{ margin: "3px 0 0", fontSize: 12, color: C.accent, lineHeight: 1.6 }}>
             Sablonokat az <strong>Árajánlat szerkesztőben</strong> menthetsz el – a Tételsorok fejlécénél megjelenik a „Mentés sablonként" gomb.
             Az elmentett sablonból egy kattintással betölthetők a tételsorok bármely új ajánlatba.
           </p>
@@ -1577,8 +1577,8 @@ function AjanlatSablonokBeallitas() {
       </div>
 
       {sablonok.length === 0 && (
-        <div style={{ textAlign: "center", padding: "48px 0", color: "#94A3B8" }}>
-          <BookTemplate size={38} style={{ opacity: 0.25, marginBottom: 12 }} color="#7C3AED" />
+        <div style={{ textAlign: "center", padding: "48px 0", color: C.muted }}>
+          <BookTemplate size={38} style={{ opacity: 0.25, marginBottom: 12 }} color={C.accent} />
           <p style={{ fontWeight: 700, fontSize: 14, margin: "0 0 6px" }}>Nincsenek elmentett sablonok</p>
           <p style={{ fontSize: 12, margin: 0 }}>Nyiss meg egy árajánlatot, adj hozzá tételsorokat, és mentsd el sablonként.</p>
         </div>
@@ -1588,7 +1588,7 @@ function AjanlatSablonokBeallitas() {
         {sablonok.map(s => (
           <div key={s.id} style={{ background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: C.accentLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <BookTemplate size={18} color="#7C3AED" />
+              <BookTemplate size={18} color={C.accent} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               {renameId === s.id ? (
@@ -1596,13 +1596,13 @@ function AjanlatSablonokBeallitas() {
                   <input value={renameNev} onChange={e => setRenameNev(e.target.value)} autoFocus
                     onKeyDown={e => e.key === "Enter" && handleRenameOk(s.id)}
                     style={{ flex: 1, padding: "6px 10px", border: "1.5px solid #7C3AED", borderRadius: 7, fontSize: 14, fontFamily: FONT, outline: "none" }} />
-                  <button onClick={() => handleRenameOk(s.id)} style={{ padding: "5px 14px", background: "#7C3AED", color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>Mentés</button>
+                  <button onClick={() => handleRenameOk(s.id)} style={{ padding: "5px 14px", background: C.accent, color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>Mentés</button>
                   <button onClick={() => setRenameId(null)} style={{ padding: "5px 10px", background: C.bg, border: "1px solid #E2E8F0", borderRadius: 7, cursor: "pointer" }}><X size={13} /></button>
                 </div>
               ) : (
                 <>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: C.text }}>{s.nev}</p>
-                  <p style={{ margin: 0, fontSize: 11, color: "#64748B" }}>
+                  <p style={{ margin: 0, fontSize: 11, color: C.muted }}>
                     {(s.tetelek || []).length} tételsor · Létrehozva: {s.createdAt}
                   </p>
                 </>
@@ -1611,7 +1611,7 @@ function AjanlatSablonokBeallitas() {
             {renameId !== s.id && (
               <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                 <button onClick={() => { setRenameId(s.id); setRenameNev(s.nev); }}
-                  style={{ padding: "5px 10px", background: "#F1F5F9", border: "none", borderRadius: 7, cursor: "pointer", color: C.muted }} title="Átnevezés">
+                  style={{ padding: "5px 10px", background: C.bg, border: "none", borderRadius: 7, cursor: "pointer", color: C.muted }} title="Átnevezés">
                   <Pencil size={14} />
                 </button>
                 <button onClick={() => handleDelete(s.id)}

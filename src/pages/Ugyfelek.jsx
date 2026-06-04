@@ -35,7 +35,7 @@ const inp = {
   fontSize: 14,
   fontFamily: "inherit",
   outline: "none",
-  background: "#FAFAFA",
+  background: C.bg,
 };
 
 function Field({ label, children, half }) {
@@ -361,9 +361,9 @@ export default function Ugyfelek({ data, currentUser }) {
                 return (
                   <tr
                     key={c.id}
-                    style={{ borderBottom: `1px solid ${C.bg}`, background: i % 2 === 0 ? "#fff" : "#FAFAFA", cursor: "pointer", transition: "background .1s" }}
+                    style={{ borderBottom: `1px solid ${C.bg}`, background: i % 2 === 0 ? "#fff" : C.bg, cursor: "pointer", transition: "background .1s" }}
                     onMouseEnter={e => e.currentTarget.style.background = C.accentLight}
-                    onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? "#fff" : "#FAFAFA"}
+                    onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? "#fff" : C.bg}
                     onClick={() => handleEdit(c)}
                   >
                     <td style={{ padding: "14px 16px" }}>
@@ -394,7 +394,7 @@ export default function Ugyfelek({ data, currentUser }) {
                       </td>
                     )}
                     <td style={{ padding: "14px 16px" }}>
-                      <span style={{ background: c.type === "Vállalkozás" ? "#FEF9C3" : C.bg, color: c.type === "Vállalkozás" ? "#854D0E" : C.muted, borderRadius: 6, padding: "3px 9px", fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ background: c.type === "Vállalkozás" ? "#FEF9C3" : C.bg, color: c.type === "Vállalkozás" ? C.warning : C.muted, borderRadius: 6, padding: "3px 9px", fontSize: 11, fontWeight: 600 }}>
                         {c.type || "Magánszemély"}
                       </span>
                     </td>

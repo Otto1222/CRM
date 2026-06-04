@@ -171,7 +171,7 @@ function FotoKartya({ kat, photos, onChange, hianyOk, onHianyOkChange }) {
           <p style={{ fontSize:12, color:C.muted, lineHeight:1.5 }}>{kat.leiras}</p>
         </div>
         <button onClick={()=>ref.current?.click()} style={{ width:48, height:48, flexShrink:0, background:C.accentLight, border:`1.5px solid #93C5FD`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-          <Camera size={22} color="#D97706"/>
+          <Camera size={22} color={C.warning}/>
         </button>
       </div>
 
@@ -698,8 +698,8 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
           <p style={{ fontSize:12,color:C.muted }}>{clientCim}</p>
         </div>
         <div style={{ display:"flex",gap:12 }}>
-          {clientTel&&<a href={`tel:${clientTel}`} style={{ color:"#4ADE80" }}><Phone size={22}/></a>}
-          {clientCim&&<a href={`https://maps.google.com/?q=${encodeURIComponent(clientCim)}`} target="_blank" rel="noreferrer" style={{ color:"#60A5FA" }}><MapPin size={22}/></a>}
+          {clientTel&&<a href={`tel:${clientTel}`} style={{ color:C.success }}><Phone size={22}/></a>}
+          {clientCim&&<a href={`https://maps.google.com/?q=${encodeURIComponent(clientCim)}`} target="_blank" rel="noreferrer" style={{ color:C.accent }}><MapPin size={22}/></a>}
         </div>
       </div>
     </div>
@@ -773,7 +773,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
         {!megkezdve ? (
           <div style={{ marginTop: 20 }}>
             <div style={{ background: C.warningLight, border: "1px solid #FCD34D", borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.warning }}>
-              <Shield size={16} color="#D97706" />
+              <Shield size={16} color={C.warning} />
               <span><b>LMRA szükséges</b> – minden csapattag aláírja a kockázatbecslést a munkakezdés előtt</span>
             </div>
             <button onClick={handleMegkezdes} style={{ width:"100%",padding:"15px",borderRadius:12,border:"none",background:C.success,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT }}>
@@ -941,7 +941,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
               {label:"Fotó nélküli kategóriák indokolva",ok:ell_mindenKatOk||ell_hianyosKat.length===0,info:`${ell_hianyosKat.filter(k=>!fotoHianyOkok[k.id]).length} kategória indoklás hiányzik`},
             ].map(item=>(
               <div key={item.label} style={{ display:"flex",alignItems:"flex-start",gap:10,padding:"10px 0",borderBottom:`1px solid ${C.border}` }}>
-                {item.ok?<CheckCircle2 size={20} color={C.success} style={{flexShrink:0,marginTop:2}}/>:<AlertTriangle size={20} color="#D97706" style={{flexShrink:0,marginTop:2}}/>}
+                {item.ok?<CheckCircle2 size={20} color={C.success} style={{flexShrink:0,marginTop:2}}/>:<AlertTriangle size={20} color={C.warning} style={{flexShrink:0,marginTop:2}}/>}
                 <div>
                   <p style={{ fontSize:14,color:item.ok?C.success:"#D97706",fontWeight:item.ok?600:500,margin:0 }}>{item.label}</p>
                   {!item.ok&&<p style={{ fontSize:11,color:C.muted,margin:"2px 0 0" }}>{item.info}</p>}
