@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import { MunkalapLista, MunkalapDetail } from "./pages/Munkalapok";
 import Ugyfelek from "./pages/Ugyfelek";
 import ComingSoon from "./pages/ComingSoon";
+import ArajanlaltokPage from "./pages/ArajanlaltokPage.jsx";
 import BeallitasokPage from "./pages/BeallitasokPage";
 import UjMunkalap from "./pages/UjMunkalap";
 import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
@@ -361,7 +362,7 @@ export default function App() {
 
             {page === "ugyfelek" && <Ugyfelek data={data} currentUser={user} />}
 
-            {page === "arajanlatok" && <ComingSoon title="Árajánlatok" />}
+            {page === "arajanlatok" && <ArajanlaltokPage currentUser={user} />}
             {page === "szerzodések" && <ComingSoon title="Szerződések" />}
             {page === "szamlak" && <SzamlakPage currentUser={user} />}
             {page === "csapat" && <CsapatokPage currentUser={user} />}

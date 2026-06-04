@@ -21,8 +21,10 @@ const KEYS = {
   crm_napelem_users:           "crm_napelem_users",
   szamlak:                     "szamlak",
   edi_sorszam_counter:         "edi_sorszam_counter",
-  edi_projekt_sorszam_counter: "edi_projekt_sorszam_counter",
-  crm_backups:                 "crm_backups",
+  edi_projekt_sorszam_counter:  "edi_projekt_sorszam_counter",
+  "ajanla tok":                 "ajanla tok",
+  edi_ajanlat_sorszam_counter:  "edi_ajanlat_sorszam_counter",
+  crm_backups:                  "crm_backups",
 };
 
 // ─── Cross-tab szinkronizáció BroadcastChannel-lel ───────────

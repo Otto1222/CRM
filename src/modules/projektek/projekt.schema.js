@@ -5,6 +5,17 @@
 
 export const PROJEKT_SCHEMA_VERSION = "1.0";
 
+export const PROJEKT_FORRAS = [
+  { id: "saját_ügyfél",  label: "Saját ügyfél",           color: "#2563EB", bg: "#EFF6FF" },
+  { id: "fővállalkozói", label: "Fővállalkozói megbízás",  color: "#7C3AED", bg: "#F5F3FF" },
+  { id: "garanciális",   label: "Garanciális munka",        color: "#D97706", bg: "#FFFBEB" },
+  { id: "javítási",      label: "Javítási munka",           color: "#059669", bg: "#ECFDF5" },
+];
+
+export function getProjektTipus(forras) {
+  return forras === "fővállalkozói" ? "Fővállalkozói projekt" : "Saját projekt";
+}
+
 export const PROJEKT_STATUSZOK = [
   { id: "Felmérésre vár",            szin: "#0EA5E9", bg: "#F0F9FF" },
   { id: "Felmérve",                  szin: "#6366F1", bg: "#EEF2FF" },
@@ -77,6 +88,14 @@ export const PROJEKT_SCHEMA = {
   // Kommunikáció, napló
   megjegyzesek:        [],   // [{ id, datum, user, szoveg }]
   esemenynaplo:        [],   // [{ id, datum, user, esemeny, reszletek }]
+  // Projekt forrása és típusa
+  forrás:              "",   // saját_ügyfél | fővállalkozói | garanciális | javítási
+  projektTipus:        "",   // Saját projekt | Fővállalkozói projekt (derived from forrás)
+  ajanlatId:           null, // linked Árajánlat ID (saját ügyfél flow)
+  // Fővállalkozói extra adatok
+  fovKapcsolattarto:   "",
+  fovFizetesiHatarido: "",
+  fovMegjegyzes:       "",
   // Drive integráció
   driveProjektMappa:   "",   // "" | "kérve" | "kész"
   // Meta

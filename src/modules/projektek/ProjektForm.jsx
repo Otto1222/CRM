@@ -3,7 +3,7 @@ import { X, Save, Navigation, TrendingUp } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { loadLocal, saveLocal } from "../../lib/localDb.js";
-import { PROJEKT_STATUSZOK } from "./projekt.schema.js";
+import { PROJEKT_STATUSZOK, PROJEKT_FORRAS, getProjektTipus } from "./projekt.schema.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { getAktivCsapatok } from "../csapatok/csapat.service.js";
 import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
@@ -48,7 +48,7 @@ const inp = {
   outline: "none",
   background: "#FAFAFA",
 };
-export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) {
+export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved, currentUser }) {
   const isNew = !projekt?.id;
   const users = getUsers();
   const csapatok = getAktivCsapatok();
@@ -57,18 +57,24 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
   const pmList = users.filter(u => ["Admin", "Projektmenedzser"].includes(u.role));
   const ugyfelek = loadLocal("ugyfelek") || [];
   const [form, setForm] = useState({
-    nev: projekt?.nev || "",
+    nev: projekt?.nev || ajanlatElofolt?.nev || "",
     kulsoAzonosito: projekt?.kulsoAzonosito || "",
     tipus: projekt?.tipus || "Napelem telepítés",
-    status: projekt?.status || "Felmérésre vár",
-    clientId: projekt?.clientId || "",
-    clientNev: projekt?.clientNev || "",
+    status: projekt?.status || (ajanlatElofolt ? "Elfogadva" : "Felmérésre vár"),
+    clientId: projekt?.clientId || ajanlatElofolt?.clientId || "",
+    clientNev: projekt?.clientNev || ajanlatElofolt?.clientNev || "",
     megbizoCeg: projekt?.megbizoCeg || "",
-    clientCim: projekt?.clientCim || "",
-    clientTel: projekt?.clientTel || "",
-    clientEmail: projekt?.clientEmail || "",
+    clientCim: projekt?.clientCim || ajanlatElofolt?.clientCim || "",
+    clientTel: projekt?.clientTel || ajanlatElofolt?.clientTel || "",
+    clientEmail: projekt?.clientEmail || ajanlatElofolt?.clientEmail || "",
     kapcsolattarto: projekt?.kapcsolattarto || "",
-    telepitesiCim: projekt?.telepitesiCim || "",
+    telepitesiCim: projekt?.telepitesiCim || ajanlatElofolt?.clientCim || "",
+    forrás: projekt?.forrás || (ajanlatElofolt ? "saját_ügyfél" : ""),
+    projektTipus: projekt?.projektTipus || (ajanlatElofolt ? "Saját projekt" : ""),
+    ajanlatId: projekt?.ajanlatId || ajanlatElofolt?.id || null,
+    fovKapcsolattarto: projekt?.fovKapcsolattarto || "",
+    fovFizetesiHatarido: projekt?.fovFizetesiHatarido || "",
+    fovMegjegyzes: projekt?.fovMegjegyzes || "",
     napelemDb:     projekt?.napelemDb     || 0,
     inverterDb:    projekt?.inverterDb    || 0,
     akkumulatorDb: projekt?.akkumulatorDb ?? (projekt?.akkumulator ? 1 : 0),
@@ -80,7 +86,7 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
     csapatNev: projekt?.csapatNev || "",
     tervezettKezdes: projekt?.tervezettKezdes || "",
     tervezettBefejezes: projekt?.tervezettBefejezes || "",
-    elfogadottAjanlat: projekt?.elfogadottAjanlat || 0,
+    elfogadottAjanlat: projekt?.elfogadottAjanlat || ajanlatElofolt?.osszeg || 0,
     penzugy: projekt?.penzugy || {
       fovallalkoziId: "",
       munkatipus: "",
@@ -208,6 +214,7 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
       const data = {
         ...form,
         elfogadottAjanlat: Number(form.elfogadottAjanlat) || 0,
+        projektTipus: getProjektTipus(form.forrás),
         // Backward compat boolean mezők szinkronban az db értékekkel
         akkumulator: (form.akkumulatorDb || 0) > 0,
         okosmerő:    (form.smartMeterDb  || 0) > 0,
@@ -358,6 +365,25 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
               {hiba}
             </div>
           )}
+          {/* ── Projekt forrása (kötelező) ── */}
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>
+              Projekt forrása *
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {PROJEKT_FORRAS.map(f => {
+                const active = form.forrás === f.id;
+                return (
+                  <button key={f.id} type="button" onClick={() => upd("forrás", f.id)}
+                    style={{ padding: "8px 16px", borderRadius: 9, border: `2px solid ${active ? f.color : "#E2E8F0"}`, background: active ? f.bg : "#fff", color: active ? f.color : "#64748B", fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer", fontFamily: FONT, transition: "all .15s" }}>
+                    {f.label}
+                  </button>
+                );
+              })}
+            </div>
+            {!form.forrás && hiba && <p style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>A projekt forrásának megadása kötelező</p>}
+          </div>
+
           <div
             style={{
               display: "grid",
@@ -522,8 +548,8 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
                 💰 Pénzügyi konfiguráció
               </p>
             </div>
-            <Field label="Fővállalkozó" half>
-              <select value={form.penzugy.fovallalkoziId} onChange={e => handleFovallalkozo(e.target.value)} style={inp}>
+            <Field label={form.forrás === "fővállalkozói" ? "Fővállalkozó *" : "Fővállalkozó"} half>
+              <select value={form.penzugy.fovallalkoziId} onChange={e => handleFovallalkozo(e.target.value)} style={{ ...inp, ...(form.forrás === "fővállalkozói" ? { border: "2px solid #7C3AED" } : {}) }}>
                 <option value="">— Válassz fővállalkozót —</option>
                 {fovallalkozok.map(f => (
                   <option key={f.id} value={f.id}>
@@ -534,6 +560,18 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
               {form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: "#059669", marginTop: 3 }}>✅ Elszámolási szabály automatikusan betöltve</p>}
               {form.penzugy.fovallalkoziId && !form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: "#D97706", marginTop: 3 }}>⚠️ Nincs aktív szabály ehhez a munkatípushoz</p>}
             </Field>
+            {/* Fővállalkozói extra mezők */}
+            {form.forrás === "fővállalkozói" && <>
+              <Field label="FV kapcsolattartó" half>
+                <input value={form.fovKapcsolattarto} onChange={e => upd("fovKapcsolattarto", e.target.value)} placeholder="Kapcsolattartó neve" style={inp} />
+              </Field>
+              <Field label="Fizetési határidő" half>
+                <input type="date" value={form.fovFizetesiHatarido} onChange={e => upd("fovFizetesiHatarido", e.target.value)} style={inp} />
+              </Field>
+              <Field label="Fővállalkozói megjegyzés">
+                <input value={form.fovMegjegyzes} onChange={e => upd("fovMegjegyzes", e.target.value)} placeholder="Egyéb instrukciók, feltételek…" style={inp} />
+              </Field>
+            </>}
             <Field label="Elszámolási db (auto: panel db)" half>
               <input type="number" value={form.penzugy.darabszam || form.napelemDb || 1} onChange={e => updPenz("darabszam", e.target.value)} placeholder="1" style={inp} />
               <p style={{ fontSize: 10, color: "#64748B", marginTop: 3 }}>Szinkronizálva a Műszaki adatok panel db-vel</p>
