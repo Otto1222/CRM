@@ -86,7 +86,7 @@ function TételRow({ t, idx, onUpdate, onDelete, onAnyagtorzsOpen }) {
           <input value={t.megnevezes} onChange={e => onUpdate("megnevezes", e.target.value)}
             placeholder="Megnevezés…" style={{ ...inpSm, flex: 1 }} />
           <button type="button" onClick={onAnyagtorzsOpen} title="Választás anyagtörzsből"
-            style={{ padding: "5px 7px", background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 7, cursor: "pointer", flexShrink: 0, color: C.accent }}>
+            style={{ padding: "5px 7px", background: C.accentLight, border: "1.5px solid #BFDBFE", borderRadius: 7, cursor: "pointer", flexShrink: 0, color: C.accent }}>
             <Search size={12} />
           </button>
         </div>

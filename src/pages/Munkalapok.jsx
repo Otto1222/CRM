@@ -984,7 +984,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
             )}
             <div style={{ display:"flex", gap:12, marginTop:20 }}>
               <button style={{ flex:1, padding:"12px 0", borderRadius:11, border:`2px solid ${C.border}`, background:"#fff", color:C.text, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:FONT }}><Printer size={16}/>Díjbekérő</button>
-              <button onClick={issueInvoice} disabled={saving||(m.items||[]).length===0} style={{ flex:1, padding:"12px 0", borderRadius:11, border:"none", background:(m.items||[]).length?C.success:"#E2E8F0", color:"#fff", fontWeight:700, cursor:(m.items||[]).length?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:FONT }}>
+              <button onClick={issueInvoice} disabled={saving||(m.items||[]).length===0} style={{ flex:1, padding:"12px 0", borderRadius:11, border:"none", background:(m.items||[]).length?C.success:C.border, color:"#fff", fontWeight:700, cursor:(m.items||[]).length?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:FONT }}>
                 {saving?<Loader2 size={16} style={{ animation:"spin 1s linear infinite" }}/>:<><Send size={16}/>Számla kiállítása</>}
               </button>
             </div>

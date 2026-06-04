@@ -195,7 +195,7 @@ function FajlFeltoltes({ files, onChange }) {
         onDragOver={e=>{ e.preventDefault(); setDrag(true); }}
         onDragLeave={()=>setDrag(false)}
         onClick={()=>ref.current?.click()}
-        style={{ border:`2px dashed ${drag?C.accent:C.border}`, borderRadius:12, padding:"24px 16px", textAlign:"center", cursor:"pointer", background:drag?C.accentLight:"#F8FAFC", marginBottom:12 }}
+        style={{ border:`2px dashed ${drag?C.accent:C.border}`, borderRadius:12, padding:"24px 16px", textAlign:"center", cursor:"pointer", background:drag?C.accentLight: C.bg, marginBottom:12 }}
       >
         <Upload size={28} color={drag?C.accent:C.muted} style={{ display:"block", margin:"0 auto 8px" }}/>
         <p style={{ fontSize:14, fontWeight:600, color:drag?C.accent:C.text, marginBottom:4 }}>PDF, kép vagy dokumentum</p>
@@ -544,7 +544,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                   { id:"Egyéb",           ikon:"🔧", szin:"#64748B" },
                 ].map(t=>(
                   <button key={t.id} type="button" onClick={()=>updAlap("telepitesTipusa",t.id)}
-                    style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"10px 8px", border:`2px solid ${alap.telepitesTipusa===t.id?t.szin:C.border}`, borderRadius:10, background:alap.telepitesTipusa===t.id?t.szin+"15":"#F8FAFC", cursor:"pointer", fontFamily:FONT, fontWeight:700, fontSize:13, color:alap.telepitesTipusa===t.id?t.szin:C.muted }}>
+                    style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"10px 8px", border:`2px solid ${alap.telepitesTipusa===t.id?t.szin:C.border}`, borderRadius:10, background:alap.telepitesTipusa===t.id?t.szin+"15": C.bg, cursor:"pointer", fontFamily:FONT, fontWeight:700, fontSize:13, color:alap.telepitesTipusa===t.id?t.szin:C.muted }}>
                     <span style={{ fontSize:18 }}>{t.ikon}</span> {t.id}
                   </button>
                 ))}
