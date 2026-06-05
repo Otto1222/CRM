@@ -4,7 +4,7 @@ import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { loadLocal, saveLocal } from "../../lib/localDb.js";
 import { PROJEKT_STATUSZOK, PROJEKT_FORRAS, getProjektTipus } from "./projekt.schema.js";
-import { migrateProjektForrasFromRekord, validateProjektForrás } from "../../lib/workflowRules.js";
+import { migrateProjektForrasFromRekord, validateProjektForrás, FORRAS_ELLENORZES_SZUKSEGES } from "../../lib/workflowRules.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { getAktivCsapatok } from "../csapatok/csapat.service.js";
 import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
@@ -245,6 +245,10 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
       setHiba("A projekt neve kötelező.");
       return;
     }
+    if (form.forrás === FORRAS_ELLENORZES_SZUKSEGES) {
+      setHiba("A projekt forrása még nincs meghatározva. Válassz egyet a három forrás közül, mielőtt mentesz.");
+      return;
+    }
     const validation = validateProjektForrás(form);
     if (!validation.ok) {
       setHiba(validation.message);
@@ -411,6 +415,21 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>
               Projekt forrása *
             </p>
+
+            {/* Bizonytalan forrás figyelmeztetés – adminnak kézzel kell besorolni */}
+            {form.forrás === FORRAS_ELLENORZES_SZUKSEGES && (
+              <div style={{ background:"#FEF2F2", border:"2px solid #DC2626", borderRadius:10, padding:"12px 16px", marginBottom:12, fontSize:13, color:"#991B1B" }}>
+                <div style={{ fontWeight:800, marginBottom:6 }}>⚠ Kézi ellenőrzés szükséges!</div>
+                <div style={{ lineHeight:1.65 }}>
+                  Ez a projekt régi <strong>{projekt?.forrásElotti || "garanciális/javítási"}</strong> besorolásból érkezett,
+                  de az automatikus migráció nem tudta biztosan meghatározni az új forrást.
+                  Van rögzített ügyfélnév (<strong>{form.clientNev}</strong>), de nincs strukturált CRM ügyfél- vagy ajánlathivatkozás.
+                  <br />
+                  <strong>Kérlek válaszd ki kézzel a megfelelő forrást az alábbi gombok közül, majd mentsd a projektet!</strong>
+                </div>
+              </div>
+            )}
+
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {PROJEKT_FORRAS.map(f => {
                 const active = form.forrás === f.id;

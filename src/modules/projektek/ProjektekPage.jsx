@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Search, Download, Users, Handshake, Wrench, WifiOff } from "lucide-react";
+import { Plus, Search, Download, Users, Handshake, AlertTriangle, WifiOff } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { PROJEKT_STATUSZOK, PROJEKT_FORRAS } from "./projekt.schema.js";
+import { FORRAS_ELLENORZES_SZUKSEGES } from "../../lib/workflowRules.js";
 import { loadProjektek } from "./projekt.service.js";
 import { exportToExcel, exportToPDF } from "../../lib/exportService.js";
 import ProjektTable from "./ProjektTable.jsx";
@@ -9,10 +10,11 @@ import ProjektDetail from "./ProjektDetail.jsx";
 import ProjektForm from "./ProjektForm.jsx";
 
 const FORRAS_FILTER = [
-  { id: "Összes",               label: "Összes",              color: "#64748B" },
-  { id: "sajat_ajanlat",        label: "Saját ajánlat",       color: "#2563EB" },
-  { id: "fovallalkozoi_munka",  label: "Fővállalkozói",       color: "#7C3AED" },
-  { id: "belso_munka",          label: "Belső munka",         color: "#059669" },
+  { id: "Összes",                       label: "Összes",              color: "#64748B" },
+  { id: "sajat_ajanlat",                label: "Saját ajánlat",       color: "#2563EB" },
+  { id: "fovallalkozoi_munka",          label: "Fővállalkozói",       color: "#7C3AED" },
+  { id: "belso_munka",                  label: "Belső munka",         color: "#059669" },
+  { id: FORRAS_ELLENORZES_SZUKSEGES,   label: "⚠ Ellenőrzendő",     color: "#DC2626" },
 ];
 
 export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, onNewMunkalapForProjekt, onNav }) {
@@ -71,6 +73,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
 
   const aktiv = projektek.filter(p => !["Lezárt"].includes(p.status)).length;
   const kivFolyamat = projektek.filter(p => p.status === "Kivitelezés alatt").length;
+  const ellenorzendok = projektek.filter(p => p.forrás === FORRAS_ELLENORZES_SZUKSEGES);
 
   if (sel) {
     return (
@@ -87,6 +90,27 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
 
   return (
     <div style={{ padding: "16px max(16px, min(28px, 3vw))", fontFamily: FONT }}>
+
+      {/* Admin figyelmeztetés: bizonytalan projekt forrás (migráció) */}
+      {["Admin", "Projektmenedzser"].includes(userRole) && ellenorzendok.length > 0 && (
+        <div style={{ display:"flex", alignItems:"flex-start", gap:10, background:"#FEF2F2", border:"1.5px solid #FECACA", borderRadius:10, padding:"12px 16px", marginBottom:14, fontSize:13, color:"#991B1B" }}>
+          <AlertTriangle size={17} style={{ flexShrink:0, marginTop:1 }} />
+          <div>
+            <div style={{ fontWeight:700, marginBottom:4 }}>
+              {ellenorzendok.length} projekt forrása nem határozható meg automatikusan – kézi ellenőrzés szükséges!
+            </div>
+            <div style={{ fontSize:12, color:"#B91C1C", lineHeight:1.6 }}>
+              Ezek régi <em>garanciális</em> vagy <em>javítási</em> projektek, ahol az adatokból nem derül ki egyértelműen a forrás.
+              Nyisd meg az érintett projektet, és kézzel állítsd be a forrást (Saját ajánlat / Fővállalkozói / Belső munka).<br/>
+              Érintett projektek: {ellenorzendok.map(p => <span key={p.id} style={{ fontWeight:700, cursor:"pointer", textDecoration:"underline", marginRight:8 }} onClick={() => setSel(p)}>{p.projektkod || p.nev || p.id}</span>)}
+            </div>
+          </div>
+          <button onClick={() => setForrasFilter(FORRAS_ELLENORZES_SZUKSEGES)}
+            style={{ marginLeft:"auto", flexShrink:0, padding:"5px 12px", background:"#DC2626", color:"#fff", border:"none", borderRadius:7, fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:FONT }}>
+            Mutasd
+          </button>
+        </div>
+      )}
 
       {/* Szinkron figyelmeztetés */}
       {syncWarning && (

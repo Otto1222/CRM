@@ -132,7 +132,13 @@ export function getMunkalapStatusConfig(statusId) {
   return MUNKALAP_STATUSZOK.find(s => s.id === statusId) || { szin: "#64748B", bg: "#F8FAFC" };
 }
 
+// Speciális jelölő: a migráció nem tudott biztosan dönteni – adminnak kell tisztázni
+export const FORRAS_ELLENORZES_SZUKSEGES = "ellenorzes_szukseges";
+
 export function getProjektForrasConfig(forrasId) {
+  if (forrasId === FORRAS_ELLENORZES_SZUKSEGES) {
+    return { color: "#DC2626", bg: "#FEF2F2", label: "⚠ Ellenőrzés szükséges" };
+  }
   return PROJEKT_FORRAS.find(f => f.id === forrasId) || { color: "#64748B", bg: "#F8FAFC", label: forrasId };
 }
 
@@ -174,33 +180,51 @@ export function migrateProjektForras(forras) {
 
 /**
  * Adatvesztés nélküli migráció garanciális / javítási projekteknél.
- * A rekord saját adatai alapján dönti el az új forrást:
- *   1. fovallalkoziId megadva → fovallalkozoi_munka
- *   2. ajanlatId vagy CRM clientId megadva → sajat_ajanlat
- *   3. egyéb (cégen belüli) → belso_munka
+ *
+ * Döntési fa:
+ *   1. penzugy.fovallalkoziId van → fovallalkozoi_munka           (erős jel)
+ *   2. ajanlatId VAGY clientId van → sajat_ajanlat                 (erős jel)
+ *   3. nincs clientNev, vagy clientNev = "E.D.I. Solutions Kft." → belso_munka (egyértelmű belső)
+ *   4. van clientNev, de nincs strukturált hivatkozás → ellenorzes_szukseges   (bizonytalan!)
+ *
+ * A bizonytalan rekord adminnak kell kézzel besorolni –
+ * jobban adatvesztés megakadályozni, mint félremigrálni.
  */
 export function migrateProjektForrasFromRekord(projekt) {
-  const { forrás, ajanlatId, clientId, penzugy } = projekt;
+  const { forrás, ajanlatId, clientId, penzugy, clientNev } = projekt;
 
-  // Már új formátumú forrás → nincs teendő
-  const ujForrasok = ["sajat_ajanlat", "fovallalkozoi_munka", "belso_munka"];
+  // Már új formátumú forrás (beleértve az ellenorzes_szukseges-t) → nincs teendő
+  const ujForrasok = ["sajat_ajanlat", "fovallalkozoi_munka", "belso_munka", FORRAS_ELLENORZES_SZUKSEGES];
   if (ujForrasok.includes(forrás)) return forrás;
 
-  // Egyszerű átnevezések
+  // Egyszerű 1:1 átnevezések
   if (LEGACY_FORRAS_MAP[forrás]) return LEGACY_FORRAS_MAP[forrás];
 
-  // Okos migráció garanciális / javítási esetén
+  // Adatfüggő migráció garanciális / javítási esetén
   if (forrás === "garanciális" || forrás === "javítási") {
-    // Erős jel: fővállalkozói kapcsolat
+    // 1. Erős jel: fővállalkozói kapcsolat
     if (penzugy?.fovallalkoziId || projekt.fovallalkoziId) return "fovallalkozoi_munka";
-    // Erős jel: CRM ajánlat vagy regisztrált ügyfél hivatkozás
+
+    // 2. Erős jel: strukturált CRM hivatkozás
     if (ajanlatId || clientId) return "sajat_ajanlat";
-    // Gyenge jel nincs: tényleg belső munka
-    return "belso_munka";
+
+    // 3. Egyértelmű belső: nincs ügyfél, vagy explicit E.D.I. megrendelő
+    const nev = String(clientNev || "").trim();
+    if (!nev || nev === "E.D.I. Solutions Kft." || nev === "EDI Solutions" || nev === "E.D.I.") {
+      return "belso_munka";
+    }
+
+    // 4. Van ügyfélnév, de nincs strukturált hivatkozás → bizonytalan, adminnak kell dönteni
+    return FORRAS_ELLENORZES_SZUKSEGES;
   }
 
   // Ismeretlen forrás → érintetlen marad
   return forrás;
+}
+
+/** Visszaadja, hogy egy projektnek szüksége van-e adminellenőrzésre a forrás miatt. */
+export function projektEllenorzesKell(projekt) {
+  return projekt?.forrás === FORRAS_ELLENORZES_SZUKSEGES;
 }
 
 export function migrateMunkalapStatus(status) {
