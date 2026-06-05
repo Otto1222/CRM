@@ -24,6 +24,7 @@ import SzamlakPage from "./modules/szamlak/SzamlakPage.jsx";
 import PwaInstallBanner from "./components/PwaInstallBanner.jsx";
 import RiportokPage from "./pages/RiportokPage.jsx";
 import NaptarPage from "./pages/NaptarPage.jsx";
+import KarteritesekPage from "./pages/KarteritesekTab.jsx";
 
 const PAGE_TITLES = {
   dashboard: "Pénzügy",
@@ -376,6 +377,8 @@ export default function App() {
                 }}
               />
             )}
+
+            {page === "karteritesek" && <KarteritesekPage currentUser={user} userRole={user?.role} />}
 
             {page === "riportok" && <RiportokPage currentUser={user} />}
 
