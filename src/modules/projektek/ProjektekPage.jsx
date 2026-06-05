@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Search, Download, Users, Handshake, ShieldCheck, Wrench } from "lucide-react";
+import { Plus, Search, Download, Users, Handshake, Wrench, WifiOff } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { PROJEKT_STATUSZOK, PROJEKT_FORRAS } from "./projekt.schema.js";
 import { loadProjektek } from "./projekt.service.js";
@@ -9,11 +9,10 @@ import ProjektDetail from "./ProjektDetail.jsx";
 import ProjektForm from "./ProjektForm.jsx";
 
 const FORRAS_FILTER = [
-  { id: "Összes",          label: "Összes",               color: "#64748B" },
-  { id: "saját_ügyfél",   label: "Saját ügyfél",          color: "#2563EB" },
-  { id: "fővállalkozói",  label: "Fővállalkozói",          color: "#7C3AED" },
-  { id: "garanciális",    label: "Garanciális",            color: "#D97706" },
-  { id: "javítási",       label: "Javítási",               color: "#059669" },
+  { id: "Összes",               label: "Összes",              color: "#64748B" },
+  { id: "sajat_ajanlat",        label: "Saját ajánlat",       color: "#2563EB" },
+  { id: "fovallalkozoi_munka",  label: "Fővállalkozói",       color: "#7C3AED" },
+  { id: "belso_munka",          label: "Belső munka",         color: "#059669" },
 ];
 
 export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, onNewMunkalapForProjekt, onNav }) {
@@ -27,13 +26,14 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
   const [q, setQ] = useState("");
   const [forrasFilter, setForrasFilter] = useState("Összes");
   const [tabFilter, setTabFilter] = useState("Összes");
+  const [syncWarning, setSyncWarning] = useState("");
 
   const selRef = useRef(sel);
   useEffect(() => { selRef.current = sel; }, [sel]);
 
   useEffect(() => {
-    function refresh(e) {
-      if (!e.detail?.collection || e.detail.collection === "projektek" || e.detail.collection === "munkalapok" || e.detail.collection === "all") {
+    function onDbUpdate(e) {
+      if (!e.detail?.collection || ["projektek", "munkalapok", "all"].includes(e.detail.collection)) {
         const freshList = loadProjektek();
         setProjektek(freshList);
         if (selRef.current) {
@@ -42,8 +42,16 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
         }
       }
     }
-    window.addEventListener("crm-db-updated", refresh);
-    return () => window.removeEventListener("crm-db-updated", refresh);
+    function onSyncWarning(e) {
+      setSyncWarning(e.detail?.message || "Mentve helyileg, de nincs szinkronizálva.");
+      setTimeout(() => setSyncWarning(""), 9000);
+    }
+    window.addEventListener("crm-db-updated", onDbUpdate);
+    window.addEventListener("crm-sync-warning", onSyncWarning);
+    return () => {
+      window.removeEventListener("crm-db-updated", onDbUpdate);
+      window.removeEventListener("crm-sync-warning", onSyncWarning);
+    };
   }, []);
 
   const SZUROK = ["Összes", ...PROJEKT_STATUSZOK.map(s => s.id)];
@@ -61,7 +69,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
     return matchQ && matchForras && matchT;
   });
 
-  const aktiv = projektek.filter(p => !["Lezárva", "Elbukott Projekt"].includes(p.status)).length;
+  const aktiv = projektek.filter(p => !["Lezárt"].includes(p.status)).length;
   const kivFolyamat = projektek.filter(p => p.status === "Kivitelezés alatt").length;
 
   if (sel) {
@@ -79,10 +87,20 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
 
   return (
     <div style={{ padding: "16px max(16px, min(28px, 3vw))", fontFamily: FONT }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+
+      {/* Szinkron figyelmeztetés */}
+      {syncWarning && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#92400E", fontWeight: 600 }}>
+          <WifiOff size={15} />
+          {syncWarning}
+          <button onClick={() => setSyncWarning("")} style={{ marginLeft: "auto", border: "none", background: "transparent", cursor: "pointer", color: "#92400E", fontWeight: 700, fontSize: 14 }}>×</button>
+        </div>
+      )}
+
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
         <div>
           <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: "#0F172A", margin: "0 0 4px" }}>
-            🏗️ Projektek
+            Projektek
           </h1>
           <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
             {projektek.length} projekt · {aktiv} aktív · {kivFolyamat} kivitelezés alatt
@@ -102,24 +120,30 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
               </button>
             </>
           )}
-          {/* Saját ügyfél: átnavigál az Ajánlatok oldalra */}
+          {/* Saját ajánlat: átnavigál az Ajánlatok oldalra */}
           {["Admin", "Projektmenedzser"].includes(userRole) && onNav && (
             <button onClick={() => onNav("arajanlatok")}
               style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 14px", background:"#EFF6FF", color:"#2563EB", border:"1.5px solid #BFDBFE", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
-              <Users size={14} /> Saját ügyfél projekt
+              <Users size={14} /> Saját ajánlat projekt
             </button>
           )}
-          {/* Fővállalkozói / Garanciális / Javítási: közvetlen projektnyitás */}
+          {/* Fővállalkozói / Belső: közvetlen projektnyitás */}
           {["Admin", "Projektmenedzser"].includes(userRole) && (
-            <button onClick={() => { setUjForrasInit("fővállalkozói"); setUjOpen(true); }}
-              style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 18px", background:"#7C3AED", color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:14, fontFamily:FONT }}>
-              <Plus size={15} /> Fővállalkozói / Egyéb projekt
-            </button>
+            <>
+              <button onClick={() => { setUjForrasInit("fovallalkozoi_munka"); setUjOpen(true); }}
+                style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 14px", background:"#F5F3FF", color:"#7C3AED", border:"1.5px solid #DDD6FE", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+                <Handshake size={14} /> Fővállalkozói
+              </button>
+              <button onClick={() => { setUjForrasInit("belso_munka"); setUjOpen(true); }}
+                style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 18px", background:"#059669", color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:14, fontFamily:FONT }}>
+                <Plus size={15} /> Belső munka
+              </button>
+            </>
           )}
         </div>
       </div>
 
-      {/* Forrás-szűrő (elsődleges) */}
+      {/* Forrás-szűrő */}
       <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
         {FORRAS_FILTER.map(f => {
           const count = f.id === "Összes" ? projektek.length : projektek.filter(p => p.forrás === f.id).length;
@@ -133,7 +157,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
         })}
       </div>
 
-      {/* Státusz szűrő + keresés */}
+      {/* Keresés */}
       <div style={{ position:"relative", marginBottom:10 }}>
         <Search size={15} color="#94A3B8" style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)" }} />
         <input value={q} onChange={e => setQ(e.target.value)}
@@ -141,6 +165,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
           style={{ width:"100%", boxSizing:"border-box", padding:"9px 12px 9px 34px", border:"1.5px solid #E2E8F0", borderRadius:10, fontSize:13, fontFamily:FONT, outline:"none", background:"#fff" }} />
       </div>
 
+      {/* Státusz szűrő */}
       <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:6, marginBottom:14 }}>
         {SZUROK.map(s => {
           const cnt = s === "Összes"
@@ -148,7 +173,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
             : projektek.filter(p => p.status === s && (forrasFilter === "Összes" || p.forrás === forrasFilter)).length;
           return (
             <button key={s} onClick={() => setTabFilter(s)}
-              style={{ padding:"5px 12px", borderRadius:20, border:"none", cursor:"pointer", fontFamily:FONT, fontWeight:600, fontSize:12, whiteSpace:"nowrap", background: tabFilter === s ? "#2563EB" : "#F1F5F9", color: tabFilter === s ? "#fff" : "#64748B" }}>
+              style={{ padding:"5px 12px", borderRadius:20, border:"none", cursor:"pointer", fontFamily:FONT, fontWeight:600, fontSize:12, whiteSpace:"nowrap", background: tabFilter === s ? C.accent : "#F1F5F9", color: tabFilter === s ? "#fff" : "#64748B" }}>
               {s} ({cnt})
             </button>
           );
@@ -165,7 +190,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
       {ujOpen && (
         <ProjektForm
           currentUser={currentUser}
-          projekt={ujForrasInit ? { forrás: ujForrasInit } : undefined}
+          projekt={ujForrasInit ? { forrás: ujForrasInit, clientNev: ujForrasInit === "belso_munka" ? "E.D.I. Solutions Kft." : "" } : undefined}
           onClose={() => { setUjOpen(false); setUjForrasInit(""); }}
           onSaved={p => {
             setProjektek(loadProjektek());
