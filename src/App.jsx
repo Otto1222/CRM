@@ -25,6 +25,8 @@ import PwaInstallBanner from "./components/PwaInstallBanner.jsx";
 import RiportokPage from "./pages/RiportokPage.jsx";
 import NaptarPage from "./pages/NaptarPage.jsx";
 import KarteritesekPage from "./pages/KarteritesekTab.jsx";
+import MunkalapSablonokPage from "./modules/munkalap_sablonok/MunkalapSablonokPage.jsx";
+import { initSablonok, getAktivSablonok } from "./modules/munkalap_sablonok/munkalapSablon.service.js";
 
 const PAGE_TITLES = {
   dashboard: "Pénzügy",
@@ -86,6 +88,7 @@ export default function App() {
   const [defaultPwWarning, setDefaultPwWarning] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [ujMunkalapInit, setUjMunkalapInit] = useState(null);
+  const [sablonValaszto, setSablonValaszto] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -281,6 +284,7 @@ export default function App() {
     setUser(u);
     setPage(getHomePage(u?.role));
     if (u?.role === "Admin") setDefaultPwWarning(hasDefaultPasswords());
+    initSablonok();
   }
 
   if (!user) return <Login onLogin={handleLogin} />;
@@ -380,6 +384,8 @@ export default function App() {
             )}
 
             {page === "karteritesek" && <KarteritesekPage currentUser={user} userRole={user?.role} />}
+
+            {page === "munkalap_sablonok" && <MunkalapSablonokPage userRole={user?.role} />}
 
             {page === "riportok" && <RiportokPage currentUser={user} />}
 

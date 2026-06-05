@@ -3,8 +3,8 @@
  */
 
 export const ROLE_PAGES = {
-  "Admin":            ["dashboard","projektek","munkalapok","ugyfelek","arajanlatok","szerzodesek","szamlak","naptar","riportok","karteritesek","beallitasok"],
-  "Projektmenedzser": ["dashboard","projektek","munkalapok","ugyfelek","arajanlatok","szerzodesek","szamlak","naptar","riportok","karteritesek","beallitasok"],
+  "Admin":            ["dashboard","projektek","munkalapok","ugyfelek","arajanlatok","szerzodesek","szamlak","naptar","riportok","karteritesek","munkalap_sablonok","beallitasok"],
+  "Projektmenedzser": ["dashboard","projektek","munkalapok","ugyfelek","arajanlatok","szerzodesek","szamlak","naptar","riportok","karteritesek","munkalap_sablonok","beallitasok"],
   "Iroda/Könyvelés":  ["dashboard","projektek","munkalapok","ugyfelek","szamlak","naptar","riportok","karteritesek"],
   "Telepítő":         ["munkalapok"],
 };
