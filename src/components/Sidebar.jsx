@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   LayoutDashboard, Users, ClipboardList,
-  ScrollText, Calendar, Settings, LogOut, Sun, Building2, Receipt, FileText, BarChart3, BookOpen, X, AlertTriangle,
+  ScrollText, Calendar, Settings, LogOut, Building2, Receipt, FileText, BarChart3, BookOpen, X, AlertTriangle,
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getAllowedPages } from "../lib/roles.js";
@@ -33,15 +33,19 @@ function SidebarContent({ page, onNav, user, onLogout, onClose }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", fontFamily: FONT }}>
-      {/* Fejléc */}
-      <div style={{ padding: "24px 20px 18px", borderBottom: `1px solid ${C.sidebarBorder}`, display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 36, height: 36, background: C.accent, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <Sun size={18} color="#fff" />
+      {/* Fejléc – E.D.I. brand logo */}
+      <div style={{ padding: "20px 20px 16px", borderBottom: `1px solid ${C.sidebarBorder}`, display: "flex", alignItems: "center", gap: 12 }}>
+        {/* E.D.I. szöveg logó */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: FONT_HEADING, fontWeight: 800, fontSize: 22, color: C.accent, letterSpacing: 2, lineHeight: 1 }}>
+            E.D.I.
+          </div>
+          <div style={{ fontFamily: FONT_HEADING, fontWeight: 600, fontSize: 10, color: C.sidebarText, letterSpacing: 3, textTransform: "uppercase", marginTop: 2 }}>
+            Solutions CRM
+          </div>
         </div>
-        <span style={{ fontFamily: FONT_HEADING, color: "#fff", fontWeight: 800, fontSize: 18, flex: 1 }}>CRM Napelem</span>
-        {/* Bezáró gomb – csak mobilon látható (onClose prop jelzi) */}
         {onClose && (
-          <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", color: C.sidebarText, padding: 4, display: "flex", alignItems: "center" }}>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", color: C.sidebarText, padding: 4, display: "flex", alignItems: "center", flexShrink: 0 }}>
             <X size={20} />
           </button>
         )}
@@ -49,7 +53,7 @@ function SidebarContent({ page, onNav, user, onLogout, onClose }) {
 
       {/* Navigáció */}
       <nav style={{ flex: 1, padding: "14px 10px", overflowY: "auto" }}>
-        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "#3a5070", textTransform: "uppercase", padding: "4px 10px", marginBottom: 6 }}>Főmenü</p>
+        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.8, color: "rgba(111,173,168,0.5)", textTransform: "uppercase", padding: "4px 10px", marginBottom: 6 }}>Főmenü</p>
         {visibleNav.map(({ id, label, icon: Icon }) => {
           const active = page === id;
           return (
@@ -57,12 +61,12 @@ function SidebarContent({ page, onNav, user, onLogout, onClose }) {
               width: "100%", display: "flex", alignItems: "center", gap: 11,
               padding: "10px 12px", borderRadius: 9, border: "none",
               borderLeft: active ? `3px solid ${C.accent}` : "3px solid transparent",
-              background: active ? "rgba(37,99,235,0.25)" : "transparent",
-              color: active ? "#93C5FD" : C.sidebarText,
-              cursor: "pointer", fontSize: 14, fontWeight: active ? 600 : 400,
+              background: active ? C.sidebarActive : "transparent",
+              color: active ? C.accent : C.sidebarText,
+              cursor: "pointer", fontSize: 13, fontWeight: active ? 700 : 500,
               marginBottom: 2, transition: "all .15s", fontFamily: FONT,
             }}>
-              <Icon size={17} strokeWidth={active ? 2 : 1.7} />{label}
+              <Icon size={16} strokeWidth={active ? 2.2 : 1.7} />{label}
             </button>
           );
         })}
@@ -95,11 +99,11 @@ function SidebarContent({ page, onNav, user, onLogout, onClose }) {
               width: "100%", display: "flex", alignItems: "center", gap: 11,
               padding: "10px 12px", borderRadius: 9, border: "none",
               borderLeft: page === "beallitasok" ? `3px solid ${C.accent}` : "3px solid transparent",
-              background: page === "beallitasok" ? "rgba(37,99,235,0.25)" : "transparent",
-              color: page === "beallitasok" ? "#93C5FD" : C.sidebarText,
-              cursor: "pointer", fontSize: 14, fontFamily: FONT,
+              background: page === "beallitasok" ? C.sidebarActive : "transparent",
+              color: page === "beallitasok" ? C.accent : C.sidebarText,
+              cursor: "pointer", fontSize: 13, fontFamily: FONT, fontWeight: page === "beallitasok" ? 700 : 500,
             }}>
-              <Settings size={17} strokeWidth={1.7} />Beállítások
+              <Settings size={16} strokeWidth={1.7} />Beállítások
             </button>
           </>
         )}
@@ -107,14 +111,14 @@ function SidebarContent({ page, onNav, user, onLogout, onClose }) {
 
       {/* Felhasználó + kijelentkezés */}
       <div style={{ padding: "14px 14px 20px", borderTop: `1px solid ${C.sidebarBorder}` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", marginBottom: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px", borderRadius: 10, background: "rgba(24,172,160,0.06)", marginBottom: 4 }}>
           <Avatar u={user} size={34} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: "#fff", fontWeight: 600, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name}</div>
-            <div style={{ color: "#4a6a8a", fontSize: 11 }}>{user.role}</div>
+            <div style={{ color: "#fff", fontWeight: 600, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: FONT }}>{user.name}</div>
+            <div style={{ color: C.sidebarText, fontSize: 11, fontFamily: FONT }}>{user.role}</div>
           </div>
         </div>
-        <button onClick={onLogout} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, border: "none", background: "transparent", color: "#4a6a8a", cursor: "pointer", fontSize: 13, fontFamily: FONT }}>
+        <button onClick={onLogout} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, border: "none", background: "transparent", color: C.sidebarText, cursor: "pointer", fontSize: 12, fontFamily: FONT, fontWeight: 500 }}>
           <LogOut size={14} />Kijelentkezés
         </button>
       </div>
