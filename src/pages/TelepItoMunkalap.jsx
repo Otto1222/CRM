@@ -714,24 +714,19 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
 
     const ts = new Date().toISOString();
 
-    // ── Elszámolás mentése lezáráskor ──────────────────────
-    try {
-      const mlElszamolas = calcMunkalapElszamolas(
-        { ...m, elszamolasAdatok },
-        proj
-      );
-      saveMunkalapElszamolas(m.id, mlElszamolas);
-    } catch (e) {
-      console.warn("[TelepItoMunkalap] Elszámolás mentés hiba:", e);
-    }
+    // Anyagköltség kiszámítása a felhasznált anyagokból
+    const felhasznaltAnyagok = loadLocal(`felh_anyagok_${m.id}`) || [];
+    const anyagkoltsegeTotal = felhasznaltAnyagok.reduce(
+      (s, t) => s + (Number(t.menny) || 0) * (Number(t.egysegAr) || Number(t.netto_egysegar) || 0), 0
+    );
 
     const updates = {
-      status:"Ellenőrzés alatt",
-      statusSzin:"#D97706",
-      befejezesIdopont:ts,
-      lezarva:true,
-      megjegyzes:megjegyzes.trim(),
-      elszamolasAdatok, // tényleges adatok mentése
+      status:              "Ellenőrzés alatt",
+      statusSzin:          "#D97706",
+      befejezesIdopont:    ts,
+      lezarva:             true,
+      megjegyzes:          megjegyzes.trim(),
+      anyagkoltsegeTotal,  // csak az anyagköltség kerül be, nincs km/panel/profit
     };
 
     updateItem("munkalapok",m.id,updates);

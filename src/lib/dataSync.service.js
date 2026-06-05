@@ -96,6 +96,14 @@ export async function loadCollection(collection) {
  * @returns {{ localSaved: true, driveSaved: boolean, driveError: string|null, data }}
  */
 export async function saveCollection(collection, data) {
+  // KRITIKUS: üres adat soha ne írja felül a meglévő adatot
+  if (Array.isArray(data) && data.length === 0) {
+    const existing = loadLocal(collection);
+    if (Array.isArray(existing) && existing.length > 0) {
+      console.warn(`[dataSync] MEGAKADÁLYOZVA: üres [] felülírna ${existing.length} rekordot (${collection})`);
+      return { localSaved: false, driveSaved: false, driveError: "Üres adat – mentés megakadályozva", data };
+    }
+  }
   saveLocal(collection, data);
 
   let driveSaved  = false;

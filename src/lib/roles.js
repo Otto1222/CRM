@@ -9,26 +9,22 @@
 export const ROLE_PAGES = {
   "Admin": [
     "dashboard",
-    // Értékesítés
-    "ugyfelek", "arajanlatok", "szerzodesek",
-    // Fő modulok
-    "projektek", "munkalapok", "naptar", "dokumentumok",
-    // Pénzügy
+    "ugyfelek", "arajanlatok",
+    "projektek", "munkalapok", "naptar",
     "szamlak", "karteritesek", "riportok",
-    // Beállítások
     "csapat", "munkalap_sablonok", "beallitasok",
   ],
   "Projektmenedzser": [
     "dashboard",
-    "ugyfelek", "arajanlatok", "szerzodesek",
-    "projektek", "munkalapok", "naptar", "dokumentumok",
+    "ugyfelek", "arajanlatok",
+    "projektek", "munkalapok", "naptar",
     "szamlak", "karteritesek", "riportok",
     "csapat", "munkalap_sablonok", "beallitasok",
   ],
   "Iroda/Könyvelés": [
     "dashboard",
     "ugyfelek",
-    "projektek", "munkalapok", "naptar", "dokumentumok",
+    "projektek", "munkalapok", "naptar",
     "szamlak", "karteritesek", "riportok",
   ],
   "Telepítő": [
