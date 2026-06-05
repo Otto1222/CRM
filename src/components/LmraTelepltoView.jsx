@@ -18,8 +18,7 @@ import {
   loadLmraRec, addResztvevo, addIdeiglenesResztvevo,
   removeResztvevo, saveSignature, closeLmra,
   LMRA_STATUS_LABELS, LMRA_STATUS_COLORS,
-  getTagokForMunkalap, getAllAktivTagok,
-  saveNewTagToTeam, getAktivTeleppCsapatok,
+  getTagokForMunkalap,
   autoPopulateResztvevok, updateResztvevoJelenlet,
 } from "../lib/lmraData.service";
 import { downloadLmraPdf } from "../lib/lmraPdfMerge";
