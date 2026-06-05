@@ -202,6 +202,14 @@ export default function TabKoltsegek({ projekt, munkalapok, currentUser }) {
           ⚠️ <strong>Hiányos tételek:</strong> {kalk.hianyosTetelek.join(", ")}
         </div>
       )}
+      {/* Nulla értékű tételek figyelmeztetés */}
+      {tetelek.filter(t => t.hasznalandoNetto === 0 && !t.hiany && t.tetelTipusId !== "km_elszamolas").length > 0 && (
+        <div style={{ background: "#FFFBEB", border: "1.5px solid #FCD34D", borderRadius: 12, padding: "10px 16px", marginBottom: 12, fontSize: 12, color: "#92400E" }}>
+          ⚠️ <strong>0 Ft-os tételek</strong> (nincs egységár beállítva):&nbsp;
+          {tetelek.filter(t => t.hasznalandoNetto === 0 && !t.hiany && t.tetelTipusId !== "km_elszamolas").map(t => t.megnevezes).join(", ")}
+          <br/>→ Állítsd be a díjat: <strong>Beállítások → Fővállalkozók → Szabály → Tételes árak</strong>
+        </div>
+      )}
 
       {/* Konfig info sáv */}
       {fvNev && (

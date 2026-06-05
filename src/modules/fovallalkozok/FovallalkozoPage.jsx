@@ -127,21 +127,31 @@ function SzabalyForm({ szabaly, fovallalkoziId, onSave, onClose }) {
 
           {/* Tételes árak override */}
           <div style={{ gridColumn:"span 2", paddingTop:10, borderTop:"1px solid #E2E8F0" }}>
-            <p style={{ fontSize:11, fontWeight:700, color:"#64748B", marginBottom:8 }}>
-              Tételes árak (felülírja a munkatípus definíciót)
-              <span style={{ fontWeight:400, marginLeft:6 }}>– csak ha ettől a fővállalkozótól eltérő összeg jár</span>
+            <p style={{ fontSize:11, fontWeight:700, color:"#64748B", marginBottom:4 }}>
+              Tételes árak – fővállalkozói díjak (Ft)
+            </p>
+            <p style={{ fontSize:11, color:"#DC2626", marginBottom:8, background:"#FEF2F2", padding:"6px 10px", borderRadius:7 }}>
+              ⚠️ Ha itt 0 az ár ÉS a Munkatípusnál sincs egységár → a számítás 0 Ft lesz!
+              Töltsd ki azokat a tételeket amit ez a fővállalkozó fizet.
             </p>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-              {BEVETELI_TETEL_TIPUSOK.filter(t => t.id !== "km_elszamolas").map(t => (
-                <div key={t.id}>
-                  <label style={{ fontSize:10, color:"#64748B", display:"block", marginBottom:2 }}>{t.label} (Ft, 0 = nem ír felül)</label>
-                  <input type="number"
-                    value={f.tetelArak?.[t.id] || ""}
-                    onChange={e => u("tetelArak", { ...f.tetelArak, [t.id]: e.target.value === "" ? undefined : Number(e.target.value) })}
-                    placeholder="0"
-                    style={{...inp, padding:"6px 10px"}}/>
-                </div>
-              ))}
+              {BEVETELI_TETEL_TIPUSOK.filter(t => t.id !== "km_elszamolas").map(t => {
+                const val = f.tetelArak?.[t.id];
+                const kitoltve = val && val > 0;
+                const fontos = ["napelem_telepites","rendszerbovites","inverter_csere","inverter_telepites","akku_telepites"].includes(t.id);
+                return (
+                  <div key={t.id} style={{ background: kitoltve ? "#F0FDF4" : fontos ? "#FFFBEB" : "#fff", borderRadius:6, padding:"4px 0" }}>
+                    <label style={{ fontSize:10, color: kitoltve ? "#166534" : fontos ? "#92400E" : "#64748B", display:"block", marginBottom:2, fontWeight: fontos ? 700 : 400 }}>
+                      {t.label} (Ft){fontos && !kitoltve ? " ⚠️" : kitoltve ? " ✓" : ""}
+                    </label>
+                    <input type="number"
+                      value={f.tetelArak?.[t.id] || ""}
+                      onChange={e => u("tetelArak", { ...f.tetelArak, [t.id]: e.target.value === "" ? undefined : Number(e.target.value) })}
+                      placeholder="0 = nem ír felül"
+                      style={{...inp, padding:"6px 10px", borderColor: kitoltve ? "#86EFAC" : fontos && !kitoltve ? "#FCD34D" : "#E2E8F0" }}/>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
