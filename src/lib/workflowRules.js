@@ -107,11 +107,11 @@ export const LEGACY_PROJEKT_STATUS_MAP = {
   "Elbukott Projekt":           "Lezárt",
 };
 
+// Csak az egyértelmű 1:1 átnevezések szerepelnek itt.
+// Garanciális / javítási NEM kerül ide – azok adatfüggő migrációt igényelnek.
 export const LEGACY_FORRAS_MAP = {
   "saját_ügyfél":  "sajat_ajanlat",
   "fővállalkozói": "fovallalkozoi_munka",
-  "garanciális":   "belso_munka",
-  "javítási":      "belso_munka",
 };
 
 export const LEGACY_MUNKALAP_STATUS_MAP = {
@@ -166,8 +166,41 @@ export function migrateProjektStatus(status) {
   return LEGACY_PROJEKT_STATUS_MAP[status] || status;
 }
 
+// Egyszerű string-szintű migráció (csak 1:1 esetekre).
+// Garanciális / javítási esetén ezt NE hívd – használd migrateProjektForrasFromRekord-ot.
 export function migrateProjektForras(forras) {
   return LEGACY_FORRAS_MAP[forras] || forras;
+}
+
+/**
+ * Adatvesztés nélküli migráció garanciális / javítási projekteknél.
+ * A rekord saját adatai alapján dönti el az új forrást:
+ *   1. fovallalkoziId megadva → fovallalkozoi_munka
+ *   2. ajanlatId vagy CRM clientId megadva → sajat_ajanlat
+ *   3. egyéb (cégen belüli) → belso_munka
+ */
+export function migrateProjektForrasFromRekord(projekt) {
+  const { forrás, ajanlatId, clientId, penzugy } = projekt;
+
+  // Már új formátumú forrás → nincs teendő
+  const ujForrasok = ["sajat_ajanlat", "fovallalkozoi_munka", "belso_munka"];
+  if (ujForrasok.includes(forrás)) return forrás;
+
+  // Egyszerű átnevezések
+  if (LEGACY_FORRAS_MAP[forrás]) return LEGACY_FORRAS_MAP[forrás];
+
+  // Okos migráció garanciális / javítási esetén
+  if (forrás === "garanciális" || forrás === "javítási") {
+    // Erős jel: fővállalkozói kapcsolat
+    if (penzugy?.fovallalkoziId || projekt.fovallalkoziId) return "fovallalkozoi_munka";
+    // Erős jel: CRM ajánlat vagy regisztrált ügyfél hivatkozás
+    if (ajanlatId || clientId) return "sajat_ajanlat";
+    // Gyenge jel nincs: tényleg belső munka
+    return "belso_munka";
+  }
+
+  // Ismeretlen forrás → érintetlen marad
+  return forrás;
 }
 
 export function migrateMunkalapStatus(status) {

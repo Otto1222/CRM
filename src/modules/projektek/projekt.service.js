@@ -3,7 +3,7 @@
  * Projekt CRUD – minden projektművelet itt.
  */
 import { PROJEKT_SCHEMA } from "./projekt.schema.js";
-import { migrateProjektStatus, migrateProjektForras } from "../../lib/workflowRules.js";
+import { migrateProjektStatus, migrateProjektForrasFromRekord } from "../../lib/workflowRules.js";
 import { createBackup } from "../../lib/backupService.js";
 import { driveSave } from "../../lib/driveApi.js";
 
@@ -22,7 +22,8 @@ function notifySyncFailed() {
 
 function migrateProjekt(p) {
   const ms = migrateProjektStatus(p.status);
-  const mf = migrateProjektForras(p.forrás);
+  // Okos forrás-migráció: garanciális/javítási esetén a rekord adatai döntenek
+  const mf = migrateProjektForrasFromRekord(p);
   if (ms === p.status && mf === p.forrás) return p;
   return { ...p, status: ms, forrás: mf };
 }

@@ -4,7 +4,7 @@ import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { loadLocal, saveLocal } from "../../lib/localDb.js";
 import { PROJEKT_STATUSZOK, PROJEKT_FORRAS, getProjektTipus } from "./projekt.schema.js";
-import { migrateProjektForras, validateProjektForrás } from "../../lib/workflowRules.js";
+import { migrateProjektForrasFromRekord, validateProjektForrás } from "../../lib/workflowRules.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { getAktivCsapatok } from "../csapatok/csapat.service.js";
 import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
@@ -83,7 +83,9 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     clientEmail: projekt?.clientEmail || ajanlatElofolt?.clientEmail || "",
     kapcsolattarto: projekt?.kapcsolattarto || "",
     telepitesiCim: projekt?.telepitesiCim || ajanlatElofolt?.clientCim || "",
-    forrás: migrateProjektForras(projekt?.forrás || (ajanlatElofolt ? "sajat_ajanlat" : "")),
+    forrás: projekt
+      ? migrateProjektForrasFromRekord(projekt)
+      : (ajanlatElofolt ? "sajat_ajanlat" : ""),
     projektTipus: projekt?.projektTipus || (ajanlatElofolt ? "Saját projekt" : ""),
     ajanlatId: projekt?.ajanlatId || ajanlatElofolt?.id || null,
     fovKapcsolattarto: projekt?.fovKapcsolattarto || "",

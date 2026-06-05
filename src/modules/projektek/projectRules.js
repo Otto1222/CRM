@@ -19,6 +19,7 @@ export {
   getProjectStatusFromWorkorder,
   migrateProjektStatus,
   migrateProjektForras,
+  migrateProjektForrasFromRekord,
   migrateMunkalapStatus,
 } from "../../lib/workflowRules.js";
 
