@@ -208,13 +208,13 @@ export function migrateProjektForrasFromRekord(projekt) {
     // 2. Erős jel: strukturált CRM hivatkozás
     if (ajanlatId || clientId) return "sajat_ajanlat";
 
-    // 3. Egyértelmű belső: nincs ügyfél, vagy explicit E.D.I. megrendelő
+    // 3. Egyértelmű belső: kizárólag explicit E.D.I. megrendelő esetén
     const nev = String(clientNev || "").trim();
-    if (!nev || nev === "E.D.I. Solutions Kft." || nev === "EDI Solutions" || nev === "E.D.I.") {
+    if (nev === "E.D.I. Solutions Kft." || nev === "EDI Solutions" || nev === "E.D.I.") {
       return "belso_munka";
     }
 
-    // 4. Van ügyfélnév, de nincs strukturált hivatkozás → bizonytalan, adminnak kell dönteni
+    // 4. Minden más eset bizonytalan (üres név = lehetséges adatvesztés is)
     return FORRAS_ELLENORZES_SZUKSEGES;
   }
 
