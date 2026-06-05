@@ -18,6 +18,7 @@ import TabNaplo from "./tabs/TabNaplo.jsx";
 import TabRiport from "./tabs/TabRiport.jsx";
 import TabLmra from "./tabs/TabLmra.jsx";
 import TabKarteritesek from "./tabs/TabKarteritesek.jsx";
+import TabElszamolas from "./tabs/TabElszamolas.jsx";
 
 const TABS = [
   { id: "attekintes",   label: "Áttekintés",   icon: "📊" },
@@ -28,6 +29,7 @@ const TABS = [
   { id: "dokumentumok", label: "Dokumentumok", icon: "📁" },
   { id: "utemezas",     label: "Ütemezés",     icon: "📅" },
   { id: "szamlazas",    label: "Számlázás",    icon: "🧾" },
+  { id: "elszamolas",   label: "Elszámolás",   icon: "📊" },
   { id: "kommunikacio", label: "Kommunikáció", icon: "💬" },
   { id: "naplo",        label: "Napló",        icon: "📝" },
   { id: "lmra",         label: "LMRA",         icon: "🛡️" },
@@ -91,6 +93,8 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
         return <TabUtemezas {...props} />;
       case "szamlazas":
         return <TabSzamlazas {...props} />;
+      case "elszamolas":
+        return <TabElszamolas {...props} />;
       case "kommunikacio":
         return <TabKommunikacio {...props} />;
       case "naplo":

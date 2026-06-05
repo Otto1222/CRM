@@ -153,6 +153,21 @@ export function updateWorkorder(id, updates, user = "") {
     if (ujProjektStatusz) {
       updateProjekt(updated.projektId, { status: ujProjektStatusz }, user || "system");
     }
+
+    // Ha projekt "Készre jelentve" lett és minden munkalap lezárva
+    // → automatikus pénzügyi előkészítés (dinamikus import = nincs circular dep)
+    if (ujProjektStatusz === "Készre jelentve") {
+      const projektMunkalapok = loadWorkorders().filter(w => w.projektId === updated.projektId);
+      const mindLezarva = projektMunkalapok.length > 0
+        && projektMunkalapok.every(m => m.status === "Lezárva");
+      if (mindLezarva) {
+        import("../modules/penzugy/penzugyi.service.js")
+          .then(({ autoElszamolasElokeszites }) => {
+            autoElszamolasElokeszites(updated.projektId, projektMunkalapok, user || "system");
+          })
+          .catch(() => {});
+      }
+    }
   }
 
   syncMunkalapToCalendar(updated).catch(() => {});
