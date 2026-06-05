@@ -6,6 +6,7 @@ import { hasDefaultPasswords } from "./lib/crmUsers";
 import { getHomePage } from "./lib/roles";
 import { loadLocal, saveLocal } from "./lib/localDb";
 import { syncAllFromDrive, syncAllToDrive } from "./lib/dataSync.service";
+import { migrateTelepitoCsapatok } from "./lib/csapatMigracio";
 import { deleteWorkorder } from "./services/workorder.service";
 import { linkMunkalap } from "./modules/projektek/projekt.service";
 import Login from "./pages/Login";
@@ -296,6 +297,8 @@ export default function App() {
     setPage(getHomePage(u?.role));
     if (u?.role === "Admin") setDefaultPwWarning(hasDefaultPasswords());
     initSablonok();
+    // Egyszeri, idempotens csapat-migráció (régi Telepítő csapatok → egységes Csapatok)
+    try { migrateTelepitoCsapatok(); } catch (e) { console.warn("[csapat migráció]", e); }
   }
 
   if (!user) return <Login onLogin={handleLogin} />;
