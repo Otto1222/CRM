@@ -18,6 +18,7 @@ const KEYS = {
   elszamolasi_szabalyok:       "elszamolasi_szabalyok",
   projektek:                   "projektek",
   csapatok:                    "csapatok",
+  csapat_tagok:                "csapat_tagok",
   crm_napelem_users:           "crm_napelem_users",
   szamlak:                     "szamlak",
   edi_sorszam_counter:         "edi_sorszam_counter",
