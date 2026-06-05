@@ -4,6 +4,7 @@ import {
   X, FileText, Play, Phone, MapPin, Lock, Trash2, Hash, Shield, Users, BookOpen
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
+import { getAktivAnyagok, TELEPITOI_KATEGORIAK } from "../lib/anyagtorzs";
 import AlairasModal from "../components/AlairasModal";
 import LmraTelepltoView from "../components/LmraTelepltoView";
 import FelmeresTelepito from "./FelmeresTelepito";
@@ -225,127 +226,309 @@ function FotoKartya({ kat, photos, onChange, hianyOk, onHianyOkChange }) {
   );
 }
 
-function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
-  function initAnyagok() {
-    const saved = loadLocal(`felh_anyagok_${munkalapId}`);
-    if (saved) return saved;
-    return (meglevoAnyagok||[]).map(a => {
-      const nev = a.nev||a.name||"";
-      const db = parseInt(a.menny||a.qty||1) || 1;
-      const needSerial = requiresSerial(nev);
-      return {
-        id: `a_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-        nev,
-        menny: db,
-        egyseg: a.egyseg||a.unit||"db",
-        needSerial,
-        isManual: false,
-        sorozatszamok: needSerial ? Array.from({length:db},()=>"") : null,
-      };
-    });
-  }
+/**
+ * BeepitesiVisszaigazolas – Spec: telepítő csak beépítve/nem szükséges jelöl
+ * A projekt szintről örökölt elemek megjelennek, nem szerkeszthető a db/típus.
+ */
+const BEEPITESI_ALLAPOTOK = [
+  { id: "beepitve",     label: "Beépítve",              szin: "#059669", bg: "#ECFDF5" },
+  { id: "nem_kellett",  label: "Nem volt szükséges",     szin: "#D97706", bg: "#FFFBEB" },
+  { id: "nem_epult_be", label: "Nem került beépítésre",  szin: "#DC2626", bg: "#FEF2F2" },
+];
 
-  const [anyagok, setAnyagok] = useState(initAnyagok);
-  const [ujNev, setUjNev] = useState("");
-  const [ujMenny, setUjMenny] = useState(1);
-  const [ujEgyseg, setUjEgyseg] = useState("db");
+function BeepitesiVisszaigazolas({ munkalap, projekt }) {
+  const LS_KEY = `beepites_${munkalap.id}`;
+  const [allapotok, setAllapotok] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; }
+  });
+  const [megjegyzesek, setMegjegyzesek] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`${LS_KEY}_mj`) || "{}"); } catch { return {}; }
+  });
   const [mentve, setMentve] = useState(false);
-  const [hiba, setHiba] = useState("");
 
-  function add() {
-    if (!ujNev.trim()) return;
-    const db = parseInt(ujMenny)||1;
-    const needSerial = requiresSerial(ujNev);
-    setAnyagok(p=>[...p, {
-      id:`a_${Date.now()}`,
-      nev:ujNev.trim(),
-      menny:db,
-      egyseg:ujEgyseg,
-      needSerial,
-      isManual: true,
-      sorozatszamok: needSerial ? Array.from({length:db},()=>"") : null,
-    }]);
-    setUjNev("");
-    setUjMenny(1);
+  // Projekt szintű elemek – csak ezeket mutatjuk
+  const ELEMEK = [
+    { key: "napelem",    label: "Napelem panel",        db: projekt?.napelemDb,    tipusMezo: "napelemTipus" },
+    { key: "inverter",   label: "Inverter",             db: projekt?.inverterDb,   tipusMezo: "inverterTipus" },
+    { key: "akku",       label: "Akkumulátor",          db: projekt?.akkumulatorDb,tipusMezo: "akkumulatorTipus" },
+    { key: "smartmeter", label: "Smart Meter",          db: projekt?.smartMeterDb, tipusMezo: null },
+    { key: "evtolto",    label: "EV töltő",             db: projekt?.evToltoDb,    tipusMezo: null },
+    { key: "tartoszerk", label: "Tartószerkezet",       db: null,                  tipusMezo: "tartoszerkezetTipus" },
+  ].filter(e => e.db > 0 || (e.db === null && projekt?.[e.tipusMezo || ""]));
+
+  function setAllapot(key, val) {
+    const uj = { ...allapotok, [key]: val };
+    setAllapotok(uj);
+    localStorage.setItem(LS_KEY, JSON.stringify(uj));
+    setMentve(false);
   }
 
-  function updSerial(aid, idx, val) {
-    setAnyagok(p=>p.map(a=>a.id!==aid?a:{...a,sorozatszamok:a.sorozatszamok.map((s,i)=>i===idx?val:s)}));
+  function setMegjegyzes(key, val) {
+    const uj = { ...megjegyzesek, [key]: val };
+    setMegjegyzesek(uj);
+    localStorage.setItem(`${LS_KEY}_mj`, JSON.stringify(uj));
+    setMentve(false);
   }
 
-  function save() {
-    const hiany = anyagok.filter(a=>a.needSerial&&a.sorozatszamok?.some(s=>!s||s.trim()===""));
-    if (hiany.length>0) {
-      setHiba("Hiányzó sorozatszám: "+hiany.map(a=>a.nev).join(", "));
+  function handleMent() {
+    // Ellenőrzés: eltérésnél kötelező a megjegyzés
+    const hianyzik = ELEMEK.filter(e => {
+      const al = allapotok[e.key];
+      return (al === "nem_kellett" || al === "nem_epult_be") && !megjegyzesek[e.key]?.trim();
+    });
+    if (hianyzik.length > 0) {
+      alert(`Kötelező megjegyzés: ${hianyzik.map(e => e.label).join(", ")}`);
       return;
     }
-    setHiba("");
-    saveLocal(`felh_anyagok_${munkalapId}`, anyagok);
-    updateItem("munkalapok", munkalapId, { felhasznaltAnyagok: anyagok });
-    window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
-    onSave(anyagok);
+    updateItem("munkalapok", munkalap.id, { beepitesiVisszaigazolas: allapotok, beepitesiMegjegyzesek: megjegyzesek });
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
     setMentve(true);
-    setTimeout(()=>setMentve(false),2000);
+    setTimeout(() => setMentve(false), 2500);
+  }
+
+  if (ELEMEK.length === 0) {
+    return (
+      <div style={{ background: "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 14, fontSize: 12, color: C.muted }}>
+        ℹ️ A projektben nincs rögzített szerelési elem. Az adminisztráció adja meg a projekten.
+      </div>
+    );
   }
 
   return (
-    <div style={{ padding:"16px", background:"#F1F5F9" }}>
-      <p style={{ fontSize:13, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-        Kék keretes tételeknél minden darabhoz külön sorozatszám szükséges.
+    <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 16 }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: C.text, margin: "0 0 12px" }}>
+        ✅ Beépítési visszaigazolás
       </p>
-
-      {hiba&&<div style={{ background:"#FEF2F2",border:`1px solid #FECACA`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.danger }}>⚠️ {hiba}</div>}
-
-      {anyagok.map(a=>(
-        <div key={a.id} style={{ background:"#fff", border:`1.5px solid ${a.needSerial?"#2563EB30":C.border}`, borderRadius:12, padding:"12px 14px", marginBottom:10 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:a.needSerial?10:0 }}>
-            {a.needSerial&&<Hash size={14} color={C.accent} style={{flexShrink:0}}/>}
-            <span style={{ flex:1, fontSize:14, fontWeight:600, color:C.text }}>{a.nev}</span>
-            <span style={{ fontSize:13, color:C.muted, whiteSpace:"nowrap" }}>{a.menny} {a.egyseg}</span>
-            {a.isManual && (
-              <button onClick={()=>setAnyagok(p=>p.filter(x=>x.id!==a.id))} style={{ border:"none",background:"none",cursor:"pointer",color:C.danger,flexShrink:0 }}>
-                <Trash2 size={14}/>
-              </button>
-            )}
-          </div>
-
-          {a.needSerial && a.sorozatszamok?.map((sn,idx)=>(
-            <div key={idx} style={{ marginBottom:6 }}>
-              <label style={{ fontSize:11, color:C.accent, fontWeight:700, textTransform:"uppercase", letterSpacing:.8 }}>
-                {idx+1}. db sorozatszáma (kötelező)
-              </label>
-              <input
-                value={sn}
-                onChange={e=>updSerial(a.id,idx,e.target.value)}
-                placeholder="pl. SN-1234567890"
-                style={{ width:"100%", marginTop:4, padding:"9px 12px", border:`1.5px solid ${!sn?C.accent:C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none", background:!sn?"#EFF6FF":"#F8FAFC" }}
-              />
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {ELEMEK.map(e => {
+          const al = allapotok[e.key];
+          const alCfg = BEEPITESI_ALLAPOTOK.find(a => a.id === al);
+          const kell_mj = al === "nem_kellett" || al === "nem_epult_be";
+          return (
+            <div key={e.key} style={{ background: alCfg?.bg || "#F8FAFC", border: `1px solid ${alCfg?.szin || C.border}30`, borderRadius: 10, padding: "10px 12px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: kell_mj ? 8 : 0 }}>
+                <div>
+                  <span style={{ fontWeight: 700, fontSize: 13 }}>{e.label}</span>
+                  {e.db > 0 && <span style={{ fontSize: 11, color: C.muted, marginLeft: 6 }}>{e.db} db · {projekt?.[e.tipusMezo || ""] || ""}</span>}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                {BEEPITESI_ALLAPOTOK.map(a => (
+                  <button key={a.id} onClick={() => setAllapot(e.key, a.id)}
+                    style={{ padding: "6px 12px", borderRadius: 20, border: `2px solid ${al === a.id ? a.szin : "#E2E8F0"}`,
+                      background: al === a.id ? a.bg : "#fff", color: al === a.id ? a.szin : C.muted,
+                      cursor: "pointer", fontSize: 12, fontWeight: al === a.id ? 700 : 400, fontFamily: FONT }}>
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+              {kell_mj && (
+                <textarea value={megjegyzesek[e.key] || ""} onChange={e2 => setMegjegyzes(e.key, e2.target.value)}
+                  placeholder="Kötelező: miért tért el a tervtől?"
+                  rows={2}
+                  style={{ width: "100%", boxSizing: "border-box", marginTop: 8, padding: "8px 10px",
+                    border: `1.5px solid ${!megjegyzesek[e.key]?.trim() ? "#DC2626" : C.border}`,
+                    borderRadius: 8, fontSize: 12, fontFamily: FONT, resize: "none", outline: "none" }} />
+              )}
             </div>
+          );
+        })}
+      </div>
+      <button onClick={handleMent}
+        style={{ marginTop: 12, width: "100%", padding: "11px", borderRadius: 10, border: "none",
+          background: mentve ? "#059669" : C.accent, color: "#fff", fontWeight: 700, fontSize: 14,
+          cursor: "pointer", fontFamily: FONT }}>
+        {mentve ? "✓ Mentve" : "Visszaigazolás mentése"}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * FelhasznaltAnyagokTab – Telepítő anyagrögzítés anyagtörzsből
+ * Spec: listából választ → mennyiséget ad meg → menti → auto költségszámítás
+ */
+function FelhasznaltAnyagokTab({ munkalapId, onSave }) {
+  const anyagtorzs = getAktivAnyagok();
+
+  function load() {
+    const saved = loadLocal(`felh_anyagok_${munkalapId}`);
+    return Array.isArray(saved) ? saved : [];
+  }
+
+  const [tetelek, setTetelek]     = useState(load);
+  const [keresoQ, setKeresoQ]     = useState("");
+  const [mentve, setMentve]       = useState(false);
+  const [selectedKat, setSelectedKat] = useState("mind");
+
+  // Szériaszám-köteles anyagok
+  const serialCategories = ["inverter", "akkumulátor", "optimalizáló", "napelem"];
+  function needsSerial(nev) {
+    return serialCategories.some(k => nev.toLowerCase().includes(k));
+  }
+
+  function addAnyag(anyag) {
+    setTetelek(p => {
+      const existing = p.find(t => t.anyagId === anyag.id);
+      if (existing) {
+        return p.map(t => t.anyagId === anyag.id
+          ? { ...t, menny: (Number(t.menny) || 0) + 1 }
+          : t
+        );
+      }
+      return [...p, {
+        id: `t_${Date.now()}`,
+        anyagId: anyag.id,
+        nev: anyag.nev,
+        egyseg: anyag.egyseg,
+        egysegAr: anyag.netto_egysegar || anyag.egysegAr || 0,
+        menny: 1,
+        serials: needsSerial(anyag.nev) ? [""] : null,
+        megjegyzes: "",
+      }];
+    });
+    setKeresoQ("");
+    setMentve(false);
+  }
+
+  function updMenny(id, v) {
+    const n = Number(v) || 0;
+    setTetelek(p => p.map(t => {
+      if (t.id !== id) return t;
+      const serials = t.serials ? Array.from({ length: n }, (_, i) => t.serials[i] || "") : null;
+      return { ...t, menny: n, serials };
+    }));
+    setMentve(false);
+  }
+
+  function updSerial(id, idx, val) {
+    setTetelek(p => p.map(t => t.id !== id ? t : {
+      ...t, serials: t.serials.map((s, i) => i === idx ? val : s)
+    }));
+    setMentve(false);
+  }
+
+  function remove(id) {
+    setTetelek(p => p.filter(t => t.id !== id));
+    setMentve(false);
+  }
+
+  function handleMent() {
+    const hianySerial = tetelek.filter(t => t.serials?.some(s => !s?.trim()));
+    if (hianySerial.length > 0) {
+      alert("Hiányzó sorozatszám: " + hianySerial.map(t => t.nev).join(", "));
+      return;
+    }
+    const anyagkoltség = tetelek.reduce((s, t) => s + (t.menny || 0) * (t.egysegAr || 0), 0);
+    saveLocal(`felh_anyagok_${munkalapId}`, tetelek);
+    updateItem("munkalapok", munkalapId, { felhasznaltAnyagok: tetelek, anyagkoltség });
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+    onSave(tetelek);
+    setMentve(true);
+    setTimeout(() => setMentve(false), 2500);
+  }
+
+  const szurtAnyagok = anyagtorzs.filter(a => {
+    const katOk = selectedKat === "mind" || a.kat === selectedKat;
+    const qOk   = !keresoQ || a.nev.toLowerCase().includes(keresoQ.toLowerCase());
+    return katOk && qOk;
+  });
+
+  const osszesCost = tetelek.reduce((s, t) => s + (t.menny || 0) * (t.egysegAr || 0), 0);
+
+  return (
+    <div style={{ padding: 16, background: "#F1F5F9", minHeight: "60vh" }}>
+      {/* Anyag választó */}
+      <div style={{ background: "#fff", borderRadius: 12, padding: 14, marginBottom: 14, border: `1px solid ${C.border}` }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .7, margin: "0 0 10px" }}>Anyag hozzáadása</p>
+
+        {/* Keresés */}
+        <input value={keresoQ} onChange={e => setKeresoQ(e.target.value)}
+          placeholder="🔍 Keresés…"
+          style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px", border: `1.5px solid ${C.border}`, borderRadius: 9, fontSize: 13, fontFamily: FONT, outline: "none", marginBottom: 8 }} />
+
+        {/* Kategória filter */}
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
+          {[{ id: "mind", label: "Mind" }, ...TELEPITOI_KATEGORIAK].map(k => (
+            <button key={k.id} onClick={() => setSelectedKat(k.id)}
+              style={{ padding: "4px 10px", borderRadius: 20, border: `1px solid ${selectedKat === k.id ? C.accent : C.border}`,
+                background: selectedKat === k.id ? C.accent : "#fff", color: selectedKat === k.id ? "#fff" : C.textSub,
+                cursor: "pointer", fontSize: 11, fontFamily: FONT }}>
+              {k.label}
+            </button>
           ))}
         </div>
-      ))}
 
-      <div style={{ border:`1.5px dashed ${C.border}`,borderRadius:12,padding:14,background:"#fff",marginBottom:16 }}>
-        <p style={{ fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:.8,marginBottom:10 }}>Új tétel</p>
-        <input
-          value={ujNev}
-          onChange={e=>setUjNev(e.target.value)}
-          onKeyDown={e=>e.key==="Enter"&&add()}
-          placeholder="Anyag / eszköz neve…"
-          style={{ width:"100%",padding:"10px 12px",border:`1.5px solid ${C.border}`,borderRadius:9,fontSize:14,fontFamily:FONT,outline:"none",marginBottom:8 }}
-        />
-        {requiresSerial(ujNev)&&<p style={{ fontSize:12,color:C.accent,marginBottom:8,fontWeight:600 }}>⚠️ Sorozatszámot igényel ({ujMenny} db → {ujMenny} mező)</p>}
-        <div style={{ display:"flex",gap:8 }}>
-          <input type="number" value={ujMenny} onChange={e=>setUjMenny(parseInt(e.target.value)||1)}
-            style={{ width:64,padding:"10px 8px",border:`1.5px solid ${C.border}`,borderRadius:9,fontSize:14,fontFamily:FONT,outline:"none",textAlign:"center" }}/>
-          <input value={ujEgyseg} onChange={e=>setUjEgyseg(e.target.value)} placeholder="db"
-            style={{ width:64,padding:"10px 8px",border:`1.5px solid ${C.border}`,borderRadius:9,fontSize:13,fontFamily:FONT,outline:"none" }}/>
-          <button onClick={add} style={{ flex:1,padding:"10px",background:C.accent,color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:700,fontFamily:FONT }}>+ Hozzáad</button>
+        {/* Anyag gombok */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {szurtAnyagok.slice(0, 20).map(a => (
+            <button key={a.id} onClick={() => addAnyag(a)}
+              style={{ padding: "6px 12px", borderRadius: 9, border: `1px solid ${C.border}`,
+                background: tetelek.find(t => t.anyagId === a.id) ? "#EFF6FF" : "#fff",
+                color: tetelek.find(t => t.anyagId === a.id) ? C.accent : C.text,
+                cursor: "pointer", fontSize: 12, fontFamily: FONT, fontWeight: tetelek.find(t => t.anyagId === a.id) ? 700 : 400 }}>
+              {a.nev}
+              {tetelek.find(t => t.anyagId === a.id) && <span style={{ marginLeft: 5, fontWeight: 700 }}>+</span>}
+            </button>
+          ))}
+          {szurtAnyagok.length === 0 && (
+            <p style={{ fontSize: 12, color: C.muted }}>Nincs találat. Kérj az admintól új anyagot.</p>
+          )}
         </div>
       </div>
 
-      <button onClick={save} style={{ width:"100%",padding:"14px",borderRadius:12,border:"none",background:C.success,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT }}>
-        <Save size={18}/>{mentve?"Mentve ✓":"Anyagok mentése"}
+      {/* Felvett tételek */}
+      {tetelek.length === 0 ? (
+        <p style={{ textAlign: "center", color: C.muted, padding: "24px 0", fontSize: 13 }}>Még nincs anyag rögzítve</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+          {tetelek.map(t => (
+            <div key={t.id} style={{ background: "#fff", border: `1.5px solid ${t.serials ? "#BFDBFE" : C.border}`, borderRadius: 12, padding: "12px 14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: t.serials ? 10 : 0 }}>
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: C.text }}>{t.nev}</span>
+                <input type="number" min="0" value={t.menny}
+                  onChange={e => updMenny(t.id, e.target.value)}
+                  style={{ width: 60, padding: "6px 8px", border: `1.5px solid ${C.border}`, borderRadius: 7, fontSize: 14, textAlign: "center", fontFamily: FONT, outline: "none" }} />
+                <span style={{ fontSize: 12, color: C.muted, minWidth: 28 }}>{t.egyseg}</span>
+                {t.egysegAr > 0 && (
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#059669", minWidth: 70, textAlign: "right" }}>
+                    {((t.menny || 0) * t.egysegAr).toLocaleString("hu-HU")} Ft
+                  </span>
+                )}
+                <button onClick={() => remove(t.id)}
+                  style={{ padding: "4px 7px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 6, cursor: "pointer" }}>
+                  <Trash2 size={13} />
+                </button>
+              </div>
+              {/* Sorozatszámok */}
+              {t.serials && t.serials.map((sn, idx) => (
+                <div key={idx} style={{ marginBottom: 6 }}>
+                  <label style={{ fontSize: 10, color: C.accent, fontWeight: 700, textTransform: "uppercase" }}>
+                    {idx + 1}. db sorozatszáma *
+                  </label>
+                  <input value={sn} onChange={e => updSerial(t.id, idx, e.target.value)}
+                    placeholder="pl. SN-1234567890"
+                    style={{ width: "100%", marginTop: 3, padding: "8px 11px", border: `1.5px solid ${!sn ? C.accent : C.border}`, borderRadius: 8, fontSize: 13, fontFamily: FONT, outline: "none", background: !sn ? "#EFF6FF" : "#fff" }} />
+                </div>
+              ))}
+            </div>
+          ))}
+
+          {/* Összeg */}
+          {osszesCost > 0 && (
+            <div style={{ background: "#ECFDF5", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#166534" }}>Anyagköltség összesen</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: "#059669" }}>{osszesCost.toLocaleString("hu-HU")} Ft</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      <button onClick={handleMent}
+        style={{ width: "100%", padding: "14px", borderRadius: 12, border: "none",
+          background: mentve ? "#059669" : C.accent, color: "#fff", fontWeight: 700, fontSize: 16,
+          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: FONT }}>
+        <Save size={18} />{mentve ? "Mentve ✓" : "Anyagok mentése"}
       </button>
     </div>
   );
@@ -904,7 +1087,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
       {activeTab===0&&<InfoTab/>}
       {activeTab===1&&<AnyagokTab/>}
       {activeTab===2&&<FelmeresTab/>}
-      {megkezdve&&activeTab===3&&<FelhasznaltAnyagokTab munkalapId={m.id} meglevoAnyagok={m.anyagok||[]} onSave={()=>{}}/>}
+      {megkezdve&&activeTab===3&&<FelhasznaltAnyagokTab munkalapId={m.id} onSave={()=>{}}/>}
       {megkezdve&&activeTab===4&&<VbfTab/>}
       {megkezdve&&activeTab===5&&<FotokTab/>}
       {megkezdve&&activeTab===6&&(
@@ -1026,31 +1209,8 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
             )}
           </div>
 
-          {/* Elszámolási adatok megerősítése */}
-          <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, padding:16, marginBottom:16 }}>
-            <p style={{ fontSize:13, fontWeight:700, color:"#475569", marginBottom:12 }}>💰 Elszámolási adatok (lezáráskor rögzítve)</p>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px 12px" }}>
-              {[
-                { key:"panelDb",       label:"Panel db" },
-                { key:"inverterDb",    label:"Inverter db" },
-                { key:"akkumulatorDb", label:"Akkumulátor db" },
-                { key:"smartMeterDb",  label:"Smart meter db" },
-                { key:"tavKm",         label:"Km (oda)" },
-                { key:"anyagkoltság",  label:"Anyagköltség (Ft)" },
-              ].map(({ key, label }) => (
-                <div key={key}>
-                  <label style={{ fontSize:10, fontWeight:700, color:C.muted, display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:.5 }}>{label}</label>
-                  <input
-                    type="number" min="0"
-                    value={elszamolasAdatok[key] ?? 0}
-                    onChange={e => setElszamolasAdatok(p => ({ ...p, [key]: Number(e.target.value) }))}
-                    style={{ width:"100%", boxSizing:"border-box", padding:"7px 10px", border:`1.5px solid ${C.border}`, borderRadius:8, fontSize:13, fontFamily:FONT, outline:"none" }}
-                  />
-                </div>
-              ))}
-            </div>
-            <p style={{ fontSize:11, color:C.muted, marginTop:8 }}>Az adatok a projektből öröklődnek, de pontosíthatók.</p>
-          </div>
+          {/* Beépítési visszaigazolás – csak projekt szintről örökölt elemek */}
+          <BeepitesiVisszaigazolas munkalap={m} projekt={proj} />
 
           <button
             onClick={handleBefejezesKezdete}

@@ -17,6 +17,7 @@ import MunkatipusokPage from "../modules/munkatipusok/MunkatipusokPage";
 import SablonKezelo from "./SablonKezelo";
 import BackupKezelo from "./BackupKezelo";
 import CsapatokPage from "../modules/csapatok/CsapatokPage";
+import AnyagtorzsPage from "./AnyagtorzsPage";
 
 const MENU_ITEMS = [
   {
@@ -42,6 +43,14 @@ const MENU_ITEMS = [
     icon: Wrench,
     color: "#7C3AED",
     bg: "#F5F3FF",
+  },
+  {
+    id: "anyagtorzs",
+    label: "Anyagtörzs",
+    desc: "Villanyszerelési anyagok és egységárak – telepítő ebből választ",
+    icon: Settings,
+    color: "#0891B2",
+    bg: "#F0F9FF",
   },
   {
     id: "munkakiosztas",
@@ -159,6 +168,15 @@ export default function BeallitasokPage({ currentUser }) {
       <>
         <BackBtn onClick={() => setAktiv(null)} label="LMRA – Kockázatbecslés" />
         <LmraBeallitasok />
+      </>
+    );
+  }
+
+  if (aktiv === "anyagtorzs") {
+    return (
+      <>
+        <BackBtn onClick={() => setAktiv(null)} label="Anyagtörzs" />
+        <AnyagtorzsPage />
       </>
     );
   }
