@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
 import { driveSave, driveAvailable } from "./lib/driveApi";
+import { hasDefaultPasswords } from "./lib/crmUsers";
 import { getHomePage } from "./lib/roles";
 import { loadLocal, saveLocal } from "./lib/localDb";
 import { syncAllFromDrive, syncAllToDrive } from "./lib/dataSync.service";
+import { migrateTelepitoCsapatok } from "./lib/csapatMigracio";
 import { deleteWorkorder } from "./services/workorder.service";
+import { linkMunkalap } from "./modules/projektek/projekt.service";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
@@ -13,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import { MunkalapLista, MunkalapDetail } from "./pages/Munkalapok";
 import Ugyfelek from "./pages/Ugyfelek";
 import ComingSoon from "./pages/ComingSoon";
+import ArajanlaltokPage from "./pages/ArajanlaltokPage.jsx";
 import BeallitasokPage from "./pages/BeallitasokPage";
 import UjMunkalap from "./pages/UjMunkalap";
 import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
@@ -20,26 +24,52 @@ import CsapatokPage from "./modules/csapatok/CsapatokPage.jsx";
 import SzamlakPage from "./modules/szamlak/SzamlakPage.jsx";
 import PwaInstallBanner from "./components/PwaInstallBanner.jsx";
 import RiportokPage from "./pages/RiportokPage.jsx";
+import NaptarPage from "./pages/NaptarPage.jsx";
+import KarteritesekPage from "./pages/KarteritesekTab.jsx";
+import MunkalapSablonokPage from "./modules/munkalap_sablonok/MunkalapSablonokPage.jsx";
+import { initSablonok, getAktivSablonok } from "./modules/munkalap_sablonok/munkalapSablon.service.js";
 
 const PAGE_TITLES = {
-  dashboard: "Pénzügy",
-  munkalapok: "Munkalapok",
-  projektek: "Projektek",
-  ugyfelek: "Ügyfelek",
-  arajanlatok: "Árajánlatok",
-  szerzodések: "Szerződések",
-  szamlak: "Számlák",
-  csapat: "Csapat",
-  naptar: "Naptár",
-  riportok:    "Riportok",
-  beallitasok: "Beállítások",
+  dashboard:         "Dashboard",
+  projektek:         "Projektek",
+  munkalapok:        "Munkalapok",
+  ugyfelek:          "Ügyfelek",
+  arajanlatok:       "Ajánlatok",
+  szerzodesek:       "Szerződések",
+  szamlak:           "Számlák",
+  csapat:            "Csapatok",
+  naptar:            "Naptár",
+  riportok:          "Riportok",
+  karteritesek:      "Kártérítések",
+  munkalap_sablonok: "ML Sablonok",
+  dokumentumok:      "Dokumentumok",
+  beallitasok:       "Beállítások / Rendszer",
 };
 
+function fixMunkalapokSzamozas(list) {
+  let changed = false;
+  const fixed = list.map(m => {
+    if (!m.dokumentumszam && !m.ugyszam && !m.ediSorszam) {
+      changed = true;
+      const fallback = `#${(m.id || "").slice(-6)}`;
+      return { ...m, dokumentumszam: fallback, ugyszam: fallback };
+    }
+    if (!m.dokumentumszam && (m.ugyszam || m.ediSorszam)) {
+      changed = true;
+      return { ...m, dokumentumszam: m.ugyszam || m.ediSorszam };
+    }
+    return m;
+  });
+  if (changed) saveLocal("munkalapok", fixed);
+  return fixed;
+}
+
 function loadInitialData() {
+  const rawMl = loadLocal("munkalapok") || SAMPLE_DATA.munkalapok || [];
   return {
     ...SAMPLE_DATA,
     projektek: loadLocal("projektek") || SAMPLE_DATA.projektek || [],
-    munkalapok: loadLocal("munkalapok") || SAMPLE_DATA.munkalapok || [],
+    munkalapok: fixMunkalapokSzamozas(rawMl),
     ugyfelek: loadLocal("ugyfelek") || SAMPLE_DATA.ugyfelek || [],
     beallitasok: loadLocal("beallitasok") || SAMPLE_DATA.beallitasok || {},
     munkatipusok: loadLocal("munkatipusok") || SAMPLE_DATA.munkatipusok || [],
@@ -54,15 +84,25 @@ function loadInitialData() {
 }
 
 export default function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const t = localStorage.getItem("__crm_test_session__");
+      if (t) return JSON.parse(t);
+    } catch {}
+    return null;
+  });
   const [page, setPage] = useState("dashboard");
   const [sel, setSel] = useState(null);
   const [data, setData] = useState(loadInitialData);
   const [drive, setDrive] = useState("idle");
+  const [defaultPwWarning, setDefaultPwWarning] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [ujMunkalapInit, setUjMunkalapInit] = useState(null);
+  const [sablonValaszto, setSablonValaszto] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => { localStorage.removeItem("__crm_test_session__"); }, []);
 
   useEffect(() => {
     const goOnline  = () => setIsOnline(true);
@@ -197,14 +237,14 @@ export default function App() {
     setDrive("saving");
 
     try {
-      await syncAllToDrive();
-      setDrive("ok");
+      const { allOk } = await syncAllToDrive();
+      setDrive(allOk ? "ok" : "error");
     } catch (e) {
       console.warn("[App syncAllToDrive]", e);
       setDrive("error");
     }
 
-    setTimeout(() => setDrive("idle"), 2500);
+    setTimeout(() => setDrive("idle"), 3000);
   }
 
   async function handleNewMunkalap(formData) {
@@ -223,6 +263,11 @@ export default function App() {
     saveLocal("munkalapok", newList);
 
     await saveCollection("munkalapok", newList);
+
+    // Projekt munkalapIds frissítése ha projekthez tartozik
+    if (newItem.projektId) {
+      linkMunkalap(newItem.projektId, newItem.id);
+    }
 
     setShowNew(false);
     setPage("munkalapok");
@@ -250,6 +295,10 @@ export default function App() {
   function handleLogin(u) {
     setUser(u);
     setPage(getHomePage(u?.role));
+    if (u?.role === "Admin") setDefaultPwWarning(hasDefaultPasswords());
+    initSablonok();
+    // Egyszeri, idempotens csapat-migráció (régi Telepítő csapatok → egységes Csapatok)
+    try { migrateTelepitoCsapatok(); } catch (e) { console.warn("[csapat migráció]", e); }
   }
 
   if (!user) return <Login onLogin={handleLogin} />;
@@ -275,6 +324,7 @@ export default function App() {
               m={sel}
               data={data}
               userRole={user?.role}
+              currentUser={user}
               onBack={() => setSel(null)}
               onDelete={handleDeleteMunkalap}
               onRefresh={() => {
@@ -288,7 +338,10 @@ export default function App() {
           </>
         ) : (
           <>
-            <TopBar title={PAGE_TITLES[page]} user={user} driveStatus={drive} onMenuOpen={() => setSidebarOpen(true)} />
+            <TopBar
+              title={user?.role === "Telepítő" && page === "munkalapok" ? "Saját munkalapok" : (PAGE_TITLES[page] || page)}
+              user={user} driveStatus={drive} onMenuOpen={() => setSidebarOpen(true)}
+            />
 
             {page === "dashboard" && <Dashboard user={user} />}
 
@@ -307,6 +360,7 @@ export default function App() {
               <ProjektekPage
                 data={data}
                 currentUser={user}
+                onNav={setPage}
                 onNavigateMunkalap={(m) => {
                   setPage("munkalapok");
                   setSel(m);
@@ -328,11 +382,25 @@ export default function App() {
 
             {page === "ugyfelek" && <Ugyfelek data={data} currentUser={user} />}
 
-            {page === "arajanlatok" && <ComingSoon title="Árajánlatok" />}
-            {page === "szerzodések" && <ComingSoon title="Szerződések" />}
+            {page === "arajanlatok" && <ArajanlaltokPage currentUser={user} />}
+            {page === "szerzodesek" && <ComingSoon title="Szerződések" />}
+            {page === "dokumentumok" && <ComingSoon title="Dokumentumok" />}
             {page === "szamlak" && <SzamlakPage currentUser={user} />}
             {page === "csapat" && <CsapatokPage currentUser={user} />}
-            {page === "naptar" && <ComingSoon title="Naptár" />}
+            {page === "naptar" && (
+              <NaptarPage
+                data={data}
+                currentUser={user}
+                onNavigate={(type, ref) => {
+                  if (type === "munkalap" && ref) { setPage("munkalapok"); setSel(ref); }
+                  else if (type === "projekt")    { setPage("projektek"); }
+                }}
+              />
+            )}
+
+            {page === "karteritesek" && <KarteritesekPage currentUser={user} userRole={user?.role} />}
+
+            {page === "munkalap_sablonok" && <MunkalapSablonokPage userRole={user?.role} />}
 
             {page === "riportok" && <RiportokPage currentUser={user} />}
 
@@ -380,6 +448,32 @@ export default function App() {
           fontSize: 13, fontWeight: 700, fontFamily: "system-ui, sans-serif",
         }}>
           📵 Nincs internetkapcsolat – az adatok helyi mentésből töltődnek, Drive szinkron szünetel
+        </div>
+      )}
+
+      {/* Alapértelmezett jelszó figyelmeztetés (Admin) */}
+      {defaultPwWarning && (
+        <div style={{
+          position: "fixed", top: isOnline ? 0 : 38, left: 0, right: 0, zIndex: 9998,
+          background: "#92400E", color: "#FEF3C7",
+          padding: "8px 16px", display: "flex", alignItems: "center", justifyContent: "space-between",
+          fontSize: 13, fontWeight: 700, fontFamily: "system-ui, sans-serif", gap: 12,
+        }}>
+          <span>⛔ Alapértelmezett jelszavak aktívak – éles indulás ELŐTT változtasd meg! (Beállítások → Felhasználók)</span>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <button
+              onClick={() => { nav("beallitasok"); }}
+              style={{ padding: "3px 12px", background: "#FEF3C7", color: "#92400E", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+            >
+              Megnyitás
+            </button>
+            <button
+              onClick={() => setDefaultPwWarning(false)}
+              style={{ padding: "3px 8px", background: "transparent", color: "#FEF3C7", border: "1px solid #FEF3C7", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 

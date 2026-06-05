@@ -4,11 +4,45 @@ import {
   ChevronDown, ChevronUp, FileText, Search
 } from "lucide-react";
 import { C, FONT, FONT_HEADING, MUNKALAP_TIPUSOK, WORKFLOW_STATUSES } from "../lib/constants";
-import { nextEdiSorszam, fullDokumentumszam } from "../lib/dokumentumszam";
+import { getAktivSablonok } from "../modules/munkalap_sablonok/munkalapSablon.service.js";
+import { nextEdiSorszam } from "../lib/dokumentumszam";
 import { createBackup } from "../lib/backupService";
 import { getUsers } from "../lib/crmUsers";
 import { ft, totals } from "../lib/helpers";
-import { getSettings } from "../lib/munkakiosztasSettings";
+import { getAktivCsapatok } from "../modules/csapatok/csapat.service";
+
+// ─── Munkalap sorszám auto-generálás projektkód alapján ──────
+function genMunkalapKod(projektId, projektkod) {
+  if (!projektId || !projektkod) return "";
+  try {
+    const all      = JSON.parse(localStorage.getItem("munkalapok") || "[]");
+    const existing = new Set(all.map(m => m.ugyszam || m.dokumentumszam).filter(Boolean));
+    let seq = all.filter(m => m.projektId === projektId).length + 1;
+    let candidate = `${projektkod}/M-${String(seq).padStart(3, "0")}`;
+    while (existing.has(candidate)) {
+      seq++;
+      candidate = `${projektkod}/M-${String(seq).padStart(3, "0")}`;
+    }
+    return candidate;
+  } catch { return ""; }
+}
+
+// ─── Fővállalkozói díj auto-számítás projekt adataiból ───────
+function calcBillingFromProject(projekt) {
+  if (!projekt?.napelemDb || !projekt?.munkatipusId) return null;
+  try {
+    const munkatipusok = JSON.parse(localStorage.getItem("munkatipusok") || "[]");
+    const mt = munkatipusok.find(m => m.id === projekt.munkatipusId);
+    if (!mt?.beveteliTetelek) return null;
+    const tetel = mt.beveteliTetelek.find(t => t.arlogikaTipus === "darab_egysegar" && Number(t.egysegAr) > 0);
+    if (!tetel) return null;
+    const ar = Math.round(projekt.napelemDb * Number(tetel.egysegAr));
+    return {
+      ar,
+      megjegyzes: `${projekt.napelemDb} db × ${Number(tetel.egysegAr).toLocaleString("hu-HU")} Ft = ${ar.toLocaleString("hu-HU")} Ft`,
+    };
+  } catch { return null; }
+}
 
 // ─── Eszköz kategóriák ────────────────────────────────────────
 const DEFAULT_ESZKOZ_KAT = [
@@ -184,14 +218,139 @@ function FajlFeltoltes({ files, onChange }) {
   );
 }
 
+// ─── Sablon választó ─────────────────────────────────────────
+function SablonValaszto({ onSelect, onClose }) {
+  const sablonok = getAktivSablonok();
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:3000, background:"rgba(0,0,0,.65)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+      <div style={{ background:"#fff", borderRadius:18, width:"100%", maxWidth:720, maxHeight:"90vh", overflow:"auto", boxShadow:"0 24px 60px rgba(0,0,0,.35)", fontFamily:FONT }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"18px 24px", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, background:"#fff", zIndex:1 }}>
+          <div>
+            <h2 style={{ fontFamily:FONT_HEADING, fontSize:18, fontWeight:800, color:C.text, margin:0 }}>Válassz munkalap sablont</h2>
+            <p style={{ fontSize:12, color:C.muted, margin:"3px 0 0" }}>A sablon határozza meg a munkalap mezőit és kötelező elemeit</p>
+          </div>
+          <button onClick={onClose} style={{ border:"none", background:"none", cursor:"pointer", color:C.muted }}><X size={22}/></button>
+        </div>
+        <div style={{ padding:"16px 24px 24px", display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:12 }}>
+          {sablonok.map(s => {
+            const mezokDb = (s.mezok || []).length;
+            const beall = s.beallitasok || {};
+            const jelzok = [beall.kellVBF&&"VBF", beall.kellLMRA&&"LMRA", beall.kellTIG&&"TIG", beall.kellAlairas&&"Aláírás"].filter(Boolean);
+            return (
+              <button key={s.id} onClick={() => onSelect(s)}
+                style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"14px 16px", border:`2px solid ${C.border}`, borderRadius:12, background:"#fff", cursor:"pointer", textAlign:"left", fontFamily:FONT, transition:"all .15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.background = C.accentLight; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = "#fff"; }}>
+                <span style={{ fontSize:30, flexShrink:0, lineHeight:1 }}>{s.ikon || "📋"}</span>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <p style={{ fontWeight:700, fontSize:14, color:C.text, margin:"0 0 3px" }}>{s.nev}</p>
+                  {s.leiras && <p style={{ fontSize:11, color:C.muted, margin:"0 0 6px", lineHeight:1.4 }}>{s.leiras}</p>}
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                    <span style={{ fontSize:11, color:C.muted, padding:"1px 6px", background:"#F8FAFC", borderRadius:4, border:`1px solid ${C.border}` }}>📝 {mezokDb} mező</span>
+                    {jelzok.map(j => <span key={j} style={{ fontSize:10, fontWeight:600, padding:"1px 5px", background:C.accentLight, color:C.accentDark, borderRadius:4 }}>{j}</span>)}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+          {sablonok.length === 0 && (
+            <div style={{ gridColumn:"1/-1", textAlign:"center", padding:"40px 0", color:C.muted }}>
+              <p style={{ fontSize:14, fontWeight:600 }}>Nincsenek aktív sablonok</p>
+              <p style={{ fontSize:12 }}>Menj a „ML Sablonok" menüpontba és hozz létre sablont</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Sablon mezők renderer ────────────────────────────────────
+function SablonMezokSection({ sablon, mezokErtekek, onMezoChange }) {
+  if (!sablon || !sablon.mezok || sablon.mezok.length === 0) return null;
+  return (
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14, padding:"10px 14px", background:C.accentLight, borderRadius:10, border:`1px solid ${C.accentLight}` }}>
+        <span style={{ fontSize:20 }}>{sablon.ikon || "📋"}</span>
+        <div>
+          <p style={{ fontWeight:700, fontSize:13, color:C.accentDark, margin:0 }}>{sablon.nev} – sablon mezők</p>
+          <p style={{ fontSize:11, color:C.muted, margin:0 }}>{sablon.mezok.length} mező</p>
+        </div>
+      </div>
+      {sablon.mezok.map(mezo => {
+        const ertek = mezokErtekek[mezo.id] ?? "";
+        const inputStyle = { width:"100%", boxSizing:"border-box", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none", background:"#F8FAFC", color:C.text };
+        return (
+          <div key={mezo.id} style={{ marginBottom:14 }}>
+            <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>
+              {mezo.cimke}{mezo.kotelezo && <span style={{ color:C.danger }}> *</span>}
+              {mezo.mertekegyseg && <span style={{ color:C.muted, fontWeight:400 }}> ({mezo.mertekegyseg})</span>}
+            </label>
+            {mezo.tipus === "szoveg" && (
+              <input value={ertek} onChange={e => onMezoChange(mezo.id, e.target.value)} style={inputStyle}/>
+            )}
+            {mezo.tipus === "hosszu_szoveg" && (
+              <textarea value={ertek} onChange={e => onMezoChange(mezo.id, e.target.value)} rows={3}
+                style={{ ...inputStyle, resize:"vertical" }}/>
+            )}
+            {mezo.tipus === "szam" && (
+              <input type="number" value={ertek} min={mezo.szamMin ?? undefined} max={mezo.szamMax ?? undefined}
+                onChange={e => onMezoChange(mezo.id, e.target.value)} style={inputStyle}/>
+            )}
+            {mezo.tipus === "meresiAdat" && (
+              <div style={{ display:"flex", gap:8 }}>
+                <input type="number" value={ertek} min={mezo.szamMin ?? undefined} max={mezo.szamMax ?? undefined}
+                  onChange={e => onMezoChange(mezo.id, e.target.value)} style={{ ...inputStyle, flex:1 }}/>
+                {mezo.mertekegyseg && <span style={{ alignSelf:"center", fontWeight:600, color:C.muted, flexShrink:0 }}>{mezo.mertekegyseg}</span>}
+              </div>
+            )}
+            {mezo.tipus === "datum" && (
+              <input type="date" value={ertek} onChange={e => onMezoChange(mezo.id, e.target.value)} style={inputStyle}/>
+            )}
+            {mezo.tipus === "ido" && (
+              <input type="time" value={ertek} onChange={e => onMezoChange(mezo.id, e.target.value)} style={inputStyle}/>
+            )}
+            {mezo.tipus === "igen_nem" && (
+              <div style={{ display:"flex", gap:8 }}>
+                {["Igen","Nem"].map(v => (
+                  <button key={v} onClick={() => onMezoChange(mezo.id, v)}
+                    style={{ flex:1, padding:"10px", border:`2px solid ${ertek===v ? (v==="Igen"?C.success:C.danger) : C.border}`, borderRadius:9, background: ertek===v ? (v==="Igen"?"#ECFDF5":"#FEF2F2") : "#fff", color: ertek===v ? (v==="Igen"?C.success:C.danger) : C.muted, fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:FONT }}>
+                    {v==="Igen"?"✅":"❌"} {v}
+                  </button>
+                ))}
+              </div>
+            )}
+            {mezo.tipus === "legordulo" && (
+              <select value={ertek} onChange={e => onMezoChange(mezo.id, e.target.value)} style={inputStyle}>
+                <option value="">— Válassz —</option>
+                {(mezo.legordulo_opciok || []).map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            )}
+            {["alairas","jelenletiIv","fotoKategoria","anyagfelhasznalasok"].includes(mezo.tipus) && (
+              <div style={{ padding:"10px 14px", background:"#F8FAFC", borderRadius:9, border:`1px solid ${C.border}`, fontSize:12, color:C.muted }}>
+                📱 {mezo.tipus === "alairas" ? "Aláírás a telepítői nézetben rögzíthető" :
+                     mezo.tipus === "fotoKategoria" ? "Fotók a telepítői nézetben tölthetők fel" :
+                     mezo.tipus === "jelenletiIv" ? "Jelenléti ív a telepítői nézetben tölthető ki" :
+                     "Anyagfelhasználás a telepítői nézetben rögzíthető"}
+              </div>
+            )}
+            {mezo.szamMin !== null && mezo.szamMax !== null && ["szam","meresiAdat"].includes(mezo.tipus) && (
+              <p style={{ fontSize:11, color:C.muted, marginTop:3 }}>Érvényes tartomány: {mezo.szamMin} – {mezo.szamMax} {mezo.mertekegyseg}</p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 // FŐ KOMPONENS
 // ═══════════════════════════════════════════════════════════════
 export default function UjMunkalap({ data, onBack, onSave, onClose, initialData }) {
   const handleClose = onClose || onBack;
   const eszkozKat   = getEszkozKat();
-  const settings    = getSettings();
-  const csapatok    = settings.csapatok || [];
+  const csapatok    = getAktivCsapatok();
 
   // Projektlista a projekt-választóhoz
   const projektek = (() => {
@@ -201,16 +360,31 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
   const [saving, setSaving]   = useState(false);
   const [errors, setErrors]   = useState({});
   const [activeSec, setActive] = useState("alap");
+  const [kivalasztottSablon, setKivalasztottSablon] = useState(
+    initialData?.sablonId ? getAktivSablonok().find(s => s.id === initialData.sablonId) || null : null
+  );
+  const [sablonPickerNyitva, setSablonPickerNyitva] = useState(!initialData?.sablonId);
+  const [sablonMezokErtekek, setSablonMezokErtekek] = useState({});
   const [projektQ, setProjektQ] = useState("");
+  const [billingInfo, setBillingInfo] = useState(null); // auto-számított bevétel jelzése
 
-  const [alap, setAlap] = useState({
-    ugyszam:"", cimke:"Junior Vital", cimkeSzin:"#2563EB",
-    projektMegnevezes: initialData?.projektNev || initialData?.projektkod || "",
-    projektId: initialData?.projektId || "",
-    munkalapTipus: initialData?.tipus || "Első kivitelezés",
-    feladat:"", status:"Kiosztásra vár",
-    csapatId:"", csapatNev:"", date:"", ertekesito:"",
-    ar:0, munkaeroDij:0, kiszallasiDij:0, egyebKolts:0,
+  const [alap, setAlap] = useState(() => {
+    const autoUgyszam = initialData?.projektId
+      ? genMunkalapKod(initialData.projektId, initialData.projektkod)
+      : "";
+    return {
+      ugyszam:          autoUgyszam,
+      telepitesTipusa:  "Napelem",
+      cimke:            "Junior Vital",
+      cimkeSzin:        "#2563EB",
+      projektMegnevezes: initialData?.projektNev || initialData?.projektkod || "",
+      projektId:         initialData?.projektId  || "",
+      munkalapTipus:     initialData?.tipus || "Első kivitelezés",
+      feladat: "", status: "Kiosztásra vár",
+      csapatId: initialData?.csapatId || "", csapatNev: "", date: initialData?.tervezettKezdes || "", ertekesito: "",
+      ar: 0, munkaeroDij: 0, kiszallasiDij: 0, egyebKolts: 0,
+      fovallalkoiAzonosito: initialData?.fovallalkoiAzonosito || "",
+    };
   });
   const [ugyfEl, setUgyfel]   = useState({
     nev:   initialData?.clientNev   || "",
@@ -236,7 +410,6 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
 
   function validate() {
     const e={};
-    if(!alap.ugyszam) e.ugyszam="Kötelező!";
     if(!ugyfEl.nev)   e.ugyfel="Kötelező!";
     // Csapat és dátum opcionális – nem blokkolja a mentést
     setErrors(e);
@@ -247,7 +420,19 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
     if(!validate()) { setActive("alap"); return; }
     setSaving(true);
     createBackup("Új munkalap mentés előtt");
-    const generaltEdi = nextEdiSorszam(); // Csak 1x generálódik;
+    const generaltEdi = nextEdiSorszam(); // belső egyedi azonosító (Drive sync)
+
+    // Sablon mezők validáció – kötelező mezők ellenőrzése
+    if (kivalasztottSablon) {
+      const kotelez = (kivalasztottSablon.mezok || []).filter(m => m.kotelezo);
+      const hianyzo = kotelez.filter(m => !String(sablonMezokErtekek[m.id] || "").trim());
+      if (hianyzo.length > 0) {
+        setErrors({ sablon: `Kötelező mezők hiányoznak: ${hianyzo.map(m => m.cimke).join(", ")}` });
+        setActive("sablon");
+        setSaving(false);
+        return;
+      }
+    }
 
     const anyagok = eszkozKat.flatMap(k =>
       (eszkozok[k.id]||[]).map(it=>({ ...it, kategoria:k.label }))
@@ -256,9 +441,11 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
     // Kiválasztott csapat adatai
     const csapat = csapatok.find(c=>c.id===alap.csapatId);
 
+    const veglegesUgyszam = alap.ugyszam || generaltEdi;
+
     const ml = {
-      id:                alap.ugyszam,
-      ugyszam:           alap.ugyszam,
+      id:                `ml_${Date.now()}`,  // egyedi belső ID (nem tartalmaz "/" karaktert)
+      ugyszam:           veglegesUgyszam,
       cimke:             alap.cimke,
       cimkeSzin:         alap.cimkeSzin,
       status:            alap.status,
@@ -280,9 +467,13 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
       kiszallasiDij:     Number(alap.kiszallasiDij) || 0,
       egyebKolts:        Number(alap.egyebKolts) || 0,
       munkalapTipus:     alap.munkalapTipus || "Első kivitelezés",
+      telepitesTipusa:   alap.telepitesTipusa || "Napelem",
       fovallalkoiAzonosito: alap.fovallalkoiAzonosito || "",
       ediSorszam:        generaltEdi,
-      dokumentumszam:    fullDokumentumszam(generaltEdi, alap.fovallalkoiAzonosito),
+      // Fő azonosító: projektkód/M-001 formátum; ha van fővállalkozói szám, hozzáfűzzük
+      dokumentumszam:    alap.fovallalkoiAzonosito?.trim()
+        ? `${veglegesUgyszam} / ${alap.fovallalkoiAzonosito.trim()}`
+        : veglegesUgyszam,
       // Csapat – a Telepítő szűrés erre támaszkodik
       assigneeId:        alap.csapatId,
       assigneeNev:       csapat?.nev || alap.csapatNev,
@@ -302,6 +493,10 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
       items,
       files:             files.map(f=>({ name:f.name, size:f.size, type:f.type })),
       createdAt:         new Date().toISOString(),
+      // Sablon integráció
+      sablonId:          kivalasztottSablon?.id || null,
+      sablonNev:         kivalasztottSablon?.nev || null,
+      sablonMezokErtekek: kivalasztottSablon ? sablonMezokErtekek : {},
     };
 
     await new Promise(r=>setTimeout(r,600));
@@ -311,6 +506,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
 
   const SECTIONS = [
     {id:"alap",      label:"Alapadatok",        icon:"📋"},
+    ...(kivalasztottSablon ? [{id:"sablon", label: kivalasztottSablon.nev, icon: kivalasztottSablon.ikon || "📋"}] : []),
     {id:"eszkozok",  label:"Eszközök / Anyagok", icon:"🔧"},
     {id:"szamlazas", label:"Számlázás",          icon:"💰"},
     {id:"felmeres",  label:"Felmérés",           icon:"📐"},
@@ -346,6 +542,56 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
         {Object.keys(errors).length>0&&(
           <div style={{ background:"#FEF2F2", border:`1px solid #FECACA`, borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:13, color:C.danger }}>
             ⚠️ {Object.values(errors).join(" · ")}
+          </div>
+        )}
+
+        {/* ══ SABLON VÁLASZTÁS BANNER ══ */}
+        {activeSec==="alap"&&(
+          <div style={{ marginBottom:14 }}>
+            {kivalasztottSablon ? (
+              <div style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", background:C.accentLight, border:`1.5px solid ${C.border}`, borderRadius:12 }}>
+                <span style={{ fontSize:24 }}>{kivalasztottSablon.ikon || "📋"}</span>
+                <div style={{ flex:1 }}>
+                  <p style={{ fontSize:13, fontWeight:700, color:C.accentDark, margin:0 }}>
+                    Sablon: {kivalasztottSablon.nev}
+                  </p>
+                  <p style={{ fontSize:11, color:C.muted, margin:0 }}>
+                    {(kivalasztottSablon.mezok||[]).length} mező · Kattints a „{kivalasztottSablon.nev}" tabra a sablon mezők kitöltéséhez
+                  </p>
+                </div>
+                <button onClick={() => setSablonPickerNyitva(true)}
+                  style={{ padding:"6px 12px", border:`1px solid ${C.border}`, borderRadius:8, background:"#fff", fontSize:12, color:C.muted, cursor:"pointer", fontFamily:FONT }}>
+                  Csere
+                </button>
+              </div>
+            ) : (
+              <div style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", background:"#FFFBEB", border:`1.5px solid #FDE68A`, borderRadius:12 }}>
+                <span style={{ fontSize:20 }}>⚠️</span>
+                <p style={{ fontSize:13, color:"#92400E", fontWeight:600, margin:0, flex:1 }}>
+                  Nincs sablon kiválasztva
+                </p>
+                <button onClick={() => setSablonPickerNyitva(true)}
+                  style={{ padding:"7px 14px", background:C.accent, color:"#fff", border:"none", borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>
+                  Sablon választása
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══ SABLON MEZŐK ══ */}
+        {activeSec==="sablon"&&(
+          <div>
+            {errors.sablon && (
+              <div style={{ background:"#FEF2F2", border:`1px solid #FECACA`, borderRadius:10, padding:"10px 14px", marginBottom:14, fontSize:13, color:C.danger }}>
+                ⚠️ {errors.sablon}
+              </div>
+            )}
+            <SablonMezokSection
+              sablon={kivalasztottSablon}
+              mezokErtekek={sablonMezokErtekek}
+              onMezoChange={(id, val) => setSablonMezokErtekek(prev => ({ ...prev, [id]: val }))}
+            />
           </div>
         )}
 
@@ -385,6 +631,17 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                           setUgyfel({ nev: p.clientNev||"", cim: p.telepitesiCim||p.clientCim||"", tel: p.clientTel||"", email: p.clientEmail||"" });
                           if (p.csapatId) updAlap("csapatId", p.csapatId);
                           if (p.tervezettKezdes) updAlap("date", p.tervezettKezdes);
+                          // Auto-generált munkalap sorszám: projektkód/M-001
+                          updAlap("ugyszam", genMunkalapKod(p.id, p.projektkod));
+                          // Fővállalkozói azonosító auto-kitöltés
+                          const fovAzon = p.penzugy?.fovallalkoziAzonosito || p.fovallalkoiAzonosito || "";
+                          if (fovAzon) updAlap("fovallalkoiAzonosito", fovAzon);
+                          // Telepítés típusa auto-kitöltés projektből
+                          if (p.telepitesTipusa) updAlap("telepitesTipusa", p.telepitesTipusa);
+                          // Fővállalkozói díj auto-számítás (napelem db × egységár)
+                          const billing = calcBillingFromProject(p);
+                          if (billing) { updAlap("ar", billing.ar); setBillingInfo(billing.megjegyzes); }
+                          else setBillingInfo(null);
                         }} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", cursor:"pointer", borderBottom:`1px solid ${C.border}`, fontSize:13 }}
                           onMouseEnter={e => e.currentTarget.style.background="#F8FAFC"}
                           onMouseLeave={e => e.currentTarget.style.background=""}
@@ -410,14 +667,29 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
             )}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
               <div>
-                <Field label="Munkaszám / Ügyszám" value={alap.ugyszam} onChange={v=>updAlap("ugyszam",v)} placeholder="T003700" required/>
-                {errors.ugyszam&&<p style={{ color:C.danger,fontSize:11,marginTop:-10,marginBottom:10 }}>{errors.ugyszam}</p>}
+                <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>
+                  Munkaszám {alap.projektId ? <span style={{ fontWeight:400, color:"#22C55E" }}>✓ auto-generált</span> : <span style={{ color:C.danger }}> *</span>}
+                </label>
+                <input
+                  value={alap.ugyszam||""}
+                  onChange={e=>updAlap("ugyszam",e.target.value)}
+                  placeholder={alap.projektId ? "E.D.I.001/M-001" : "Válassz projektet fentebb"}
+                  style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${alap.ugyszam ? "#86EFAC" : C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background: alap.ugyszam ? "#F0FDF4" : "#F8FAFC" }}
+                />
+                {errors.ugyszam&&<p style={{ color:C.danger,fontSize:11,marginTop:4 }}>{errors.ugyszam}</p>}
               </div>
               <div>
-                <Field label="Dátum" value={alap.date} onChange={v=>updAlap("date",v)} type="date" required/>
+                <Field label="Dátum" value={alap.date} onChange={v=>updAlap("date",v)} type="date"/>
                 {errors.date&&<p style={{ color:C.danger,fontSize:11,marginTop:-10,marginBottom:10 }}>{errors.date}</p>}
               </div>
             </div>
+
+            {/* Billing auto-számítás jelzés */}
+            {billingInfo && (
+              <div style={{ background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:9, padding:"8px 14px", marginBottom:12, fontSize:13, color:"#166534", fontWeight:600 }}>
+                💡 Fővállalkozói díj auto-számítva: {billingInfo}
+              </div>
+            )}
 
             {/* ÜGYFÉL – szabad szöveg + autocomplete */}
             <UgyfelField value={ugyfEl.nev} onChange={setUgyfel} ugyfelek={data.ugyfelek||[]} />
@@ -459,6 +731,23 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                 </div>
               )}
               {errors.csapat&&<p style={{ color:C.danger,fontSize:11,marginTop:8 }}>{errors.csapat}</p>}
+            </div>
+
+            {/* Telepítés típusa – meghatározza az ikont a telepítői nézeten */}
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Telepítés típusa</label>
+              <div style={{ display:"flex", gap:8 }}>
+                {[
+                  { id:"Napelem",         ikon:"☀️",  szin:"#F97316" },
+                  { id:"Elektromos töltő",ikon:"⚡",  szin:"#EAB308" },
+                  { id:"Egyéb",           ikon:"🔧", szin:"#64748B" },
+                ].map(t=>(
+                  <button key={t.id} type="button" onClick={()=>updAlap("telepitesTipusa",t.id)}
+                    style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"10px 8px", border:`2px solid ${alap.telepitesTipusa===t.id?t.szin:C.border}`, borderRadius:10, background:alap.telepitesTipusa===t.id?t.szin+"15":"#F8FAFC", cursor:"pointer", fontFamily:FONT, fontWeight:700, fontSize:13, color:alap.telepitesTipusa===t.id?t.szin:C.muted }}>
+                    <span style={{ fontSize:18 }}>{t.ikon}</span> {t.id}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
@@ -634,6 +923,13 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
           </button>
         </div>
       </div>
+
+      {sablonPickerNyitva && (
+        <SablonValaszto
+          onSelect={s => { setKivalasztottSablon(s); setSablonPickerNyitva(false); setActive("sablon"); }}
+          onClose={() => setSablonPickerNyitva(false)}
+        />
+      )}
     </div>
   );
 }

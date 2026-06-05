@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
-  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink, Upload, CheckCircle2, Save, Check, X,
+  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink, Upload, CheckCircle2, Save, Check, X, UserPlus, Pencil,
 } from "lucide-react";
 import { loadLocal, saveLocal } from "../lib/localDb";
 import {
@@ -9,6 +9,7 @@ import {
 } from "../lib/vbfDocxService";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AdminPanel from "./AdminPanel";
+import DriveStatusPanel from "../components/DriveStatusPanel";
 import JegyzokonyviBeallitasok from "./JegyzokonyviBeallitasok";
 import MunkakiosztasBeallitasok from "./MunkakiosztasBeallitasok";
 import FovallalkozoPage from "../modules/fovallalkozok/FovallalkozoPage";
@@ -83,6 +84,14 @@ const MENU_ITEMS = [
     bg: "#F8FAFC",
   },
   {
+    id: "drive_status",
+    label: "Drive szinkron állapot",
+    desc: "Kapcsolat teszt, kollekciónkénti szinkron napló, teljes Drive mentés",
+    icon: Shield,
+    color: "#0891B2",
+    bg: "#ECFEFF",
+  },
+  {
     id: "oktatoanyagok",
     label: "Oktató anyagok (Drive link)",
     desc: "Telepítők számára elérhető Google Drive mappa URL-je",
@@ -91,12 +100,20 @@ const MENU_ITEMS = [
     bg: "#ECFEFF",
   },
   {
-    id: "vbfsablon",
-    label: "VBF Sablon (.docx)",
-    desc: "VBF Villamos Biztonsági Felülvizsgálati Jegyzőkönyv Word sablonja",
+    id: "vbfpdfsablon",
+    label: "VBF Sablon (.pdf)",
+    desc: "VBF PDF sablon feltöltése – adatlap az eredeti nyomtatványra",
     icon: Upload,
-    color: "#7C3AED",
-    bg: "#F5F3FF",
+    color: "#DC2626",
+    bg: "#FEF2F2",
+  },
+  {
+    id: "kezikonyvek",
+    label: "Kézikönyvek & Útmutatók",
+    desc: "Teljes rendszer-kézikönyv PDF-ben · Telepítői útmutató letöltése",
+    icon: BookOpen,
+    color: "#0891B2",
+    bg: "#ECFEFF",
   },
 ];
 
@@ -156,6 +173,14 @@ export default function BeallitasokPage({ currentUser }) {
       </div>
     );
   }
+  if (aktiv === "drive_status") {
+    return (
+      <div>
+        <BackBtn onClick={() => setAktiv(null)} label="Drive szinkron állapot" />
+        <DriveStatusPanel />
+      </div>
+    );
+  }
   if (aktiv === "oktatoanyagok") {
     return (
       <div>
@@ -164,11 +189,19 @@ export default function BeallitasokPage({ currentUser }) {
       </div>
     );
   }
-  if (aktiv === "vbfsablon") {
+  if (aktiv === "vbfpdfsablon") {
     return (
       <div>
-        <BackBtn onClick={() => setAktiv(null)} label="VBF Sablon (.docx)" />
-        <VbfSablonBeallitas />
+        <BackBtn onClick={() => setAktiv(null)} label="VBF Sablon (.pdf)" />
+        <VbfPdfSablonBeallitas />
+      </div>
+    );
+  }
+  if (aktiv === "kezikonyvek") {
+    return (
+      <div>
+        <BackBtn onClick={() => setAktiv(null)} label="Kézikönyvek & Útmutatók" />
+        <KezikonyvekPanel />
       </div>
     );
   }
@@ -196,7 +229,7 @@ export default function BeallitasokPage({ currentUser }) {
   // Főmenü – kártyás elrendezés
   const lathatoMenuk = MENU_ITEMS.filter(m => {
     if (role === "Admin") return true;
-    if (role === "Projektmenedzser") return ["fovallalkozok","munkatipusok","munkakiosztas","sablonok"].includes(m.id);
+    if (role === "Projektmenedzser") return ["fovallalkozok","munkatipusok","munkakiosztas","sablonok","lmra","vbfpdfsablon","kezikonyvek"].includes(m.id);
     return false;
   });
 
@@ -254,6 +287,49 @@ export default function BeallitasokPage({ currentUser }) {
       </div>
 
       {role === "Admin" && <AdatTorlesPanel />}
+    </div>
+  );
+}
+
+// ─── Kézikönyvek panel ────────────────────────────────────────
+function KezikonyvekPanel() {
+  function openManual(print = false) {
+    window.open(`/manual.html${print ? "?print=1" : ""}`, "_blank");
+  }
+  function openInstaller(print = false) {
+    window.open(`/installer-guide.html${print ? "?print=1" : ""}`, "_blank");
+  }
+  return (
+    <div style={{ padding: "0 28px 40px", fontFamily: FONT, maxWidth: 680 }}>
+      <p style={{ fontSize: 13, color: C.muted, marginBottom: 24 }}>
+        Megnyitás → böngészőben olvasható · Letöltés PDF-ként → a megnyíló lapon kattints a <strong>„PDF mentés"</strong> gombra.
+      </p>
+      <div style={{ background: "#fff", border: "2px solid #BFDBFE", borderRadius: 14, padding: "22px 24px", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 22 }}>📖</div>
+          <div>
+            <p style={{ fontWeight: 800, fontSize: 15, color: C.text, margin: "0 0 4px" }}>Teljes rendszer-kézikönyv</p>
+            <p style={{ fontSize: 12.5, color: C.muted, margin: 0, lineHeight: 1.5 }}>Összes funkció Admin / PM / Iroda felhasználóknak. Telepítős fejezet is benne van.</p>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => openManual(false)} style={{ flex: 1, padding: "10px 0", background: "#EFF6FF", color: "#1D4ED8", border: "1.5px solid #BFDBFE", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>🌐 Megnyitás böngészőben</button>
+          <button onClick={() => openManual(true)} style={{ flex: 1, padding: "10px 0", background: "#2563EB", color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>📥 Letöltés PDF-ként</button>
+        </div>
+      </div>
+      <div style={{ background: "#fff", border: "2px solid #86EFAC", borderRadius: 14, padding: "22px 24px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: "#F0FDF4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 22 }}>📱</div>
+          <div>
+            <p style={{ fontWeight: 800, fontSize: 15, color: C.text, margin: "0 0 4px" }}>Telepítői kézikönyv</p>
+            <p style={{ fontSize: 12.5, color: C.muted, margin: 0, lineHeight: 1.5 }}>Felmérés (7 fotókat.) + Kivitelezés (LMRA, VBF, 29 fotókat.) lépésről lépésre. Nyomtatva add az új telepítőknek.</p>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => openInstaller(false)} style={{ flex: 1, padding: "10px 0", background: "#F0FDF4", color: "#15803D", border: "1.5px solid #86EFAC", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>🌐 Megnyitás böngészőben</button>
+          <button onClick={() => openInstaller(true)} style={{ flex: 1, padding: "10px 0", background: "#059669", color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>📥 Letöltés PDF-ként</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -598,6 +674,7 @@ function BackBtn({ onClick, label }) {
 
 // ─── LMRA Beállítások – PDF sablon feltöltés ─────────────────
 import { hasPdfSablon, savePdfSablon, deletePdfSablon, getPdfSablonMeta, readFileAsBase64 as lmraReadFile, LMRA_KOCKAZATOK } from "../lib/lmraService";
+import { hasVbfPdfSablon, saveVbfPdfSablon, deleteVbfPdfSablon, getVbfPdfSablonMeta } from "../lib/vbfPdfMerge";
 
 function LmraBeallitasok() {
   const fileRef = useRef();
@@ -679,6 +756,96 @@ function LmraBeallitasok() {
             {k.szoveg}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── VBF PDF Sablon feltöltés ─────────────────────────────────
+function VbfPdfSablonBeallitas() {
+  const fileRef  = useRef();
+  const [van,     setVan]     = useState(hasVbfPdfSablon);
+  const [meta,    setMeta]    = useState(getVbfPdfSablonMeta);
+  const [loading, setLoading] = useState(false);
+
+  async function handleFeltoltes(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      alert("Csak PDF fájl tölthető fel.");
+      e.target.value = "";
+      return;
+    }
+    setLoading(true);
+    try {
+      const b64 = await lmraReadFile(file);
+      saveVbfPdfSablon(b64);
+      setVan(true);
+      setMeta(getVbfPdfSablonMeta());
+    } catch (err) {
+      alert("Feltöltés sikertelen: " + err.message);
+    }
+    setLoading(false);
+    e.target.value = "";
+  }
+
+  function handleTorles() {
+    if (!window.confirm("Biztosan törlöd a feltöltött VBF PDF sablont?")) return;
+    deleteVbfPdfSablon();
+    setVan(false);
+    setMeta(null);
+  }
+
+  return (
+    <div style={{ padding: "16px 0" }}>
+      <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", gap: 10, alignItems: "flex-start" }}>
+        <Upload size={18} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
+        <div>
+          <p style={{ fontWeight: 700, fontSize: 13, color: "#991B1B", margin: 0 }}>VBF – Villamos Biztonsági Felülvizsgálati Jegyzőkönyv (PDF sablon)</p>
+          <p style={{ fontSize: 12, color: "#991B1B", margin: "3px 0 0" }}>
+            Töltsd fel az eredeti VBF nyomtatványt PDF formátumban. A letöltött dokumentum az eredeti sablont
+            tartalmazza + az utolsó oldalon a kitöltött mérési adatokat.
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, padding: "12px 16px", background: van ? "#F0FDF4" : "#FFFBEB", border: `1px solid ${van ? "#86EFAC" : "#FCD34D"}`, borderRadius: 10 }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontWeight: 700, fontSize: 14, color: van ? "#166534" : "#92400E", margin: 0 }}>
+            {van ? `✓ VBF PDF sablon feltöltve (${meta?.kb ?? "?"} KB)` : "Nincs PDF sablon feltöltve"}
+          </p>
+          <p style={{ fontSize: 12, color: van ? "#15803D" : "#D97706", margin: "3px 0 0" }}>
+            {van ? "Munkalap nézetben megjelenik a 'VBF .pdf' letöltés gomb." : "Feltöltés nélkül a VBF adatlap csak adatoldalt tartalmaz sablon nélkül."}
+          </p>
+        </div>
+        {van && (
+          <button onClick={handleTorles} style={{ padding: "7px 14px", background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
+            Törlés
+          </button>
+        )}
+      </div>
+
+      <input ref={fileRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={handleFeltoltes} />
+      <button
+        onClick={() => fileRef.current?.click()}
+        disabled={loading}
+        style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 22px", background: loading ? "#E2E8F0" : "#DC2626", color: "#fff", border: "none", borderRadius: 10, cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, marginBottom: 16 }}
+      >
+        <Upload size={16} />
+        {loading ? "Feltöltés..." : van ? "PDF sablon cseréje" : "VBF PDF sablon feltöltése (.pdf)"}
+      </button>
+
+      <div style={{ background: "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px" }}>
+        <p style={{ fontSize: 12, color: "#374151", margin: 0, lineHeight: 1.7 }}>
+          <strong>Hogyan működik:</strong><br />
+          1. Töltsd fel az eredeti VBF nyomtatvány PDF-jét itt.<br />
+          2. A Telepítő kitölti a VBF méréssort a munkalap nézetben.<br />
+          3. PM / Admin a munkalap nézetben: „VBF .pdf" gomb → letölt egyetlen PDF-et,<br />
+          &nbsp;&nbsp;&nbsp;amelynek első oldala az eredeti sablon, utolsó oldala a kitöltött adatok.<br />
+          <br />
+          <strong>Word sablon is elérhető:</strong> Beállítások → VBF Sablon (.docx) – ha a Word sablonba
+          {` {placeholder}`} mezőket írsz, a „VBF .docx" gomb pontosan beleilleszt minden mért értéket.
+        </p>
       </div>
     </div>
   );

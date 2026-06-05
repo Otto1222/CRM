@@ -3,6 +3,24 @@ import { Search, Plus, Pencil, Trash2, X, Save, User, Phone, Mail, MapPin, Folde
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { loadLocal, saveLocal } from "../lib/localDb";
 import { canSeeFovallalkozo } from "../lib/roles";
+import { loadFovallalkozok } from "../modules/fovallalkozok/fovallalkozo.service";
+
+// Dinamikusan feloldja az ügyfél forrás-rövidítését a fővállalkozók aktuális adatai alapján
+function resolveForrAs(u, fovallalkozok) {
+  if (!u.forrás || u.forrás === "Saját") return u.forrás;
+  // 1) Próbál rövidítés alapján találni (ha nem változott)
+  const byRov = fovallalkozok.find(f => f.rovidites === u.forrás);
+  if (byRov) return byRov.rovidites;
+  // 2) Ha a rövidítés megváltozott, a fővállalkozó nevével azonosítja
+  if (u.fovallalkozoNev) {
+    const byNev = fovallalkozok.find(f =>
+      f.nev?.toLowerCase().trim() === u.fovallalkozoNev?.toLowerCase().trim()
+    );
+    if (byNev?.rovidites) return byNev.rovidites;
+  }
+  // 3) Fallback: tárolt érték
+  return u.forrás;
+}
 
 // ─── Státusz konfig ───────────────────────────────────────────
 const STATUSZ_CFG = {
@@ -92,7 +110,7 @@ function UgyfelForm({ ugyfel, onClose, onSaved }) {
     <div
       style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "20px 16px", overflowY: "auto" }}
     >
-      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 0 }} onClick={onClose} />
+      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 0 }} />
       <div style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 16, width: "100%", maxWidth: 560, boxShadow: "0 24px 60px rgba(0,0,0,.25)", fontFamily: FONT }}>
         {/* Fejléc */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: "1px solid #E2E8F0" }}>
@@ -196,6 +214,8 @@ export default function Ugyfelek({ data, currentUser }) {
   const [editItem, setEditItem]           = useState(null);
   const [torlesItem, setTorlesItem]       = useState(null);
   const canPartner = canSeeFovallalkozo(currentUser?.role);
+  // Fővállalkozók betöltése a forrás dinamikus feloldásához
+  const fovallalkozok = loadFovallalkozok();
 
   const projektek = data?.projektek || [];
 
@@ -384,15 +404,18 @@ export default function Ugyfelek({ data, currentUser }) {
                     {/* Forrás (csak nem-Telepítő) */}
                     {canPartner && (
                       <td style={{ padding:"14px 16px" }}>
-                        {c.forrás ? (
-                          <span style={{
-                            background: c.forrás==="Saját"?"#ECFDF5":"#EFF6FF",
-                            color: c.forrás==="Saját"?"#059669":"#2563EB",
-                            borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:700, whiteSpace:"nowrap"
-                          }}>
-                            {c.forrás==="Saját"?"Saját":`[${c.forrás}]`}
-                          </span>
-                        ) : <span style={{ color:"#CBD5E1", fontSize:12 }}>—</span>}
+                        {c.forrás ? (() => {
+                          const aktualis = resolveForrAs(c, fovallalkozok);
+                          return (
+                            <span style={{
+                              background: aktualis==="Saját"?"#ECFDF5":"#EFF6FF",
+                              color: aktualis==="Saját"?"#059669":"#2563EB",
+                              borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:700, whiteSpace:"nowrap"
+                            }}>
+                              {aktualis==="Saját"?"Saját":`[${aktualis}]`}
+                            </span>
+                          );
+                        })() : <span style={{ color:"#CBD5E1", fontSize:12 }}>—</span>}
                       </td>
                     )}
                     {/* Típus */}

@@ -1,26 +1,22 @@
 /**
  * projekt.schema.js
- * Projekt adatmodell és konstansok
+ * Re-exportálja a workflowRules.js-ből a projekt-specifikus konstansokat,
+ * és definiálja az adatmodellt.
  */
 
-export const PROJEKT_SCHEMA_VERSION = "1.0";
+export {
+  PROJEKT_STATUSZOK,
+  PROJEKT_FORRAS,
+  LEGACY_PROJEKT_STATUS_MAP as LEGACY_STATUS_MAP,
+  LEGACY_FORRAS_MAP,
+  getProjektStatusConfig as getStatusConfig,
+  getProjektStatusConfig,
+  getProjektTipus,
+  migrateProjektStatus,
+  migrateProjektForras,
+} from "../../lib/workflowRules.js";
 
-export const PROJEKT_STATUSZOK = [
-  { id: "Felmérésre vár",            szin: "#0EA5E9", bg: "#F0F9FF" },
-  { id: "Felmérve",                  szin: "#6366F1", bg: "#EEF2FF" },
-  { id: "Ajánlat kiküldve",          szin: "#D97706", bg: "#FFFBEB" },
-  { id: "Elbukott Projekt",          szin: "#DC2626", bg: "#FEF2F2" },
-  { id: "Elfogadva",                 szin: "#059669", bg: "#ECFDF5" },
-  { id: "Kivitelezésre vár",         szin: "#EA580C", bg: "#FFF7ED" },
-  { id: "Kivitelezés alatt",         szin: "#2563EB", bg: "#EFF6FF" },
-  { id: "Elkészült",                 szin: "#0891B2", bg: "#ECFEFF" },
-  { id: "Ellenőrzésre vár",          szin: "#8B5CF6", bg: "#F5F3FF" },
-  { id: "Hiánypótlás",               szin: "#B45309", bg: "#FFFBEB" },
-  { id: "Ellenőrizve minden rendben",szin: "#0369A1", bg: "#F0F9FF" },
-  { id: "Leszámlázva",               szin: "#15803D", bg: "#F0FDF4" },
-  { id: "Kifizetve",                 szin: "#166534", bg: "#DCFCE7" },
-  { id: "Lezárva",                   szin: "#475569", bg: "#F8FAFC" },
-];
+export const PROJEKT_SCHEMA_VERSION = "2.0";
 
 export const PROJEKT_TIPUSOK = [
   "Napelem telepítés",
@@ -33,57 +29,52 @@ export const PROJEKT_TIPUSOK = [
 ];
 
 export const PROJEKT_SCHEMA = {
-  version:             PROJEKT_SCHEMA_VERSION,
   id:                  "",
-  projektkod:          "",          // auto: PRJ-2026-001
-  kulsoAzonosito:      "",          // fővállalkozói szám
+  projektkod:          "",
+  kulsoAzonosito:      "",
   nev:                 "",
-  // Ügyfél és megbízó
   clientId:            null,
-  megbizoCeg:          "",          // Megbízó cég neve (spec 1. pont)
+  megbizoCeg:          "",
   clientNev:           "",
   clientCim:           "",
   clientTel:           "",
   clientEmail:         "",
   kapcsolattarto:      "",
   telepitesiCim:       "",
-  // Projekt adatok
   tipus:               "Napelem telepítés",
-  status:              "Felmérésre vár",
-  // Műszaki adatok
+  status:              "Létrehozva",
   napelemDb:           0,
   inverterDb:          0,
+  akkumulatorDb:       0,
+  smartMeterDb:        0,
   akkumulator:         false,
   okosmerő:            false,
   autoTolto:           false,
-  // Csapat
   projektvezetoId:     "",
   projektvezetoNev:    "",
   csapatId:            "",
   csapatNev:           "",
-  // Ütemezés
   tervezettKezdes:     "",
   tervezettBefejezes:  "",
   valoKezdes:          "",
   valoBefejezes:       "",
   elvegzettMunkaora:   0,
-  // Kapcsolódó entitások (ID tömbök)
   munkalapIds:         [],
   dokumentumIds:       [],
-  // Pénzügy (manuálisan rögzített)
   elfogadottAjanlat:   0,
-  // Kommunikáció, napló
-  megjegyzesek:        [],   // [{ id, datum, user, szoveg }]
-  esemenynaplo:        [],   // [{ id, datum, user, esemeny, reszletek }]
-  // Drive integráció
-  driveProjektMappa:   "",   // "" | "kérve" | "kész"
-  // Meta
+  megjegyzesek:        [],
+  esemenynaplo:        [],
+  forrás:              "",
+  projektTipus:        "",
+  ajanlatId:           null,
+  fovKapcsolattarto:   "",
+  fovFizetesiHatarido: "",
+  fovMegjegyzes:       "",
+  driveProjektMappa:   "",
   createdAt:           "",
   updatedAt:           "",
   createdBy:           "",
+  updatedBy:           "",
+  version:             1,
+  syncStatus:          "synced",
 };
-
-export function getStatusConfig(statusId) {
-  return PROJEKT_STATUSZOK.find(s => s.id === statusId)
-    || { szin: "#64748B", bg: "#F8FAFC" };
-}

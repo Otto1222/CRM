@@ -1,18 +1,19 @@
-import { useState } from "react";
-import { X, Save, Navigation } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { X, Save, Navigation, TrendingUp } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { loadLocal, saveLocal } from "../../lib/localDb.js";
-import { PROJEKT_STATUSZOK } from "./projekt.schema.js";
+import { PROJEKT_STATUSZOK, PROJEKT_FORRAS, getProjektTipus } from "./projekt.schema.js";
+import { migrateProjektForrasFromRekord, validateProjektForrás, FORRAS_ELLENORZES_SZUKSEGES } from "../../lib/workflowRules.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { getAktivCsapatok } from "../csapatok/csapat.service.js";
 import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
+import { calcProjektElszamolas, buildInput } from "../../services/settlementCalculator.js";
 import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
 import { createProjekt, updateProjekt } from "./projekt.service.js";
 import { createInitialWorkorderForProject } from "../../services/projectWorkorder.service.js";
 import { driveCreateProjektFolder } from "../../lib/driveApi.js";
 import {
-  validateProjectBeforeSave,
   shouldCreateInitialWorkorder,
   getInitialWorkorderTypeByProjectStatus,
 } from "./projectRules.js";
@@ -47,7 +48,7 @@ const inp = {
   outline: "none",
   background: "#FAFAFA",
 };
-export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) {
+export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved, currentUser }) {
   const isNew = !projekt?.id;
   const users = getUsers();
   const csapatok = getAktivCsapatok();
@@ -55,23 +56,45 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
   const munkatipusok = getAktivMunkatipusok();
   const pmList = users.filter(u => ["Admin", "Projektmenedzser"].includes(u.role));
   const ugyfelek = loadLocal("ugyfelek") || [];
+
+  // Elfogadott ajánlatok (saját ügyfél flow ajanlat-selectorhoz)
+  const elfogadottAjanlatok = useMemo(() => {
+    try {
+      const all = loadLocal("ajanlatok") || [];
+      const projektek = loadLocal("projektek") || [];
+      const linkedIds = new Set(projektek.map(p => p.ajanlatId).filter(Boolean));
+      return all.filter(a =>
+        a.status === "Elfogadva" &&
+        (!a.projektId || a.projektId === projekt?.id) &&
+        (!linkedIds.has(a.id) || a.id === projekt?.ajanlatId)
+      );
+    } catch { return []; }
+  }, [projekt?.id, projekt?.ajanlatId]);
   const [form, setForm] = useState({
-    nev: projekt?.nev || "",
+    nev: projekt?.nev || ajanlatElofolt?.nev || "",
     kulsoAzonosito: projekt?.kulsoAzonosito || "",
     tipus: projekt?.tipus || "Napelem telepítés",
-    status: projekt?.status || "Felmérésre vár",
-    clientId: projekt?.clientId || "",
-    clientNev: projekt?.clientNev || "",
+    status: projekt?.status || "Létrehozva",
+    clientId: projekt?.clientId || ajanlatElofolt?.clientId || "",
+    clientNev: projekt?.clientNev || ajanlatElofolt?.clientNev || "",
     megbizoCeg: projekt?.megbizoCeg || "",
-    clientCim: projekt?.clientCim || "",
-    clientTel: projekt?.clientTel || "",
-    clientEmail: projekt?.clientEmail || "",
+    clientCim: projekt?.clientCim || ajanlatElofolt?.clientCim || "",
+    clientTel: projekt?.clientTel || ajanlatElofolt?.clientTel || "",
+    clientEmail: projekt?.clientEmail || ajanlatElofolt?.clientEmail || "",
     kapcsolattarto: projekt?.kapcsolattarto || "",
-    telepitesiCim: projekt?.telepitesiCim || "",
-    napelemDb: projekt?.napelemDb || 0,
-    inverterDb: projekt?.inverterDb || 0,
-    akkumulator: projekt?.akkumulator || false,
-    okosmerő: projekt?.okosmerő || false,
+    telepitesiCim: projekt?.telepitesiCim || ajanlatElofolt?.clientCim || "",
+    forrás: projekt
+      ? migrateProjektForrasFromRekord(projekt)
+      : (ajanlatElofolt ? "sajat_ajanlat" : ""),
+    projektTipus: projekt?.projektTipus || (ajanlatElofolt ? "Saját projekt" : ""),
+    ajanlatId: projekt?.ajanlatId || ajanlatElofolt?.id || null,
+    fovKapcsolattarto: projekt?.fovKapcsolattarto || "",
+    fovFizetesiHatarido: projekt?.fovFizetesiHatarido || "",
+    fovMegjegyzes: projekt?.fovMegjegyzes || "",
+    napelemDb:     projekt?.napelemDb     || 0,
+    inverterDb:    projekt?.inverterDb    || 0,
+    akkumulatorDb: projekt?.akkumulatorDb ?? (projekt?.akkumulator ? 1 : 0),
+    smartMeterDb:  projekt?.smartMeterDb  ?? (projekt?.okosmerő   ? 1 : 0),
     autoTolto: projekt?.autoTolto || false,
     projektvezetoId: projekt?.projektvezetoId || "",
     projektvezetoNev: projekt?.projektvezetoNev || "",
@@ -79,7 +102,7 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
     csapatNev: projekt?.csapatNev || "",
     tervezettKezdes: projekt?.tervezettKezdes || "",
     tervezettBefejezes: projekt?.tervezettBefejezes || "",
-    elfogadottAjanlat: projekt?.elfogadottAjanlat || 0,
+    elfogadottAjanlat: projekt?.elfogadottAjanlat || ajanlatElofolt?.osszeg || 0,
     penzugy: projekt?.penzugy || {
       fovallalkoziId: "",
       munkatipus: "",
@@ -93,8 +116,12 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
       keziUtikoltség: null,
       keziAnyagkoltség: null,
       keziKartérités: null,
-      emelőgepKoltseg: 0,
-      egyebKoltseg: 0,
+      emelőgepKoltseg:     projekt?.penzugy?.emelőgepKoltseg     || 0,
+      daruKoltseg:         projekt?.penzugy?.daruKoltseg         || 0,
+      szallasKoltseg:      projekt?.penzugy?.szallasKoltseg      || 0,
+      bereltEszkozKoltseg: projekt?.penzugy?.bereltEszkozKoltseg || 0,
+      irodaAdminKoltseg:   projekt?.penzugy?.irodaAdminKoltseg   || 0,
+      egyebKoltseg:        projekt?.penzugy?.egyebKoltseg        || 0,
     },
     megjegyzes: "",
   });
@@ -192,8 +219,37 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
       },
     }));
   }
+  function handleAjanlatSelect(ajanlatId) {
+    const a = elfogadottAjanlatok.find(x => x.id === ajanlatId);
+    if (!a) {
+      setForm(p => ({ ...p, ajanlatId: null }));
+      return;
+    }
+    setForm(p => ({
+      ...p,
+      ajanlatId: a.id,
+      nev: p.nev || a.nev || "",
+      clientId: a.clientId || p.clientId,
+      clientNev: a.clientNev || p.clientNev || "",
+      clientCim: a.clientCim || p.clientCim || "",
+      clientTel: a.clientTel || p.clientTel || "",
+      clientEmail: a.clientEmail || p.clientEmail || "",
+      telepitesiCim: p.telepitesiCim || a.clientCim || "",
+      elfogadottAjanlat: a.osszeg || p.elfogadottAjanlat || 0,
+    }));
+    if (hiba) setHiba("");
+  }
+
   async function handleSave() {
-    const validation = validateProjectBeforeSave(form);
+    if (!form.nev?.trim()) {
+      setHiba("A projekt neve kötelező.");
+      return;
+    }
+    if (form.forrás === FORRAS_ELLENORZES_SZUKSEGES) {
+      setHiba("A projekt forrása még nincs meghatározva. Válassz egyet a három forrás közül, mielőtt mentesz.");
+      return;
+    }
+    const validation = validateProjektForrás(form);
     if (!validation.ok) {
       setHiba(validation.message);
       return;
@@ -203,7 +259,14 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
       const data = {
         ...form,
         elfogadottAjanlat: Number(form.elfogadottAjanlat) || 0,
-        penzugy: form.penzugy,
+        projektTipus: getProjektTipus(form.forrás),
+        // Backward compat boolean mezők szinkronban az db értékekkel
+        akkumulator: (form.akkumulatorDb || 0) > 0,
+        okosmerő:    (form.smartMeterDb  || 0) > 0,
+        penzugy: {
+          ...form.penzugy,
+          darabszam: form.napelemDb || form.penzugy?.darabszam || 1,
+        },
       };
       delete data.megjegyzes;
       let saved;
@@ -285,7 +348,6 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
       {/* Backdrop: testvér elem, nem szülő – így a modal belsejéből drag-select nem zárja be */}
       <div
         style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 0 }}
-        onClick={onClose}
       />
       <div
         style={{
@@ -348,6 +410,98 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
               {hiba}
             </div>
           )}
+          {/* ── Projekt forrása (kötelező) ── */}
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>
+              Projekt forrása *
+            </p>
+
+            {/* Bizonytalan forrás figyelmeztetés – adminnak kézzel kell besorolni */}
+            {form.forrás === FORRAS_ELLENORZES_SZUKSEGES && (
+              <div style={{ background:"#FEF2F2", border:"2px solid #DC2626", borderRadius:10, padding:"12px 16px", marginBottom:12, fontSize:13, color:"#991B1B" }}>
+                <div style={{ fontWeight:800, marginBottom:6 }}>⚠ Kézi ellenőrzés szükséges!</div>
+                <div style={{ lineHeight:1.65 }}>
+                  Ez a projekt régi <strong>{projekt?.forrásElotti || "garanciális/javítási"}</strong> besorolásból érkezett,
+                  de az automatikus migráció nem tudta biztosan meghatározni az új forrást.
+                  Van rögzített ügyfélnév (<strong>{form.clientNev}</strong>), de nincs strukturált CRM ügyfél- vagy ajánlathivatkozás.
+                  <br />
+                  <strong>Kérlek válaszd ki kézzel a megfelelő forrást az alábbi gombok közül, majd mentsd a projektet!</strong>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {PROJEKT_FORRAS.map(f => {
+                const active = form.forrás === f.id;
+                return (
+                  <button key={f.id} type="button"
+                    onClick={() => {
+                      if (f.id === "belso_munka") {
+                        setForm(p => ({ ...p, forrás: f.id, clientNev: "E.D.I. Solutions Kft.", clientId: "", clientCim: "", clientTel: "", clientEmail: "", ajanlatId: null }));
+                      } else if (f.id === "sajat_ajanlat") {
+                        setForm(p => ({ ...p, forrás: f.id, clientNev: p.clientNev === "E.D.I. Solutions Kft." ? "" : p.clientNev }));
+                      } else {
+                        upd("forrás", f.id);
+                      }
+                      if (hiba) setHiba("");
+                    }}
+                    title={f.desc}
+                    style={{ padding: "8px 16px", borderRadius: 9, border: `2px solid ${active ? f.color : "#E2E8F0"}`, background: active ? f.bg : "#fff", color: active ? f.color : "#64748B", fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer", fontFamily: FONT, transition: "all .15s" }}>
+                    {f.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* sajat_ajanlat: elfogadott ajánlat kiválasztása */}
+            {form.forrás === "sajat_ajanlat" && (
+              <div style={{ marginTop: 12, background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 10, padding: "12px 14px" }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: "#1D4ED8", margin: "0 0 8px" }}>
+                  📋 Elfogadott ajánlat kiválasztása *
+                </p>
+                {elfogadottAjanlatok.length === 0 ? (
+                  <p style={{ fontSize: 12, color: "#DC2626", margin: 0, fontWeight: 600 }}>
+                    Nincs elfogadott ajánlat. Menj az <strong>Ajánlatok</strong> oldalra, módosítsd az ajánlat státuszát "Elfogadva"-ra, majd onnan hozd létre a projektet.
+                  </p>
+                ) : (
+                  <>
+                    <select value={form.ajanlatId || ""} onChange={e => handleAjanlatSelect(e.target.value)}
+                      style={{ width: "100%", padding: "9px 12px", border: `1.5px solid ${form.ajanlatId ? "#2563EB" : "#E2E8F0"}`, borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none", background: "#fff" }}>
+                      <option value="">— Válassz elfogadott ajánlatot —</option>
+                      {elfogadottAjanlatok.map(a => (
+                        <option key={a.id} value={a.id}>
+                          {a.ajanlatkod} · {a.clientNev} · {a.osszeg ? a.osszeg.toLocaleString("hu-HU") + " Ft" : "—"} ({a.nev || "Nincs megnevezés"})
+                        </option>
+                      ))}
+                    </select>
+                    {form.ajanlatId && <p style={{ fontSize: 11, color: "#059669", margin: "4px 0 0", fontWeight: 600 }}>✅ Ügyfél adatok automatikusan betöltve az ajánlatból</p>}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* fovallalkozoi_munka: külső munkaszám kötelező */}
+            {form.forrás === "fovallalkozoi_munka" && (
+              <div style={{ marginTop: 12, background: "#F5F3FF", border: "1.5px solid #DDD6FE", borderRadius: 10, padding: "10px 14px" }}>
+                <p style={{ fontSize: 12, color: "#7C3AED", margin: "0 0 6px", fontWeight: 700 }}>
+                  🤝 Fővállalkozói munka – kötelező mezők:
+                </p>
+                <p style={{ fontSize: 12, color: "#7C3AED", margin: 0 }}>
+                  Külső munkaszám (fent) · Fővállalkozó · Elszámolási szabály (Pénzügyi konfiguráció)
+                </p>
+              </div>
+            )}
+
+            {/* belso_munka: tájékoztató */}
+            {form.forrás === "belso_munka" && (
+              <div style={{ marginTop: 12, background: "#ECFDF5", border: "1.5px solid #86EFAC", borderRadius: 10, padding: "10px 14px" }}>
+                <p style={{ fontSize: 12, color: "#166534", margin: 0, fontWeight: 600 }}>
+                  🏢 Belső munka – garancia, javítás, karbantartás. Megrendelő: <strong>E.D.I. Solutions Kft.</strong> (automatikus). Nincs ügyfél, nincs ajánlat.
+                </p>
+              </div>
+            )}
+          </div>
+
           <div
             style={{
               display: "grid",
@@ -388,6 +542,7 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
                 ))}
               </select>
             </Field>
+            {form.forrás !== "belso_munka" && (<>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Ügyfél adatok
@@ -438,6 +593,7 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
                 style={inp}
               />
             </Field>
+            </>)}
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Csapat
@@ -481,29 +637,21 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
             <Field label="Inverter darabszám" half>
               <input type="number" min="0" value={form.inverterDb} onChange={e => upd("inverterDb", Number(e.target.value))} placeholder="0" style={inp} />
             </Field>
-            <div style={{ gridColumn: "span 2", display: "flex", gap: 16, flexWrap: "wrap" }}>
-              {[
-                { key: "akkumulator", label: "Akkumulátor" },
-                { key: "okosmerő",    label: "Okosmérő" },
-                { key: "autoTolto",   label: "Elektromos autótöltő" },
-              ].map(({ key, label }) => (
-                <label key={key} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14, fontWeight: 500, color: "#334155", userSelect: "none" }}>
-                  <div
-                    onClick={() => upd(key, !form[key])}
-                    style={{
-                      width: 44, height: 24, borderRadius: 12, position: "relative", cursor: "pointer",
-                      background: form[key] ? "#2563EB" : "#CBD5E1", transition: "background .2s",
-                    }}
-                  >
-                    <div style={{
-                      position: "absolute", top: 3, left: form[key] ? 23 : 3, width: 18, height: 18,
-                      borderRadius: "50%", background: "#fff", transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)",
-                    }} />
-                  </div>
-                  {label}: <span style={{ color: form[key] ? "#059669" : "#94A3B8", fontWeight: 700 }}>{form[key] ? "Van" : "Nincs"}</span>
-                </label>
-              ))}
-            </div>
+            <Field label="Akkumulátor db" half>
+              <input type="number" min="0" value={form.akkumulatorDb} onChange={e => upd("akkumulatorDb", Number(e.target.value))} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Smart meter db" half>
+              <input type="number" min="0" value={form.smartMeterDb} onChange={e => upd("smartMeterDb", Number(e.target.value))} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Elektromos autótöltő" half>
+              <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:14, fontWeight:500, color:"#334155", userSelect:"none", paddingTop:4 }}>
+                <div onClick={() => upd("autoTolto", !form.autoTolto)}
+                  style={{ width:44, height:24, borderRadius:12, position:"relative", cursor:"pointer", background:form.autoTolto?"#2563EB":"#CBD5E1", transition:"background .2s" }}>
+                  <div style={{ position:"absolute", top:3, left:form.autoTolto?23:3, width:18, height:18, borderRadius:"50%", background:"#fff", transition:"left .2s", boxShadow:"0 1px 3px rgba(0,0,0,.2)" }}/>
+                </div>
+                <span style={{ color:form.autoTolto?"#059669":"#94A3B8", fontWeight:700 }}>{form.autoTolto?"Van":"Nincs"}</span>
+              </label>
+            </Field>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Ütemezés
@@ -520,8 +668,8 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
                 💰 Pénzügyi konfiguráció
               </p>
             </div>
-            <Field label="Fővállalkozó" half>
-              <select value={form.penzugy.fovallalkoziId} onChange={e => handleFovallalkozo(e.target.value)} style={inp}>
+            <Field label={form.forrás === "fovallalkozoi_munka" ? "Fővállalkozó *" : "Fővállalkozó"} half>
+              <select value={form.penzugy.fovallalkoziId} onChange={e => handleFovallalkozo(e.target.value)} style={{ ...inp, ...(form.forrás === "fovallalkozoi_munka" ? { border: "2px solid #7C3AED" } : {}) }}>
                 <option value="">— Válassz fővállalkozót —</option>
                 {fovallalkozok.map(f => (
                   <option key={f.id} value={f.id}>
@@ -532,6 +680,18 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
               {form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: "#059669", marginTop: 3 }}>✅ Elszámolási szabály automatikusan betöltve</p>}
               {form.penzugy.fovallalkoziId && !form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: "#D97706", marginTop: 3 }}>⚠️ Nincs aktív szabály ehhez a munkatípushoz</p>}
             </Field>
+            {/* Fővállalkozói extra mezők */}
+            {form.forrás === "fovallalkozoi_munka" && <>
+              <Field label="FV kapcsolattartó" half>
+                <input value={form.fovKapcsolattarto} onChange={e => upd("fovKapcsolattarto", e.target.value)} placeholder="Kapcsolattartó neve" style={inp} />
+              </Field>
+              <Field label="Fizetési határidő" half>
+                <input type="date" value={form.fovFizetesiHatarido} onChange={e => upd("fovFizetesiHatarido", e.target.value)} style={inp} />
+              </Field>
+              <Field label="Fővállalkozói megjegyzés">
+                <input value={form.fovMegjegyzes} onChange={e => upd("fovMegjegyzes", e.target.value)} placeholder="Egyéb instrukciók, feltételek…" style={inp} />
+              </Field>
+            </>}
             <Field label="Elszámolási db (auto: panel db)" half>
               <input type="number" value={form.penzugy.darabszam || form.napelemDb || 1} onChange={e => updPenz("darabszam", e.target.value)} placeholder="1" style={inp} />
               <p style={{ fontSize: 10, color: "#64748B", marginTop: 3 }}>Szinkronizálva a Műszaki adatok panel db-vel</p>
@@ -553,8 +713,20 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
             <Field label="Munkanapok száma" half>
               <input type="number" value={form.penzugy.munkanapok || 1} onChange={e => updPenz("munkanapok", e.target.value)} placeholder="1" style={inp} />
             </Field>
-            <Field label="Emelőgép költség (Ft)" half>
+            <Field label="Emelőgép (Ft)" half>
               <input type="number" value={form.penzugy.emelőgepKoltseg || ""} onChange={e => updPenz("emelőgepKoltseg", e.target.value)} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Daru / Teheremelő (Ft)" half>
+              <input type="number" value={form.penzugy.daruKoltseg || ""} onChange={e => updPenz("daruKoltseg", e.target.value)} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Szállás (Ft)" half>
+              <input type="number" value={form.penzugy.szallasKoltseg || ""} onChange={e => updPenz("szallasKoltseg", e.target.value)} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Bérelt eszközök (Ft)" half>
+              <input type="number" value={form.penzugy.bereltEszkozKoltseg || ""} onChange={e => updPenz("bereltEszkozKoltseg", e.target.value)} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Iroda / Admin (Ft)" half>
+              <input type="number" value={form.penzugy.irodaAdminKoltseg || ""} onChange={e => updPenz("irodaAdminKoltseg", e.target.value)} placeholder="0" style={inp} />
             </Field>
             <Field label="Egyéb költség (Ft)" half>
               <input type="number" value={form.penzugy.egyebKoltseg || ""} onChange={e => updPenz("egyebKoltseg", e.target.value)} placeholder="0" style={inp} />
@@ -562,6 +734,51 @@ export default function ProjektForm({ projekt, onClose, onSaved, currentUser }) 
             <Field label="Elfogadott ajánlat (Ft)" half>
               <input type="number" value={form.elfogadottAjanlat} onChange={e => upd("elfogadottAjanlat", e.target.value)} placeholder="0" style={inp} />
             </Field>
+
+            {/* Várható bevétel preview */}
+            {form.penzugy.fovallalkoziId && (() => {
+              try {
+                const mockProj = {
+                  id: "_preview",
+                  penzugy: { ...form.penzugy, darabszam: form.napelemDb || form.penzugy.darabszam || 1 },
+                  napelemDb:     form.napelemDb     || 0,
+                  inverterDb:    form.inverterDb     || 0,
+                  akkumulatorDb: form.akkumulatorDb  || 0,
+                  smartMeterDb:  form.smartMeterDb   || 0,
+                  munkalapIds:   [],
+                };
+                const kalk = calcProjektElszamolas(mockProj, []);
+                if (kalk.autoBevitel > 0 || kalk.beveteliTetelek.length > 0) {
+                  return (
+                    <div style={{ gridColumn:"span 2", background:"#F0FDF4", border:"1.5px solid #86EFAC", borderRadius:10, padding:"12px 16px", marginTop:4 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:8 }}>
+                        <TrendingUp size={15} color="#059669"/>
+                        <span style={{ fontSize:12, fontWeight:700, color:"#166534", textTransform:"uppercase", letterSpacing:.5 }}>Várható fővállalkozói bevétel</span>
+                      </div>
+                      {kalk.beveteliTetelek.map((t, i) => (
+                        <div key={i} style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#374151", marginBottom:3 }}>
+                          <span>{t.megnevezes}</span>
+                          <span style={{ fontWeight:700, color:"#059669" }}>{t.autoNetto.toLocaleString("hu-HU")} Ft</span>
+                        </div>
+                      ))}
+                      {kalk.beveteliTetelek.length > 1 && (
+                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, fontWeight:800, color:"#059669", borderTop:"1px solid #86EFAC", paddingTop:6, marginTop:4 }}>
+                          <span>Összesen</span>
+                          <span>{kalk.autoBevitel.toLocaleString("hu-HU")} Ft</span>
+                        </div>
+                      )}
+                      {kalk.autoBevitel === 0 && kalk.beveteliTetelek.some(t=>t.hiany) && (
+                        <p style={{ fontSize:11, color:"#D97706", margin:"4px 0 0" }}>⚠️ A sávos szabály nem találja a darabszám tartományát – ellenőrizd a szabályokat.</p>
+                      )}
+                      {kalk.beveteliTetelek.length === 0 && (
+                        <p style={{ fontSize:11, color:"#D97706", margin:0 }}>Nincs aktív szabály ehhez a munkatípushoz – add meg a Beállítások → Fővállalkozók menüben.</p>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              } catch { return null; }
+            })()}
           </div>
         </div>
         <div style={{ padding: "14px 24px", borderTop: "1px solid #E2E8F0", display: "flex", gap: 10, justifyContent: "flex-end" }}>

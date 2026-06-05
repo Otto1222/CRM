@@ -1,29 +1,36 @@
-// ─── DESIGN TOKENS ───────────────────────────────────────────
+// ─── DESIGN TOKENS – E.D.I. Solutions brand ───────────────────
+// Színek forrása: E.D.I. Arculati Kézikönyv
+// Light Sea Green: #18ACA0 | Mosque: #075E56
+// Venetian Red: #E30613   | Dark Red: #861001
+// Black 90%: #3C3C3B      | Black: #1D1D1B
 export const C = {
-  sidebar:      "#0D1B2A",
-  sidebarBorder:"rgba(255,255,255,0.06)",
-  sidebarText:  "#94A3B8",
-  sidebarActive:"#1E4D8C",
-  accent:       "#2563EB",
-  accentHover:  "#1D4ED8",
-  accentLight:  "#EFF6FF",
-  success:      "#059669",
-  successLight: "#ECFDF5",
-  warning:      "#D97706",
-  warningLight: "#FFFBEB",
-  danger:       "#DC2626",
-  dangerLight:  "#FEF2F2",
-  bg:           "#F8FAFC",
-  card:         "#FFFFFF",
-  text:         "#0F172A",
-  textSub:      "#475569",
-  muted:        "#94A3B8",
-  border:       "#E2E8F0",
-  borderHover:  "#CBD5E1",
+  sidebar:       "#082521",                   // sötét zöld (Mosque-bázis)
+  sidebarBorder: "rgba(24,172,160,0.12)",
+  sidebarText:   "#6FADA8",
+  sidebarActive: "rgba(24,172,160,0.16)",
+  accent:        "#18ACA0",                   // Light Sea Green
+  accentHover:   "#0F8F84",
+  accentLight:   "#E3F5F4",
+  accentDark:    "#075E56",                   // Mosque
+  success:       "#059669",
+  successLight:  "#ECFDF5",
+  warning:       "#D97706",
+  warningLight:  "#FFFBEB",
+  danger:        "#E30613",                   // Venetian Red
+  dangerDark:    "#861001",                   // Dark Red
+  dangerLight:   "#FEF2F2",
+  bg:            "#F2F8F7",                   // enyhe zöld árnyalat
+  card:          "#FFFFFF",
+  text:          "#1D1D1B",                   // Brand Black
+  textSub:       "#3C3C3B",                   // Brand Black 90%
+  muted:         "#7BA8A3",
+  border:        "#D0E8E6",
+  borderHover:   "#AECFCC",
 };
 
-export const FONT         = "'DM Sans', sans-serif";
-export const FONT_HEADING = "'Sora', sans-serif";
+// Arculati Kézikönyv: elsődleges font Montserrat, logo font Raleway
+export const FONT         = "'Montserrat', 'Open Sans', sans-serif";
+export const FONT_HEADING = "'Raleway', 'Montserrat', sans-serif";
 
 // ─── FELHASZNÁLÓK ─────────────────────────────────────────────
 export const USERS = [

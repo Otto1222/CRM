@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import UjrakiosztasModal from "./UjrakiosztasModal";
 import VbfAdminCard from "../components/VbfAdminCard";
+import { getLmraStatus, LMRA_STATUS_LABELS, LMRA_STATUS_COLORS, exportLmraPdfWindow, loadLmraRec, initOrLoadLmraRec, lockLmraForInstaller, reopenLmra } from "../lib/lmraData.service";
+import TabLmra from "../modules/projektek/tabs/TabLmra";
 import FotokAdminCard from "../components/FotokAdminCard";
 import FelmeresFotokAdminCard from "../components/FelmeresFotokAdminCard";
 import FelmeresJegyzokonyv from "./FelmeresJegyzokonyv";
@@ -31,6 +33,34 @@ import Avatar from "../components/Avatar";
 
 function useIsMobile() {
   return window.innerWidth < 900;
+}
+
+// ─── Telepítés típus ikon (napelem / EV töltő / egyéb) ────────
+function TelepitesTipusIkon({ tipusa, small = false }) {
+  const sz = small ? 36 : 46;
+  if (tipusa === "Elektromos töltő") {
+    return (
+      <div style={{ width:sz, height:sz, borderRadius:11, background:"#FEF9C3", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+        <svg width={sz*0.55} height={sz*0.55} viewBox="0 0 24 24" fill="#CA8A04">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+      </div>
+    );
+  }
+  // Napelem (alapértelmezett)
+  return (
+    <div style={{ width:sz, height:sz, borderRadius:11, background:"#FFF7ED", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+      <svg width={sz*0.6} height={sz*0.6} viewBox="0 0 24 20" fill="none" stroke="#F97316" strokeWidth="1.6">
+        <rect x="0.5" y="0.5" width="23" height="13" rx="1.5"/>
+        <line x1="0.5" y1="5" x2="23.5" y2="5"/>
+        <line x1="0.5" y1="9.5" x2="23.5" y2="9.5"/>
+        <line x1="7.5" y1="0.5" x2="7.5" y2="13.5"/>
+        <line x1="15.5" y1="0.5" x2="15.5" y2="13.5"/>
+        <line x1="8" y1="18" x2="16" y2="18"/>
+        <line x1="12" y1="13.5" x2="12" y2="18"/>
+      </svg>
+    </div>
+  );
 }
 
 function CimkeBadge({ label, color }) {
@@ -206,8 +236,8 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
         )}
       </div>
 
-      {/* Státusz szűrők */}
-      {!isMobile && (
+      {/* Státusz szűrők – Telepítőnek nem kell */}
+      {!isMobile && userRole !== "Telepítő" && (
         <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:16 }}>
           {STATUSES.map(s => (
             <button key={s} onClick={()=>setTab(s)} style={{ padding:"7px 13px", borderRadius:8, border:`1px solid ${tab===s?C.accent:C.border}`, background:tab===s?C.accentLight:"#fff", color:tab===s?C.accent:C.textSub, fontWeight:tab===s?700:400, fontSize:12, cursor:"pointer", fontFamily:FONT }}>{s}</button>
@@ -238,8 +268,8 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
                     <td style={{ padding:"14px 16px" }}>
                       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                         <div>
-                          <span style={{ fontWeight:700, color:C.accent }}>{m.dokumentumszam || m.ediSorszam || m.id}</span>
-                          {m.dokumentumszam && <span style={{ fontSize:10, color:C.muted, display:"block" }}>{m.id}</span>}
+                          <span style={{ fontWeight:700, color:C.accent }}>{m.dokumentumszam || m.ugyszam || m.ediSorszam || `#${m.id?.slice(-6)}`}</span>
+                          {m.dokumentumszam && m.ediSorszam && <span style={{ fontSize:10, color:C.muted, display:"block" }}>{m.ediSorszam}</span>}
                         </div>
                         {m.cimke && <CimkeBadge label={m.cimke} color={m.cimkeSzin||C.accent} />}
                         {m.munkalapTipus && <span style={{ fontSize:10, background:"#F1F5F9", color:C.muted, padding:"2px 7px", borderRadius:6, fontWeight:600 }}>{m.munkalapTipus}</span>}
@@ -263,11 +293,52 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
         <div>
           {filtered.map(m => {
             const cl = data.ugyfelek?.find(u=>u.id===m.clientId);
+            const clientNev = m.clientNev || cl?.name || "";
+            const clientCim = m.clientCim || cl?.address || "";
+            const munkaszam  = m.dokumentumszam || m.ugyszam || m.ediSorszam || `#${m.id?.slice(-6)}`;
+
+            // ── Telepítő egyszerűsített kártya ──────────────────
+            if (userRole === "Telepítő") {
+              return (
+                <button key={m.id} onClick={()=>onSelect(m)} style={{ width:"100%", background:"#fff", border:`1.5px solid ${C.border}`, borderRadius:14, padding:"14px 16px", marginBottom:10, cursor:"pointer", textAlign:"left", fontFamily:FONT, boxShadow:"0 1px 4px rgba(0,0,0,.06)" }}>
+                  {/* Fejléc: ikon + munkaszám + dátum */}
+                  <div style={{ display:"flex", alignItems:"flex-start", gap:12 }}>
+                    <TelepitesTipusIkon tipusa={m.telepitesTipusa} />
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
+                        <span style={{ fontWeight:800, fontSize:14, color:C.accent, letterSpacing:.3 }}>{munkaszam}</span>
+                        <span style={{ fontSize:11, color:C.muted, whiteSpace:"nowrap" }}>{m.date}</span>
+                      </div>
+                      {m.status && (
+                        <span style={{ display:"inline-block", marginTop:4, fontSize:12, fontWeight:700, color: m.statusSzin || "#38BDF8", background:(m.statusSzin||"#38BDF8")+"18", borderRadius:6, padding:"2px 8px" }}>
+                          {m.status}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Leírás / megjegyzés */}
+                  {(m.feladat || m.projektMegjegyzes || m.projektMegnevezes) && (
+                    <p style={{ fontSize:13, color:C.textSub, margin:"10px 0 0", lineHeight:1.5 }}>
+                      {m.feladat || m.projektMegjegyzes || m.projektMegnevezes}
+                    </p>
+                  )}
+                  {/* Ügyfél */}
+                  {clientNev && (
+                    <div style={{ marginTop:10, paddingTop:10, borderTop:`1px solid ${C.border}` }}>
+                      <p style={{ fontWeight:700, fontSize:14, color:C.text, margin:0 }}>{clientNev}</p>
+                      {clientCim && <p style={{ fontSize:12, color:C.muted, margin:"3px 0 0" }}>{clientCim}</p>}
+                    </div>
+                  )}
+                </button>
+              );
+            }
+
+            // ── Normál mobil kártya (Admin, PM, stb.) ──────────
             return (
               <button key={m.id} onClick={()=>onSelect(m)} style={{ width:"100%", background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", marginBottom:10, cursor:"pointer", textAlign:"left", fontFamily:FONT }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
                   <div>
-                    <span style={{ fontWeight:800, fontSize:15, color:C.text }}>{m.dokumentumszam || m.ediSorszam || m.id}</span>
+                    <span style={{ fontWeight:800, fontSize:15, color:C.text }}>{munkaszam}</span>
                     {m.munkalapTipus && <span style={{ fontSize:10, background:"#F1F5F9", color:C.muted, padding:"1px 6px", borderRadius:5, fontWeight:600, marginLeft:6 }}>{m.munkalapTipus}</span>}
                   </div>
                   {m.cimke&&<CimkeBadge label={m.cimke} color={m.cimkeSzin||C.accent}/>}
@@ -275,7 +346,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
                 </div>
                 {m.status&&<span style={{ color:m.statusSzin||C.muted, fontSize:13, fontWeight:600 }}>{m.status}</span>}
                 {m.projektMegnevezes&&<p style={{ fontSize:13, color:C.textSub, marginTop:4 }}>{m.projektMegnevezes}</p>}
-                {(m.clientNev||cl)&&<div style={{ marginTop:8 }}><p style={{ fontWeight:700, fontSize:14, color:C.text }}>{m.clientNev||cl?.name}</p><p style={{ fontSize:12, color:C.muted }}>{m.clientCim||cl?.address}</p></div>}
+                {clientNev&&<div style={{ marginTop:8 }}><p style={{ fontWeight:700, fontSize:14, color:C.text }}>{clientNev}</p><p style={{ fontSize:12, color:C.muted }}>{clientCim}</p></div>}
               </button>
             );
           })}
@@ -358,7 +429,7 @@ export function UjMunkalapModal({ data, onClose, onSave }) {
   ];
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
       <div style={{ background:"#fff", borderRadius:"20px 20px 0 0", width:"100%", maxWidth:680, maxHeight:"95vh", display:"flex", flexDirection:"column" }}>
         {/* Fejléc */}
         <div style={{ padding:"20px 24px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
@@ -961,6 +1032,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           )}
         </Card>
         <FelhasznaltAnyagokCard m={m} />
+        <LmraAdminCard munkalap={m} userRole={userRole} />
         <VbfAdminCard munkalapId={m.id} munkalap={m} />
         <Card style={{ padding:"20px 22px", marginTop:16 }}>
           <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Műveletek</h4>
@@ -1057,12 +1129,80 @@ function TelepItoDetail({ m, data }) {
 
 // ═══════════════════════════════════════════════════════════════
 // FŐ EXPORT
+// ─── LMRA Admin kártya – PM-es nézetben ─────────────────────
+
+function LmraAdminCard({ munkalap, userRole }) {
+  const munkalapId = munkalap.id;
+  const [rec, setRec] = useState(() => loadLmraRec(munkalapId));
+  const [open, setOpen] = useState(false);
+  const role     = userRole;
+  const canEdit  = ["Admin","Projektmenedzser"].includes(role);
+  const canExport= ["Admin","Projektmenedzser"].includes(role);
+  const currentUser = { role, name: userRole };
+
+  useEffect(() => {
+    const handler = () => setRec(loadLmraRec(munkalapId));
+    window.addEventListener("crm-db-updated", handler);
+    return () => window.removeEventListener("crm-db-updated", handler);
+  }, [munkalapId]);
+
+  const status = rec?.status || "nincs";
+  const label  = LMRA_STATUS_LABELS[status] || status;
+  const color  = LMRA_STATUS_COLORS[status] || "#94A3B8";
+
+  return (
+    <Card style={{ padding:"16px 18px", marginTop:12 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:32, height:32, borderRadius:8, background:color+"18", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <div>
+            <p style={{ margin:0, fontWeight:700, fontSize:13, color:C.text }}>LMRA – Kockázatértékelés</p>
+            <span style={{ fontSize:11, fontWeight:700, background:color+"18", color, padding:"2px 9px", borderRadius:12 }}>{label}</span>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+          {canExport && rec && ["alairva","exportalva"].includes(status) && (
+            <button
+              onClick={() => { exportLmraPdfWindow(rec, munkalap, null, currentUser?.name); setRec(loadLmraRec(munkalapId)); }}
+              style={{ padding:"5px 12px", background:"#7C3AED", color:"#fff", border:"none", borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
+            >
+              PDF
+            </button>
+          )}
+          {canEdit && (
+            <button
+              onClick={() => setOpen(p => !p)}
+              style={{ padding:"5px 12px", background:open?C.accent:"#F8FAFC", color:open?"#fff":C.textSub, border:`1px solid ${open?C.accent:C.border}`, borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
+            >
+              {open ? "Bezárás" : "LMRA szerkesztése"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {open && canEdit && (
+        <div style={{ marginTop:14, borderTop:`1px solid ${C.border}`, paddingTop:14 }}>
+          <TabLmra
+            projekt={{ id: munkalap.projektId || null, munkalapIds: [munkalapId] }}
+            munkalapok={[munkalap]}
+            currentUser={currentUser}
+          />
+        </div>
+      )}
+    </Card>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
-export function MunkalapDetail({ m, data, userRole, onBack, onDelete, onRefresh }) {
+export function MunkalapDetail({ m, data, userRole, currentUser, onBack, onDelete, onRefresh }) {
   const isMobile = useIsMobile();
   if (userRole === "Telepítő") {
     if (m.status === "Felmérés") return <FelmeresTelepito m={m} data={data} onBack={onBack||(()=>window.history.back())} />;
-    return <TelepItoMunkalap m={m} data={data} onBack={onBack||(()=>window.history.back())} />;
+    return <TelepItoMunkalap m={m} data={data} currentUser={currentUser} onBack={onBack||(()=>window.history.back())} />;
   }
   if (isMobile) return <AdminMobileDetail m={m} data={data} userRole={userRole} onDelete={onDelete} onRefresh={onRefresh} />;
   return <AdminDesktopDetail m={m} data={data} userRole={userRole} onDelete={onDelete} onRefresh={onRefresh} />;

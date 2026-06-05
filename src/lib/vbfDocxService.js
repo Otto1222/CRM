@@ -74,56 +74,57 @@ function buildData(munkalap, projekt, vbf) {
     panel_db:          v_(ml.napelemDb  || pr.napelemDb),
     inverter_db:       v_(ml.inverterDb || pr.inverterDb),
 
-    // ── Panel adatok ──────────────────────────────────────────
-    panel_tipus:       v_(v.panelTipus),
-    panel_voc:         v_(v.panelVoc),
-    panel_vmp:         v_(v.panelVmp),
-    panel_imp:         v_(v.panelImp),
-    panel_isc:         v_(v.panelIsc),
-    panel_telj:        v_(v.panelTelj),
+    // ── Panel adatok – flat keys (VbfJegyzokonyv schema) ─────
+    panel_tipus:       v_(v.panel_tipus),
+    panel_voc:         v_(v.panel_voc),
+    panel_vmp:         v_(v.panel_vmp),
+    panel_imp:         v_(v.panel_imp),
+    panel_isc:         v_(v.panel_isc),
+    panel_telj:        v_(v.panel_telj),
 
     // ── Inverter / Egyéb ──────────────────────────────────────
-    inverter_nevleges: v_(v.inverterNevleges),
-    smart_mero:        v_(v.smartMeter),
-    akku:              v_(v.akku),
-    betapalt_dc:       v_(v.betapaltDC),
-    tuz_megszakito:    v_(v.tuzMegszakito),
+    inverter_nevleges:  v_(v.inv_nevleges),
+    smart_mero:         v_(v.smart_meter),
+    akku:               v_(v.akku_db),
+    betapalt_dc:        v_(v.dc_teljesitmeny),
+    epulet_alapfoldes:  v_(v.epulet_alapfoldes),
+    tuz_megszakito:     v_(v.tuz_megszakito),
 
     // ── AC feszültség (V) ─────────────────────────────────────
-    ac_l1: v_(v.acFeszultseg?.L1),
-    ac_l2: v_(v.acFeszultseg?.L2),
-    ac_l3: v_(v.acFeszultseg?.L3),
+    ac_l1: v_(v.ac_l1),
+    ac_l2: v_(v.ac_l2),
+    ac_l3: v_(v.ac_l3),
 
     // ── Kismegszakító – inverternél (A) ───────────────────────
-    kismegs_inv_l1: v_(v.kismegsInverter?.L1),
-    kismegs_inv_l2: v_(v.kismegsInverter?.L2),
-    kismegs_inv_l3: v_(v.kismegsInverter?.L3),
+    kismegs_inv_l1: v_(v.ki_l1),
+    kismegs_inv_l2: v_(v.ki_l2),
+    kismegs_inv_l3: v_(v.ki_l3),
 
     // ── Kismegszakító – mérőhelynél (A) ──────────────────────
-    kismegs_mero_l1: v_(v.kismegsMero?.L1),
-    kismegs_mero_l2: v_(v.kismegsMero?.L2),
-    kismegs_mero_l3: v_(v.kismegsMero?.L3),
+    kismegs_mero_l1: v_(v.km_l1),
+    kismegs_mero_l2: v_(v.km_l2),
+    kismegs_mero_l3: v_(v.km_l3),
 
     // ── Hurokellenállás (MΩ) ──────────────────────────────────
-    hurok_l1: v_(v.hurokellenallas?.L1),
-    hurok_l2: v_(v.hurokellenallas?.L2),
-    hurok_l3: v_(v.hurokellenallas?.L3),
+    hurok_l1: v_(v.hu_l1),
+    hurok_l2: v_(v.hu_l2),
+    hurok_l3: v_(v.hu_l3),
 
     // ── Panelszám stringenként (db) ───────────────────────────
-    panel_st1: v_(v.panelszam?.ST1),
-    panel_st2: v_(v.panelszam?.ST2),
-    panel_st3: v_(v.panelszam?.ST3),
-    panel_st4: v_(v.panelszam?.ST4),
-    panel_st5: v_(v.panelszam?.ST5),
-    panel_st6: v_(v.panelszam?.ST6),
+    panel_st1: v_(v.ps_st1),
+    panel_st2: v_(v.ps_st2),
+    panel_st3: v_(v.ps_st3),
+    panel_st4: v_(v.ps_st4),
+    panel_st5: v_(v.ps_st5),
+    panel_st6: v_(v.ps_st6),
 
     // ── DC feszültség stringenként (V) ────────────────────────
-    dc_st1: v_(v.dcFeszultseg?.ST1),
-    dc_st2: v_(v.dcFeszultseg?.ST2),
-    dc_st3: v_(v.dcFeszultseg?.ST3),
-    dc_st4: v_(v.dcFeszultseg?.ST4),
-    dc_st5: v_(v.dcFeszultseg?.ST5),
-    dc_st6: v_(v.dcFeszultseg?.ST6),
+    dc_st1: v_(v.dc_st1),
+    dc_st2: v_(v.dc_st2),
+    dc_st3: v_(v.dc_st3),
+    dc_st4: v_(v.dc_st4),
+    dc_st5: v_(v.dc_st5),
+    dc_st6: v_(v.dc_st6),
 
     // ── Megjegyzés ────────────────────────────────────────────
     megjegyzes: v_(ml.megjegyzes),
@@ -231,11 +232,12 @@ export const VBF_PLACEHOLDER_DOCS = [
       ["{panel_imp}",         "Panel Imp (A)"],
       ["{panel_isc}",         "Panel Isc (A)"],
       ["{panel_telj}",        "Panel teljesítmény (Wp)"],
-      ["{inverter_nevleges}", "Inverter névleges (kVA)"],
-      ["{smart_mero}",        "Smart mérő (db)"],
-      ["{akku}",              "Akkumulátor (db)"],
-      ["{betapalt_dc}",       "Betáplált DC teljesítmény (Wp)"],
-      ["{tuz_megszakito}",    "Tűzeseti megszakító (A)"],
+      ["{inverter_nevleges}",  "Inverter névleges (kVA)"],
+      ["{smart_mero}",         "Smart mérő (db)"],
+      ["{akku}",               "Akkumulátor (db)"],
+      ["{betapalt_dc}",        "Betáplált DC teljesítmény (Wp)"],
+      ["{epulet_alapfoldes}",  "Épület alapföldelés (Ω)"],
+      ["{tuz_megszakito}",     "Tűzeseti megszakító (A)"],
     ],
   },
   {

@@ -1,15 +1,25 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   ArrowLeft, Camera, Save, AlertTriangle, CheckCircle2,
-  X, FileText, Play, Phone, MapPin, Lock, Trash2, Hash, Shield
+  X, FileText, Play, Phone, MapPin, Lock, Trash2, Hash, Shield, Users, BookOpen
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import AlairasModal from "../components/AlairasModal";
-import LmraModal from "../components/LmraModal";
+import LmraTelepltoView from "../components/LmraTelepltoView";
 import FelmeresTelepito from "./FelmeresTelepito";
 import FelmeresFotok from "./FelmeresFotok";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
-import { driveSave } from "../lib/driveApi";
+import { driveSave, driveVbfSave } from "../lib/driveApi";
+import { calcMunkalapElszamolas, saveMunkalapElszamolas } from "../services/settlementCalculator";
+import {
+  getJelenletByMunkalap,
+  createJelenletBejegyzes,
+  updateJelenletBejegyzes,
+  deleteJelenletBejegyzes,
+  buildJavasloltJelenlet,
+  calcJelenletKoltseg,
+} from "../services/jelenlet.service";
+import { getCsapatTagok } from "../modules/csapatok/csapat.service";
 
 // ─── Sorozatszámos tételek ────────────────────────────────────
 const SERIAL_CATEGORIES = ["inverter","akkumulátor","akkumulator","okosmérő","okosmerő","okos mérő","optimalizáló","optimalizalo","napelem","panel"];
@@ -341,7 +351,7 @@ function FelhasznaltAnyagokTab({ munkalapId, meglevoAnyagok, onSave }) {
   );
 }
 
-export default function TelepItoMunkalap({ m, data, onBack }) {
+export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   const client = data.ugyfelek?.find(u=>u.id===m.clientId);
   const clientNev = m.clientNev||client?.name||"";
   const clientCim = m.clientCim||client?.address||"";
@@ -370,6 +380,42 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   const [progressMsg, setProgressMsg] = useState("");
   const [megjegyzes, setMegjegyzes] = useState(m.megjegyzes||"");
 
+  // Elszámolási adatok – a projektből örökölve, de a telepítő módosíthatja
+  const initEa = m.elszamolasAdatok || {};
+  const proj = data.projektek?.find(p => p.id === m.projektId);
+
+  // Napi jelenlét
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [jelenletNaplok, setJelenletNaplok] = useState(() => getJelenletByMunkalap(m.id));
+  const [jelenletDatum, setJelenletDatum] = useState(m.datum || todayStr);
+
+  // Napi jelenlét napló frissítése
+  function refreshJelenlet() { setJelenletNaplok(getJelenletByMunkalap(m.id)); }
+
+  // Javasolt jelenlét inicializálása a kiosztott csapatokból (ha még nincs)
+  const javasloltJelenlet = useMemo(() => {
+    const existing = getJelenletByMunkalap(m.id);
+    if (existing.length > 0) return [];
+    return buildJavasloltJelenlet(m, jelenletDatum);
+  }, [m.id, jelenletDatum]);
+
+  function initJelenletFromJavaslat() {
+    if (javasloltJelenlet.length === 0) return;
+    for (const bej of javasloltJelenlet) {
+      createJelenletBejegyzes(bej);
+    }
+    refreshJelenlet();
+  }
+
+  const [elszamolasAdatok, setElszamolasAdatok] = useState({
+    panelDb:       initEa.panelDb       ?? proj?.napelemDb    ?? 0,
+    inverterDb:    initEa.inverterDb    ?? proj?.inverterDb   ?? 0,
+    akkumulatorDb: initEa.akkumulatorDb ?? proj?.akkumulatorDb ?? 0,
+    smartMeterDb:  initEa.smartMeterDb  ?? proj?.smartMeterDb  ?? 0,
+    tavKm:         initEa.tavKm         ?? proj?.penzugy?.tavKm ?? 0,
+    anyagkoltság:  initEa.anyagkoltság  ?? 0,
+  });
+
   const [vbf, setVbf] = useState(()=>loadLocal(`vbf_${m.id}`)||VBF_TEMPLATE);
   const [fotok,setFotok] = useState(()=>loadLocal(`fotok_${m.id}`)||Object.fromEntries(FOTO_KAT.map(k=>[k.id,[]])));
   const [fotoHianyOkok, setFotoHianyOkok] = useState(()=>{
@@ -380,7 +426,6 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   useEffect(()=>{
     const toSave = Object.fromEntries(Object.entries(fotok).map(([k,v])=>[k,v.map(f=>({name:f.name,size:f.size,type:f.type,originalName:f.originalName}))]));
     saveLocal(`fotok_${m.id}`,toSave);
-    window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:`fotok_${m.id}`}}));
   },[fotok,m.id]);
 
   useEffect(()=>{ saveLocal(`foto_hiany_${m.id}`,fotoHianyOkok); },[fotoHianyOkok,m.id]);
@@ -397,13 +442,16 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   }
 
   function handleMegkezdes() {
-    // LMRA szükséges-e? Ha már van mentett LMRA erre a munkalapra, átugorjuk
-    const meglevoLmra = loadLocal(`lmra_${m.id}`);
-    if (meglevoLmra) {
-      doMegkezdes();
-    } else {
-      setShowLmra(true);
-    }
+    // LMRA szükséges-e? Mindig megnyitjuk az LMRA nézetet (ha már lezárva, azonnal megkezdés)
+    setShowLmra(true);
+  }
+
+  // Fire-and-forget Drive sync – nem blokkolja a UI-t
+  function syncMunkalapokToDrive() {
+    const osszesMl = loadLocal("munkalapok") || [];
+    driveSave("munkalapok", { munkalapok: osszesMl })
+      .then(res => { if (!res.ok && !res.offline) console.warn("[TelepIto Drive]", res.error); })
+      .catch(e => console.warn("[TelepIto Drive]", e));
   }
 
   function doMegkezdes() {
@@ -411,16 +459,16 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     const ujStatus = ["Kivitelezésre vár","Megkezdésre Vár","Ütemezett","Kiosztásra vár","Létrehozva","Kiosztva csapatnak"].includes(m.status) ? "Folyamatban" : m.status;
     updateItem("munkalapok", m.id, { megkezdve: true, megkezdesIdopont: ts, status: ujStatus, statusSzin: "#2563EB" });
     window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+    syncMunkalapokToDrive(); // státusz: Folyamatban → Drive-ra
     setMegkezdve(true);
     setShowLmra(false);
     setActiveTab(3);
   }
 
   function handleLmraComplete(lmraAdat) {
-    // LMRA kész – mentjük a munkalaphoz is
-    updateItem("munkalapok", m.id, { lmra: lmraAdat });
+    updateItem("munkalapok", m.id, { lmraLezarva: true, lmraLezarvaAt: new Date().toISOString() });
     window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
-    // A munka megkezdése az LmraModal "Munka megkezdése" gombjára klikk után hívódik (onClose)
+    syncMunkalapokToDrive(); // LMRA lezárva → Drive-ra
   }
 
   function handleBefejezesKezdete() {
@@ -482,12 +530,25 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
     }
 
     const ts = new Date().toISOString();
+
+    // ── Elszámolás mentése lezáráskor ──────────────────────
+    try {
+      const mlElszamolas = calcMunkalapElszamolas(
+        { ...m, elszamolasAdatok },
+        proj
+      );
+      saveMunkalapElszamolas(m.id, mlElszamolas);
+    } catch (e) {
+      console.warn("[TelepItoMunkalap] Elszámolás mentés hiba:", e);
+    }
+
     const updates = {
       status:"Ellenőrzés alatt",
       statusSzin:"#D97706",
       befejezesIdopont:ts,
       lezarva:true,
       megjegyzes:megjegyzes.trim(),
+      elszamolasAdatok, // tényleges adatok mentése
     };
 
     updateItem("munkalapok",m.id,updates);
@@ -557,12 +618,21 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
   }
 
   async function handleVbfMentes() {
-    saveLocal(`vbf_${m.id}`,vbf);
-    updateItem("munkalapok",m.id,{vbf});
-    window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
+    saveLocal(`vbf_${m.id}`, vbf);
+    updateItem("munkalapok", m.id, { vbf });
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+    setProgress(30);
+    setProgressMsg("VBF mentése Drive-ra…");
+    // VBF külön fájlba Drive-ra + teljes munkalapok lista szinkron
+    try {
+      await driveVbfSave(m.id, vbf);
+      syncMunkalapokToDrive();
+    } catch(e) {
+      console.warn("[VBF Drive sync]", e);
+    }
     setProgress(100);
     setProgressMsg("VBF mentve ✓");
-    await new Promise(r=>setTimeout(r,1200));
+    await new Promise(r => setTimeout(r, 1200));
     setProgress(null);
   }
 
@@ -617,6 +687,9 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
           <ArrowLeft size={18}/> Feladatok
         </button>
         <span style={{ fontWeight:800,fontSize:14,color:"#fff",flex:1 }}>{munkalapAzonosito}</span>
+        <button onClick={()=>window.open("/installer-guide.html","_blank")} title="Telepítői útmutató" style={{ border:"none",background:"rgba(255,255,255,0.12)",color:"#fff",cursor:"pointer",borderRadius:8,padding:"5px 8px",display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:600,fontFamily:FONT }}>
+          <BookOpen size={15}/> Útmutató
+        </button>
         {m.cimke&&<span style={{ background:m.cimkeSzin||C.accent,color:"#fff",borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700 }}>{m.cimke}</span>}
       </div>
       <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px 14px" }}>
@@ -644,6 +717,9 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
 
   const InfoTab=()=>{
     const FR=({label,value})=>value?(<div><p style={{ fontSize:12,color:"#64748B",paddingTop:8,marginBottom:3 }}>{label}</p><div style={{ background:"#E8EDF5",borderRadius:6,padding:"9px 12px",fontSize:14,color:C.text }}>{value}</div></div>):null;
+
+    const kiosztasok = m.csapatKiosztasok || [];
+
     return (
       <div style={{ padding:"0 16px 16px",background:"#F1F5F9" }}>
         <FR label="Projekt megnevezés" value={m.projektMegnevezes}/>
@@ -652,6 +728,48 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
         <FR label="Telefonszám" value={clientTel}/>
         <FR label="Értékesítő" value={m.ertekesito}/>
         {m.megkezdesIdopont&&<div style={{ marginTop:12,padding:"10px 14px",background:"#EFF6FF",border:`1px solid #BFDBFE`,borderRadius:10,fontSize:13,color:C.accent }}>▶️ Megkezdve: <b>{new Date(m.megkezdesIdopont).toLocaleString("hu-HU")}</b></div>}
+
+        {/* Kiosztott csapatok */}
+        {kiosztasok.length > 0 && (
+          <div style={{ marginTop:14, background:"#fff", border:`1px solid ${C.border}`, borderRadius:10, overflow:"hidden" }}>
+            <div style={{ padding:"10px 14px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:7 }}>
+              <Users size={14} color="#2563EB"/>
+              <span style={{ fontSize:12, fontWeight:700, color:"#1D4ED8" }}>Kiosztott csapatok ({kiosztasok.length})</span>
+            </div>
+            {kiosztasok.map(k => {
+              const tagok = getCsapatTagok(k.csapatId).filter(t => t.aktiv !== false);
+              return (
+                <div key={k.id || k.csapatId} style={{ padding:"10px 14px", borderBottom:`1px solid #F1F5F9` }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom: tagok.length ? 6 : 0 }}>
+                    <span style={{ fontSize:13, fontWeight:700, color:"#0F172A" }}>{k.csapatNev || k.csapatId}</span>
+                    <span style={{ fontSize:10, fontWeight:700, background: k.tipus==="focsapat"?"#EFF6FF":"#F0FDF4", color: k.tipus==="focsapat"?"#1D4ED8":"#059669", padding:"1px 7px", borderRadius:20 }}>
+                      {k.tipus==="focsapat" ? "Főcsapat" : "Segítő"}
+                    </span>
+                    {k.datumTol && <span style={{ fontSize:11, color:C.muted }}>{k.datumTol}{k.datumIg ? ` – ${k.datumIg}` : ""}</span>}
+                  </div>
+                  {tagok.length > 0 && (
+                    <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+                      {tagok.map(tag => (
+                        <span key={tag.id} style={{ fontSize:11, background:"#F8FAFC", border:`1px solid ${C.border}`, color:C.text, padding:"2px 8px", borderRadius:20 }}>
+                          {tag.nev} <span style={{ color:C.muted }}>({tag.szerep || "—"})</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {k.megjegyzes && <p style={{ fontSize:11, color:C.muted, margin:"4px 0 0", fontStyle:"italic" }}>{k.megjegyzes}</p>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Ha nincs kiosztás de van csapatNev */}
+        {kiosztasok.length === 0 && m.csapatNev && (
+          <div style={{ marginTop:10, padding:"8px 12px", background:"#F8FAFC", border:`1px solid ${C.border}`, borderRadius:9, fontSize:12, color:C.text }}>
+            👷 Csapat: <strong>{m.csapatNev}</strong>
+          </div>
+        )}
+
         {!megkezdve ? (
           <div style={{ marginTop: 20 }}>
             <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#92400E" }}>
@@ -665,11 +783,17 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
         ) : (
           <div>
             <div style={{ marginTop:12,padding:"10px 14px",background:"#ECFDF5",border:`1px solid #A7F3D0`,borderRadius:10,fontSize:13,color:C.success,fontWeight:600 }}>✅ Munka folyamatban</div>
-            {loadLocal(`lmra_${m.id}`) && (
-              <div style={{ marginTop:8,padding:"8px 12px",background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:9,fontSize:12,color:"#166534" }}>
-                🛡️ LMRA aláírva · {loadLocal(`lmra_${m.id}`)?.tagok?.join(", ")}
-              </div>
-            )}
+            {(() => {
+              const lmraRec = loadLocal(`lmra_rec_${m.id}`);
+              if (lmraRec && ["alairva","exportalva"].includes(lmraRec.status)) {
+                return (
+                  <div style={{ marginTop:8,padding:"8px 12px",background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:9,fontSize:12,color:"#166534" }}>
+                    🛡️ LMRA aláírva · {(lmraRec.resztvevok||[]).filter(r=>r.signed).map(r=>r.nev).join(", ")}
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         )}
       </div>
@@ -796,8 +920,9 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
               onChange={e=>setMegjegyzes(e.target.value)}
               onBlur={()=>{
                 if (megjegyzes.trim().length>0) {
-                  updateItem("munkalapok",m.id,{megjegyzes:megjegyzes.trim()});
-                  window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
+                  updateItem("munkalapok", m.id, { megjegyzes: megjegyzes.trim() });
+                  window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+                  syncMunkalapokToDrive();
                 }
               }}
               placeholder="Pl. A telepítés rendben megtörtént. Az inverter a garázs falán lett elhelyezve..."
@@ -823,6 +948,108 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Napi jelenlét napló */}
+          <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, padding:16, marginBottom:16 }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12, flexWrap:"wrap", gap:8 }}>
+              <p style={{ fontSize:13, fontWeight:700, color:"#0F172A", margin:0 }}>👥 Napi jelenlét napló</p>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <label style={{ fontSize:11, color:C.muted }}>Dátum:</label>
+                <input type="date" value={jelenletDatum} onChange={e => setJelenletDatum(e.target.value)}
+                  style={{ padding:"5px 8px", border:`1.5px solid ${C.border}`, borderRadius:7, fontSize:12, fontFamily:FONT, outline:"none" }}/>
+              </div>
+            </div>
+
+            {jelenletNaplok.length === 0 && javasloltJelenlet.length > 0 && (
+              <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE", borderRadius:9, padding:"10px 14px", marginBottom:12 }}>
+                <p style={{ fontSize:12, color:"#1D4ED8", margin:"0 0 8px", fontWeight:600 }}>
+                  {javasloltJelenlet.length} csapattag importálható a kiosztott csapatokból
+                </p>
+                <button onClick={initJelenletFromJavaslat}
+                  style={{ padding:"7px 14px", background:C.accent, color:"#fff", border:"none", borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+                  Csapattagok betöltése →
+                </button>
+              </div>
+            )}
+
+            {jelenletNaplok.length === 0 ? (
+              <div style={{ textAlign:"center", padding:"16px 0", color:C.muted, fontSize:12 }}>
+                <p>Nincs rögzített jelenlét.</p>
+                <p style={{ fontSize:11 }}>A jelenlét a csapattagok béralapú költségszámításhoz szükséges.</p>
+              </div>
+            ) : (
+              <div>
+                {jelenletNaplok.map(bej => (
+                  <div key={bej.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", border:`1px solid ${C.border}`, borderRadius:9, marginBottom:6, background: bej.jelen ? "#fff" : "#F8FAFC", opacity: bej.jelen ? 1 : .6 }}>
+                    {/* Jelen toggle */}
+                    <div onClick={() => { updateJelenletBejegyzes(bej.id, { jelen: !bej.jelen }); refreshJelenlet(); }}
+                      style={{ width:34, height:18, borderRadius:9, position:"relative", cursor:"pointer", flexShrink:0,
+                        background: bej.jelen ? "#059669" : "#CBD5E1", transition:"background .2s" }}>
+                      <div style={{ position:"absolute", top:1, left: bej.jelen ? 17 : 1, width:16, height:16, borderRadius:"50%", background:"#fff", transition:"left .2s" }} />
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <p style={{ margin:0, fontWeight:700, fontSize:13, color: bej.jelen ? C.text : C.muted }}>
+                        {bej.nev}
+                        {bej.ideiglenes && <span style={{ fontSize:10, background:"#FFF7ED", color:"#C2410C", padding:"1px 5px", borderRadius:20, marginLeft:5 }}>Ideiglenes</span>}
+                      </p>
+                      <div style={{ display:"flex", gap:6, marginTop:1 }}>
+                        {bej.csapatNev && <span style={{ fontSize:10, color:C.muted }}>{bej.csapatNev}</span>}
+                        {bej.szerep    && <span style={{ fontSize:10, color:C.muted }}>{bej.szerep}</span>}
+                      </div>
+                    </div>
+                    {/* Óra vagy napi bér */}
+                    <div style={{ display:"flex", alignItems:"center", gap:4, flexShrink:0 }}>
+                      {bej.napiBer > 0 ? (
+                        <span style={{ fontSize:11, color:"#059669", fontWeight:600 }}>
+                          {Number(bej.napiBer).toLocaleString("hu-HU")} Ft
+                        </span>
+                      ) : (
+                        <div style={{ display:"flex", alignItems:"center", gap:3 }}>
+                          <input type="number" min="0" value={bej.orak || 8}
+                            onChange={e => { updateJelenletBejegyzes(bej.id, { orak: Number(e.target.value) }); refreshJelenlet(); }}
+                            style={{ width:44, padding:"4px 6px", border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:12, fontFamily:FONT, textAlign:"center" }}/>
+                          <span style={{ fontSize:10, color:C.muted }}>h</span>
+                        </div>
+                      )}
+                    </div>
+                    <button onClick={() => { deleteJelenletBejegyzes(bej.id); refreshJelenlet(); }}
+                      style={{ padding:"3px 5px", background:"#FEF2F2", border:"none", borderRadius:5, cursor:"pointer", color:"#DC2626", flexShrink:0 }}>
+                      <X size={11}/>
+                    </button>
+                  </div>
+                ))}
+                <div style={{ textAlign:"right", fontSize:12, color:"#059669", fontWeight:700, marginTop:8, paddingTop:8, borderTop:`1px solid ${C.border}` }}>
+                  Összes bérköltség: {jelenletNaplok.filter(j=>j.jelen).reduce((s,j) => s + (j.koltseg || calcJelenletKoltseg(j)), 0).toLocaleString("hu-HU")} Ft
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Elszámolási adatok megerősítése */}
+          <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, padding:16, marginBottom:16 }}>
+            <p style={{ fontSize:13, fontWeight:700, color:"#475569", marginBottom:12 }}>💰 Elszámolási adatok (lezáráskor rögzítve)</p>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px 12px" }}>
+              {[
+                { key:"panelDb",       label:"Panel db" },
+                { key:"inverterDb",    label:"Inverter db" },
+                { key:"akkumulatorDb", label:"Akkumulátor db" },
+                { key:"smartMeterDb",  label:"Smart meter db" },
+                { key:"tavKm",         label:"Km (oda)" },
+                { key:"anyagkoltság",  label:"Anyagköltség (Ft)" },
+              ].map(({ key, label }) => (
+                <div key={key}>
+                  <label style={{ fontSize:10, fontWeight:700, color:C.muted, display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:.5 }}>{label}</label>
+                  <input
+                    type="number" min="0"
+                    value={elszamolasAdatok[key] ?? 0}
+                    onChange={e => setElszamolasAdatok(p => ({ ...p, [key]: Number(e.target.value) }))}
+                    style={{ width:"100%", boxSizing:"border-box", padding:"7px 10px", border:`1.5px solid ${C.border}`, borderRadius:8, fontSize:13, fontFamily:FONT, outline:"none" }}
+                  />
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize:11, color:C.muted, marginTop:8 }}>Az adatok a projektből öröklődnek, de pontosíthatók.</p>
           </div>
 
           <button
@@ -853,7 +1080,7 @@ export default function TelepItoMunkalap({ m, data, onBack }) {
       )}
 
       {showAlairas&&<AlairasModal m={m} userRole="Telepítő" onClose={()=>setShowAlairas(false)} onSave={handleBefejezes}/>}
-      {showLmra&&<LmraModal munkalap={m} onClose={() => { setShowLmra(false); doMegkezdes(); }} onComplete={handleLmraComplete} />}
+      {showLmra&&<LmraTelepltoView munkalap={m} currentUser={currentUser} onClose={() => { setShowLmra(false); doMegkezdes(); }} onComplete={handleLmraComplete} />}
     </div>
   );
 }

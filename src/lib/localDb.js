@@ -8,18 +8,24 @@
 // Ha NEM szerepel, a fallback `crm_${key}` – ami eltérő lenne!
 // A meglévő adatok kompatibilitása megőrzött: a kulcsnevek nem változnak.
 const KEYS = {
-  munkalapok:            "munkalapok",
-  ugyfelek:              "ugyfelek",
-  beallitasok:           "beallitasok",
-  karteritesek:          "karteritesek",
-  sablonok:              "sablonok",
-  fovallalkozok:         "fovallalkozok",
-  munkatipusok:          "munkatipusok",
-  elszamolasi_szabalyok: "elszamolasi_szabalyok",
-  projektek:             "projektek",
-  csapatok:              "csapatok",
-  crm_napelem_users:     "crm_napelem_users",
-  szamlak:               "szamlak",
+  munkalapok:                  "munkalapok",
+  ugyfelek:                    "ugyfelek",
+  beallitasok:                 "beallitasok",
+  karteritesek:                "karteritesek",
+  sablonok:                    "sablonok",
+  fovallalkozok:               "fovallalkozok",
+  munkatipusok:                "munkatipusok",
+  elszamolasi_szabalyok:       "elszamolasi_szabalyok",
+  projektek:                   "projektek",
+  csapatok:                    "csapatok",
+  csapat_tagok:                "csapat_tagok",
+  crm_napelem_users:           "crm_napelem_users",
+  szamlak:                     "szamlak",
+  edi_sorszam_counter:         "edi_sorszam_counter",
+  edi_projekt_sorszam_counter:  "edi_projekt_sorszam_counter",
+  "ajanla tok":                 "ajanla tok",
+  edi_ajanlat_sorszam_counter:  "edi_ajanlat_sorszam_counter",
+  crm_backups:                  "crm_backups",
 };
 
 // ─── Cross-tab szinkronizáció BroadcastChannel-lel ───────────

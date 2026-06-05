@@ -11,6 +11,7 @@ export function createWorkorderFromProject(projekt, options = {}) {
 
   const existing = getWorkordersByProjectId(projekt.id);
   const sorszam = String(existing.length + 1).padStart(3, "0");
+  const penzugy = projekt.penzugy || {};
 
   const workorder = createWorkorder({
     projektId: projekt.id,
@@ -36,6 +37,20 @@ export function createWorkorderFromProject(projekt, options = {}) {
 
     projektNev: projekt.nev || "",
     kulsoAzonosito: projekt.kulsoAzonosito || "",
+
+    // ── Elszámolási adatok öröklése ──────────────────────────
+    // FV és munkatípus a projektből
+    fovallalkoziId: penzugy.fovallalkoziId || "",
+    munkatipus:     penzugy.munkatipus     || projekt.tipus || "",
+    // Műszaki mennyiségek a projektből (módosíthatók a munkalapnál)
+    elszamolasAdatok: {
+      panelDb:       projekt.napelemDb     || penzugy.darabszam || 0,
+      inverterDb:    projekt.inverterDb    || 0,
+      akkumulatorDb: projekt.akkumulatorDb || (projekt.akkumulator ? 1 : 0) || 0,
+      smartMeterDb:  projekt.smartMeterDb  || (projekt.okosmerő  ? 1 : 0)  || 0,
+      tavKm:         penzugy.tavKm         || 0,
+      anyagkoltság:  0,
+    },
 
     megjegyzes:
       options.megjegyzes ||

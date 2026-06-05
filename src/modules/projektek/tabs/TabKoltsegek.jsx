@@ -4,6 +4,7 @@ import { C, FONT } from "../../../lib/constants.js";
 import { ft } from "../../../lib/helpers.js";
 import { loadKarteritesek } from "../../../lib/karterites.js";
 import { calcEsmentProjektPenzugy, loadTetelek, felulirTetel, visszaallitTetel } from "../../../services/workOrderFinancial.service.js";
+import { calcProjektOsszesites } from "../../../services/settlementCalculator.js";
 import { loadFovallalkozok } from "../../fovallalkozok/fovallalkozo.service.js";
 import { getCsapat } from "../../csapatok/csapat.service.js";
 import { getMunkatipus } from "../../munkatipusok/munkatipus.service.js";
@@ -102,9 +103,13 @@ function KombiDetailSzekció({ kalk, penzugy, csapat }) {
       csoport: "koltseg", label: "Anyagköltség", ertek: kalk.anyagkoltség, szin: "#DC2626",
       reszlet: penzugy.keziAnyagkoltség != null ? "⚠️ kézi" : null,
     } : null,
-    kalk.emelőgepKoltseg > 0 ? { csoport: "koltseg", label: "Emelőgép",      ertek: kalk.emelőgepKoltseg, szin: "#DC2626" } : null,
-    kalk.kartérités > 0      ? { csoport: "koltseg", label: "Kártérítés",     ertek: kalk.kartérités,       szin: "#DC2626" } : null,
-    kalk.egyebKoltseg > 0    ? { csoport: "koltseg", label: "Egyéb költség",  ertek: kalk.egyebKoltseg,     szin: "#DC2626" } : null,
+    kalk.emelőgepKoltseg     > 0 ? { csoport: "koltseg", label: "Emelőgép",         ertek: kalk.emelőgepKoltseg,     szin: "#DC2626" } : null,
+    kalk.daruKoltseg         > 0 ? { csoport: "koltseg", label: "Daru / Teheremelő", ertek: kalk.daruKoltseg,         szin: "#DC2626" } : null,
+    kalk.szallasKoltseg      > 0 ? { csoport: "koltseg", label: "Szállás",            ertek: kalk.szallasKoltseg,      szin: "#DC2626" } : null,
+    kalk.bereltEszkozKoltseg > 0 ? { csoport: "koltseg", label: "Bérelt eszközök",    ertek: kalk.bereltEszkozKoltseg, szin: "#DC2626" } : null,
+    kalk.irodaAdminKoltseg   > 0 ? { csoport: "koltseg", label: "Iroda / Admin",       ertek: kalk.irodaAdminKoltseg,   szin: "#DC2626" } : null,
+    kalk.kartérités          > 0 ? { csoport: "koltseg", label: "Kártérítés",          ertek: kalk.kartérités,          szin: "#DC2626" } : null,
+    kalk.egyebKoltseg        > 0 ? { csoport: "koltseg", label: "Egyéb költség",       ertek: kalk.egyebKoltseg,        szin: "#DC2626" } : null,
   ].filter(Boolean);
 
   return (
@@ -140,6 +145,97 @@ function KombiDetailSzekció({ kalk, penzugy, csapat }) {
             </tr>
           </tbody>
         </table>
+      )}
+    </div>
+  );
+}
+
+// ─── Munkalap szintű elszámolás táblázat ─────────────────────
+function MunkalapElszamolasTabla({ projekt, munkalapok }) {
+  const [open, setOpen] = useState(false);
+  if (!munkalapok?.length) return null;
+
+  const ossz = calcProjektOsszesites(projekt, munkalapok);
+  const mlSorok = ossz.munkalapok;
+  const lezartMlk = munkalapok.filter(m => m.lezarva || m.status === "Ellenőrzés alatt" || m.status === "Lezárva");
+
+  if (lezartMlk.length === 0) return (
+    <div style={{ background:"#F8FAFC", border:`1px solid ${C.border}`, borderRadius:12, padding:"12px 16px", marginBottom:14, fontSize:12, color:C.muted }}>
+      Munkalap szintű elszámolás: nincs lezárt munkalap még.
+    </div>
+  );
+
+  return (
+    <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, overflow:"hidden", marginBottom:14 }}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 16px", background:"#F8FAFC", border:"none", cursor:"pointer", fontFamily:FONT, borderBottom: open ? `1px solid ${C.border}` : "none" }}>
+        <span style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.7 }}>
+          Munkalap szintű elszámolás ({lezartMlk.length} lezárt)
+        </span>
+        {open ? <ChevronDown size={14} color={C.muted}/> : <ChevronRight size={14} color={C.muted}/>}
+      </button>
+      {open && (
+        <div style={{ overflowX:"auto" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+            <thead>
+              <tr style={{ background:"#F8FAFC", borderBottom:`1px solid ${C.border}` }}>
+                {["Munkalap", "Panel db", "Km", "FV bevétel", "AV bér", "Anyag", "Haszon", "Állapot"].map(h => (
+                  <th key={h} style={{ padding:"7px 12px", textAlign:"left", fontWeight:700, color:C.muted, whiteSpace:"nowrap" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {munkalapok.map((m, i) => {
+                const e = mlSorok[i] || {};
+                const lezart = m.lezarva || m.status === "Ellenőrzés alatt" || m.status === "Lezárva";
+                return (
+                  <tr key={m.id} style={{ borderBottom:`1px solid #F1F5F9`, background: lezart ? "#fff" : "#FFFBEB" }}>
+                    <td style={{ padding:"8px 12px", fontWeight:600, color:"#374151" }}>
+                      {m.munkalapSzam || m.dokumentumszam || m.id?.slice(-6)}
+                      {!lezart && <span style={{ fontSize:10, color:C.muted, marginLeft:4 }}>(folyamatban)</span>}
+                    </td>
+                    <td style={{ padding:"8px 12px", color:C.muted }}>{e.inputs?.darabszam ?? "—"}</td>
+                    <td style={{ padding:"8px 12px", color:C.muted }}>{e.inputs?.tavKm ? `${e.inputs.tavKm} km` : "—"}</td>
+                    <td style={{ padding:"8px 12px", fontWeight:700, color:"#059669" }}>{e.bevitel > 0 ? ft(e.bevitel) : "—"}</td>
+                    <td style={{ padding:"8px 12px", color:"#DC2626" }}>{e.alvallalkozoiBer > 0 ? ft(e.alvallalkozoiBer) : "—"}</td>
+                    <td style={{ padding:"8px 12px", color:"#DC2626" }}>{e.anyagkoltság > 0 ? ft(e.anyagkoltság) : "—"}</td>
+                    <td style={{ padding:"8px 12px", fontWeight:700, color: (e.haszon || 0) >= 0 ? "#059669" : "#DC2626" }}>
+                      {e.bevitel > 0 ? ft(e.haszon || 0) : "—"}
+                    </td>
+                    <td style={{ padding:"8px 12px" }}>
+                      <span style={{ fontSize:10, background: lezart?"#DCFCE7":"#FFFBEB", color:lezart?"#166534":"#D97706", padding:"2px 7px", borderRadius:20, fontWeight:700 }}>
+                        {lezart ? "Lezárt" : "Aktív"}
+                      </span>
+                      {e._mentett && <span style={{ fontSize:9, color:C.muted, marginLeft:4 }}>●</span>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            {lezartMlk.length > 1 && (
+              <tfoot>
+                <tr style={{ background:"#F0FDF4", borderTop:"2px solid #86EFAC" }}>
+                  <td style={{ padding:"8px 12px", fontWeight:800 }}>Összesen (lezárt)</td>
+                  <td />
+                  <td />
+                  <td style={{ padding:"8px 12px", fontWeight:800, color:"#059669" }}>
+                    {ft(mlSorok.filter((_, i) => munkalapok[i]?.lezarva || munkalapok[i]?.status === "Ellenőrzés alatt" || munkalapok[i]?.status === "Lezárva").reduce((s, e) => s + (e.bevitel||0), 0))}
+                  </td>
+                  <td style={{ padding:"8px 12px", fontWeight:800, color:"#DC2626" }}>
+                    {ft(mlSorok.filter((_, i) => munkalapok[i]?.lezarva).reduce((s, e) => s + (e.alvallalkozoiBer||0), 0))}
+                  </td>
+                  <td style={{ padding:"8px 12px", fontWeight:800, color:"#DC2626" }}>
+                    {ft(mlSorok.filter((_, i) => munkalapok[i]?.lezarva).reduce((s, e) => s + (e.anyagkoltság||0), 0))}
+                  </td>
+                  <td colSpan={2} />
+                </tr>
+              </tfoot>
+            )}
+          </table>
+          <p style={{ fontSize:10, color:C.muted, padding:"6px 14px", borderTop:`1px solid ${C.border}` }}>
+            ● = elmentett elszámolás · Mentett adatok prioritást élveznek a kalkulált értékkel szemben.
+          </p>
+        </div>
       )}
     </div>
   );
@@ -235,6 +331,9 @@ export default function TabKoltsegek({ projekt, munkalapok, currentUser }) {
       {/* Kombinált részletező */}
       <KombiDetailSzekció kalk={kalk} penzugy={penzugy} csapat={csapat} />
 
+      {/* Munkalap szintű bontás */}
+      <MunkalapElszamolasTabla projekt={projekt} munkalapok={munkalapok || []} />
+
       {/* Bevételi tételek */}
       {tetelek.length > 0 && (
         <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden", marginBottom: 14 }}>
@@ -276,9 +375,13 @@ export default function TabKoltsegek({ projekt, munkalapok, currentUser }) {
               kalk.alvallalkozoiKmBer > 0 ? ["Alvállalkozói km-díj", kalk.alvallalkozoiKmBer, null, "🚗"] : null,
               ["Útiköltség",        kalk.utikoltség,        penzugy.keziUtikoltség,   null],
               ["Anyagköltség",      kalk.anyagkoltség,      penzugy.keziAnyagkoltség, null],
-              ["Emelőgép",          kalk.emelőgepKoltseg,   null,                      null],
-              ["Kártérítés",        kalk.kartérités,        penzugy.keziKartérités,   null],
-              ["Egyéb",             kalk.egyebKoltseg,      null,                      null],
+              ["Emelőgép",          kalk.emelőgepKoltseg,    null, null],
+              ["Daru / Teheremelő", kalk.daruKoltseg,        null, null],
+              ["Szállás",           kalk.szallasKoltseg,     null, null],
+              ["Bérelt eszközök",   kalk.bereltEszkozKoltseg,null, null],
+              ["Iroda / Admin",     kalk.irodaAdminKoltseg,  null, null],
+              ["Kártérítés",        kalk.kartérités,         penzugy.keziKartérités, null],
+              ["Egyéb",             kalk.egyebKoltseg,       null, null],
             ].filter(r => r && r[1] > 0).map(([l, v2, kezi, icon]) => (
               <tr key={l} style={{ borderBottom: `1px solid #F1F5F9` }}>
                 <td style={{ padding: "8px 12px", fontSize: 12, fontWeight: 600, color: "#374151" }}>
