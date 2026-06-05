@@ -22,18 +22,16 @@ import TabElszamolas from "./tabs/TabElszamolas.jsx";
 
 const TABS = [
   { id: "attekintes",   label: "Áttekintés",   icon: "📊" },
-  { id: "ajanlatok",    label: "Ajánlatok",    icon: "📋" },
   { id: "munkalapok",   label: "Munkalapok",   icon: "🔧" },
-  { id: "koltsegek",    label: "Költségek",    icon: "💰" },
-  { id: "karteritesek", label: "Kártérítések", icon: "⚠️" },
   { id: "dokumentumok", label: "Dokumentumok", icon: "📁" },
-  { id: "utemezas",     label: "Ütemezés",     icon: "📅" },
+  { id: "koltsegek",    label: "Költségek",    icon: "💰" },
   { id: "szamlazas",    label: "Számlázás",    icon: "🧾" },
   { id: "elszamolas",   label: "Elszámolás",   icon: "📊" },
-  { id: "kommunikacio", label: "Kommunikáció", icon: "💬" },
-  { id: "naplo",        label: "Napló",        icon: "📝" },
   { id: "lmra",         label: "LMRA",         icon: "🛡️" },
-  { id: "riport",       label: "Riport / PDF", icon: "🖨️" },
+  { id: "karteritesek", label: "Kártérítések", icon: "⚠️" },
+  { id: "kommunikacio", label: "Napló / Komm.", icon: "💬" },
+  { id: "utemezas",     label: "Ütemezés",     icon: "📅" },
+  { id: "ajanlatok",    label: "Árajánlat",    icon: "📋" },
 ];
 
 export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateMunkalap, currentUser, onNewMunkalapForProjekt }) {
@@ -98,7 +96,7 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
       case "kommunikacio":
         return <TabKommunikacio {...props} />;
       case "naplo":
-        return <TabNaplo {...props} />;
+        return <TabKommunikacio {...props} />; // napló beolvadt kommunikációba
       case "karteritesek":
         return <TabKarteritesek {...props} />;
       case "lmra":
