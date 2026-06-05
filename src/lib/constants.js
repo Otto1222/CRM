@@ -102,7 +102,6 @@ export const WORKFLOW_STATUSES = [
   "Meghiúsult",
 ];
 
-export const ALL_STATUSES = ["Összes","Folyamatban","Ütemezett","Kész","Meghiúsult"];
 
 // ─── NAVIGÁCIÓ ────────────────────────────────────────────────
 export const NAV_PAGES = [

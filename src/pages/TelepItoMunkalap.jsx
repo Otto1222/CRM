@@ -563,8 +563,6 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   const [progressMsg, setProgressMsg] = useState("");
   const [megjegyzes, setMegjegyzes] = useState(m.megjegyzes||"");
 
-  // Elszámolási adatok – a projektből örökölve, de a telepítő módosíthatja
-  const initEa = m.elszamolasAdatok || {};
   const proj = data.projektek?.find(p => p.id === m.projektId);
 
   // Napi jelenlét
@@ -589,15 +587,6 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
     }
     refreshJelenlet();
   }
-
-  const [elszamolasAdatok, setElszamolasAdatok] = useState({
-    panelDb:       initEa.panelDb       ?? proj?.napelemDb    ?? 0,
-    inverterDb:    initEa.inverterDb    ?? proj?.inverterDb   ?? 0,
-    akkumulatorDb: initEa.akkumulatorDb ?? proj?.akkumulatorDb ?? 0,
-    smartMeterDb:  initEa.smartMeterDb  ?? proj?.smartMeterDb  ?? 0,
-    tavKm:         initEa.tavKm         ?? proj?.penzugy?.tavKm ?? 0,
-    anyagkoltság:  initEa.anyagkoltság  ?? 0,
-  });
 
   const [vbf, setVbf] = useState(()=>loadLocal(`vbf_${m.id}`)||VBF_TEMPLATE);
   const [fotok,setFotok] = useState(()=>loadLocal(`fotok_${m.id}`)||Object.fromEntries(FOTO_KAT.map(k=>[k.id,[]])));

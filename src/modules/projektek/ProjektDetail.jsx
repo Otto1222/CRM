@@ -14,7 +14,6 @@ import TabKommunikacio from "./tabs/TabKommunikacio.jsx";
 import TabKarteritesek from "./tabs/TabKarteritesek.jsx";
 import TabAjanlatok    from "./tabs/TabAjanlatok.jsx";
 // Legacy imports (back-compat ha valaki direktben hívja)
-import TabNaplo        from "./tabs/TabNaplo.jsx";
 import TabRiport       from "./tabs/TabRiport.jsx";
 import TabLmra         from "./tabs/TabLmra.jsx";
 

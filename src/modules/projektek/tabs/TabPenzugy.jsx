@@ -173,7 +173,7 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
                 ["Csapat bér",        kalk.csapatBer,         "#DC2626"],
                 kalk.alvallalkozoiBer > 0 ? [`Alvállalkozói díj (${csapat?.nev || ""})`, kalk.alvallalkozoiBer, "#9333EA"] : null,
                 kalk.utikoltség > 0  ? ["Km-díj",             kalk.utikoltség,        "#DC2626"] : null,
-                kalk.anyagkoltség > 0? ["Anyagköltség",       kalk.anyagkoltség,      "#DC2626"] : null,
+                kalk.anyagkoltség > 0 ? [penzugy.keziAnyagkoltság != null ? "Anyagköltség (kézi)" : "Anyagköltség (munkalapokból)", kalk.anyagkoltság, "#DC2626"] : null,
                 ["Összes ktg (terv)", kalk.osszesKolts,       "#DC2626"],
                 ["Haszon",            kalk.haszon,            kalk.haszon >= 0 ? "#059669" : "#DC2626"],
               ].filter(Boolean).map(([l, v, c]) => (

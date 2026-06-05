@@ -8,6 +8,7 @@
 
 import { loadFovallalkozok, loadSzabalyok } from "../modules/fovallalkozok/fovallalkozo.service.js";
 import { calcOsszesSzabaly, findEgyezoSzabalyok, calcSzabalyOsszeg, szabalyLeiras, ELSZAMOLASI_MODOK } from "../modules/fovallalkozok/elszamolasiMotor.js";
+import { calcAnyagkoltseg } from "../lib/anyagtorzs.js";
 import { loadKarteritesek } from "../lib/karterites.js";
 import { getCsapat, loadAvSzabalyok, calcCsapatAlvallalkozoiBer, getAvSzabalyokByCsapat } from "../modules/csapatok/csapat.service.js";
 
@@ -136,8 +137,35 @@ export function calcEsmentProjektPenzugy(projekt) {
   if (keziKartérités !== null && keziKartérités !== undefined) kartérités = Number(keziKartérités);
 
   // ── Anyagköltség & Útiköltség ────────────────────────────
-  let anyagkoltság = Number(penzugy.keziAnyagkoltság) || 0;
-  let utikoltség   = (keziUtikoltség !== null && keziUtikoltség !== undefined) ? Number(keziUtikoltség) : 0;
+  // Ha van kézi felülírás → azt használjuk
+  // Ha nincs → összegezzük a projekt munkalapjainak anyagkoltsegeTotal mezőjét
+  let anyagkoltság = 0;
+  if (keziAnyagkoltság !== null && keziAnyagkoltság !== undefined) {
+    anyagkoltság = Number(keziAnyagkoltság);
+  } else {
+    try {
+      const osszesMunkalapok = JSON.parse(localStorage.getItem("munkalapok") || "[]");
+      const projektMls = osszesMunkalapok.filter(
+        m => m.projektId === projekt?.id || (projekt?.munkalapIds || []).includes(m.id)
+      );
+      // 1. Rögzített anyagkoltsegeTotal (telepítő mentette lezáráskor)
+      const mlAnyagKolts = projektMls.reduce(
+        (s, m) => s + (Number(m.anyagkoltsegeTotal) || 0), 0
+      );
+      if (mlAnyagKolts > 0) {
+        anyagkoltság = mlAnyagKolts;
+      } else {
+        // 2. Fallback: felhasznalt anyagok localStorage kulcsokból
+        for (const m of projektMls) {
+          try {
+            const felh = JSON.parse(localStorage.getItem(`felh_anyagok_${m.id}`) || "[]");
+            anyagkoltság += calcAnyagkoltseg(felh);
+          } catch {}
+        }
+      }
+    } catch {}
+  }
+  let utikoltség = (keziUtikoltség !== null && keziUtikoltség !== undefined) ? Number(keziUtikoltség) : 0;
 
   // ── Csapat bér (FV oldalon) ──────────────────────────────
   // Ha nincs AV szabály és a FV szabályban volt csapatBerTipus (backward compat), olvassuk ki

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import {
-  LayoutDashboard, Users, ClipboardList, ScrollText, Calendar, Settings,
+  LayoutDashboard, Users, ClipboardList, Calendar, Settings,
   LogOut, Building2, Receipt, FileText, BarChart3, BookOpen, X,
-  AlertTriangle, LayoutTemplate, ChevronDown, TrendingUp, FolderOpen,
+  AlertTriangle, LayoutTemplate, ChevronDown, TrendingUp,
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getAllowedPages } from "../lib/roles.js";
@@ -26,9 +26,8 @@ const NAV_GROUPS = [
     label: "Értékesítés",
     icon: TrendingUp,
     children: [
-      { id: "ugyfelek",    label: "Ügyfelek",    icon: Users },
-      { id: "arajanlatok", label: "Ajánlatok",   icon: ClipboardList },
-      { id: "szerzodesek", label: "Szerződések", icon: ScrollText },
+      { id: "ugyfelek",    label: "Ügyfelek",  icon: Users },
+      { id: "arajanlatok", label: "Ajánlatok", icon: ClipboardList },
     ],
   },
   {
@@ -42,12 +41,6 @@ const NAV_GROUPS = [
     id: "naptar",
     label: "Naptár",
     icon: Calendar,
-  },
-  {
-    type: "single",
-    id: "dokumentumok",
-    label: "Dokumentumok",
-    icon: FolderOpen,
   },
   {
     type: "group",
