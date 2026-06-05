@@ -16,22 +16,30 @@ export function getProjektTipus(forras) {
   return forras === "fővállalkozói" ? "Fővállalkozói projekt" : "Saját projekt";
 }
 
+// Projekt csak a kivitelezési fázistól létezik.
+// A Felmérésre vár / Felmérve / Ajánlat kiküldve / Elfogadva státuszok
+// az Ajánlat modulba kerültek – projektbe nem kerülhetnek.
 export const PROJEKT_STATUSZOK = [
-  { id: "Felmérésre vár",            szin: "#0EA5E9", bg: "#F0F9FF" },
-  { id: "Felmérve",                  szin: "#6366F1", bg: "#EEF2FF" },
-  { id: "Ajánlat kiküldve",          szin: "#D97706", bg: "#FFFBEB" },
-  { id: "Elbukott Projekt",          szin: "#DC2626", bg: "#FEF2F2" },
-  { id: "Elfogadva",                 szin: "#059669", bg: "#ECFDF5" },
-  { id: "Kivitelezésre vár",         szin: "#EA580C", bg: "#FFF7ED" },
-  { id: "Kivitelezés alatt",         szin: "#2563EB", bg: "#EFF6FF" },
-  { id: "Elkészült",                 szin: "#0891B2", bg: "#ECFEFF" },
-  { id: "Ellenőrzésre vár",          szin: "#8B5CF6", bg: "#F5F3FF" },
-  { id: "Hiánypótlás",               szin: "#B45309", bg: "#FFFBEB" },
-  { id: "Ellenőrizve minden rendben",szin: "#0369A1", bg: "#F0F9FF" },
-  { id: "Leszámlázva",               szin: "#15803D", bg: "#F0FDF4" },
-  { id: "Kifizetve",                 szin: "#166534", bg: "#DCFCE7" },
-  { id: "Lezárva",                   szin: "#475569", bg: "#F8FAFC" },
+  { id: "Kivitelezésre vár",          szin: "#EA580C", bg: "#FFF7ED" },
+  { id: "Kivitelezés alatt",          szin: "#2563EB", bg: "#EFF6FF" },
+  { id: "Elkészült",                  szin: "#0891B2", bg: "#ECFEFF" },
+  { id: "Ellenőrzésre vár",           szin: "#8B5CF6", bg: "#F5F3FF" },
+  { id: "Hiánypótlás",                szin: "#B45309", bg: "#FFFBEB" },
+  { id: "Ellenőrizve minden rendben", szin: "#0369A1", bg: "#F0F9FF" },
+  { id: "Leszámlázva",                szin: "#15803D", bg: "#F0FDF4" },
+  { id: "Kifizetve",                  szin: "#166534", bg: "#DCFCE7" },
+  { id: "Lezárva",                    szin: "#475569", bg: "#F8FAFC" },
+  { id: "Felfüggesztve",              szin: "#7C3AED", bg: "#F5F3FF" },
+  { id: "Elbukott Projekt",           szin: "#DC2626", bg: "#FEF2F2" },
 ];
+
+// Régi státuszok → migrációs map (backward compat meglévő adatokhoz)
+export const LEGACY_STATUS_MAP = {
+  "Felmérésre vár": "Kivitelezésre vár",
+  "Felmérve":       "Kivitelezésre vár",
+  "Ajánlat kiküldve": "Kivitelezésre vár",
+  "Elfogadva":      "Kivitelezésre vár",
+};
 
 export const PROJEKT_TIPUSOK = [
   "Napelem telepítés",
@@ -60,7 +68,7 @@ export const PROJEKT_SCHEMA = {
   telepitesiCim:       "",
   // Projekt adatok
   tipus:               "Napelem telepítés",
-  status:              "Felmérésre vár",
+  status:              "Kivitelezésre vár",
   // Műszaki adatok
   napelemDb:           0,
   inverterDb:          0,

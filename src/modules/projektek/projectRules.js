@@ -1,6 +1,6 @@
 export const PROJECT_STATUSES_VISIBLE_TO_INSTALLER = [
-  "Felmérésre vár",
   "Kivitelezésre vár",
+  "Kivitelezés alatt",
   "Bővítés",
   "Hibajavítás",
   "Szerviz",
@@ -71,7 +71,6 @@ export function validateWorkorderBeforeSave(workorder) {
 }
 
 export function getInitialWorkorderTypeByProjectStatus(status) {
-  if (status === "Felmérésre vár")    return "Felmérés";
   if (status === "Kivitelezésre vár") return "Kivitelezés";
   if (status === "Bővítés")           return "Bővítés";
   if (status === "Hibajavítás")       return "Hibajavítás";

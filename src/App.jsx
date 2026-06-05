@@ -342,6 +342,7 @@ export default function App() {
               <ProjektekPage
                 data={data}
                 currentUser={user}
+                onNav={setPage}
                 onNavigateMunkalap={(m) => {
                   setPage("munkalapok");
                   setSel(m);

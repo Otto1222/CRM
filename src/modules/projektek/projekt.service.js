@@ -2,15 +2,24 @@
  * projekt.service.js
  * Projekt CRUD – minden projektművelet itt.
  */
-import { PROJEKT_SCHEMA } from "./projekt.schema.js";
+import { PROJEKT_SCHEMA, LEGACY_STATUS_MAP } from "./projekt.schema.js";
 import { createBackup } from "../../lib/backupService.js";
 import { driveSave } from "../../lib/driveApi.js";
 const KEY = "projektek";
 const COUNTER_KEY = "edi_projekt_sorszam_counter";
 // ─── Alap CRUD ────────────────────────────────────────────────
+
+// Régi státuszú projektek automatikus migrálása (egyszeri, adatvesztés nélkül)
+function migrateProjekt(p) {
+  const ujStatus = LEGACY_STATUS_MAP[p.status];
+  if (!ujStatus) return p;
+  return { ...p, status: ujStatus };
+}
+
 export function loadProjektek() {
   try {
-    return JSON.parse(localStorage.getItem(KEY) || "[]");
+    const raw = JSON.parse(localStorage.getItem(KEY) || "[]");
+    return raw.map(migrateProjekt);
   } catch {
     return [];
   }
