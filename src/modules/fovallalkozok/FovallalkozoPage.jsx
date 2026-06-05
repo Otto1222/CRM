@@ -60,10 +60,22 @@ function SzabalyForm({ szabaly, fovallalkoziId, onSave, onClose }) {
               {munkatipusok.length === 0 && PROJEKT_TIPUSOK.map(t=><option key={t}>{t}</option>)}
             </select>
           </FL>
-          <FL label="Aktív" half><label style={{ display:"flex", alignItems:"center", gap:8, paddingTop:8, cursor:"pointer" }}>
-            <input type="checkbox" checked={f.aktiv} onChange={e=>u("aktiv",e.target.checked)} style={{ width:16,height:16 }}/>
-            <span style={{ fontSize:13 }}>{f.aktiv?"Aktív":"Inaktív"}</span>
-          </label></FL>
+          <FL label="Aktív" half>
+            <div onClick={() => u("aktiv", !f.aktiv)}
+              style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer", padding:"8px 0" }}>
+              <div style={{ width:44, height:24, borderRadius:12, position:"relative",
+                background: f.aktiv ? "#059669" : "#CBD5E1", transition:"background .2s", flexShrink:0 }}>
+                <div style={{ position:"absolute", top:2, left: f.aktiv ? 22 : 2, width:20, height:20,
+                  borderRadius:"50%", background:"#fff", transition:"left .2s", boxShadow:"0 1px 3px rgba(0,0,0,.2)" }}/>
+              </div>
+              <span style={{ fontSize:14, fontWeight:700, color: f.aktiv ? "#059669" : "#DC2626" }}>
+                {f.aktiv ? "✓ Aktív" : "✗ Inaktív"}
+              </span>
+            </div>
+            {!f.aktiv && (
+              <p style={{ fontSize:11, color:"#DC2626", margin:"2px 0 0" }}>⚠️ Inaktív szabály nem kerül felhasználásra!</p>
+            )}
+          </FL>
 
           <FL label="Nettó bevétel (Ft)">
             <input type="number" value={f.nettoBevitel} onChange={e=>u("nettoBevitel",Number(e.target.value))} style={inp}/>
@@ -254,6 +266,10 @@ function FvSor({ fv, onUpdate, onDelete }) {
                   </div>
                 </div>
                 <div style={{ display:"flex", gap:5, flexShrink:0 }}>
+                  <button onClick={()=>{ updateSzabaly(sz.id, { aktiv: !sz.aktiv }); refresh(); }}
+                    style={{ padding:"4px 8px", background: sz.aktiv ? "#FEF2F2" : "#ECFDF5", color: sz.aktiv ? "#DC2626" : "#059669", border:"none", borderRadius:6, cursor:"pointer", fontSize:11, fontWeight:700 }}>
+                    {sz.aktiv ? "Inaktivál" : "✓ Aktivál"}
+                  </button>
                   <button onClick={()=>setSzerkSz(sz)} style={{ padding:"4px 8px", background:"#EFF6FF", color:"#2563EB", border:"none", borderRadius:6, cursor:"pointer", fontSize:11 }}>Szerkeszt</button>
                   <button onClick={()=>{ deleteSzabaly(sz.id); refresh(); }} style={{ padding:"4px 7px", background:"#FEF2F2", color:"#DC2626", border:"none", borderRadius:6, cursor:"pointer" }}><Trash2 size={11}/></button>
                 </div>
