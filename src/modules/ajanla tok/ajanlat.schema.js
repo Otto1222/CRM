@@ -7,23 +7,49 @@ export const AJANLAT_STATUSZOK = [
   { id: "Lejárt",          szin: "#9CA3AF", bg: "#F3F4F6" },
 ];
 
-// Ügyfélnek látható fő tételek – ez a 3-szintű rendszer Level 3 (customer view)
+// 11 ügyfélnek látható fő tétel – 7 termékes + 4 összesített
 export const FO_TETELEK = [
-  { id: "napelem_rendszer", label: "Napelem rendszer",               osszetett: false },
-  { id: "tartoszerkezet",   label: "Tartószerkezet",                osszetett: false },
-  { id: "inverter",         label: "Inverter",                      osszetett: false },
-  { id: "energia_mero",     label: "Energia mérő",                  osszetett: false },
-  { id: "akku_vezeto",      label: "Akkumulátor vezérlő egység",    osszetett: false },
-  { id: "akku_egyseg",      label: "Akkumulátor egység",            osszetett: false },
-  { id: "akku_kiegeszito",  label: "Akkumulátor kiegészítők",       osszetett: false },
-  { id: "vedelmi_eszkozok", label: "Védelmi eszközök",              osszetett: true  },
-  { id: "villanyszereles",  label: "Villanyszerelési anyagok",      osszetett: true  },
-  { id: "ugyintézes",       label: "Ügyintézés és engedélyeztetés", osszetett: false },
-  { id: "kivi_beuzem",      label: "Kivitelezés és beüzemelés",     osszetett: false, kivi: true },
+  { id: "napelem_rendszer", label: "Napelem rendszer",               termek: true,  osszetett: false },
+  { id: "tartoszerkezet",   label: "Tartószerkezet",                termek: true,  osszetett: false },
+  { id: "inverter",         label: "Inverter",                      termek: true,  osszetett: false },
+  { id: "energia_mero",     label: "Energia mérő",                  termek: true,  osszetett: false },
+  { id: "akku_vezeto",      label: "Akkumulátor vezérlő egység",    termek: true,  osszetett: false },
+  { id: "akku_egyseg",      label: "Akkumulátor egység",            termek: true,  osszetett: false },
+  { id: "akku_kiegeszito",  label: "Akkumulátor kiegészítők",       termek: true,  osszetett: false },
+  {
+    id: "vedelmi_eszkozok", label: "Védelmi eszközök",             termek: false, osszetett: true,
+    ugyfel_leiras_default: "DC 1000V túlfeszültség levezetés, AC túlfeszültség levezetés, leválasztó kapcsolók, kismegszakítók.",
+  },
+  {
+    id: "villanyszereles",  label: "Villanyszerelési anyagok",      termek: false, osszetett: true,
+    ugyfel_leiras_default: "AC/DC kábelek, kábelcsatorna, MÜ II cső, idomok, apróanyag.",
+  },
+  {
+    id: "ugyintézes",       label: "Ügyintézés és engedélyeztetés", termek: false, osszetett: true,
+    ugyfel_leiras_default: "Műszaki terv és csatlakozási dokumentáció elkészítése, áramszolgáltatói ügyintézés, engedélyeztetés, áramszolgáltatói jóváhagyás.",
+  },
+  {
+    id: "kivi_beuzem",      label: "Kivitelezés és beüzemelés",     termek: false, osszetett: false, kivi: true,
+    ugyfel_leiras_default: "Telepítés munkadíj, próbaüzem, 3 év kivitelezés garancia.",
+  },
 ];
 
 export function makeFoTetelek() {
-  return FO_TETELEK.map(f => ({ id: f.id, label: f.label, aktiv: false, netto_osszeg: 0 }));
+  return FO_TETELEK.map(f => ({
+    id:               f.id,
+    label:            f.label,
+    aktiv:            false,
+    // termék mezők
+    anyagtorzs_id:    null,
+    tipus:            "",
+    mennyiseg:        "",
+    egyseg:           "db",
+    netto_egysegar:   0,
+    netto_osszeg:     0,
+    // ügyfél / belső szöveg
+    ugyfel_leiras:    f.ugyfel_leiras_default || "",
+    belso_megjegyzes: "",
+  }));
 }
 
 export const DEFAULT_KIVI_KALKULATOR = {
@@ -46,18 +72,17 @@ export const AJANLAT_SCHEMA = {
   clientCim:     "",
   nev:           "",
   status:        "Piszkozat",
-  osszeg:        0,         // nettó összeg (auto-számolt, backward compat mezőként is megmarad)
+  osszeg:        0,
   ervenyesseg:   "",
   megjegyzes:    "",
   projektId:     null,
   keszitette:    "",
   createdAt:     "",
   updatedAt:     "",
-  // ─── 3-szintű kalkulátor ───────────────────────────────────
   afa_szazalek:     27,
-  fo_tetelek:       [],   // makeFoTetelek() – ügyfélnek látható sorok
-  reszlet_tetelek:  [],   // belső tételek: vedelmi_eszkozok + villanyszereles
-  kivi_kalkulator:  {},   // DEFAULT_KIVI_KALKULATOR alapján
+  fo_tetelek:       [],
+  reszlet_tetelek:  [],
+  kivi_kalkulator:  {},
 };
 
 export function getAjanlatStatusConfig(statusId) {
@@ -83,16 +108,27 @@ export function computeKiviOsszeg(kalk) {
   );
 }
 
-// Minden fő-tétel aktuális nettó értéke (összetett = auto-számolt)
 export function computeFoTetelek(fo_tetelek = [], reszlet_tetelek = [], kivi_kalkulator = {}) {
   return fo_tetelek.map(t => {
     const def = FO_TETELEK.find(f => f.id === t.id);
     let netto = Number(t.netto_osszeg) || 0;
-    if (def?.osszetett) netto = computeOsszetettOsszeg(reszlet_tetelek, t.id);
-    if (t.id === "kivi_beuzem" && !kivi_kalkulator.kezi) {
-      const kiviVal = computeKiviOsszeg(kivi_kalkulator);
-      if (kiviVal !== null) netto = kiviVal;
+
+    if (def?.osszetett) {
+      // Ha vannak részlet-tételek, azok összege az irányadó; backward compat: ha nincs, a tárolt értéket tartjuk
+      const rSum = computeOsszetettOsszeg(reszlet_tetelek, t.id);
+      netto = rSum > 0 ? rSum : netto;
+    } else if (def?.kivi) {
+      if (!kivi_kalkulator.kezi) {
+        const kiviVal = computeKiviOsszeg(kivi_kalkulator);
+        if (kiviVal !== null) netto = kiviVal;
+      }
+    } else if (def?.termek) {
+      // Termék: ha mennyiség és egységár is megadott, auto-számol
+      const db = Number(t.mennyiseg) || 0;
+      const ar = Number(t.netto_egysegar) || 0;
+      if (db > 0 && ar > 0) netto = db * ar;
     }
+
     return { ...t, netto_osszeg: netto };
   });
 }
