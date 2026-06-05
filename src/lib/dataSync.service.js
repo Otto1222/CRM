@@ -12,6 +12,7 @@ export const SYNC_COLLECTIONS = [
   "karteritesek",
   "sablonok",
   "csapatok",
+  "csapat_tagok",
   "crm_napelem_users",
   "szamlak",
 ];
