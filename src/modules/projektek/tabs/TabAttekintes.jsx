@@ -1,7 +1,4 @@
-import { C, FONT } from "../../../lib/constants.js";
-import { calcProjektPenzugy } from "../../../lib/costEngine.js";
-import { calcEsmentProjektPenzugy } from "../../../services/workOrderFinancial.service.js";
-import { ft } from "../../../lib/helpers.js";
+import { FONT } from "../../../lib/constants.js";
 import { getStatusConfig } from "../projekt.schema.js";
 import { formatProjectType } from "../../../lib/projectTypeFormatter.js";
 
@@ -15,12 +12,8 @@ function Row({ label, value, bold }) {
   );
 }
 
-export default function TabAttekintes({ projekt, munkalapok }) {
-  const mls     = (munkalapok||[]).filter(m => m.projektId === projekt.id || projekt.munkalapIds?.includes(m.id));
-  const penz    = calcProjektPenzugy(mls);
-  const kalk    = projekt.penzugy?.fovallalkoziId ? calcEsmentProjektPenzugy(projekt) : null;
-  const stCfg   = getStatusConfig(projekt.status);
-  const aktiv   = mls.filter(m=>!["Lezárva","Számlázva","Ellenőrzés alatt"].includes(m.status)).length;
+export default function TabAttekintes({ projekt }) {
+  const stCfg = getStatusConfig(projekt.status);
 
   return (
     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:16, padding:"20px 0" }}>
@@ -41,41 +34,10 @@ export default function TabAttekintes({ projekt, munkalapok }) {
         </div>
       </div>
 
-      <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+      <div>
+        <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:12 }}>Státusz</p>
         <div style={{ background: stCfg.bg, border:`1.5px solid ${stCfg.szin}40`, borderRadius:12, padding:"14px 16px" }}>
-          <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:8 }}>Státusz</p>
           <span style={{ background: stCfg.szin, color:"#fff", borderRadius:20, padding:"4px 14px", fontSize:13, fontWeight:700 }}>{projekt.status}</span>
-        </div>
-
-        <div style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:12, padding:"14px 16px" }}>
-          <p style={{ fontSize:11, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.7, marginBottom:8 }}>Ütemezés</p>
-          <Row label="Terv. kezdés"     value={projekt.tervezettKezdes}/>
-          <Row label="Terv. befejezés"  value={projekt.tervezettBefejezes}/>
-          <Row label="Valós kezdés"     value={projekt.valoKezdes}/>
-          <Row label="Valós befejezés"  value={projekt.valoBefejezes}/>
-          <Row label="Ledolgozott óra"  value={projekt.elvegzettMunkaora ? projekt.elvegzettMunkaora + " óra" : null}/>
-        </div>
-
-        {/* ── Pénzügy összefoglaló – részletek a Pénzügy tabon ── */}
-        {kalk && (
-          <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 12, padding: "14px 16px" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#059669", textTransform: "uppercase", letterSpacing: .7, marginBottom: 8 }}>
-              💰 Kalkulált bevétel – {kalk.fovallalkoNev}
-            </p>
-            <Row label="Nettó bevétel (terv)"  value={kalk.nettoBevitel > 0 ? ft(kalk.nettoBevitel) : null} bold />
-            <Row label="Várható haszon"         value={kalk.nettoBevitel > 0 ? ft(kalk.haszon) : null} />
-            <Row label="Haszonkulcs"             value={kalk.haszonPct !== null ? kalk.haszonPct + "%" : null} />
-            {kalk.hianyosTetelek?.length > 0 && (
-              <p style={{ fontSize: 11, color: "#D97706", marginTop: 6 }}>⚠️ Hiányos konfig: {kalk.hianyosTetelek.join(", ")}</p>
-            )}
-          </div>
-        )}
-
-        <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE", borderRadius:12, padding:"14px 16px" }}>
-          <p style={{ fontSize:11, fontWeight:700, color:"#1D4ED8", textTransform:"uppercase", letterSpacing:.7, marginBottom:8 }}>Munkalapok</p>
-          <Row label="Összesen"   value={mls.length + " db"}/>
-          <Row label="Aktív"      value={aktiv > 0 ? aktiv + " db" : null}/>
-          <Row label="Lezárt"     value={(mls.length - aktiv) + " db"}/>
         </div>
       </div>
     </div>
