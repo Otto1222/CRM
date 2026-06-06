@@ -23,6 +23,7 @@ import ProjektekPage from "./modules/projektek/ProjektekPage.jsx";
 import CsapatokPage from "./modules/csapatok/CsapatokPage.jsx";
 import SzamlakPage from "./modules/szamlak/SzamlakPage.jsx";
 import PwaInstallBanner from "./components/PwaInstallBanner.jsx";
+import DriveProgressBar from "./components/DriveProgressBar.jsx";
 import RiportokPage from "./pages/RiportokPage.jsx";
 import NaptarPage from "./pages/NaptarPage.jsx";
 import KarteritesekPage from "./pages/KarteritesekTab.jsx";
@@ -95,6 +96,7 @@ export default function App() {
   const [sel, setSel] = useState(null);
   const [data, setData] = useState(loadInitialData);
   const [drive, setDrive] = useState("idle");
+  const [driveProgress, setDriveProgress] = useState({ active: false });
   const [defaultPwWarning, setDefaultPwWarning] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [ujMunkalapInit, setUjMunkalapInit] = useState(null);
@@ -216,14 +218,19 @@ export default function App() {
 
     if (driveAvailable()) {
       setDrive("saving");
+      setDriveProgress({ active: true, percent: 10, done: 0, total: 1, collection, status: "saving" });
       try {
         const res = await driveSave(collection, { [collection]: items });
-        setDrive(res?.ok ? "ok" : "error");
+        const ok = res?.ok;
+        setDrive(ok ? "ok" : "error");
+        setDriveProgress({ active: true, percent: 100, done: 1, total: 1, collection, status: ok ? "ok" : "error" });
       } catch (e) {
         console.warn("[App Drive save]", e);
         setDrive("error");
+        setDriveProgress({ active: true, percent: 100, done: 1, total: 1, collection, status: "error" });
       }
       setTimeout(() => setDrive("idle"), 2500);
+      setTimeout(() => setDriveProgress({ active: false }), 1800);
     }
 
     window.dispatchEvent(
@@ -235,16 +242,29 @@ export default function App() {
 
   async function handleSyncAllToDrive() {
     setDrive("saving");
+    setDriveProgress({ active: true, percent: 0, done: 0, total: 0, collection: "", status: "saving" });
 
     try {
-      const { allOk } = await syncAllToDrive();
+      const { allOk } = await syncAllToDrive((p) => {
+        setDriveProgress({
+          active: true,
+          percent: p.percent,
+          done: p.done,
+          total: p.total,
+          collection: p.collection,
+          status: "saving",
+        });
+      });
       setDrive(allOk ? "ok" : "error");
+      setDriveProgress(prev => ({ ...prev, active: true, percent: 100, status: allOk ? "ok" : "error" }));
     } catch (e) {
       console.warn("[App syncAllToDrive]", e);
       setDrive("error");
+      setDriveProgress(prev => ({ ...prev, active: true, percent: 100, status: "error" }));
     }
 
     setTimeout(() => setDrive("idle"), 3000);
+    setTimeout(() => setDriveProgress({ active: false }), 2400);
   }
 
   async function handleNewMunkalap(formData) {
@@ -478,6 +498,7 @@ export default function App() {
       )}
 
       <PwaInstallBanner />
+      <DriveProgressBar progress={driveProgress} />
     </div>
   );
 }
