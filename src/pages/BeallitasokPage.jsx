@@ -18,6 +18,7 @@ import SablonKezelo from "./SablonKezelo";
 import BackupKezelo from "./BackupKezelo";
 import CsapatokPage from "../modules/csapatok/CsapatokPage";
 import AnyagtorzsPage from "./AnyagtorzsPage";
+import { migrateMunkalapSzamok } from "../lib/munkalapSzam";
 
 const MENU_ITEMS = [
   {
@@ -887,7 +888,6 @@ function VbfPdfSablonBeallitas() {
 }
 
 // ─── Munkalapszám Migráció ────────────────────────────────────
-import { migrateMunkalapSzamok } from "../lib/munkalapSzam";
 
 function MunkalapSzamMigracio() {
   const [eredmeny, setEredmeny] = useState(null);
