@@ -11,20 +11,16 @@ import TabMunkalapok   from "./tabs/TabMunkalapok.jsx";
 import TabPenzugy      from "./tabs/TabPenzugy.jsx";
 import TabDokumentumok from "./tabs/TabDokumentumok.jsx";
 import TabKommunikacio from "./tabs/TabKommunikacio.jsx";
-import TabKarteritesek from "./tabs/TabKarteritesek.jsx";
-import TabAjanlatok    from "./tabs/TabAjanlatok.jsx";
 // Legacy imports (back-compat ha valaki direktben hívja)
 import TabRiport       from "./tabs/TabRiport.jsx";
 
-// ── 6 tab az éles teszthez – minden üzleti funkció megvan ──────
+// ── 5 tab végleges struktúra ──────────────────────────────────
 const TABS = [
-  { id: "attekintes",   label: "Áttekintés",  icon: "📊" },
-  { id: "munkalapok",   label: "Munkalapok",  icon: "🔧" },
-  { id: "penzugy",      label: "Pénzügy",     icon: "💰" },
-  { id: "dokumentumok", label: "Dokumentumok",icon: "📁" },
-  { id: "karteritesek", label: "Kártérítések",icon: "⚠️" },
-  { id: "naplo",        label: "Napló",       icon: "💬" },
-  { id: "ajanlatok",    label: "Árajánlat",   icon: "📋" },
+  { id: "attekintes",   label: "Áttekintés",   icon: "📊" },
+  { id: "munkalapok",   label: "Munkalapok",   icon: "🔧" },
+  { id: "penzugy",      label: "Pénzügy",      icon: "💰" },
+  { id: "dokumentumok", label: "Projekt mappa", icon: "🗂️" },
+  { id: "naplo",        label: "Projektnapló", icon: "💬" },
 ];
 
 export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateMunkalap, currentUser, onNewMunkalapForProjekt }) {
@@ -72,8 +68,6 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
     switch (tab) {
       case "attekintes":
         return <TabAttekintes {...props} />;
-      case "ajanlatok":
-        return <TabAjanlatok {...props} />;
       case "munkalapok":
         return <TabMunkalapok {...props} onNavigate={onNavigateMunkalap} onNewMunkalap={onNewMunkalapForProjekt ? () => onNewMunkalapForProjekt(lokalProjekt) : undefined} />;
       case "penzugy":
@@ -88,8 +82,6 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
       case "naplo":
       case "kommunikacio":
         return <TabKommunikacio {...props} />;
-      case "karteritesek":
-        return <TabKarteritesek {...props} />;
       case "utemezas":
         // Ütemezés beolvadt Áttekintésbe – dátumok ott szerkeszthetők
         return <TabAttekintes {...props} />;
