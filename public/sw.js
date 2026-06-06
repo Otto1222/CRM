@@ -1,7 +1,7 @@
 // CRM Napelem – Service Worker
 // Stratégia: hashed Vite assets → cache-first; minden más → network-first + cache fallback
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `crm-napelem-${CACHE_VERSION}`;
 
 // Az alkalmazás shell – ezeket tároljuk azonnal telepítéskor
