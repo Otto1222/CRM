@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink, Upload, CheckCircle2, Save, Check, X, UserPlus, Pencil,
+  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink, Upload, CheckCircle2, Save, Check, X, UserPlus, Pencil, AlertTriangle, Package,
 } from "lucide-react";
 import { loadLocal, saveLocal } from "../lib/localDb";
 import { ft } from "../lib/helpers";
@@ -139,22 +139,6 @@ const MENU_ITEMS = [
     color: C.accent,
     bg: C.accentLight,
   },
-  {
-    id: "anyagtorzs",
-    label: "Anyagtörzs",
-    desc: "Anyag- és eszközkatalógus, árjegyzék az árajánlatokhoz",
-    icon: Package,
-    color: C.success,
-    bg: C.successLight,
-  },
-  {
-    id: "ajanlat_sablonok",
-    label: "Ajánlati sablonok",
-    desc: "Elmentett tételsor-sablonok az árajánlat-készítőhöz",
-    icon: BookTemplate,
-    color: C.accent,
-    bg: C.accentLight,
-  },
 ];
 
 export default function BeallitasokPage({ currentUser }) {
@@ -280,23 +264,6 @@ export default function BeallitasokPage({ currentUser }) {
         <div style={{ padding: "0 28px" }}>
           <JegyzokonyviBeallitasok />
         </div>
-      </div>
-    );
-  }
-
-  if (aktiv === "anyagtorzs") {
-    return (
-      <div>
-        <BackBtn onClick={() => setAktiv(null)} label="Anyagtörzs" />
-        <AnyagtorzsBeallitas />
-      </div>
-    );
-  }
-  if (aktiv === "ajanlat_sablonok") {
-    return (
-      <div>
-        <BackBtn onClick={() => setAktiv(null)} label="Ajánlati sablonok" />
-        <AjanlatSablonokBeallitas />
       </div>
     );
   }
