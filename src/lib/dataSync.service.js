@@ -15,6 +15,7 @@ export const SYNC_COLLECTIONS = [
   "csapat_tagok",
   "crm_napelem_users",
   "szamlak",
+  "penzugyi",
 ];
 
 // ─── Drive szinkron napló (per-kollekció utolsó szinkron státusz) ─
@@ -96,14 +97,6 @@ export async function loadCollection(collection) {
  * @returns {{ localSaved: true, driveSaved: boolean, driveError: string|null, data }}
  */
 export async function saveCollection(collection, data) {
-  // KRITIKUS: üres adat soha ne írja felül a meglévő adatot
-  if (Array.isArray(data) && data.length === 0) {
-    const existing = loadLocal(collection);
-    if (Array.isArray(existing) && existing.length > 0) {
-      console.warn(`[dataSync] MEGAKADÁLYOZVA: üres [] felülírna ${existing.length} rekordot (${collection})`);
-      return { localSaved: false, driveSaved: false, driveError: "Üres adat – mentés megakadályozva", data };
-    }
-  }
   saveLocal(collection, data);
 
   let driveSaved  = false;
@@ -197,17 +190,15 @@ export async function syncAllToDrive(onProgress) {
 
   for (const collection of SYNC_COLLECTIONS) {
     if (typeof onProgress === "function") {
-      onProgress({ done, total, percent: Math.round((done / total) * 100), collection, phase: "saving" });
+      onProgress({ done, total, percent: Math.round((done / total) * 100), collection });
     }
-
     const data = loadLocal(collection) ?? emptyValue(collection);
     const res  = await saveCollection(collection, data);
     results[collection] = res;
     if (!res.driveSaved) allOk = false;
-
     done++;
     if (typeof onProgress === "function") {
-      onProgress({ done, total, percent: Math.round((done / total) * 100), collection, phase: "done" });
+      onProgress({ done, total, percent: Math.round((done / total) * 100), collection });
     }
   }
 
