@@ -1,52 +1,40 @@
-/**
- * TabDokumentumok.jsx – Dokumentumkezelés
- *
- * Csak valódi funkciók:
- * 1. Drive projekt mappa megnyitása / létrehozása
- * 2. VBF letöltés (ha van kitöltött VBF a munkalapokhoz)
- * 3. LMRA státusz + letöltés
- * 4. Fotók összesítő (hány fotó, melyik munkalap)
- * 5. Számlák feltöltési helye (Drive link)
- */
-
 import { useState } from "react";
 import {
-  ExternalLink, FolderPlus, RefreshCw, FileDown,
-  Camera, Shield, Receipt, FileText
+  ExternalLink, FolderPlus, RefreshCw, FileText,
+  Shield, Receipt, FileCheck, Layers, FolderOpen
 } from "lucide-react";
 import { C, FONT } from "../../../lib/constants.js";
 import {
   driveCreateProjektFolder, driveAvailable,
-  DRIVE_DB_FOLDER_ID,
 } from "../../../lib/driveApi.js";
 import { updateProjekt } from "../projekt.service.js";
 import { loadLocal } from "../../../lib/localDb.js";
 import { hasSablon, generateVbfDocx } from "../../../lib/vbfDocxService.js";
 import { hasLmra, loadLmra } from "../../../lib/lmraService.js";
 
-function SorGomb({ icon: Icon, label, onClick, href, color = "#2563EB", disabled }) {
-  const style = {
-    display: "flex", alignItems: "center", gap: 10,
-    padding: "12px 16px", borderRadius: 10,
-    background: "#fff", border: `1.5px solid ${C.border}`,
-    cursor: disabled ? "default" : "pointer",
-    fontFamily: FONT, fontSize: 13, fontWeight: 600,
-    color: disabled ? C.muted : C.text,
-    textDecoration: "none", width: "100%", boxSizing: "border-box",
-    opacity: disabled ? .5 : 1,
-  };
-  const inner = (
-    <>
-      <div style={{ width: 34, height: 34, borderRadius: 8, background: `${color}15`,
-        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <Icon size={17} color={color} />
+function KategoriaKartya({ icon: Icon, color, title, count, countLabel, children }) {
+  return (
+    <div style={{
+      background: "#fff", border: `1.5px solid ${C.border}`,
+      borderRadius: 12, padding: "14px 16px",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: children ? 10 : 0 }}>
+        <div style={{ width: 34, height: 34, borderRadius: 8, background: `${color}15`,
+          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Icon size={17} color={color} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: 0 }}>{title}</p>
+          {count !== undefined && (
+            <p style={{ fontSize: 11, color: C.muted, margin: "1px 0 0" }}>
+              {count > 0 ? `${count} ${countLabel}` : `Még nincs ${countLabel}`}
+            </p>
+          )}
+        </div>
       </div>
-      <span style={{ flex: 1 }}>{label}</span>
-      <ExternalLink size={13} color={C.muted} />
-    </>
+      {children}
+    </div>
   );
-  if (href) return <a href={href} target="_blank" rel="noreferrer" style={style}>{inner}</a>;
-  return <button onClick={onClick} disabled={disabled} style={{ ...style, border: `1.5px solid ${C.border}` }}>{inner}</button>;
 }
 
 export default function TabDokumentumok({ projekt, munkalapok = [] }) {
@@ -58,7 +46,6 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
     m => m.projektId === projekt.id || (projekt.munkalapIds || []).includes(m.id)
   );
 
-  // Drive mappa link – ha van driveFolderUrl tárolva, azt használjuk; különben keresés
   const driveUrl = projekt.driveFolderUrl
     || `https://drive.google.com/drive/search?q=${encodeURIComponent('"' + projekt.projektkod + '"')}`;
 
@@ -85,23 +72,16 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
   // LMRA-k
   const lmraMunkalapok = projektMunkalapok.filter(m => hasLmra(m.id));
 
-  // Fotók
-  const fotoSzam = projektMunkalapok.reduce((s, m) => {
-    const fotok = loadLocal(`fotok_${m.id}`);
-    if (!fotok) return s;
-    return s + Object.values(fotok).reduce((ss, arr) => ss + (Array.isArray(arr) ? arr.length : 0), 0);
-  }, 0);
-
   return (
-    <div style={{ paddingTop: 16, fontFamily: FONT, display: "flex", flexDirection: "column", gap: 8 }}>
+    <div style={{ paddingTop: 16, fontFamily: FONT, display: "flex", flexDirection: "column", gap: 12 }}>
 
       {/* ── Drive projekt mappa ── */}
       <div style={{ background: "#fff", border: `1.5px solid ${projekt.driveProjektMappa ? "#86EFAC" : C.border}`,
-        borderRadius: 12, padding: "14px 16px", marginBottom: 4 }}>
+        borderRadius: 12, padding: "14px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <div>
             <p style={{ fontWeight: 700, fontSize: 14, color: C.text, margin: 0 }}>
-              📁 Drive projekt mappa
+              🗂️ Drive projekt mappa
             </p>
             <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>
               {projekt.projektkod}{projekt.clientNev ? ` – ${projekt.clientNev}` : ""}
@@ -111,15 +91,12 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {/* Megnyitás gomb */}
           <a href={driveUrl} target="_blank" rel="noreferrer"
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 9,
               background: "#2563EB", color: "#fff", textDecoration: "none",
               fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
             <ExternalLink size={14} /> Megnyitás Drive-ban
           </a>
-
-          {/* Létrehozás / újra */}
           {driveOk && (
             <button onClick={handleMappaLetrehoz} disabled={loading}
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 9,
@@ -136,92 +113,93 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
         {!driveOk       && <p style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>Drive szinkron nincs konfigurálva.</p>}
       </div>
 
-      {/* ── VBF Letöltés ── */}
-      {vbfMunkalapok.length > 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .7, margin: 0 }}>
-            VBF Jegyzőkönyvek ({vbfMunkalapok.length} db)
-          </p>
-          {vbfMunkalapok.map(m => (
-            <SorGomb key={m.id} icon={FileText} label={`VBF – ${m.munkalapSzam || m.id}`}
-              color="#7C3AED"
-              onClick={() => {
-                if (!hasSablon()) { alert("Nincs VBF sablon feltöltve. Beállítások → VBF Sablon."); return; }
-                generateVbfDocx(m, projekt);
-              }} />
-          ))}
-        </div>
-      ) : (
-        <div style={{ background: "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px",
-          display: "flex", alignItems: "center", gap: 10, color: C.muted, fontSize: 13 }}>
-          <FileText size={16} color={C.muted} />
-          <span>Még nincs VBF – a munkalap lezárásakor keletkezik</span>
-        </div>
-      )}
+      {/* ── Dokumentum kategóriák ── */}
+      <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .7, margin: "4px 0 0" }}>
+        Dokumentum kategóriák
+      </p>
 
-      {/* ── LMRA Státusz ── */}
-      {lmraMunkalapok.length > 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .7, margin: 0 }}>
-            LMRA ({lmraMunkalapok.length} db)
-          </p>
-          {lmraMunkalapok.map(m => {
-            const lmra = loadLmra(m.id);
-            return (
-              <div key={m.id} style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "11px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-                <Shield size={16} color="#059669" style={{ flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "#166534", margin: 0 }}>{m.munkalapSzam || m.id}</p>
-                  <p style={{ fontSize: 11, color: "#16A34A", margin: "2px 0 0" }}>
-                    {lmra?.datum ? new Date(lmra.datum).toLocaleString("hu-HU") : ""} · {lmra?.tagok?.join(", ")}
-                  </p>
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 700, background: "#ECFDF5", color: "#059669", padding: "2px 8px", borderRadius: 20 }}>✓ Aláírva</span>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div style={{ background: "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px",
-          display: "flex", alignItems: "center", gap: 10, color: C.muted, fontSize: 13 }}>
-          <Shield size={16} color={C.muted} />
-          <span>Még nincs LMRA – a munka megkezdésekor töltik ki</span>
-        </div>
-      )}
+      {/* Szerződések */}
+      <KategoriaKartya icon={FileCheck} color="#7C3AED" title="Szerződések">
+        <a href={driveUrl} target="_blank" rel="noreferrer"
+          style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "#7C3AED", textDecoration: "none" }}>
+          <FolderOpen size={13} /> Megnyitás Drive-ban <ExternalLink size={11} />
+        </a>
+      </KategoriaKartya>
 
-      {/* ── Fotók összesítő ── */}
-      <div style={{ background: fotoSzam > 0 ? "#EFF6FF" : "#F8FAFC",
-        border: `1px solid ${fotoSzam > 0 ? "#BFDBFE" : C.border}`,
-        borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-        <Camera size={16} color={fotoSzam > 0 ? "#2563EB" : C.muted} style={{ flexShrink: 0 }} />
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: fotoSzam > 0 ? "#1D4ED8" : C.muted, margin: 0 }}>
-            {fotoSzam > 0 ? `${fotoSzam} fotó rögzítve` : "Még nincs fotó"}
-          </p>
-          {fotoSzam > 0 && (
-            <p style={{ fontSize: 11, color: "#3B82F6", margin: "2px 0 0" }}>
-              {projektMunkalapok.filter(m => {
-                const f = loadLocal(`fotok_${m.id}`);
-                return f && Object.values(f).some(a => Array.isArray(a) && a.length > 0);
-              }).map(m => m.munkalapSzam || m.id).join(", ")}
-            </p>
-          )}
-        </div>
-        {fotoSzam > 0 && projekt.driveProjektMappa && (
-          <a href={driveUrl} target="_blank" rel="noreferrer"
-            style={{ fontSize: 12, fontWeight: 600, color: "#2563EB", textDecoration: "none" }}>
-            Drive →
-          </a>
+      {/* Tervek */}
+      <KategoriaKartya icon={Layers} color="#0891B2" title="Tervek">
+        <a href={driveUrl} target="_blank" rel="noreferrer"
+          style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "#0891B2", textDecoration: "none" }}>
+          <FolderOpen size={13} /> Megnyitás Drive-ban <ExternalLink size={11} />
+        </a>
+      </KategoriaKartya>
+
+      {/* VBF dokumentumok */}
+      <KategoriaKartya icon={FileText} color="#7C3AED" title="VBF Dokumentumok"
+        count={vbfMunkalapok.length} countLabel="kitöltött VBF">
+        {vbfMunkalapok.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {vbfMunkalapok.map(m => (
+              <button key={m.id}
+                onClick={() => {
+                  if (!hasSablon()) { alert("Nincs VBF sablon feltöltve. Beállítások → VBF Sablon."); return; }
+                  generateVbfDocx(m, projekt);
+                }}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
+                  background: "#F5F3FF", border: "1px solid #DDD6FE", borderRadius: 8,
+                  cursor: "pointer", fontFamily: FONT, fontSize: 12, fontWeight: 600, color: "#6D28D9", textAlign: "left" }}>
+                <FileText size={13} color="#7C3AED" />
+                VBF – {m.munkalapSzam || m.id} · Letöltés DOCX
+              </button>
+            ))}
+          </div>
         )}
-      </div>
+      </KategoriaKartya>
 
-      {/* ── Számlák helye ── */}
-      <div style={{ background: "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px",
-        display: "flex", alignItems: "center", gap: 10 }}>
-        <Receipt size={16} color={C.muted} style={{ flexShrink: 0 }} />
-        <span style={{ fontSize: 13, color: C.muted, flex: 1 }}>Számlák → Számlázás tab</span>
-        <span style={{ fontSize: 11, color: C.muted }}>04_Számlák (Drive)</span>
-      </div>
+      {/* LMRA dokumentumok */}
+      <KategoriaKartya icon={Shield} color="#059669" title="LMRA Dokumentumok"
+        count={lmraMunkalapok.length} countLabel="aláírt LMRA">
+        {lmraMunkalapok.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {lmraMunkalapok.map(m => {
+              const lmra = loadLmra(m.id);
+              return (
+                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
+                  background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 8 }}>
+                  <Shield size={13} color="#059669" style={{ flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: "#166534", margin: 0 }}>{m.munkalapSzam || m.id}</p>
+                    {lmra?.datum && (
+                      <p style={{ fontSize: 11, color: "#16A34A", margin: "1px 0 0" }}>
+                        {new Date(lmra.datum).toLocaleDateString("hu-HU")}
+                        {lmra?.tagok?.length > 0 ? ` · ${lmra.tagok.join(", ")}` : ""}
+                      </p>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, background: "#ECFDF5", color: "#059669", padding: "2px 8px", borderRadius: 20 }}>✓ Aláírva</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </KategoriaKartya>
+
+      {/* Számlák */}
+      <KategoriaKartya icon={Receipt} color="#D97706" title="Számlák">
+        <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>
+          Számlák kezelése a <strong>Pénzügy</strong> fülön érhető el.
+          A Drive-on az <em>04_Számlák</em> mappában találod.
+        </p>
+      </KategoriaKartya>
+
+      {/* Egyéb dokumentumok */}
+      <KategoriaKartya icon={FolderOpen} color="#64748B" title="Egyéb dokumentumok">
+        <a href={driveUrl} target="_blank" rel="noreferrer"
+          style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "#64748B", textDecoration: "none" }}>
+          <FolderOpen size={13} /> Megnyitás Drive-ban <ExternalLink size={11} />
+        </a>
+      </KategoriaKartya>
+
     </div>
   );
 }
