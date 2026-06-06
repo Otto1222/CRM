@@ -21,12 +21,11 @@ const KEYS = {
   csapat_tagok:                "csapat_tagok",
   crm_napelem_users:           "crm_napelem_users",
   szamlak:                     "szamlak",
+  penzugyi:                    "penzugyi",
   edi_sorszam_counter:         "edi_sorszam_counter",
   edi_projekt_sorszam_counter:  "edi_projekt_sorszam_counter",
   "ajanla tok":                 "ajanla tok",
   edi_ajanlat_sorszam_counter:  "edi_ajanlat_sorszam_counter",
-  anyagtorzs:                   "anyagtorzs",
-  ajanlat_sablonok:             "ajanlat_sablonok",
   crm_backups:                  "crm_backups",
 };
 
