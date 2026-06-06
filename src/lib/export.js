@@ -3,7 +3,7 @@
  * Az exportService.js-t használja belsőleg
  * Megtartjuk a régi API-t hogy a meglévő hívások ne törendjenek
  */
-export { exportToExcel as exportExcel, exportToPDF as exportPDF, exportToCSV } from "./exportService";
+export { exportToCSV } from "./exportService";
 // ───────────────────────────────────────────────────────────────
 // RÉGI LOGIKA (visszafelé kompatibilitás) – ne töröld!
 // ─── Export modul: Excel + PDF ────────────────────────────────
