@@ -6,32 +6,26 @@ import { exportToPDF } from "../../lib/exportService.js";
 import { formatProjectType } from "../../lib/projectTypeFormatter.js";
 import { deleteProjekt } from "./projekt.service.js";
 import ProjektForm from "./ProjektForm.jsx";
-import TabAttekintes from "./tabs/TabAttekintes.jsx";
-import TabAjanlatok from "./tabs/TabAjanlatok.jsx";
-import TabMunkalapok from "./tabs/TabMunkalapok.jsx";
-import TabKoltsegek from "./tabs/TabKoltsegek.jsx";
+import TabAttekintes   from "./tabs/TabAttekintes.jsx";
+import TabMunkalapok   from "./tabs/TabMunkalapok.jsx";
+import TabPenzugy      from "./tabs/TabPenzugy.jsx";
 import TabDokumentumok from "./tabs/TabDokumentumok.jsx";
-import TabUtemezas from "./tabs/TabUtemezas.jsx";
-import TabSzamlazas from "./tabs/TabSzamlazas.jsx";
 import TabKommunikacio from "./tabs/TabKommunikacio.jsx";
-import TabNaplo from "./tabs/TabNaplo.jsx";
-import TabRiport from "./tabs/TabRiport.jsx";
-import TabLmra from "./tabs/TabLmra.jsx";
 import TabKarteritesek from "./tabs/TabKarteritesek.jsx";
+import TabAjanlatok    from "./tabs/TabAjanlatok.jsx";
+// Legacy imports (back-compat ha valaki direktben hívja)
+import TabRiport       from "./tabs/TabRiport.jsx";
+import TabLmra         from "./tabs/TabLmra.jsx";
 
+// ── 6 tab az éles teszthez – minden üzleti funkció megvan ──────
 const TABS = [
-  { id: "attekintes",   label: "Áttekintés",   icon: "📊" },
-  { id: "ajanlatok",    label: "Ajánlatok",    icon: "📋" },
-  { id: "munkalapok",   label: "Munkalapok",   icon: "🔧" },
-  { id: "koltsegek",    label: "Költségek",    icon: "💰" },
-  { id: "karteritesek", label: "Kártérítések", icon: "⚠️" },
-  { id: "dokumentumok", label: "Dokumentumok", icon: "📁" },
-  { id: "utemezas",     label: "Ütemezés",     icon: "📅" },
-  { id: "szamlazas",    label: "Számlázás",    icon: "🧾" },
-  { id: "kommunikacio", label: "Kommunikáció", icon: "💬" },
-  { id: "naplo",        label: "Napló",        icon: "📝" },
-  { id: "lmra",         label: "LMRA",         icon: "🛡️" },
-  { id: "riport",       label: "Riport / PDF", icon: "🖨️" },
+  { id: "attekintes",   label: "Áttekintés",  icon: "📊" },
+  { id: "munkalapok",   label: "Munkalapok",  icon: "🔧" },
+  { id: "penzugy",      label: "Pénzügy",     icon: "💰" },
+  { id: "dokumentumok", label: "Dokumentumok",icon: "📁" },
+  { id: "karteritesek", label: "Kártérítések",icon: "⚠️" },
+  { id: "naplo",        label: "Napló",       icon: "💬" },
+  { id: "ajanlatok",    label: "Árajánlat",   icon: "📋" },
 ];
 
 export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateMunkalap, currentUser, onNewMunkalapForProjekt }) {
@@ -83,22 +77,26 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
         return <TabAjanlatok {...props} />;
       case "munkalapok":
         return <TabMunkalapok {...props} onNavigate={onNavigateMunkalap} onNewMunkalap={onNewMunkalapForProjekt ? () => onNewMunkalapForProjekt(lokalProjekt) : undefined} />;
+      case "penzugy":
+        return <TabPenzugy {...props} />;
+      // Legacy redirects
       case "koltsegek":
-        return <TabKoltsegek {...props} />;
+      case "szamlazas":
+      case "elszamolas":
+        return <TabPenzugy {...props} />;
       case "dokumentumok":
         return <TabDokumentumok {...props} />;
-      case "utemezas":
-        return <TabUtemezas {...props} />;
-      case "szamlazas":
-        return <TabSzamlazas {...props} />;
+      case "naplo":
       case "kommunikacio":
         return <TabKommunikacio {...props} />;
-      case "naplo":
-        return <TabNaplo {...props} />;
       case "karteritesek":
         return <TabKarteritesek {...props} />;
+      // LMRA → munkalaphoz tartozik, itt csak összesítő
       case "lmra":
         return <TabLmra {...props} />;
+      case "utemezas":
+        // Ütemezés beolvadt Áttekintésbe – dátumok ott szerkeszthetők
+        return <TabAttekintes {...props} />;
       case "riport":
         return <TabRiport {...props} />;
       default:

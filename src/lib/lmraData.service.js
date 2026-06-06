@@ -10,6 +10,7 @@
 
 import { LMRA_KOCKAZATOK } from "./lmraService.js";
 import { driveSave } from "./driveApi.js";
+import { createCsapatTag, getAktivCsapatTagok } from "../modules/csapatok/csapat.service.js";
 
 const LMRA_REC_KEY        = id => `lmra_rec_${id}`;
 const TELEPITO_CS_KEY     = "telepito_csapatok";
@@ -296,8 +297,8 @@ export function getTagokForMunkalap(munkalap) {
     } catch {}
   }
 
-  // Legacy fallback: telepito_csapat_tagok
-  return getAllAktivTagok();
+  // Nincs hozzárendelt csapat-tag → üres lista (a telepítő kézzel adhat hozzá résztvevőt)
+  return [];
 }
 
 // Telepítő: résztvevő eltávolítása (csak aláíratlan)
@@ -351,7 +352,8 @@ export function saveNewTagToTeam(munkalapId, resztvevoId, csapatId) {
   if (!rec) return null;
   const r = (rec.resztvevok || []).find(rv => rv.id === resztvevoId);
   if (!r || !csapatId) return null;
-  const tag = addTeleppTag(csapatId, r.nev);
+  // Egységes Csapatok rendszerbe ment (csapat_tagok)
+  const tag = createCsapatTag(csapatId, { nev: r.nev, szerep: "Telepítő", aktiv: true });
   const updated = {
     ...rec,
     resztvevok: rec.resztvevok.map(rv =>
@@ -545,14 +547,14 @@ export function deleteTeleppTag(id) {
   saveTeleppTagok(loadTeleppTagok().filter(t => t.id !== id));
 }
 
-// Munkalaphoz releváns tagok lekérése (csapat → telepítő csapat kapcsolaton keresztül)
+// Munkalaphoz releváns tagok lekérése – egységes Csapatok rendszerből
 export function getRelevantTagok(munkalap) {
   const csapatId = munkalap?.csapatId;
-  if (!csapatId) return getAllAktivTagok();
-  try {
-    const szerelok = JSON.parse(localStorage.getItem("csapatok") || "[]");
-    const szerelo  = szerelok.find(c => c.id === csapatId);
-    if (szerelo?.telepitoCsapatId) return getTagokByCsapat(szerelo.telepitoCsapatId);
-  } catch {}
-  return getAllAktivTagok();
+  if (csapatId) {
+    const tagok = getAktivCsapatTagok(csapatId);
+    if (tagok.length > 0) {
+      return tagok.map(t => ({ id: t.id, nev: t.nev, csapatId, szerep: t.szerep || "", aktiv: t.aktiv !== false }));
+    }
+  }
+  return [];
 }

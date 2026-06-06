@@ -130,8 +130,23 @@ export default function TabMunkalapok({ projekt, munkalapok, onNavigate, onNewMu
   const [showLink, setShowLink] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
 
-  const getMunkalapAzonosito = (m) =>
-    m.munkalapSzam || m.dokumentumszam || m.ediSorszam || m.id;
+  const osszesMunkalapok = [...linked, ...unlinked];
+  const getMunkalapAzonosito = (m) => {
+    const dsz = m.dokumentumszam || m.munkalapSzam || "";
+    if (/^E\.D\.I\.\d+\/\d+/.test(dsz)) return dsz;
+    if (projekt?.projektkod) {
+      const projektMls = osszesMunkalapok
+        .filter(x => x.projektId === projekt.id)
+        .sort((a, b) => new Date(a.createdAt||0) - new Date(b.createdAt||0));
+      const sorsz = Math.max(1, projektMls.findIndex(x => x.id === m.id) + 1 || 1);
+      const alap = `${projekt.projektkod}/${String(sorsz).padStart(3,"0")}`;
+      const kulso = m.fovallalkoiAzonosito?.trim() || "";
+      return kulso ? `${alap} / ${kulso}` : alap;
+    }
+    const regi = m.ediSorszam || m.ugyszam || dsz;
+    if (regi && /^E\.D\.I\./.test(regi)) return regi;
+    return dsz || "Nincs munkalapszám";
+  };
 
   return (
     <div style={{ paddingTop: 16 }}>

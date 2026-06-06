@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Clock, Wrench, Building2, FileText, Users } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Clock, Wrench, Building2, FileText, Users, BarChart3 } from "lucide-react";
 import { C, FONT, FONT_HEADING, STATUS_CFG } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import { loadKarteritesek, addKarterites, updateKarterites } from "../lib/karterites";
 import { canSeePrice } from "../lib/roles";
 import { loadLocal } from "../lib/localDb";
 import { calcEsmentProjektPenzugy } from "../services/workOrderFinancial.service.js";
+import { calcDashboardPenzugyiKpik } from "../modules/penzugy/penzugyi.service.js";
 
 function StatCard({ label, value, sub, color, bg, icon: Icon }) {
   return (
@@ -260,11 +261,16 @@ export default function Dashboard({ user }) {
   }, [ajanlatok]);
 
   const projektStats = useMemo(() => {
-    const sajat       = projektek.filter(p => p.forrás && p.forrás !== "fővállalkozói");
-    const fov         = projektek.filter(p => p.forrás === "fővállalkozói");
-    const kivitelezés = projektek.filter(p => p.status === "Kivitelezés alatt");
-    const leszamlazva = projektek.filter(p => p.status === "Leszámlázva");
-    return { sajat: sajat.length, fov: fov.length, kivitelezés: kivitelezés.length, leszamlazva: leszamlazva.length };
+    const sajat      = projektek.filter(p => p.forrás === "sajat_ajanlat" || p.forrás === "saját_ügyfél");
+    const fov        = projektek.filter(p => p.forrás === "fovallalkozoi_munka" || p.forrás === "fővállalkozói");
+    const kivitelezés= projektek.filter(p => p.status === "Kivitelezés alatt");
+    const szamlazva  = projektek.filter(p => p.status === "Számlázható" || p.status === "Leszámlázva");
+    return { sajat: sajat.length, fov: fov.length, kivitelezés: kivitelezés.length, leszamlazva: szamlazva.length };
+  }, [projektek]);
+
+  const penzugyiKpik = useMemo(() => {
+    try { return calcDashboardPenzugyiKpik(projektek); }
+    catch { return null; }
   }, [projektek]);
 
   function toggleSort(f) {
@@ -349,6 +355,61 @@ export default function Dashboard({ user }) {
               <p style={{ fontSize:10, fontWeight:700, color: C.success, textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Leszámlázva (nem fizetve)</p>
               <p style={{ fontSize:20, fontWeight:800, color: C.text, margin:0 }}>{projektStats.leszamlazva}</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Projekt pénzügyi KPI-k ── */}
+      {isAdmin && penzugyiKpik && (
+        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #E2E8F0", padding:"16px 20px", marginBottom:20 }}>
+          <p style={{ fontFamily:FONT_HEADING, fontSize:15, fontWeight:800, color:"#0F172A", margin:"0 0 14px", display:"flex", alignItems:"center", gap:8 }}>
+            <BarChart3 size={17} color="#059669" /> Projekt pénzügyi összesítő
+          </p>
+          <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+            {/* Készre jelentett, elszámolás nélkül */}
+            {penzugyiKpik.keszreJelentettElszamolasNelkul > 0 && (
+              <div style={{ background:"#FEF2F2", borderRadius:10, padding:"12px 16px", border:"1px solid #FECACA40", flex:1, minWidth:140 }}>
+                <p style={{ fontSize:10, fontWeight:700, color:"#DC2626", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>⚠ Elszámolás hiányzik</p>
+                <p style={{ fontSize:20, fontWeight:800, color:"#0F172A", margin:"0 0 2px" }}>{penzugyiKpik.keszreJelentettElszamolasNelkul} projekt</p>
+                <p style={{ fontSize:11, color:"#64748B", margin:0 }}>Készre jelentve, de nincs pénzügyi rekord</p>
+              </div>
+            )}
+            {/* Számlázható */}
+            <div style={{ background:"#FFFBEB", borderRadius:10, padding:"12px 16px", border:"1px solid #FCD34D40", flex:1, minWidth:140 }}>
+              <p style={{ fontSize:10, fontWeight:700, color:"#D97706", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Számlázható</p>
+              <p style={{ fontSize:20, fontWeight:800, color:"#0F172A", margin:"0 0 2px" }}>{penzugyiKpik.szamlazhatoProjektek.length} projekt</p>
+              <p style={{ fontSize:11, color:"#64748B", margin:0 }}>Kész, számlára vár</p>
+            </div>
+            {/* Számlázva, nem fizetve */}
+            <div style={{ background:"#EFF6FF", borderRadius:10, padding:"12px 16px", border:"1px solid #BFDBFE40", flex:1, minWidth:140 }}>
+              <p style={{ fontSize:10, fontWeight:700, color:"#2563EB", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Számlázva – várja a kifizetést</p>
+              <p style={{ fontSize:20, fontWeight:800, color:"#0F172A", margin:"0 0 2px" }}>{penzugyiKpik.szamlazvaKifizetesre.length} projekt</p>
+              <p style={{ fontSize:11, color:"#64748B", margin:0 }}>Kiküldött számla, nem érkezett be</p>
+            </div>
+            {/* FV várható bevétel */}
+            {penzugyiKpik.fovVarhatoBevetel > 0 && (
+              <div style={{ background:"#F5F3FF", borderRadius:10, padding:"12px 16px", border:"1px solid #C4B5FD40", flex:1, minWidth:140 }}>
+                <p style={{ fontSize:10, fontWeight:700, color:"#7C3AED", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>FV várható bevétel</p>
+                <p style={{ fontSize:18, fontWeight:800, color:"#0F172A", margin:"0 0 2px" }}>{ft(penzugyiKpik.fovVarhatoBevetel)}</p>
+                <p style={{ fontSize:11, color:"#64748B", margin:0 }}>Aktív fővállalkozói projektek</p>
+              </div>
+            )}
+            {/* Saját projektek profitja */}
+            {penzugyiKpik.sajatVarhatoProfit !== 0 && (
+              <div style={{ background: penzugyiKpik.sajatVarhatoProfit >= 0 ? "#ECFDF5" : "#FEF2F2", borderRadius:10, padding:"12px 16px", border:"1px solid #86EFAC40", flex:1, minWidth:140 }}>
+                <p style={{ fontSize:10, fontWeight:700, color: penzugyiKpik.sajatVarhatoProfit >= 0 ? "#059669" : "#DC2626", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Saját projektek profitja</p>
+                <p style={{ fontSize:18, fontWeight:800, color:"#0F172A", margin:"0 0 2px" }}>{ft(penzugyiKpik.sajatVarhatoProfit)}</p>
+                <p style={{ fontSize:11, color:"#64748B", margin:0 }}>Aktív saját ajánlat projektek</p>
+              </div>
+            )}
+            {/* Belső munkák költsége */}
+            {penzugyiKpik.belsoMunkaKoltseg > 0 && (
+              <div style={{ background:"#F0FDF4", borderRadius:10, padding:"12px 16px", border:"1px solid #86EFAC40", flex:1, minWidth:140 }}>
+                <p style={{ fontSize:10, fontWeight:700, color:"#166534", textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Belső munkák költsége</p>
+                <p style={{ fontSize:18, fontWeight:800, color:"#0F172A", margin:"0 0 2px" }}>{ft(penzugyiKpik.belsoMunkaKoltseg)}</p>
+                <p style={{ fontSize:11, color:"#64748B", margin:0 }}>Garancia, javítás, karbantartás</p>
+              </div>
+            )}
           </div>
         </div>
       )}

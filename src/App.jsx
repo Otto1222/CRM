@@ -6,6 +6,7 @@ import { hasDefaultPasswords } from "./lib/crmUsers";
 import { getHomePage } from "./lib/roles";
 import { loadLocal, saveLocal } from "./lib/localDb";
 import { syncAllFromDrive, syncAllToDrive } from "./lib/dataSync.service";
+import { migrateTelepitoCsapatok } from "./lib/csapatMigracio";
 import { deleteWorkorder } from "./services/workorder.service";
 import { linkMunkalap } from "./modules/projektek/projekt.service";
 import Login from "./pages/Login";
@@ -24,19 +25,25 @@ import SzamlakPage from "./modules/szamlak/SzamlakPage.jsx";
 import PwaInstallBanner from "./components/PwaInstallBanner.jsx";
 import RiportokPage from "./pages/RiportokPage.jsx";
 import NaptarPage from "./pages/NaptarPage.jsx";
+import KarteritesekPage from "./pages/KarteritesekTab.jsx";
+import MunkalapSablonokPage from "./modules/munkalap_sablonok/MunkalapSablonokPage.jsx";
+import { initSablonok, getAktivSablonok } from "./modules/munkalap_sablonok/munkalapSablon.service.js";
 
 const PAGE_TITLES = {
-  dashboard: "Pénzügy",
-  munkalapok: "Munkalapok",
-  projektek: "Projektek",
-  ugyfelek: "Ügyfelek",
-  arajanlatok: "Árajánlatok",
-  szerzodések: "Szerződések",
-  szamlak: "Számlák",
-  csapat: "Csapat",
-  naptar: "Naptár",
-  riportok:    "Riportok",
-  beallitasok: "Beállítások",
+  dashboard:         "Dashboard",
+  projektek:         "Projektek",
+  munkalapok:        "Munkalapok",
+  ugyfelek:          "Ügyfelek",
+  arajanlatok:       "Ajánlatok",
+  szerzodesek:       "Szerződések",
+  szamlak:           "Számlák",
+  csapat:            "Csapatok",
+  naptar:            "Naptár",
+  riportok:          "Riportok",
+  karteritesek:      "Kártérítések",
+  munkalap_sablonok: "ML Sablonok",
+  dokumentumok:      "Dokumentumok",
+  beallitasok:       "Beállítások / Rendszer",
 };
 
 function fixMunkalapokSzamozas(list) {
@@ -77,7 +84,13 @@ function loadInitialData() {
 }
 
 export default function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const t = localStorage.getItem("__crm_test_session__");
+      if (t) return JSON.parse(t);
+    } catch {}
+    return null;
+  });
   const [page, setPage] = useState("dashboard");
   const [sel, setSel] = useState(null);
   const [data, setData] = useState(loadInitialData);
@@ -85,8 +98,11 @@ export default function App() {
   const [defaultPwWarning, setDefaultPwWarning] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [ujMunkalapInit, setUjMunkalapInit] = useState(null);
+  const [sablonValaszto, setSablonValaszto] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => { localStorage.removeItem("__crm_test_session__"); }, []);
 
   useEffect(() => {
     const goOnline  = () => setIsOnline(true);
@@ -280,6 +296,9 @@ export default function App() {
     setUser(u);
     setPage(getHomePage(u?.role));
     if (u?.role === "Admin") setDefaultPwWarning(hasDefaultPasswords());
+    initSablonok();
+    // Egyszeri, idempotens csapat-migráció (régi Telepítő csapatok → egységes Csapatok)
+    try { migrateTelepitoCsapatok(); } catch (e) { console.warn("[csapat migráció]", e); }
   }
 
   if (!user) return <Login onLogin={handleLogin} />;
@@ -320,7 +339,7 @@ export default function App() {
         ) : (
           <>
             <TopBar
-              title={user?.role === "Telepítő" && page === "munkalapok" ? "Feladatok" : PAGE_TITLES[page]}
+              title={user?.role === "Telepítő" && page === "munkalapok" ? "Saját munkalapok" : (PAGE_TITLES[page] || page)}
               user={user} driveStatus={drive} onMenuOpen={() => setSidebarOpen(true)}
             />
 
@@ -341,6 +360,7 @@ export default function App() {
               <ProjektekPage
                 data={data}
                 currentUser={user}
+                onNav={setPage}
                 onNavigateMunkalap={(m) => {
                   setPage("munkalapok");
                   setSel(m);
@@ -363,7 +383,8 @@ export default function App() {
             {page === "ugyfelek" && <Ugyfelek data={data} currentUser={user} />}
 
             {page === "arajanlatok" && <ArajanlaltokPage currentUser={user} />}
-            {page === "szerzodések" && <ComingSoon title="Szerződések" />}
+            {page === "szerzodesek" && <ComingSoon title="Szerződések" />}
+            {page === "dokumentumok" && <ComingSoon title="Dokumentumok" />}
             {page === "szamlak" && <SzamlakPage currentUser={user} />}
             {page === "csapat" && <CsapatokPage currentUser={user} />}
             {page === "naptar" && (
@@ -376,6 +397,10 @@ export default function App() {
                 }}
               />
             )}
+
+            {page === "karteritesek" && <KarteritesekPage currentUser={user} userRole={user?.role} />}
+
+            {page === "munkalap_sablonok" && <MunkalapSablonokPage userRole={user?.role} />}
 
             {page === "riportok" && <RiportokPage currentUser={user} />}
 

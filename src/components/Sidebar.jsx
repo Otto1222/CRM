@@ -1,168 +1,364 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  LayoutDashboard, Users, ClipboardList,
-  ScrollText, Calendar, Settings, LogOut, Building2, Receipt, FileText, BarChart3, BookOpen, X, CalendarRange,
+  LayoutDashboard, Users, ClipboardList, Calendar, Settings,
+  LogOut, Building2, Receipt, FileText, BarChart3, BookOpen, X,
+  AlertTriangle, LayoutTemplate, ChevronDown, TrendingUp,
 } from "lucide-react";
 import { C, FONT } from "../lib/constants";
 import { getAllowedPages } from "../lib/roles.js";
 import Avatar from "./Avatar";
 
-const NAV = [
-  { id: "dashboard",      label: "Irányítópult",   icon: LayoutDashboard },
-  { id: "projektek",      label: "Projektek",       icon: Building2 },
-  { id: "munkalapok",     label: "Munkalapok",      icon: FileText },
-  { id: "ugyfelek",       label: "Ügyfelek",        icon: Users },
-  { id: "arajanlatok",    label: "Árajánlatok",     icon: ClipboardList },
-  { id: "szerzodesek",    label: "Szerződések",     icon: ScrollText },
-  { id: "szamlak",        label: "Számlák",         icon: Receipt },
-  { id: "naptar",         label: "Naptár",          icon: Calendar },
-  { id: "riportok",       label: "Riportok",        icon: BarChart3 },
-  { id: "munkakiosztas",  label: "Munkakiosztás",   icon: CalendarRange },
+// ─── Navigáció struktúra ─────────────────────────────────────────────────────
+//
+//  type "single" : közvetlen navigációs gomb
+//  type "group"  : összecsukható csoport gyerekekkel
+
+const NAV_GROUPS = [
+  {
+    type: "single",
+    id: "dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    type: "group",
+    id: "ertekesites",
+    label: "Értékesítés",
+    icon: TrendingUp,
+    children: [
+      { id: "ugyfelek",    label: "Ügyfelek",  icon: Users },
+      { id: "arajanlatok", label: "Ajánlatok", icon: ClipboardList },
+    ],
+  },
+  {
+    type: "single",
+    id: "projektek",
+    label: "Projektek",
+    icon: Building2,
+  },
+  {
+    type: "single",
+    id: "naptar",
+    label: "Naptár",
+    icon: Calendar,
+  },
+  {
+    type: "group",
+    id: "penzugy",
+    label: "Pénzügy",
+    icon: Receipt,
+    children: [
+      { id: "szamlak",      label: "Számlák",       icon: Receipt },
+      { id: "karteritesek", label: "Kártérítések",  icon: AlertTriangle },
+      { id: "riportok",     label: "Riportok",      icon: BarChart3 },
+    ],
+  },
+  {
+    type: "group",
+    id: "beallitasok_csoport",
+    label: "Beállítások",
+    icon: Settings,
+    children: [
+      { id: "csapat",            label: "Csapatok",    icon: Users },
+      { id: "munkalap_sablonok", label: "ML Sablonok", icon: LayoutTemplate },
+      { id: "beallitasok",       label: "Rendszer",    icon: Settings },
+    ],
+  },
 ];
 
-// E.D.I. Logo SVG-based text mark
-function EdiLogo({ size = 32 }) {
+// ─── Telepítő nézet ───────────────────────────────────────────────────────────
+
+function TelepItoNav({ page, onNav, onClose }) {
+  const label = {
+    fontSize: 10, fontWeight: 700, letterSpacing: 1.8,
+    color: "rgba(111,173,168,0.5)", textTransform: "uppercase",
+    padding: "4px 10px", marginBottom: 6,
+  };
+
+  function btn(id, label_, Icon) {
+    const active = page === id;
+    return (
+      <button
+        onClick={() => { onNav(id); onClose?.(); }}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 11,
+          padding: "10px 12px", borderRadius: 9, border: "none",
+          borderLeft: active ? `3px solid ${C.accent}` : "3px solid transparent",
+          background: active ? C.sidebarActive : "transparent",
+          color: active ? C.accent : C.sidebarText,
+          cursor: "pointer", fontSize: 13, fontWeight: active ? 700 : 500,
+          marginBottom: 2, transition: "all .15s", fontFamily: FONT,
+        }}
+      >
+        <Icon size={16} strokeWidth={active ? 2.2 : 1.7} />{label_}
+      </button>
+    );
+  }
+
   return (
-    <div style={{
-      width: size, height: size,
-      background: "rgba(255,255,255,0.12)",
-      borderRadius: size * 0.28,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      border: "1.5px solid rgba(255,255,255,0.2)",
-      flexShrink: 0,
-    }}>
-      <span style={{
-        fontFamily: FONT,
-        fontWeight: 800,
-        fontSize: size * 0.36,
-        color: "#18ACA0",
-        letterSpacing: 0.5,
-        lineHeight: 1,
-      }}>E</span>
+    <>
+      <p style={label}>Feladataim</p>
+      {btn("munkalapok", "Saját munkalapok", FileText)}
+      <div style={{ borderTop: `1px solid ${C.sidebarBorder}`, margin: "10px 0" }} />
+      <button
+        onClick={() => { window.open("/installer-guide.html", "_blank"); onClose?.(); }}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 11,
+          padding: "10px 12px", borderRadius: 9, border: "none",
+          borderLeft: "3px solid transparent", background: "transparent",
+          color: "#FCD34D", cursor: "pointer", fontSize: 14,
+          fontFamily: FONT, fontWeight: 700,
+        }}
+      >
+        <BookOpen size={17} strokeWidth={2} />Kézikönyv
+      </button>
+      <button
+        onClick={() => {
+          try {
+            const b = JSON.parse(localStorage.getItem("beallitasok") || "{}");
+            const url = b?.oktatoAnyagokUrl;
+            if (url) window.open(url, "_blank", "noopener");
+            else alert("Az oktató anyagok mappája még nincs beállítva.\nKérj meg egy Adminisztrátort, hogy állítsa be a Beállítások menüben.");
+          } catch { alert("Hiba az URL betöltésekor."); }
+          onClose?.();
+        }}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 11,
+          padding: "10px 12px", borderRadius: 9, border: "none",
+          borderLeft: "3px solid transparent", background: "transparent",
+          color: "#67E8F9", cursor: "pointer", fontSize: 14,
+          fontFamily: FONT, fontWeight: 600,
+        }}
+      >
+        <BookOpen size={17} strokeWidth={1.7} />Oktató anyagok
+      </button>
+    </>
+  );
+}
+
+// ─── Egyszeres nav gomb ───────────────────────────────────────────────────────
+
+function SingleItem({ id, label, icon: Icon, page, onNav, onClose }) {
+  const active = page === id;
+  return (
+    <button
+      onClick={() => { onNav(id); onClose?.(); }}
+      style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 11,
+        padding: "10px 12px", borderRadius: 9, border: "none",
+        borderLeft: active ? `3px solid ${C.accent}` : "3px solid transparent",
+        background: active ? C.sidebarActive : "transparent",
+        color: active ? C.accent : C.sidebarText,
+        cursor: "pointer", fontSize: 13, fontWeight: active ? 700 : 500,
+        marginBottom: 2, transition: "all .15s", fontFamily: FONT,
+      }}
+    >
+      <Icon size={16} strokeWidth={active ? 2.2 : 1.7} />{label}
+    </button>
+  );
+}
+
+// ─── Gyerek nav gomb (inden tálva csoporton belül) ───────────────────────────
+
+function ChildItem({ id, label, icon: Icon, page, onNav, onClose }) {
+  const active = page === id;
+  return (
+    <button
+      onClick={() => { onNav(id); onClose?.(); }}
+      style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 10,
+        padding: "7px 12px 7px 28px", borderRadius: 7, border: "none",
+        borderLeft: active ? `3px solid ${C.accent}` : "3px solid transparent",
+        background: active ? C.sidebarActive : "transparent",
+        color: active ? C.accent : C.sidebarText,
+        cursor: "pointer", fontSize: 12, fontWeight: active ? 700 : 500,
+        marginBottom: 1, transition: "all .15s", fontFamily: FONT,
+      }}
+    >
+      <Icon size={14} strokeWidth={active ? 2.2 : 1.7} />{label}
+    </button>
+  );
+}
+
+// ─── Összecsukható csoport ────────────────────────────────────────────────────
+
+function GroupItem({ group, page, onNav, onClose, allowed, openGroups, toggleGroup }) {
+  const visible = group.children.filter(c => allowed.includes(c.id));
+  if (visible.length === 0) return null;
+
+  const hasActive = group.children.some(c => c.id === page);
+  const isOpen = openGroups.has(group.id);
+  const Icon = group.icon;
+
+  return (
+    <div style={{ marginBottom: 2 }}>
+      <button
+        onClick={() => toggleGroup(group.id)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 11,
+          padding: "10px 12px", borderRadius: 9, border: "none",
+          borderLeft: hasActive && !isOpen ? `3px solid ${C.accent}` : "3px solid transparent",
+          background: "transparent",
+          color: hasActive ? C.accent : C.sidebarText,
+          cursor: "pointer", fontSize: 13, fontWeight: hasActive ? 700 : 500,
+          transition: "all .15s", fontFamily: FONT,
+        }}
+      >
+        <Icon size={16} strokeWidth={hasActive ? 2.2 : 1.7} />
+        <span style={{ flex: 1, textAlign: "left" }}>{group.label}</span>
+        <ChevronDown
+          size={13}
+          style={{
+            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform .2s", opacity: 0.55, flexShrink: 0,
+          }}
+        />
+      </button>
+      {isOpen && (
+        <div style={{ marginBottom: 4 }}>
+          {visible.map(child => (
+            <ChildItem
+              key={child.id}
+              {...child}
+              page={page}
+              onNav={onNav}
+              onClose={onClose}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
+// ─── Sidebar belső tartalom ───────────────────────────────────────────────────
+
 function SidebarContent({ page, onNav, user, onLogout, onClose }) {
   const allowed    = getAllowedPages(user?.role);
-  const visibleNav = NAV.filter(item => allowed.includes(item.id));
-  const showSettings = allowed.includes("beallitasok");
+  const isTelepito = user?.role === "Telepítő";
 
-  function handleNav(id) {
-    onNav(id);
-    onClose?.();
+  // Csoportok nyitott állapota – az aktív oldal csoportja automatikusan nyílik
+  const [openGroups, setOpenGroups] = useState(() => {
+    const open = new Set();
+    NAV_GROUPS.forEach(g => {
+      if (g.type === "group" && g.children?.some(c => c.id === page)) open.add(g.id);
+    });
+    return open;
+  });
+
+  // Oldalváltáskor az aktív csoport automatikusan kinyílik
+  useEffect(() => {
+    NAV_GROUPS.forEach(g => {
+      if (g.type === "group" && g.children?.some(c => c.id === page)) {
+        setOpenGroups(prev => {
+          if (prev.has(g.id)) return prev;
+          const n = new Set(prev); n.add(g.id); return n;
+        });
+      }
+    });
+  }, [page]);
+
+  function toggleGroup(id) {
+    setOpenGroups(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", fontFamily: FONT }}>
 
-      {/* ── Fejléc / Logo ── */}
+      {/* ── Fejléc ── */}
       <div style={{
-        padding: "20px 18px 16px",
-        borderBottom: `1px solid ${C.sidebarBorder}`,
-        display: "flex", alignItems: "center", gap: 11,
+        padding: "20px 20px 16px", borderBottom: `1px solid ${C.sidebarBorder}`,
+        display: "flex", alignItems: "center", gap: 12,
       }}>
-        <EdiLogo size={38} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: "#fff", fontWeight: 800, fontSize: 16, letterSpacing: 0.3, lineHeight: 1.1 }}>
-            E.D.I. <span style={{ color: "#18ACA0" }}>Solutions</span>
-          </div>
-          <div style={{ color: "rgba(255,255,255,0.38)", fontSize: 9.5, letterSpacing: 1.2, textTransform: "uppercase", marginTop: 2 }}>
-            Vállalatirányítás
-          </div>
+          <div style={{
+            fontFamily: FONT_HEADING, fontWeight: 800, fontSize: 22,
+            color: C.accent, letterSpacing: 2, lineHeight: 1,
+          }}>E.D.I.</div>
+          <div style={{
+            fontFamily: FONT_HEADING, fontWeight: 600, fontSize: 10,
+            color: C.sidebarText, letterSpacing: 3, textTransform: "uppercase", marginTop: 2,
+          }}>Solutions CRM</div>
         </div>
         {onClose && (
-          <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: 4, display: "flex", alignItems: "center" }}>
-            <X size={18} />
+          <button onClick={onClose} style={{
+            background: "transparent", border: "none", cursor: "pointer",
+            color: C.sidebarText, padding: 4, display: "flex",
+            alignItems: "center", flexShrink: 0,
+          }}>
+            <X size={20} />
           </button>
         )}
       </div>
 
       {/* ── Navigáció ── */}
-      <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }}>
-        <p style={{
-          fontSize: 9.5, fontWeight: 700, letterSpacing: 1.6,
-          color: "rgba(255,255,255,0.25)",
-          textTransform: "uppercase", padding: "4px 10px", marginBottom: 4,
-        }}>Főmenü</p>
-
-        {visibleNav.map(({ id, label, icon: Icon }) => {
-          const active = page === id;
-          return (
-            <button key={id} onClick={() => handleNav(id)} style={{
-              width: "100%", display: "flex", alignItems: "center", gap: 10,
-              padding: "9px 12px", borderRadius: 8, border: "none",
-              borderLeft: active ? `3px solid #18ACA0` : "3px solid transparent",
-              background: active ? "rgba(24,172,160,0.18)" : "transparent",
-              color: active ? "#18ACA0" : C.sidebarText,
-              cursor: "pointer", fontSize: 13.5, fontWeight: active ? 700 : 400,
-              marginBottom: 1, transition: "all .15s", fontFamily: FONT,
-              letterSpacing: active ? 0.1 : 0,
-            }}>
-              <Icon size={16} strokeWidth={active ? 2.2 : 1.7} />
-              {label}
-            </button>
-          );
-        })}
-
-        {/* Oktató anyagok – Telepítő */}
-        {user?.role === "Telepítő" && (
+      <nav style={{ flex: 1, padding: "14px 10px", overflowY: "auto" }}>
+        {isTelepito ? (
+          <TelepItoNav page={page} onNav={onNav} onClose={onClose} />
+        ) : (
           <>
-            <div style={{ borderTop: `1px solid ${C.sidebarBorder}`, margin: "10px 0" }} />
-            <button
-              onClick={() => {
-                try {
-                  const b = JSON.parse(localStorage.getItem("beallitasok") || "{}");
-                  const url = b?.oktatoAnyagokUrl;
-                  if (url) window.open(url, "_blank", "noopener");
-                  else alert("Az oktató anyagok mappája még nincs beállítva.\nKérj meg egy Adminisztrátort, hogy állítsa be a Beállítások menüben.");
-                } catch { alert("Hiba az URL betöltésekor."); }
-                onClose?.();
-              }}
-              style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8, border: "none", borderLeft: "3px solid transparent", background: "transparent", color: "#67E8F9", cursor: "pointer", fontSize: 13.5, fontFamily: FONT, fontWeight: 500 }}
-            >
-              <BookOpen size={16} strokeWidth={1.7} />Oktató anyagok
-            </button>
-          </>
-        )}
+            <p style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: 1.8,
+              color: "rgba(111,173,168,0.5)", textTransform: "uppercase",
+              padding: "4px 10px", marginBottom: 6,
+            }}>Főmenü</p>
 
-        {showSettings && (
-          <>
-            <div style={{ borderTop: `1px solid ${C.sidebarBorder}`, margin: "10px 0" }} />
-            <button onClick={() => handleNav("beallitasok")} style={{
-              width: "100%", display: "flex", alignItems: "center", gap: 10,
-              padding: "9px 12px", borderRadius: 8, border: "none",
-              borderLeft: page === "beallitasok" ? "3px solid #18ACA0" : "3px solid transparent",
-              background: page === "beallitasok" ? "rgba(24,172,160,0.18)" : "transparent",
-              color: page === "beallitasok" ? "#18ACA0" : C.sidebarText,
-              cursor: "pointer", fontSize: 13.5, fontWeight: page === "beallitasok" ? 700 : 400, fontFamily: FONT,
-            }}>
-              <Settings size={16} strokeWidth={1.7} />Beállítások
-            </button>
+            {NAV_GROUPS.map(item => {
+              if (item.type === "single") {
+                if (!allowed.includes(item.id)) return null;
+                return (
+                  <SingleItem
+                    key={item.id}
+                    {...item}
+                    page={page}
+                    onNav={onNav}
+                    onClose={onClose}
+                  />
+                );
+              }
+              return (
+                <GroupItem
+                  key={item.id}
+                  group={item}
+                  page={page}
+                  onNav={onNav}
+                  onClose={onClose}
+                  allowed={allowed}
+                  openGroups={openGroups}
+                  toggleGroup={toggleGroup}
+                />
+              );
+            })}
           </>
         )}
       </nav>
 
       {/* ── Felhasználó + kijelentkezés ── */}
-      <div style={{ padding: "12px 12px 18px", borderTop: `1px solid ${C.sidebarBorder}` }}>
+      <div style={{ padding: "14px 14px 20px", borderTop: `1px solid ${C.sidebarBorder}` }}>
         <div style={{
           display: "flex", alignItems: "center", gap: 10,
-          padding: "10px 10px", borderRadius: 10,
-          background: "rgba(255,255,255,0.06)",
-          marginBottom: 6,
+          padding: "10px", borderRadius: 10,
+          background: "rgba(24,172,160,0.06)", marginBottom: 4,
         }}>
-          <Avatar u={user} size={32} />
+          <Avatar u={user} size={34} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: "#fff", fontWeight: 600, fontSize: 12.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name}</div>
-            <div style={{ color: "rgba(255,255,255,0.32)", fontSize: 10.5, marginTop: 1 }}>{user.role}</div>
+            <div style={{
+              color: "#fff", fontWeight: 600, fontSize: 13,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              fontFamily: FONT,
+            }}>{user.name}</div>
+            <div style={{ color: C.sidebarText, fontSize: 11, fontFamily: FONT }}>{user.role}</div>
           </div>
         </div>
         <button onClick={onLogout} style={{
           width: "100%", display: "flex", alignItems: "center", gap: 8,
-          padding: "7px 10px", borderRadius: 7, border: "none",
-          background: "transparent", color: "rgba(255,255,255,0.35)",
-          cursor: "pointer", fontSize: 12.5, fontFamily: FONT,
-          transition: "color .15s",
+          padding: "8px 10px", borderRadius: 8, border: "none",
+          background: "transparent", color: C.sidebarText,
+          cursor: "pointer", fontSize: 12, fontFamily: FONT, fontWeight: 500,
         }}>
           <LogOut size={14} />Kijelentkezés
         </button>
@@ -170,6 +366,8 @@ function SidebarContent({ page, onNav, user, onLogout, onClose }) {
     </div>
   );
 }
+
+// ─── Fő export: desktop sticky sidebar + mobil overlay drawer ────────────────
 
 export default function Sidebar({ page, onNav, user, onLogout, open, onClose }) {
   return (
@@ -181,7 +379,7 @@ export default function Sidebar({ page, onNav, user, onLogout, open, onClose }) 
         height: "100vh",
         position: "sticky", top: 0,
         display: "flex", flexDirection: "column",
-        boxShadow: "2px 0 20px rgba(0,0,0,0.18)",
+        ...(typeof window !== "undefined" && window.innerWidth < 768 ? { display: "none" } : {}),
       }} className="sidebar-desktop">
         <SidebarContent page={page} onNav={onNav} user={user} onLogout={onLogout} />
       </aside>

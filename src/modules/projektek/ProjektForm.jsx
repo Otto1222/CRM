@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { X, Save, Navigation, TrendingUp } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { loadLocal, saveLocal } from "../../lib/localDb.js";
 import { PROJEKT_STATUSZOK, PROJEKT_FORRAS, getProjektTipus } from "./projekt.schema.js";
+import { migrateProjektForrasFromRekord, validateProjektForrás, FORRAS_ELLENORZES_SZUKSEGES } from "../../lib/workflowRules.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { getAktivCsapatok } from "../csapatok/csapat.service.js";
 import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
@@ -13,7 +14,6 @@ import { createProjekt, updateProjekt } from "./projekt.service.js";
 import { createInitialWorkorderForProject } from "../../services/projectWorkorder.service.js";
 import { driveCreateProjektFolder } from "../../lib/driveApi.js";
 import {
-  validateProjectBeforeSave,
   shouldCreateInitialWorkorder,
   getInitialWorkorderTypeByProjectStatus,
 } from "./projectRules.js";
@@ -56,11 +56,25 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
   const munkatipusok = getAktivMunkatipusok();
   const pmList = users.filter(u => ["Admin", "Projektmenedzser"].includes(u.role));
   const ugyfelek = loadLocal("ugyfelek") || [];
+
+  // Elfogadott ajánlatok (saját ügyfél flow ajanlat-selectorhoz)
+  const elfogadottAjanlatok = useMemo(() => {
+    try {
+      const all = loadLocal("ajanlatok") || [];
+      const projektek = loadLocal("projektek") || [];
+      const linkedIds = new Set(projektek.map(p => p.ajanlatId).filter(Boolean));
+      return all.filter(a =>
+        a.status === "Elfogadva" &&
+        (!a.projektId || a.projektId === projekt?.id) &&
+        (!linkedIds.has(a.id) || a.id === projekt?.ajanlatId)
+      );
+    } catch { return []; }
+  }, [projekt?.id, projekt?.ajanlatId]);
   const [form, setForm] = useState({
     nev: projekt?.nev || ajanlatElofolt?.nev || "",
     kulsoAzonosito: projekt?.kulsoAzonosito || "",
     tipus: projekt?.tipus || "Napelem telepítés",
-    status: projekt?.status || (ajanlatElofolt ? "Elfogadva" : "Felmérésre vár"),
+    status: projekt?.status || "Létrehozva",
     clientId: projekt?.clientId || ajanlatElofolt?.clientId || "",
     clientNev: projekt?.clientNev || ajanlatElofolt?.clientNev || "",
     megbizoCeg: projekt?.megbizoCeg || "",
@@ -69,7 +83,9 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     clientEmail: projekt?.clientEmail || ajanlatElofolt?.clientEmail || "",
     kapcsolattarto: projekt?.kapcsolattarto || "",
     telepitesiCim: projekt?.telepitesiCim || ajanlatElofolt?.clientCim || "",
-    forrás: projekt?.forrás || (ajanlatElofolt ? "saját_ügyfél" : ""),
+    forrás: projekt
+      ? migrateProjektForrasFromRekord(projekt)
+      : (ajanlatElofolt ? "sajat_ajanlat" : ""),
     projektTipus: projekt?.projektTipus || (ajanlatElofolt ? "Saját projekt" : ""),
     ajanlatId: projekt?.ajanlatId || ajanlatElofolt?.id || null,
     fovKapcsolattarto: projekt?.fovKapcsolattarto || "",
@@ -203,8 +219,37 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
       },
     }));
   }
+  function handleAjanlatSelect(ajanlatId) {
+    const a = elfogadottAjanlatok.find(x => x.id === ajanlatId);
+    if (!a) {
+      setForm(p => ({ ...p, ajanlatId: null }));
+      return;
+    }
+    setForm(p => ({
+      ...p,
+      ajanlatId: a.id,
+      nev: p.nev || a.nev || "",
+      clientId: a.clientId || p.clientId,
+      clientNev: a.clientNev || p.clientNev || "",
+      clientCim: a.clientCim || p.clientCim || "",
+      clientTel: a.clientTel || p.clientTel || "",
+      clientEmail: a.clientEmail || p.clientEmail || "",
+      telepitesiCim: p.telepitesiCim || a.clientCim || "",
+      elfogadottAjanlat: a.osszeg || p.elfogadottAjanlat || 0,
+    }));
+    if (hiba) setHiba("");
+  }
+
   async function handleSave() {
-    const validation = validateProjectBeforeSave(form);
+    if (!form.nev?.trim()) {
+      setHiba("A projekt neve kötelező.");
+      return;
+    }
+    if (form.forrás === FORRAS_ELLENORZES_SZUKSEGES) {
+      setHiba("A projekt forrása még nincs meghatározva. Válassz egyet a három forrás közül, mielőtt mentesz.");
+      return;
+    }
+    const validation = validateProjektForrás(form);
     if (!validation.ok) {
       setHiba(validation.message);
       return;
@@ -370,18 +415,91 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>
               Projekt forrása *
             </p>
+
+            {/* Bizonytalan forrás figyelmeztetés – adminnak kézzel kell besorolni */}
+            {form.forrás === FORRAS_ELLENORZES_SZUKSEGES && (
+              <div style={{ background:"#FEF2F2", border:"2px solid #DC2626", borderRadius:10, padding:"12px 16px", marginBottom:12, fontSize:13, color:"#991B1B" }}>
+                <div style={{ fontWeight:800, marginBottom:6 }}>⚠ Kézi ellenőrzés szükséges!</div>
+                <div style={{ lineHeight:1.65 }}>
+                  Ez a projekt régi <strong>{projekt?.forrásElotti || "garanciális/javítási"}</strong> besorolásból érkezett,
+                  de az automatikus migráció nem tudta biztosan meghatározni az új forrást.
+                  Van rögzített ügyfélnév (<strong>{form.clientNev}</strong>), de nincs strukturált CRM ügyfél- vagy ajánlathivatkozás.
+                  <br />
+                  <strong>Kérlek válaszd ki kézzel a megfelelő forrást az alábbi gombok közül, majd mentsd a projektet!</strong>
+                </div>
+              </div>
+            )}
+
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {PROJEKT_FORRAS.map(f => {
                 const active = form.forrás === f.id;
                 return (
-                  <button key={f.id} type="button" onClick={() => upd("forrás", f.id)}
-                    style={{ padding: "8px 16px", borderRadius: 9, border: `2px solid ${active ? f.color : C.border}`, background: active ? f.bg : "#fff", color: active ? f.color : C.muted, fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer", fontFamily: FONT, transition: "all .15s" }}>
+                  <button key={f.id} type="button"
+                    onClick={() => {
+                      if (f.id === "belso_munka") {
+                        setForm(p => ({ ...p, forrás: f.id, clientNev: "E.D.I. Solutions Kft.", clientId: "", clientCim: "", clientTel: "", clientEmail: "", ajanlatId: null }));
+                      } else if (f.id === "sajat_ajanlat") {
+                        setForm(p => ({ ...p, forrás: f.id, clientNev: p.clientNev === "E.D.I. Solutions Kft." ? "" : p.clientNev }));
+                      } else {
+                        upd("forrás", f.id);
+                      }
+                      if (hiba) setHiba("");
+                    }}
+                    title={f.desc}
+                    style={{ padding: "8px 16px", borderRadius: 9, border: `2px solid ${active ? f.color : "#E2E8F0"}`, background: active ? f.bg : "#fff", color: active ? f.color : "#64748B", fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer", fontFamily: FONT, transition: "all .15s" }}>
                     {f.label}
                   </button>
                 );
               })}
             </div>
-            {!form.forrás && hiba && <p style={{ fontSize: 11, color: C.danger, marginTop: 4 }}>A projekt forrásának megadása kötelező</p>}
+
+            {/* sajat_ajanlat: elfogadott ajánlat kiválasztása */}
+            {form.forrás === "sajat_ajanlat" && (
+              <div style={{ marginTop: 12, background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 10, padding: "12px 14px" }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: "#1D4ED8", margin: "0 0 8px" }}>
+                  📋 Elfogadott ajánlat kiválasztása *
+                </p>
+                {elfogadottAjanlatok.length === 0 ? (
+                  <p style={{ fontSize: 12, color: "#DC2626", margin: 0, fontWeight: 600 }}>
+                    Nincs elfogadott ajánlat. Menj az <strong>Ajánlatok</strong> oldalra, módosítsd az ajánlat státuszát "Elfogadva"-ra, majd onnan hozd létre a projektet.
+                  </p>
+                ) : (
+                  <>
+                    <select value={form.ajanlatId || ""} onChange={e => handleAjanlatSelect(e.target.value)}
+                      style={{ width: "100%", padding: "9px 12px", border: `1.5px solid ${form.ajanlatId ? "#2563EB" : "#E2E8F0"}`, borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none", background: "#fff" }}>
+                      <option value="">— Válassz elfogadott ajánlatot —</option>
+                      {elfogadottAjanlatok.map(a => (
+                        <option key={a.id} value={a.id}>
+                          {a.ajanlatkod} · {a.clientNev} · {a.osszeg ? a.osszeg.toLocaleString("hu-HU") + " Ft" : "—"} ({a.nev || "Nincs megnevezés"})
+                        </option>
+                      ))}
+                    </select>
+                    {form.ajanlatId && <p style={{ fontSize: 11, color: "#059669", margin: "4px 0 0", fontWeight: 600 }}>✅ Ügyfél adatok automatikusan betöltve az ajánlatból</p>}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* fovallalkozoi_munka: külső munkaszám kötelező */}
+            {form.forrás === "fovallalkozoi_munka" && (
+              <div style={{ marginTop: 12, background: "#F5F3FF", border: "1.5px solid #DDD6FE", borderRadius: 10, padding: "10px 14px" }}>
+                <p style={{ fontSize: 12, color: "#7C3AED", margin: "0 0 6px", fontWeight: 700 }}>
+                  🤝 Fővállalkozói munka – kötelező mezők:
+                </p>
+                <p style={{ fontSize: 12, color: "#7C3AED", margin: 0 }}>
+                  Külső munkaszám (fent) · Fővállalkozó · Elszámolási szabály (Pénzügyi konfiguráció)
+                </p>
+              </div>
+            )}
+
+            {/* belso_munka: tájékoztató */}
+            {form.forrás === "belso_munka" && (
+              <div style={{ marginTop: 12, background: "#ECFDF5", border: "1.5px solid #86EFAC", borderRadius: 10, padding: "10px 14px" }}>
+                <p style={{ fontSize: 12, color: "#166534", margin: 0, fontWeight: 600 }}>
+                  🏢 Belső munka – garancia, javítás, karbantartás. Megrendelő: <strong>E.D.I. Solutions Kft.</strong> (automatikus). Nincs ügyfél, nincs ajánlat.
+                </p>
+              </div>
+            )}
           </div>
 
           <div
@@ -424,6 +542,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 ))}
               </select>
             </Field>
+            {form.forrás !== "belso_munka" && (<>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Ügyfél adatok
@@ -474,6 +593,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 style={inp}
               />
             </Field>
+            </>)}
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Csapat
@@ -548,8 +668,8 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 💰 Pénzügyi konfiguráció
               </p>
             </div>
-            <Field label={form.forrás === "fővállalkozói" ? "Fővállalkozó *" : "Fővállalkozó"} half>
-              <select value={form.penzugy.fovallalkoziId} onChange={e => handleFovallalkozo(e.target.value)} style={{ ...inp, ...(form.forrás === "fővállalkozói" ? { border: "2px solid #7C3AED" } : {}) }}>
+            <Field label={form.forrás === "fovallalkozoi_munka" ? "Fővállalkozó *" : "Fővállalkozó"} half>
+              <select value={form.penzugy.fovallalkoziId} onChange={e => handleFovallalkozo(e.target.value)} style={{ ...inp, ...(form.forrás === "fovallalkozoi_munka" ? { border: "2px solid #7C3AED" } : {}) }}>
                 <option value="">— Válassz fővállalkozót —</option>
                 {fovallalkozok.map(f => (
                   <option key={f.id} value={f.id}>
@@ -561,7 +681,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               {form.penzugy.fovallalkoziId && !form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: C.warning, marginTop: 3 }}>⚠️ Nincs aktív szabály ehhez a munkatípushoz</p>}
             </Field>
             {/* Fővállalkozói extra mezők */}
-            {form.forrás === "fővállalkozói" && <>
+            {form.forrás === "fovallalkozoi_munka" && <>
               <Field label="FV kapcsolattartó" half>
                 <input value={form.fovKapcsolattarto} onChange={e => upd("fovKapcsolattarto", e.target.value)} placeholder="Kapcsolattartó neve" style={inp} />
               </Field>

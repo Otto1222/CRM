@@ -61,34 +61,136 @@ export const AJANLAT_STATUSZOK = [
   { id: "Kiküldve",        szin: "#D97706", bg: "#FFFBEB" },
   { id: "Módosítás alatt", szin: "#7C3AED", bg: "#F5F3FF" },
   { id: "Elfogadva",       szin: "#059669", bg: "#ECFDF5" },
-  { id: "Elutasítva",      szin: "#DC2626", bg: "#FEF2F2" },
+  { id: "Elutasítva",      szin: "#E30613", bg: "#FEF2F2" },
   { id: "Lejárt",          szin: "#9CA3AF", bg: "#F3F4F6" },
 ];
 
+// 11 ügyfélnek látható fő tétel – 7 termékes + 4 összesített
+export const FO_TETELEK = [
+  { id: "napelem_rendszer", label: "Napelem rendszer",               termek: true,  osszetett: false },
+  { id: "tartoszerkezet",   label: "Tartószerkezet",                termek: true,  osszetett: false },
+  { id: "inverter",         label: "Inverter",                      termek: true,  osszetett: false },
+  { id: "energia_mero",     label: "Energia mérő",                  termek: true,  osszetett: false },
+  { id: "akku_vezeto",      label: "Akkumulátor vezérlő egység",    termek: true,  osszetett: false },
+  { id: "akku_egyseg",      label: "Akkumulátor egység",            termek: true,  osszetett: false },
+  { id: "akku_kiegeszito",  label: "Akkumulátor kiegészítők",       termek: true,  osszetett: false },
+  {
+    id: "vedelmi_eszkozok", label: "Védelmi eszközök",             termek: false, osszetett: true,
+    ugyfel_leiras_default: "DC 1000V túlfeszültség levezetés, AC túlfeszültség levezetés, leválasztó kapcsolók, kismegszakítók.",
+  },
+  {
+    id: "villanyszereles",  label: "Villanyszerelési anyagok",      termek: false, osszetett: true,
+    ugyfel_leiras_default: "AC/DC kábelek, kábelcsatorna, MÜ II cső, idomok, apróanyag.",
+  },
+  {
+    id: "ugyintézes",       label: "Ügyintézés és engedélyeztetés", termek: false, osszetett: true,
+    ugyfel_leiras_default: "Műszaki terv és csatlakozási dokumentáció elkészítése, áramszolgáltatói ügyintézés, engedélyeztetés, áramszolgáltatói jóváhagyás.",
+  },
+  {
+    id: "kivi_beuzem",      label: "Kivitelezés és beüzemelés",     termek: false, osszetett: false, kivi: true,
+    ugyfel_leiras_default: "Telepítés munkadíj, próbaüzem, 3 év kivitelezés garancia.",
+  },
+];
+
+export function makeFoTetelek() {
+  return FO_TETELEK.map(f => ({
+    id:               f.id,
+    label:            f.label,
+    aktiv:            false,
+    // termék mezők
+    anyagtorzs_id:    null,
+    tipus:            "",
+    mennyiseg:        "",
+    egyseg:           "db",
+    netto_egysegar:   0,
+    netto_osszeg:     0,
+    // ügyfél / belső szöveg
+    ugyfel_leiras:    f.ugyfel_leiras_default || "",
+    belso_megjegyzes: "",
+  }));
+}
+
+export const DEFAULT_KIVI_KALKULATOR = {
+  kezi:                     false,
+  panel_db:                 0,
+  telepitesi_dij_per_panel: 5000,
+  kiszallasi_dij:           25000,
+  emelőgep_dij:             0,
+  tobblet_napok:            0,
+  napi_dij:                 40000,
+};
+
 export const AJANLAT_SCHEMA = {
-  id:                 "",
-  ajanlatkod:         "",
-  nev:                "",
-  clientId:           null,
-  clientNev:          "",
-  clientCim:          "",
-  kapcsolattarto:     "",
-  clientTel:          "",
-  clientEmail:        "",
-  datum:              "",
-  ervenyesseg:        "",
-  fizetesifelteletek: "30 napos átutalás a számla kézhezvételétől",
-  megjegyzes:         "",
-  tetelek:            [],
-  sablonId:           null,
-  status:             "Piszkozat",
-  osszeg:             null,
-  projektId:          null,
-  keszitette:         "",
-  createdAt:          "",
-  updatedAt:          "",
+  id:            "",
+  ajanlatkod:    "",
+  clientId:      null,
+  clientNev:     "",
+  clientTel:     "",
+  clientEmail:   "",
+  clientCim:     "",
+  nev:           "",
+  status:        "Piszkozat",
+  osszeg:        0,
+  ervenyesseg:   "",
+  megjegyzes:    "",
+  projektId:     null,
+  keszitette:    "",
+  createdAt:     "",
+  updatedAt:     "",
+  afa_szazalek:     27,
+  fo_tetelek:       [],
+  reszlet_tetelek:  [],
+  kivi_kalkulator:  {},
 };
 
 export function getAjanlatStatusConfig(statusId) {
   return AJANLAT_STATUSZOK.find(s => s.id === statusId) || { szin: "#64748B", bg: "#F8FAFC" };
+}
+
+// ─── Computed helpers ─────────────────────────────────────────
+
+export function computeOsszetettOsszeg(reszlet_tetelek = [], fotetel_id) {
+  return reszlet_tetelek
+    .filter(t => t.fotetel === fotetel_id)
+    .reduce((sum, t) => sum + (Number(t.netto_osszeg) || 0), 0);
+}
+
+export function computeKiviOsszeg(kalk) {
+  if (!kalk || kalk.kezi) return null;
+  return (
+    (Number(kalk.panel_db) || 0) * (Number(kalk.telepitesi_dij_per_panel) || 0) +
+    (Number(kalk.kiszallasi_dij) || 0) +
+    (Number(kalk.emelőgep_dij) || 0) +
+    (Number(kalk.tobblet_napok) || 0) * (Number(kalk.napi_dij) || 0)
+  );
+}
+
+export function computeFoTetelek(fo_tetelek = [], reszlet_tetelek = [], kivi_kalkulator = {}) {
+  return fo_tetelek.map(t => {
+    const def = FO_TETELEK.find(f => f.id === t.id);
+    let netto = Number(t.netto_osszeg) || 0;
+
+    if (def?.osszetett) {
+      // Ha vannak részlet-tételek, azok összege az irányadó; backward compat: ha nincs, a tárolt értéket tartjuk
+      const rSum = computeOsszetettOsszeg(reszlet_tetelek, t.id);
+      netto = rSum > 0 ? rSum : netto;
+    } else if (def?.kivi) {
+      if (!kivi_kalkulator.kezi) {
+        const kiviVal = computeKiviOsszeg(kivi_kalkulator);
+        if (kiviVal !== null) netto = kiviVal;
+      }
+    } else if (def?.termek) {
+      // Termék: ha mennyiség és egységár is megadott, auto-számol
+      const db = Number(t.mennyiseg) || 0;
+      const ar = Number(t.netto_egysegar) || 0;
+      if (db > 0 && ar > 0) netto = db * ar;
+    }
+
+    return { ...t, netto_osszeg: netto };
+  });
+}
+
+export function computeNettoOsszeg(fo_tetelek = [], reszlet_tetelek = [], kivi_kalkulator = {}) {
+  const computed = computeFoTetelek(fo_tetelek, reszlet_tetelek, kivi_kalkulator);
+  return computed.filter(t => t.aktiv).reduce((s, t) => s + t.netto_osszeg, 0);
 }

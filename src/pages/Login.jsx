@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { User, Lock, Eye, EyeOff, LogIn, ChevronRight } from "lucide-react";
-import { FONT } from "../lib/constants";
+import { User, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { checkLogin } from "../lib/crmUsers";
 
 export default function Login({ onLogin }) {
@@ -30,126 +30,138 @@ export default function Login({ onLogin }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: C.accent,
-      display: "flex",
-      fontFamily: FONT,
-      position: "relative",
-      overflow: "hidden",
+      background: `linear-gradient(145deg, #051a17 0%, #082521 45%, ${C.accentDark} 100%)`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 24, fontFamily: FONT,
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;500;600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        @keyframes gridMove {
-          from { transform: translateY(0); }
-          to   { transform: translateY(40px); }
-        }
-
-        .edi-input-wrap:focus-within {
-          border-color: #18ACA0 !important;
-          background: #fff !important;
-          box-shadow: 0 0 0 3px rgba(24,172,160,0.15) !important;
-        }
-        .edi-submit:not(:disabled):hover {
-          background: #064f49 !important;
-          transform: translateY(-1px);
-          box-shadow: 0 8px 24px rgba(7,94,86,0.45) !important;
-        }
-        .edi-submit:not(:disabled):active {
-          transform: translateY(0);
-        }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(18px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes spin   { to { transform: rotate(360deg); } }
+        .edi-input-wrap:focus-within { border-color: ${C.accent} !important; background: #fff !important; box-shadow: 0 0 0 3px rgba(24,172,160,.12); }
+        .edi-login-btn:not(:disabled):hover { background: ${C.accentHover} !important; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(24,172,160,.4) !important; }
       `}</style>
 
-      {/* ── Animated circuit grid background ── */}
       <div style={{
-        position: "absolute", inset: 0,
-        backgroundImage: `
-          linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: "40px 40px",
-        animation: "gridMove 8s linear infinite alternate",
-        pointerEvents: "none",
-      }} />
+        animation: "fadeUp .35s ease",
+        background: "#fff", borderRadius: 24,
+        padding: "44px 40px", width: "100%", maxWidth: 440,
+        boxShadow: "0 32px 80px rgba(0,0,0,.45)",
+      }}>
 
-      {/* ── Decorative orbs ── */}
-      <div style={{
-        position: "absolute", top: "-120px", right: "-80px",
-        width: 420, height: 420,
-        borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(24,172,160,0.25) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
-      <div style={{
-        position: "absolute", bottom: "-100px", left: "-60px",
-        width: 340, height: 340,
-        borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(227,6,19,0.12) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
-
-      {/* ── Left brand panel (desktop) ── */}
-      <div style={{
-        flex: "0 0 44%",
-        display: "flex", flexDirection: "column",
-        justifyContent: "center", alignItems: "flex-start",
-        padding: "60px 52px",
-        position: "relative",
-      }} className="login-brand-panel">
-        <style>{`
-          @media (max-width: 768px) { .login-brand-panel { display: none !important; } .login-form-panel { flex: 1 !important; padding: 32px 24px !important; justify-content: center !important; } }
-        `}</style>
-
-        {/* E.D.I. wordmark */}
-        <div style={{ marginBottom: 40 }}>
-          <div style={{
-            fontFamily: FONT, fontWeight: 900, fontSize: 56,
-            color: "#fff", letterSpacing: 4, lineHeight: 1,
-            textShadow: "0 2px 20px rgba(0,0,0,0.2)",
-          }}>
+        {/* ── E.D.I. Logo ── */}
+        <div style={{ marginBottom: 28, borderBottom: `2px solid ${C.accentLight}`, paddingBottom: 24 }}>
+          <div style={{ fontFamily: FONT_HEADING, fontWeight: 800, fontSize: 36, color: C.accentDark, letterSpacing: 4, lineHeight: 1 }}>
             E.D.I.
           </div>
-          <div style={{
-            fontFamily: FONT, fontWeight: 600, fontSize: 20,
-            color: C.success, letterSpacing: 5,
-            textTransform: "uppercase", marginTop: 4,
-          }}>
-            Solutions
+          <div style={{ fontFamily: FONT_HEADING, fontWeight: 600, fontSize: 13, color: C.accent, letterSpacing: 3, textTransform: "uppercase", marginTop: 4 }}>
+            Solutions Kft.
           </div>
-          <div style={{
-            fontFamily: FONT, fontWeight: 400, fontSize: 10,
-            color: "rgba(255,255,255,0.35)", letterSpacing: 3.5,
-            textTransform: "uppercase", marginTop: 8,
-          }}>
-            Electronic · Development · Innovations
+          <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 11, color: C.muted, letterSpacing: 2, textTransform: "uppercase", marginTop: 10 }}>
+            ELECTRONIC · DEVELOPMENT · INNOVATIONS
           </div>
         </div>
 
-        <div style={{
-          width: 48, height: 2,
-          background: C.danger,
-          marginBottom: 32, borderRadius: 2,
-        }} />
+        <p style={{ fontFamily: FONT_HEADING, fontWeight: 700, fontSize: 18, color: C.text, marginBottom: 4 }}>
+          Bejelentkezés
+        </p>
+        <p style={{ color: C.muted, fontSize: 13, marginBottom: 28, fontWeight: 500 }}>
+          CRM rendszer hozzáférés
+        </p>
 
-        <h2 style={{
-          fontFamily: FONT, fontWeight: 700, fontSize: 26,
-          color: "#fff", lineHeight: 1.35, maxWidth: 340,
-          marginBottom: 16,
-        }}>
-          Vállalatirányítási<br />rendszer
-        </h2>
-        <p style={{
-          fontFamily: FONT, fontWeight: 400, fontSize: 14,
-          color: "rgba(255,255,255,0.50)", lineHeight: 1.8, maxWidth: 300,
-        }}>
-          Projektek, ajánlatok, munkalapok és elszámolások egyetlen integrált platformon.
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+          {/* ── Felhasználónév ── */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: C.textSub, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 6 }}>
+              Felhasználónév
+            </label>
+            <div className="edi-input-wrap" style={{
+              display: "flex", alignItems: "center", gap: 10,
+              background: "#F2F8F7",
+              border: `1.5px solid ${error ? C.danger : C.border}`,
+              borderRadius: 12, padding: "0 14px", transition: "all .15s",
+            }}>
+              <User size={16} color={C.muted} />
+              <input
+                type="text"
+                value={username}
+                onChange={e => { setUsername(e.target.value); setError(""); }}
+                placeholder="pl. edi"
+                autoFocus
+                autoComplete="username"
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 15, padding: "13px 0", fontFamily: FONT, background: "transparent", color: C.text, fontWeight: 500 }}
+              />
+            </div>
+          </div>
+
+          {/* ── Jelszó ── */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: C.textSub, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 6 }}>
+              Jelszó
+            </label>
+            <div className="edi-input-wrap" style={{
+              display: "flex", alignItems: "center", gap: 10,
+              background: "#F2F8F7",
+              border: `1.5px solid ${error ? C.danger : C.border}`,
+              borderRadius: 12, padding: "0 14px", transition: "all .15s",
+            }}>
+              <Lock size={16} color={C.muted} />
+              <input
+                type={showPw ? "text" : "password"}
+                value={password}
+                onChange={e => { setPassword(e.target.value); setError(""); }}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 15, padding: "13px 0", fontFamily: FONT, background: "transparent", color: C.text, fontWeight: 500 }}
+              />
+              <button type="button" onClick={() => setShowPw(p => !p)}
+                style={{ border: "none", background: "none", cursor: "pointer", padding: "4px", color: C.muted, display: "flex", alignItems: "center" }}
+                tabIndex={-1}>
+                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          {/* ── Hibaüzenet ── */}
+          {error && (
+            <div style={{
+              background: C.dangerLight, border: `1.5px solid #FECACA`,
+              borderRadius: 10, padding: "10px 14px", fontSize: 13,
+              color: C.danger, fontWeight: 600, display: "flex", alignItems: "center", gap: 8,
+            }}>
+              <span>⚠</span> {error}
+            </div>
+          )}
+
+          {/* ── Bejelentkezés gomb ── */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="edi-login-btn"
+            style={{
+              marginTop: 4, padding: "14px", borderRadius: 12, border: "none",
+              background: loading ? C.muted : C.accent,
+              color: "#fff", fontWeight: 700, fontSize: 15,
+              cursor: loading ? "not-allowed" : "pointer",
+              fontFamily: FONT, display: "flex", alignItems: "center",
+              justifyContent: "center", gap: 8, transition: "all .15s",
+              boxShadow: loading ? "none" : `0 4px 16px rgba(24,172,160,.35)`,
+              letterSpacing: 0.5,
+            }}>
+            {loading ? (
+              <>
+                <span style={{ display: "inline-block", width: 17, height: 17, border: "2.5px solid rgba(255,255,255,.35)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .7s linear infinite" }} />
+                Ellenőrzés...
+              </>
+            ) : (
+              <><LogIn size={18} /> Bejelentkezés</>
+            )}
+          </button>
+        </form>
+
+        <p style={{ textAlign: "center", fontSize: 11, color: C.muted, marginTop: 24, fontWeight: 500 }}>
+          Elfelejtett jelszó? Kérd az adminisztrátortól.
         </p>
 
         <div style={{ marginTop: 52, display: "flex", flexDirection: "column", gap: 14 }}>
