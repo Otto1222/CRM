@@ -1,15 +1,3 @@
-/**
- * DriveProgressBar.jsx
- * Lebegő alsó folyamatsáv Drive mentésekhez.
- *
- * Props: progress = { active, percent, done, total, collection, status }
- *   active:     boolean – látszik-e
- *   percent:    0..100
- *   done:       elvégzett kollekciók száma
- *   total:      összes kollekció száma
- *   collection: aktuális kollekció kulcs (pl. "munkalapok")
- *   status:     "saving" | "ok" | "error"
- */
 import { C, FONT } from "../lib/constants";
 
 const LABELS = {
@@ -28,10 +16,6 @@ const LABELS = {
   szamlak:               "Számlák",
 };
 
-function label(key) {
-  return LABELS[key] || key;
-}
-
 export default function DriveProgressBar({ progress }) {
   if (!progress || !progress.active) return null;
 
@@ -39,7 +23,7 @@ export default function DriveProgressBar({ progress }) {
   const status = progress.status || "saving";
 
   const barColor =
-    status === "error" ? C.danger  :
+    status === "error" ? C.danger :
     status === "ok"    ? C.success :
     C.accent;
 
@@ -50,12 +34,10 @@ export default function DriveProgressBar({ progress }) {
 
   const sub =
     status === "saving" && progress.total > 1
-      ? `${label(progress.collection)} · ${progress.done}/${progress.total}`
-      : status === "ok"
-        ? "Minden kollekció elmentve"
-        : status === "error"
-          ? "Néhány kollekció nem mentődött"
-          : label(progress.collection);
+      ? `${LABELS[progress.collection] || progress.collection} · ${progress.done}/${progress.total}`
+      : status === "ok"  ? "Minden kollekció elmentve"
+      : status === "error" ? "Néhány kollekció nem mentődött"
+      : LABELS[progress.collection] || progress.collection;
 
   return (
     <div style={{
@@ -66,15 +48,15 @@ export default function DriveProgressBar({ progress }) {
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          <span style={{ fontSize: 15, flexShrink: 0 }}>
+          <span style={{ fontSize: 15 }}>
             {status === "error" ? "⚠️" : status === "ok" ? "✅" : "☁️"}
           </span>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, whiteSpace: "nowrap" }}>{title}</div>
-            <div style={{ fontSize: 11, color: C.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{title}</div>
+            <div style={{ fontSize: 11, color: C.muted }}>{sub}</div>
           </div>
         </div>
-        <div style={{ fontSize: 17, fontWeight: 800, color: barColor, flexShrink: 0, marginLeft: 12 }}>
+        <div style={{ fontSize: 17, fontWeight: 800, color: barColor, marginLeft: 12 }}>
           {pct}%
         </div>
       </div>
