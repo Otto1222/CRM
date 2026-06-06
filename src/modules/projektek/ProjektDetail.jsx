@@ -15,7 +15,6 @@ import TabKarteritesek from "./tabs/TabKarteritesek.jsx";
 import TabAjanlatok    from "./tabs/TabAjanlatok.jsx";
 // Legacy imports (back-compat ha valaki direktben hívja)
 import TabRiport       from "./tabs/TabRiport.jsx";
-import TabLmra         from "./tabs/TabLmra.jsx";
 
 // ── 6 tab az éles teszthez – minden üzleti funkció megvan ──────
 const TABS = [
@@ -91,9 +90,6 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
         return <TabKommunikacio {...props} />;
       case "karteritesek":
         return <TabKarteritesek {...props} />;
-      // LMRA → munkalaphoz tartozik, itt csak összesítő
-      case "lmra":
-        return <TabLmra {...props} />;
       case "utemezas":
         // Ütemezés beolvadt Áttekintésbe – dátumok ott szerkeszthetők
         return <TabAttekintes {...props} />;
