@@ -23,6 +23,8 @@ import BackupKezelo from "./BackupKezelo";
 import CsapatokPage from "../modules/csapatok/CsapatokPage";
 import AnyagtorzsPage from "./AnyagtorzsPage";
 import { migrateMunkalapSzamok } from "../lib/munkalapSzam";
+import { hasPdfSablon, savePdfSablon, deletePdfSablon, getPdfSablonMeta, readFileAsBase64 as lmraReadFile, LMRA_KOCKAZATOK } from "../lib/lmraService";
+import { hasVbfPdfSablon, saveVbfPdfSablon, deleteVbfPdfSablon, getVbfPdfSablonMeta } from "../lib/vbfPdfMerge";
 
 const MENU_ITEMS = [
   {
@@ -746,8 +748,6 @@ function BackBtn({ onClick, label }) {
 }
 
 // ─── LMRA Beállítások – PDF sablon feltöltés ─────────────────
-import { hasPdfSablon, savePdfSablon, deletePdfSablon, getPdfSablonMeta, readFileAsBase64 as lmraReadFile, LMRA_KOCKAZATOK } from "../lib/lmraService";
-import { hasVbfPdfSablon, saveVbfPdfSablon, deleteVbfPdfSablon, getVbfPdfSablonMeta } from "../lib/vbfPdfMerge";
 
 function LmraBeallitasok() {
   const fileRef = useRef();
