@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getWorkOrderDisplayCode } from "../lib/munkalapSzam";
 import UjrakiosztasModal from "./UjrakiosztasModal";
 import VbfAdminCard from "../components/VbfAdminCard";
 import { getLmraStatus, LMRA_STATUS_LABELS, LMRA_STATUS_COLORS, exportLmraPdfWindow, loadLmraRec, initOrLoadLmraRec, lockLmraForInstaller, reopenLmra } from "../lib/lmraData.service";
@@ -61,6 +62,14 @@ function TelepitesTipusIkon({ tipusa, small = false }) {
       </svg>
     </div>
   );
+}
+
+// Munkalapszám megjelenítés – mindig E.D.I.XXX/NNN formátum, soha ml_ / #random
+function getMunkalapKod(m, data) {
+  const projektek = data?.projektek || [];
+  const projekt = projektek.find(p => p.id === m.projektId || p.projektkod === m.projektKod);
+  const osszesMl = data ? Object.values(data).flat().filter(x => x?.id?.startsWith?.("ml_")) : [];
+  return getWorkOrderDisplayCode(m, projekt, osszesMl.length ? osszesMl : null);
 }
 
 function CimkeBadge({ label, color }) {
@@ -268,8 +277,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
                     <td style={{ padding:"14px 16px" }}>
                       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                         <div>
-                          <span style={{ fontWeight:700, color:C.accent }}>{m.dokumentumszam || m.ugyszam || m.ediSorszam || `#${m.id?.slice(-6)}`}</span>
-                          {m.dokumentumszam && m.ediSorszam && <span style={{ fontSize:10, color:C.muted, display:"block" }}>{m.ediSorszam}</span>}
+                          <span style={{ fontWeight:700, color:C.accent }}>{getMunkalapKod(m, data)}</span>
                         </div>
                         {m.cimke && <CimkeBadge label={m.cimke} color={m.cimkeSzin||C.accent} />}
                         {m.munkalapTipus && <span style={{ fontSize:10, background:"#F1F5F9", color:C.muted, padding:"2px 7px", borderRadius:6, fontWeight:600 }}>{m.munkalapTipus}</span>}
@@ -295,7 +303,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
             const cl = data.ugyfelek?.find(u=>u.id===m.clientId);
             const clientNev = m.clientNev || cl?.name || "";
             const clientCim = m.clientCim || cl?.address || "";
-            const munkaszam  = m.dokumentumszam || m.ugyszam || m.ediSorszam || `#${m.id?.slice(-6)}`;
+            const munkaszam  = getMunkalapKod(m, data);
 
             // ── Telepítő egyszerűsített kártya ──────────────────
             if (userRole === "Telepítő") {

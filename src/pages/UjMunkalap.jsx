@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { C, FONT, FONT_HEADING, MUNKALAP_TIPUSOK, WORKFLOW_STATUSES } from "../lib/constants";
 import { getAktivSablonok } from "../modules/munkalap_sablonok/munkalapSablon.service.js";
-import { nextEdiSorszam } from "../lib/dokumentumszam";
+import { generateMunkalapSzam } from "../lib/munkalapSzam";
 import { createBackup } from "../lib/backupService";
 import { getUsers } from "../lib/crmUsers";
 import { ft, totals } from "../lib/helpers";
@@ -420,7 +420,15 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
     if(!validate()) { setActive("alap"); return; }
     setSaving(true);
     createBackup("Új munkalap mentés előtt");
-    const generaltEdi = nextEdiSorszam(); // belső egyedi azonosító (Drive sync)
+    const projekt = projektek.find(p => p.id === alap.projektId);
+    const meglevoMunkalapok = data?.munkalapok || JSON.parse(localStorage.getItem("munkalapok") || "[]");
+    const ujMunkalapSzam = generateMunkalapSzam(
+      projekt?.projektkod || "",
+      alap.fovallalkoiAzonosito || "",
+      meglevoMunkalapok
+    );
+
+    const veglegesUgyszam = alap.ugyszam || ujMunkalapSzam || `${projekt?.projektkod || "ML"}/001`;
 
     // Sablon mezők validáció – kötelező mezők ellenőrzése
     if (kivalasztottSablon) {
@@ -441,7 +449,6 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
     // Kiválasztott csapat adatai
     const csapat = csapatok.find(c=>c.id===alap.csapatId);
 
-    const veglegesUgyszam = alap.ugyszam || generaltEdi;
 
     const ml = {
       id:                `ml_${Date.now()}`,  // egyedi belső ID (nem tartalmaz "/" karaktert)
@@ -469,11 +476,10 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
       munkalapTipus:     alap.munkalapTipus || "Első kivitelezés",
       telepitesTipusa:   alap.telepitesTipusa || "Napelem",
       fovallalkoiAzonosito: alap.fovallalkoiAzonosito || "",
-      ediSorszam:        generaltEdi,
-      // Fő azonosító: projektkód/M-001 formátum; ha van fővállalkozói szám, hozzáfűzzük
-      dokumentumszam:    alap.fovallalkoiAzonosito?.trim()
-        ? `${veglegesUgyszam} / ${alap.fovallalkoiAzonosito.trim()}`
-        : veglegesUgyszam,
+      ediSorszam:        veglegesUgyszam,   // backward compat
+      // Fő azonosító: E.D.I.XXX/NNN formátum
+      dokumentumszam:    veglegesUgyszam,
+      munkalapSzam:      veglegesUgyszam,
       // Csapat – a Telepítő szűrés erre támaszkodik
       assigneeId:        alap.csapatId,
       assigneeNev:       csapat?.nev || alap.csapatNev,

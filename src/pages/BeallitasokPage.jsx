@@ -93,6 +93,14 @@ const MENU_ITEMS = [
     bg: "#F8FAFC",
   },
   {
+    id: "munkalapszam_migracio",
+    label: "🔧 Munkalapszám javítás",
+    desc: "Régi ml_xxx / #random azonosítók → E.D.I.XXX/001 formátum",
+    icon: AlertTriangle,
+    color: "#D97706",
+    bg: "#FFFBEB",
+  },
+  {
     id: "drive_status",
     label: "Drive szinkron állapot",
     desc: "Kapcsolat teszt, kollekciónkénti szinkron napló, teljes Drive mentés",
@@ -177,6 +185,15 @@ export default function BeallitasokPage({ currentUser }) {
       <>
         <BackBtn onClick={() => setAktiv(null)} label="Anyagtörzs" />
         <AnyagtorzsPage />
+      </>
+    );
+  }
+
+  if (aktiv === "munkalapszam_migracio") {
+    return (
+      <>
+        <BackBtn onClick={() => setAktiv(null)} label="Munkalapszám javítás" />
+        <MunkalapSzamMigracio />
       </>
     );
   }
@@ -865,6 +882,91 @@ function VbfPdfSablonBeallitas() {
           {` {placeholder}`} mezőket írsz, a „VBF .docx" gomb pontosan beleilleszt minden mért értéket.
         </p>
       </div>
+    </div>
+  );
+}
+
+// ─── Munkalapszám Migráció ────────────────────────────────────
+import { migrateMunkalapSzamok } from "../lib/munkalapSzam";
+
+function MunkalapSzamMigracio() {
+  const [eredmeny, setEredmeny] = useState(null);
+  const [mentve, setMentve]     = useState(false);
+
+  function handleElemez() {
+    const mls = JSON.parse(localStorage.getItem("munkalapok") || "[]");
+    const prj = JSON.parse(localStorage.getItem("projektek")  || "[]");
+    const result = migrateMunkalapSzamok(mls, prj);
+    setEredmeny(result);
+    setMentve(false);
+  }
+
+  function handleJavit() {
+    if (!eredmeny?.fixed?.length) return;
+    const mls = JSON.parse(localStorage.getItem("munkalapok") || "[]");
+    const frissitett = mls.map(m => {
+      const fix = eredmeny.fixed.find(f => f.id === m.id);
+      if (!fix) return m;
+      return { ...m, dokumentumszam: fix.uj, munkalapSzam: fix.uj, _projektSorszam: fix._projektSorszam };
+    });
+    localStorage.setItem("munkalapok", JSON.stringify(frissitett));
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+    setMentve(true);
+  }
+
+  const inp = { width:"100%",boxSizing:"border-box",padding:"7px 10px",border:`1px solid ${C.border}`,borderRadius:7,fontSize:12,fontFamily:FONT,outline:"none",background:"#F8FAFC" };
+
+  return (
+    <div style={{ padding:"16px 20px", fontFamily:FONT, maxWidth:640 }}>
+      <div style={{ background:"#FFFBEB",border:"1.5px solid #FCD34D",borderRadius:12,padding:"12px 16px",marginBottom:16,fontSize:13,color:"#92400E" }}>
+        ⚠️ Ez az eszköz elemzi a meglévő munkalapszámokat és javítja a helytelen formátumokat.<br/>
+        <strong>Adatot nem töröl – csak a dokumentumszam mezőt egészíti ki.</strong>
+      </div>
+      <button onClick={handleElemez}
+        style={{ padding:"10px 20px",background:C.accent,color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:700,fontFamily:FONT,marginBottom:16 }}>
+        🔍 Munkalapszámok elemzése
+      </button>
+      {eredmeny && (
+        <div>
+          {eredmeny.fixed.length > 0 && (
+            <div style={{ marginBottom:14 }}>
+              <p style={{ fontWeight:700,fontSize:13,color:"#059669",marginBottom:8 }}>✅ Javítható: {eredmeny.fixed.length} munkalap</p>
+              <div style={{ maxHeight:200,overflowY:"auto",border:`1px solid ${C.border}`,borderRadius:9 }}>
+                {eredmeny.fixed.map(f => (
+                  <div key={f.id} style={{ padding:"7px 12px",borderBottom:`1px solid ${C.border}`,display:"flex",gap:12,fontSize:12 }}>
+                    <span style={{ color:C.muted,textDecoration:"line-through",minWidth:120 }}>{f.regi}</span>
+                    <span style={{ color:"#059669",fontWeight:700 }}>→ {f.uj}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {eredmeny.needsAdminCheck.length > 0 && (
+            <div style={{ marginBottom:14 }}>
+              <p style={{ fontWeight:700,fontSize:13,color:"#DC2626",marginBottom:8 }}>⚠️ Admin ellenőrzés szükséges: {eredmeny.needsAdminCheck.length} munkalap</p>
+              <div style={{ maxHeight:200,overflowY:"auto",border:`1px solid #FECACA`,borderRadius:9 }}>
+                {eredmeny.needsAdminCheck.map(f => (
+                  <div key={f.id} style={{ padding:"7px 12px",borderBottom:`1px solid #FEF2F2`,display:"flex",gap:12,fontSize:12 }}>
+                    <span style={{ color:C.muted,minWidth:120 }}>{f.regi}</span>
+                    <span style={{ color:"#DC2626" }}>← {f.ok}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {eredmeny.fixed.length === 0 && eredmeny.needsAdminCheck.length === 0 && (
+            <div style={{ background:"#ECFDF5",border:"1px solid #86EFAC",borderRadius:9,padding:"10px 14px",fontSize:13,color:"#166534" }}>
+              ✅ Minden munkalapszám helyes formátumú!
+            </div>
+          )}
+          {eredmeny.fixed.length > 0 && (
+            <button onClick={handleJavit} disabled={mentve}
+              style={{ padding:"11px 22px",background:mentve?"#059669":C.accent,color:"#fff",border:"none",borderRadius:9,cursor:mentve?"default":"pointer",fontWeight:700,fontFamily:FONT }}>
+              {mentve ? "✅ Mentve!" : `Javítás alkalmazása (${eredmeny.fixed.length} munkalap)`}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

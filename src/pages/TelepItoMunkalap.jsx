@@ -78,17 +78,36 @@ const VBF_TEMPLATE = {
   inverterNevleges:"", tuzMegszakito:"",
 };
 
-function getMunkalapAzonosito(m) {
-  return (
-    m?.dokumentumszam ||
-    m?.munkalapSzam ||
-    m?.munkalapszam ||
-    m?.workorderNumber ||
-    m?.ediSorszam ||
-    m?.ugyszam ||
-    m?.id ||
-    "Munkalap"
+function getMunkalapAzonosito(m, projektek = []) {
+  // Helyes formátumú dokumentumszam ha már van
+  const dsz = m?.dokumentumszam || m?.munkalapSzam || "";
+  if (dsz && /^E\.D\.I\.\d+\/\d+/.test(dsz)) return dsz;
+
+  // Projekt kódból generálás
+  const projekt = projektek.find(p =>
+    p.id === m?.projektId || p.projektkod === m?.projektKod
   );
+  if (projekt?.projektkod) {
+    const osszesMl = JSON.parse(localStorage.getItem("munkalapok") || "[]");
+    const { getWorkOrderDisplayCode } = window._munkalapSzamHelper || {};
+    if (getWorkOrderDisplayCode) return getWorkOrderDisplayCode(m, projekt, osszesMl);
+
+    // Inline fallback
+    const projektMls = osszesMl
+      .filter(x => x.projektId === m.projektId)
+      .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    const sorsz = Math.max(1, projektMls.findIndex(x => x.id === m.id) + 1 || 1);
+    const alap = `${projekt.projektkod}/${String(sorsz).padStart(3, "0")}`;
+    const kulso = m.fovallalkoiAzonosito?.trim() || "";
+    return kulso ? `${alap} / ${kulso}` : alap;
+  }
+
+  // Régi EDI sorszám backward compat
+  const regi = m?.ediSorszam || m?.ugyszam;
+  if (regi && /^E\.D\.I\./.test(regi)) return regi;
+
+  // Soha nem mutatunk ml_ vagy timestamp ID-t
+  return dsz || "Nincs munkalapszám";
 }
 
 function VbfNumInput({ value, onCommit, unit, piros }) {
@@ -539,7 +558,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   const clientNev = m.clientNev||client?.name||"";
   const clientCim = m.clientCim||client?.address||"";
   const clientTel = m.clientTel||client?.phone||"";
-  const munkalapAzonosito = getMunkalapAzonosito(m);
+  const munkalapAzonosito = getMunkalapAzonosito(m, data.projektek || []);
 
   const isLezartStatus = (ml) =>
     ml.lezarva ||
