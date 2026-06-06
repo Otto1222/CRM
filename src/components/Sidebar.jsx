@@ -101,6 +101,18 @@ function TelepItoNav({ page, onNav, onClose }) {
       {btn("munkalapok", "Saját munkalapok", FileText)}
       <div style={{ borderTop: `1px solid ${C.sidebarBorder}`, margin: "10px 0" }} />
       <button
+        onClick={() => { window.open("/installer-guide.html", "_blank"); onClose?.(); }}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 11,
+          padding: "10px 12px", borderRadius: 9, border: "none",
+          borderLeft: "3px solid transparent", background: "transparent",
+          color: "#FCD34D", cursor: "pointer", fontSize: 14,
+          fontFamily: FONT, fontWeight: 700,
+        }}
+      >
+        <BookOpen size={17} strokeWidth={2} />Kézikönyv
+      </button>
+      <button
         onClick={() => {
           try {
             const b = JSON.parse(localStorage.getItem("beallitasok") || "{}");
