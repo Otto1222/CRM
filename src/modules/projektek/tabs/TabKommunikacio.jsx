@@ -1,5 +1,5 @@
 /**
- * TabKommunikacio.jsx – Napló + Megjegyzések (összevonva)
+ * TabKommunikacio.jsx – Projektnapló (megjegyzések + eseménynapló összevonva)
  */
 import { useState } from "react";
 import { MessageSquare, Send } from "lucide-react";
@@ -17,8 +17,12 @@ export default function TabKommunikacio({ projekt, currentUser }) {
     })),
     ...(projekt.esemenynaplo || []).map(e => ({
       id: e.id, datum: e.datum, user: e.user || "Rendszer",
-      cimke: e.esemeny === "Státusz változás" ? "🔄 Státusz" :
-             e.esemeny === "Projekt létrehozva" ? "✅ Létrehozva" : `📌 ${e.esemeny}`,
+      cimke: e.esemeny === "Státusz változás"   ? "🔄 Státusz" :
+             e.esemeny === "Projekt létrehozva"  ? "✅ Létrehozva" :
+             e.esemeny === "Ügyfél egyeztetés"   ? "📞 Egyeztetés" :
+             e.esemeny === "MVM ügyintézés"       ? "⚡ MVM" :
+             e.esemeny === "Anyagrendelés"        ? "📦 Anyagrendelés" :
+             `📌 ${e.esemeny}`,
       szoveg: e.reszletek || e.esemeny, tipus: "esemeny",
     })),
   ].sort((a, b) => new Date(b.datum) - new Date(a.datum));
