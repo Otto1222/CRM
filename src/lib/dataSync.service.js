@@ -189,15 +189,26 @@ export async function syncAllFromDrive() {
  * Összes kollekció mentése Drive-ra.
  * @returns {{ results: Object, allOk: boolean }}
  */
-export async function syncAllToDrive() {
+export async function syncAllToDrive(onProgress) {
   const results = {};
   let   allOk   = true;
+  const total   = SYNC_COLLECTIONS.length;
+  let   done    = 0;
 
   for (const collection of SYNC_COLLECTIONS) {
+    if (typeof onProgress === "function") {
+      onProgress({ done, total, percent: Math.round((done / total) * 100), collection, phase: "saving" });
+    }
+
     const data = loadLocal(collection) ?? emptyValue(collection);
     const res  = await saveCollection(collection, data);
     results[collection] = res;
     if (!res.driveSaved) allOk = false;
+
+    done++;
+    if (typeof onProgress === "function") {
+      onProgress({ done, total, percent: Math.round((done / total) * 100), collection, phase: "done" });
+    }
   }
 
   return { results, allOk };
