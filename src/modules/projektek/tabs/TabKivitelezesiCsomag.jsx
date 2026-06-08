@@ -16,13 +16,15 @@ import {
   isKivitelezesiCsomagSzerkesztesTiltott,
   KIVITELEZESI_CSOMAG_FORRAS,
 } from "../../kivitelezesi_csomag/kivitelezesiCsomag.schema.js";
+import AnyagszamitoPanel from "./AnyagszamitoPanel.jsx";
 
 const th = { textAlign: "left", padding: "8px 10px", fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1.5px solid #E2E8F0" };
 const td = { padding: "8px 10px", fontSize: 13, color: "#0F172A", borderBottom: "1px solid #F1F5F9" };
 const inputStyle = { padding: "7px 10px", borderRadius: 7, border: "1.5px solid #E2E8F0", fontSize: 13, fontFamily: FONT, color: "#0F172A" };
 const mennyisegInputStyle = { ...inputStyle, width: 64, padding: "4px 6px", textAlign: "right" };
 
-// PM/Admin – ők kezelhetik a csomag státuszát és a mennyiségeket (Fázis 4D).
+// PM/Admin – ők kezelhetik a csomag státuszát, a mennyiségeket és az
+// Anyagszámítási Motor előnézetének jóváhagyását (Fázis 4D / 5A).
 const KIVITELEZESI_CSOMAG_KEZELO_SZEREPEK = ["Admin", "Projektmenedzser"];
 
 export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
@@ -216,6 +218,10 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
             <p style={{ fontSize: 12, color: "#DC2626", fontWeight: 700, margin: "10px 0 0" }}>{keziHiba}</p>
           )}
         </div>
+      )}
+
+      {isPMvagyAdmin && !szerkesztesTiltott && (
+        <AnyagszamitoPanel csomag={csomag} currentUser={currentUser} onCsomagFrissult={setCsomag} />
       )}
 
       {tetelek.length === 0 ? (

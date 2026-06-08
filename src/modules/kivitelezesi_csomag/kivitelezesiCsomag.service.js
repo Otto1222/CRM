@@ -11,6 +11,7 @@ import {
   KIVITELEZESI_CSOMAG_FORRAS,
   generateKiviTetelekFromAjanlatPillanatkep,
   createKeziTetelPillanatkep,
+  createAnyagszamitoTetelPillanatkep,
   ellenorizStatuszValtas,
   isKivitelezesiCsomagSzerkesztesTiltott,
 } from "./kivitelezesiCsomag.schema.js";
@@ -205,4 +206,59 @@ export function updateKiviTetelMennyisegek(csomagId, tetelId, mezok = {}, user =
     return uj;
   });
   return updateKivitelezesiCsomag(csomagId, { tetelek }, user);
+}
+
+/**
+ * Az Anyagszámítási Motor előnézetében jóváhagyott sorok beillesztése a
+ * Kivitelezési Csomagba (Fázis 5A spec 6–8. pont).
+ *
+ * A motor (ld. anyagSzamito.service.js – generateAnyagszamitas) önmagában
+ * SOSEM ír a csomagba: csak egy előnézeti "anyaglista"-t számol. Ez a
+ * függvény a PM jóváhagyása UTÁN, egyetlen lépésben illeszti be a sorokat –
+ * NEM destruktív módon:
+ *
+ *   - a meglévő tételeket nem írja felül és nem módosítja
+ *   - minden sorhoz pillanatképet készít (createAnyagszamitoTetelPillanatkep),
+ *     forras = "anyagszamito"
+ *   - DUPLIKÁCIÓVÉDELEM: ha egy anyagtorzs_id már szerepel a csomagban
+ *     (akár a jóváhagyási kör elején, akár az időközben hozzáadott új
+ *     sorok miatt), az adott sor NEM kerül be – a "duplikalt" listában
+ *     jelzi vissza, hogy már szerepelt. Mennyiség-összevonás (a duplikált
+ *     sor mennyiségének hozzáadása a meglévőhöz) későbbi fejlesztés tárgya.
+ *
+ * Visszaad: { csomag, hozzaadva, duplikalt }
+ *   - csomag:    a frissített Kivitelezési Csomag (vagy a változatlan, ha
+ *                egyetlen sor sem került be)
+ *   - hozzaadva: az újonnan beillesztett tétel-pillanatképek
+ *   - duplikalt: a kihagyott sorok (anyagtorzs_id már szerepelt a csomagban)
+ */
+export function addAnyagszamitoTetelekToKivitelezesiCsomag(csomagId, anyaglista = [], user = "") {
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) {
+    throw new Error("A Kivitelezési Csomag nem található.");
+  }
+  if (isKivitelezesiCsomagSzerkesztesTiltott(csomag.status)) {
+    throw new Error("Lezárt vagy elszámolt csomagba nem illeszthető be új tétel.");
+  }
+
+  const meglevoIdk = new Set((csomag.tetelek || []).map(t => t.anyagtorzs_id));
+  const ujTetelek  = [];
+  const duplikalt  = [];
+
+  for (const sor of anyaglista) {
+    if (meglevoIdk.has(sor.anyagtorzs_id)) {
+      duplikalt.push(sor);
+      continue;
+    }
+    const tetel = createAnyagszamitoTetelPillanatkep(sor.anyagtorzs_id, sor.szamoltMennyiseg);
+    if (!tetel) continue;
+    ujTetelek.push(tetel);
+    meglevoIdk.add(sor.anyagtorzs_id);
+  }
+
+  const updatedCsomag = ujTetelek.length > 0
+    ? updateKivitelezesiCsomag(csomagId, { tetelek: [...(csomag.tetelek || []), ...ujTetelek] }, user)
+    : csomag;
+
+  return { csomag: updatedCsomag, hozzaadva: ujTetelek, duplikalt };
 }

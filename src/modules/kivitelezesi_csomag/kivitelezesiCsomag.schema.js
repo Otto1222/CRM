@@ -30,6 +30,7 @@ export const KIVITELEZESI_CSOMAG_FORRAS = {
   AJANLATBOL:     "ajanlatbol",       // saját munka – elfogadott ajánlatból generálva (automatikus)
   SABLONBOL:      "sablonbol",        // fővállalkozói / belső – PM hozza létre sablonból
   KEZI:           "kezi",             // fővállalkozói / belső – PM kézi tételrögzítéssel
+  ANYAGSZAMITO:   "anyagszamito",     // Anyagszámítási Motor – PM jóváhagyása után kerül be (Fázis 5A)
 };
 
 // ─── Fázis 4D – státusz alapok (a csomag belső mennyiség-életútja) ────────
@@ -292,6 +293,41 @@ export function createKeziTetelPillanatkep(anyagtorzsId, mennyisegek = {}) {
     egysegarPillanatkepBeszerzesi: Number(anyag.netto_egysegar) || 0,
     tervezettMennyiseg:    Number(mennyisegek.tervezettMennyiseg) || 0,
     kiadandoMennyiseg:     Number(mennyisegek.kiadandoMennyiseg) || 0,
+    kiadottMennyiseg:      0,
+    felhasznaltMennyiseg:  0,
+    visszahozottMennyiseg: 0,
+  };
+}
+
+/**
+ * Anyagszámítási Motor által javasolt tétel pillanatkép-objektuma
+ * (Fázis 5A – PM jóváhagyása UTÁN, az előnézetből kerül be a csomagba).
+ *
+ * Ugyanazt a pillanatkép-garanciát követi, mint createKeziTetelPillanatkep:
+ * a leíró adatok és árak a hívás pillanatában érvényes anyagtörzs-rekordból
+ * másolódnak át, ezután teljesen függetlenek attól (ld. fenti pillanatkép-
+ * garancia dokumentáció). A motor által számolt mennyiség a tervezett
+ * mennyiségbe kerül – a kiadandó/kiadott/felhasznált/visszahozott mezőket
+ * a PM tölti ki a csomag további életútja során (ld. Fázis 4D).
+ *
+ * Csak létező anyagtörzs-rekordra hívható (anyagtorzsId kötelező, a hívó
+ * – generateAnyagszamitas – garantáltan csak ilyenekre ad vissza sort).
+ */
+export function createAnyagszamitoTetelPillanatkep(anyagtorzsId, szamoltMennyiseg) {
+  const anyag = getAnyag(anyagtorzsId);
+  if (!anyag) return null;
+  return {
+    id:                    `ktet_${anyag.id}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    anyagtorzs_id:         anyag.id,
+    forras:                KIVITELEZESI_CSOMAG_FORRAS.ANYAGSZAMITO,
+    cikkszam:              anyag.kulsoAzonosito || "",
+    nev:                   anyag.nev || "",
+    kategoria:             anyag.telepitoi_kategoria || anyag.kategoria || "",
+    egyseg:                anyag.egyseg || "db",
+    egysegarPillanatkepEladasi:    Number(anyag.javasoltEladasiAr) || 0,
+    egysegarPillanatkepBeszerzesi: Number(anyag.netto_egysegar) || 0,
+    tervezettMennyiseg:    Number(szamoltMennyiseg) || 0,
+    kiadandoMennyiseg:     0,
     kiadottMennyiseg:      0,
     felhasznaltMennyiseg:  0,
     visszahozottMennyiseg: 0,
