@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { Save, Check, Plus, Receipt, RefreshCw, CheckCircle2, AlertTriangle } from "lucide-react";
 import { C, FONT } from "../../../lib/constants.js";
 import { ft } from "../../../lib/helpers.js";
-import { calcEsmentProjektPenzugy } from "../../../services/workOrderFinancial.service.js";
+import { calcEsmentProjektPenzugy, ANYAGKOLTSEG_FORRAS } from "../../../services/workOrderFinancial.service.js";
 import { calcProjektPenzugy }       from "../../../lib/costEngine.js";
 import {
   ELSZAMOLAS_STATUSZOK, SZAMLAZAS_STATUSZOK, TIG_STATUSZOK,
@@ -19,6 +19,16 @@ import { getPenzugyi, upsertPenzugyi, autoElszamolasElokeszites } from "../../pe
 import { PENZUGYI_SCHEMA }   from "../../penzugy/penzugyi.schema.js";
 import { loadSzamlak, createSzamla } from "../../szamlak/szamla.service.js";
 import { getCsapat }         from "../../csapatok/csapat.service.js";
+
+// Anyagköltség-forrás megjelenítendő rövid neve – P0-2 javítás: a forrás
+// MINDIG látható, hogy pénzügyi vita esetén egyértelmű legyen, honnan jött a szám.
+const ANYAGKOLTSEG_FORRAS_LABEL = {
+  [ANYAGKOLTSEG_FORRAS.KIVITELEZESI_CSOMAG_TENYLEGES]: "Kivitelezési Csomag",
+  [ANYAGKOLTSEG_FORRAS.MUNKALAP_ANYAGKOLTSEG_TOTAL]:   "Munkalap",
+  [ANYAGKOLTSEG_FORRAS.FELHASZNALT_ANYAGOK_LOCAL]:     "Munkalap (helyi adat)",
+  [ANYAGKOLTSEG_FORRAS.KEZI_PENZUGYI_ADAT]:            "Kézi adat",
+  [ANYAGKOLTSEG_FORRAS.NINCS_ADAT]:                    "nincs adat",
+};
 
 // ─── KPI kártya ──────────────────────────────────────────────
 function KPI({ label, value, color, sub }) {
@@ -173,7 +183,7 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
                 ["Csapat bér",        kalk.csapatBer,         "#DC2626"],
                 kalk.alvallalkozoiBer > 0 ? [`Alvállalkozói díj (${csapat?.nev || ""})`, kalk.alvallalkozoiBer, "#9333EA"] : null,
                 kalk.utikoltség > 0  ? ["Km-díj",             kalk.utikoltség,        "#DC2626"] : null,
-                kalk.anyagkoltség > 0 ? [penzugy.keziAnyagkoltság != null ? "Anyagköltség (kézi)" : "Anyagköltség (munkalapokból)", kalk.anyagkoltság, "#DC2626"] : null,
+                kalk.anyagkoltság > 0 ? [`Anyagköltség (forrás: ${ANYAGKOLTSEG_FORRAS_LABEL[kalk.anyagkoltsegForras] || kalk.anyagkoltsegForras})`, kalk.anyagkoltság, "#DC2626"] : null,
                 ["Összes ktg (terv)", kalk.osszesKolts,       "#DC2626"],
                 ["Haszon",            kalk.haszon,            kalk.haszon >= 0 ? "#059669" : "#DC2626"],
               ].filter(Boolean).map(([l, v, c]) => (
@@ -184,6 +194,9 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
               ))}
               {kalk.hianyosTetelek?.length > 0 && (
                 <p style={{ fontSize: 11, color: "#D97706", marginTop: 8 }}>⚠️ Hiányos konfig: {kalk.hianyosTetelek.join(", ")}</p>
+              )}
+              {kalk.anyagkoltsegWarning && (
+                <p style={{ fontSize: 11, color: '#D97706', fontWeight: 600, marginTop: 8 }}>⚠ {kalk.anyagkoltsegWarning}</p>
               )}
             </div>
           )}

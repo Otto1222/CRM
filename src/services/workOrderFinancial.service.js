@@ -9,6 +9,7 @@
 import { loadFovallalkozok, loadSzabalyok } from "../modules/fovallalkozok/fovallalkozo.service.js";
 import { calcOsszesSzabaly, findEgyezoSzabalyok, calcSzabalyOsszeg, szabalyLeiras, ELSZAMOLASI_MODOK } from "../modules/fovallalkozok/elszamolasiMotor.js";
 import { calcAnyagkoltseg } from "../lib/anyagtorzs.js";
+import { getKivitelezesiCsomagByProjektId } from "../modules/kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import { loadKarteritesek } from "../lib/karterites.js";
 import { getCsapat, loadAvSzabalyok, calcCsapatAlvallalkozoiBer, getAvSzabalyokByCsapat } from "../modules/csapatok/csapat.service.js";
 
@@ -28,6 +29,111 @@ export function loadTetelek(projektId) {
 }
 
 // ─── Fő kalkuláció ────────────────────────────────────────────
+
+// ─── Anyagköltség-forrás egyértelműsítése (P0-2 javítás) ──────
+// A korábbi csendes fallback-lánc (munkalap.anyagkoltsegeTotal →
+// localStorage felh_anyagok_{id} → kézi adat) helyett ez a helper
+// MINDIG megmondja, melyik forrásból jött a szám, és figyelmeztet,
+// ha nem az elsődleges forrásból (Kivitelezési Csomag tényleges
+// felhasználás) számolódott – pénzügyi vita esetén ez legyen védhető.
+
+export const ANYAGKOLTSEG_FORRAS = {
+  KIVITELEZESI_CSOMAG_TENYLEGES: "KIVITELEZESI_CSOMAG_TENYLEGES",
+  MUNKALAP_ANYAGKOLTSEG_TOTAL:   "MUNKALAP_ANYAGKOLTSEG_TOTAL",
+  FELHASZNALT_ANYAGOK_LOCAL:     "FELHASZNALT_ANYAGOK_LOCAL",
+  KEZI_PENZUGYI_ADAT:            "KEZI_PENZUGYI_ADAT",
+  NINCS_ADAT:                    "NINCS_ADAT",
+};
+
+const NEM_ELSODLEGES_FIGYELMEZTETES = "Anyagköltség nem elsődleges forrásból számolva.";
+
+/**
+ * Egyértelműsíti, HONNAN jön az anyagköltség száma. Nincs csendes fallback:
+ * minden visszatérési érték megmondja a forrását, a megbízhatóságát, és ha
+ * nem az elsődleges forrásból (Kivitelezési Csomag tényleges felhasználása)
+ * származik, kifejezett figyelmeztetést ad.
+ *
+ * Forrás-prioritás:
+ *   1. KEZI_PENZUGYI_ADAT            – PM kézi felülírása (explicit döntés, nem fallback)
+ *   2. KIVITELEZESI_CSOMAG_TENYLEGES – ELSŐDLEGES: tényleges felhasznált mennyiség × beszerzési ár pillanatkép
+ *   3. MUNKALAP_ANYAGKOLTSEG_TOTAL   – telepítő által lezáráskor rögzített összeg
+ *   4. FELHASZNALT_ANYAGOK_LOCAL     – ideiglenes, helyi (localStorage) felhasznált anyag adatok
+ *   5. NINCS_ADAT                    – egyik forrásból sem áll rendelkezésre adat
+ *
+ * @param munkalap  egy munkalap vagy munkalapok tömbje (a projekt munkalapjai)
+ * @param projekt   a projekt (Kivitelezési Csomag és kézi pénzügyi adat eléréséhez)
+ * @param options   { keziAnyagkoltseg } – PM által explicit módon felülírt érték, ha van
+ * @returns { ertek, forras, megbizhatosag, warning }
+ */
+export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
+  const { keziAnyagkoltseg } = options;
+
+  // 1. Kézi felülírás – ez egy EXPLICIT PM-döntés, nem csendes fallback.
+  if (keziAnyagkoltseg !== null && keziAnyagkoltseg !== undefined) {
+    return {
+      ertek: Number(keziAnyagkoltseg) || 0,
+      forras: ANYAGKOLTSEG_FORRAS.KEZI_PENZUGYI_ADAT,
+      megbizhatosag: "kezi",
+      warning: null,
+    };
+  }
+
+  const munkalapok = Array.isArray(munkalap) ? munkalap : (munkalap ? [munkalap] : []);
+
+  // 2. ELSŐDLEGES forrás: Kivitelezési Csomag tényleges felhasználása.
+  const csomag = projekt?.id ? getKivitelezesiCsomagByProjektId(projekt.id) : null;
+  const tenylegesTetelek = (csomag?.tetelek || []).filter(t => (Number(t.felhasznaltMennyiseg) || 0) > 0);
+  if (tenylegesTetelek.length > 0) {
+    const ertek = tenylegesTetelek.reduce((s, t) => {
+      const ar = Number(t.egysegarPillanatkepBeszerzesi) || 0;
+      const m  = Number(t.felhasznaltMennyiseg) || 0;
+      return s + ar * m;
+    }, 0);
+    return {
+      ertek,
+      forras: ANYAGKOLTSEG_FORRAS.KIVITELEZESI_CSOMAG_TENYLEGES,
+      megbizhatosag: "magas",
+      warning: null,
+    };
+  }
+
+  // 3. Munkalap-szintű rögzített összeg (telepítő mentette lezáráskor).
+  const mlAnyagKolts = munkalapok.reduce((s, m) => s + (Number(m?.anyagkoltsegeTotal) || 0), 0);
+  if (mlAnyagKolts > 0) {
+    return {
+      ertek: mlAnyagKolts,
+      forras: ANYAGKOLTSEG_FORRAS.MUNKALAP_ANYAGKOLTSEG_TOTAL,
+      megbizhatosag: "kozepes",
+      warning: `${NEM_ELSODLEGES_FIGYELMEZTETES} Forrás: munkalap rögzített anyagköltség-összege (nincs tényleges felhasználás a Kivitelezési Csomagban).`,
+    };
+  }
+
+  // 4. Ideiglenes, helyi (localStorage) felhasznált anyag adatok.
+  let localOsszeg = 0;
+  for (const m of munkalapok) {
+    if (!m?.id) continue;
+    try {
+      const felh = JSON.parse(localStorage.getItem(`felh_anyagok_${m.id}`) || "[]");
+      localOsszeg += calcAnyagkoltseg(felh);
+    } catch {}
+  }
+  if (localOsszeg > 0) {
+    return {
+      ertek: localOsszeg,
+      forras: ANYAGKOLTSEG_FORRAS.FELHASZNALT_ANYAGOK_LOCAL,
+      megbizhatosag: "alacsony",
+      warning: `${NEM_ELSODLEGES_FIGYELMEZTETES} Forrás: ideiglenes, helyi (nem szinkronizált) felhasznált anyag adatok.`,
+    };
+  }
+
+  // 5. Egyik forrásból sem áll rendelkezésre adat.
+  return {
+    ertek: 0,
+    forras: ANYAGKOLTSEG_FORRAS.NINCS_ADAT,
+    megbizhatosag: "nincs",
+    warning: "Nincs elérhető anyagköltség-adat egyik forrásból sem.",
+  };
+}
 
 /**
  * Projekt pénzügyi kalkuláció – szabályalapú motor.
@@ -137,34 +243,19 @@ export function calcEsmentProjektPenzugy(projekt) {
   if (keziKartérités !== null && keziKartérités !== undefined) kartérités = Number(keziKartérités);
 
   // ── Anyagköltség & Útiköltség ────────────────────────────
-  // Ha van kézi felülírás → azt használjuk
-  // Ha nincs → összegezzük a projekt munkalapjainak anyagkoltsegeTotal mezőjét
-  let anyagkoltság = 0;
-  if (keziAnyagkoltság !== null && keziAnyagkoltság !== undefined) {
-    anyagkoltság = Number(keziAnyagkoltság);
-  } else {
-    try {
-      const osszesMunkalapok = JSON.parse(localStorage.getItem("munkalapok") || "[]");
-      const projektMls = osszesMunkalapok.filter(
-        m => m.projektId === projekt?.id || (projekt?.munkalapIds || []).includes(m.id)
-      );
-      // 1. Rögzített anyagkoltsegeTotal (telepítő mentette lezáráskor)
-      const mlAnyagKolts = projektMls.reduce(
-        (s, m) => s + (Number(m.anyagkoltsegeTotal) || 0), 0
-      );
-      if (mlAnyagKolts > 0) {
-        anyagkoltság = mlAnyagKolts;
-      } else {
-        // 2. Fallback: felhasznalt anyagok localStorage kulcsokból
-        for (const m of projektMls) {
-          try {
-            const felh = JSON.parse(localStorage.getItem(`felh_anyagok_${m.id}`) || "[]");
-            anyagkoltság += calcAnyagkoltseg(felh);
-          } catch {}
-        }
-      }
-    } catch {}
-  }
+  // P0-2 javítás: nincs csendes fallback-lánc – a forrás mindig
+  // egyértelmű és látható (ld. resolveAnyagkoltsegForras).
+  let projektMls = [];
+  try {
+    const osszesMunkalapok = JSON.parse(localStorage.getItem("munkalapok") || "[]");
+    projektMls = osszesMunkalapok.filter(
+      m => m.projektId === projekt?.id || (projekt?.munkalapIds || []).includes(m.id)
+    );
+  } catch {}
+  const anyagkoltsegEredmeny = resolveAnyagkoltsegForras(projektMls, projekt, { keziAnyagkoltseg: keziAnyagkoltság });
+  const anyagkoltság        = anyagkoltsegEredmeny.ertek;
+  const anyagkoltsegForras  = anyagkoltsegEredmeny.forras;
+  const anyagkoltsegWarning = anyagkoltsegEredmeny.warning;
   let utikoltség = (keziUtikoltség !== null && keziUtikoltség !== undefined) ? Number(keziUtikoltség) : 0;
 
   // ── Csapat bér (FV oldalon) ──────────────────────────────
@@ -220,6 +311,7 @@ export function calcEsmentProjektPenzugy(projekt) {
     beveteliTetelek,
     // Költségek
     csapatBer, utikoltség, anyagkoltság,
+    anyagkoltsegForras, anyagkoltsegWarning,
     emelőgepKoltseg:     Number(emelőgepKoltseg     || 0),
     daruKoltseg:         Number(daruKoltseg         || 0),
     szallasKoltseg:      Number(szallasKoltseg      || 0),
