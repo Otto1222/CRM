@@ -211,3 +211,40 @@ export function computeNettoOsszeg(fo_tetelek = [], reszlet_tetelek = [], kivi_k
   const computed = computeFoTetelek(fo_tetelek, reszlet_tetelek, kivi_kalkulator);
   return computed.filter(t => t.aktiv).reduce((s, t) => s + t.netto_osszeg, 0);
 }
+
+// ─── Fázis 4A – elfogadott ajánlat pillanatkép a projekt-örökléshez ──
+// A pillanatkép egy teljesen független, mély másolt (JSON.parse/stringify)
+// objektum-gráf: a projektben tárolt érték semmilyen referenciát nem oszt meg
+// az élő ajánlat-rekorddal vagy az anyagtörzzsel. Ezért sem egy későbbi
+// ajánlatmódosítás, sem egy anyagtörzs árváltozás nem tudja visszamenőleg
+// módosítani – a projekt mindig a pillanatkép-készítés időpontjában érvényes
+// adatokat látja. A pillanatkép a projekt létrehozásakor készül el EGYSZER,
+// és utána soha nem számolódik újra.
+export function createAjanlatPillanatkep(ajanlat) {
+  if (!ajanlat) return null;
+  const fo = computeFoTetelek(ajanlat.fo_tetelek, ajanlat.reszlet_tetelek, ajanlat.kivi_kalkulator);
+  const netto = fo.filter(t => t.aktiv).reduce((s, t) => s + t.netto_osszeg, 0);
+  const afa = netto * (Number(ajanlat.afa_szazalek) || 0) / 100;
+  return JSON.parse(JSON.stringify({
+    keszult:         new Date().toISOString(),
+    ajanlatId:       ajanlat.id,
+    ajanlatkod:      ajanlat.ajanlatkod,
+    ajanlatDatuma:   ajanlat.createdAt,
+    ajanlatStatusza: ajanlat.status,
+    ugyfel: {
+      clientId:    ajanlat.clientId,
+      clientNev:   ajanlat.clientNev,
+      clientCim:   ajanlat.clientCim,
+      clientTel:   ajanlat.clientTel,
+      clientEmail: ajanlat.clientEmail,
+    },
+    fo_tetelek:      fo,
+    reszlet_tetelek: ajanlat.reszlet_tetelek || [],
+    osszesito: {
+      afa_szazalek: ajanlat.afa_szazalek,
+      netto_osszeg: netto,
+      afa,
+      brutto_osszeg: netto + afa,
+    },
+  }));
+}

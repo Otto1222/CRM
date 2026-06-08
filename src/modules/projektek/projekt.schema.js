@@ -79,7 +79,14 @@ export const PROJEKT_SCHEMA = {
   anyagelszamolasiMod: "NINCS_KIVALASZTVA",
   adminReviewRequired: false,
   projektTipus:        "",
+  // Fázis 4A: az "elfogadottAjanlatId" szerepét a már meglévő ajanlatId tölti be
+  // (ld. AJANLAT_MEZO_SZOTAR-mintájú döntés – nincs duplikált mező).
   ajanlatId:           null,
+  // Fázis 4A – immutábilis pillanatkép az elfogadott ajánlatról: a projekt
+  // létrehozásakor készül EGYSZER (deep clone), utána soha nem frissül –
+  // sem ajánlatmódosítás, sem anyagtörzs-árváltozás nem írhatja felül.
+  // null = a projekt nem elfogadott ajánlatból jött létre (pl. fővállalkozói/belső).
+  elfogadottAjanlatPillanatkep: null,
   fovKapcsolattarto:   "",
   fovFizetesiHatarido: "",
   fovMegjegyzes:       "",

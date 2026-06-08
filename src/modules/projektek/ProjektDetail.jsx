@@ -12,7 +12,6 @@ import TabPenzugy      from "./tabs/TabPenzugy.jsx";
 import TabDokumentumok from "./tabs/TabDokumentumok.jsx";
 import TabKommunikacio from "./tabs/TabKommunikacio.jsx";
 import TabKarteritesek from "./tabs/TabKarteritesek.jsx";
-import TabAjanlatok    from "./tabs/TabAjanlatok.jsx";
 // Legacy imports (back-compat ha valaki direktben hívja)
 import TabRiport       from "./tabs/TabRiport.jsx";
 import TabLmra         from "./tabs/TabLmra.jsx";
@@ -25,7 +24,6 @@ const TABS = [
   { id: "dokumentumok", label: "Dokumentumok",icon: "📁" },
   { id: "karteritesek", label: "Kártérítések",icon: "⚠️" },
   { id: "naplo",        label: "Napló",       icon: "💬" },
-  { id: "ajanlatok",    label: "Árajánlat",   icon: "📋" },
 ];
 
 export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateMunkalap, currentUser, onNewMunkalapForProjekt }) {
@@ -73,8 +71,6 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
     switch (tab) {
       case "attekintes":
         return <TabAttekintes {...props} />;
-      case "ajanlatok":
-        return <TabAjanlatok {...props} />;
       case "munkalapok":
         return <TabMunkalapok {...props} onNavigate={onNavigateMunkalap} onNewMunkalap={onNewMunkalapForProjekt ? () => onNewMunkalapForProjekt(lokalProjekt) : undefined} />;
       case "penzugy":

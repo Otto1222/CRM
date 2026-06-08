@@ -27,10 +27,16 @@ function migrateProjekt(p) {
   // D1: anyagelszámolási mód migráció – nincs automatikus default,
   // a régi rekordok NINCS_KIVALASZTVA + adminReviewRequired jelzést kapnak
   const am = migrateAnyagelszamolasiMod(p);
+  // Fázis 4A: régi projekteknél a pillanatkép mező hiányzik – csak a mező
+  // jelenlétét pótoljuk (null), a mögöttes tartalmat SOSEM állítjuk vissza
+  // utólag (a pillanatkép kizárólag az ajánlatból induló létrehozáskor készül).
+  const hasPillanatkep = Object.prototype.hasOwnProperty.call(p, "elfogadottAjanlatPillanatkep");
+  const pillanatkep = hasPillanatkep ? p.elfogadottAjanlatPillanatkep : null;
   if (ms === p.status && mf === p.forrás
     && am.anyagelszamolasiMod === p.anyagelszamolasiMod
-    && am.adminReviewRequired === !!p.adminReviewRequired) return p;
-  return { ...p, status: ms, forrás: mf, ...am };
+    && am.adminReviewRequired === !!p.adminReviewRequired
+    && hasPillanatkep) return p;
+  return { ...p, status: ms, forrás: mf, ...am, elfogadottAjanlatPillanatkep: pillanatkep };
 }
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────

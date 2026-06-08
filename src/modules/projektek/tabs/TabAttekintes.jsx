@@ -5,6 +5,13 @@ import { ft } from "../../../lib/helpers.js";
 import { getStatusConfig, getAnyagelszamolasiModConfig, hasAnyagelszamolasiMod } from "../projekt.schema.js";
 import { formatProjectType } from "../../../lib/projectTypeFormatter.js";
 
+function fmtDatum(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("hu-HU");
+}
+
 function Row({ label, value, bold }) {
   if (!value) return null;
   return (
@@ -16,6 +23,7 @@ function Row({ label, value, bold }) {
 }
 
 export default function TabAttekintes({ projekt, munkalapok }) {
+  const pillanatkep = projekt.elfogadottAjanlatPillanatkep || null;
   const mls     = (munkalapok||[]).filter(m => m.projektId === projekt.id || projekt.munkalapIds?.includes(m.id));
   const penz    = calcProjektPenzugy(mls);
   const kalk    = projekt.penzugy?.fovallalkoziId ? calcEsmentProjektPenzugy(projekt) : null;
@@ -64,6 +72,25 @@ export default function TabAttekintes({ projekt, munkalapok }) {
           <Row label="Valós befejezés"  value={projekt.valoBefejezes}/>
           <Row label="Ledolgozott óra"  value={projekt.elvegzettMunkaora ? projekt.elvegzettMunkaora + " óra" : null}/>
         </div>
+
+        {/* ── Fázis 4A: az elfogadott ajánlat lefagyasztott pillanatképe ── */}
+        {pillanatkep && (
+          <div style={{ background:"#FAF5FF", border:"1px solid #E9D5FF", borderRadius:12, padding:"14px 16px" }}>
+            <p style={{ fontSize:11, fontWeight:700, color:"#7C3AED", textTransform:"uppercase", letterSpacing:.7, marginBottom:8 }}>
+              📋 Elfogadott ajánlat (lefagyasztott pillanatkép)
+            </p>
+            <Row label="Ajánlat kódja"      value={pillanatkep.ajanlatkod} bold/>
+            <Row label="Ajánlat dátuma"     value={fmtDatum(pillanatkep.ajanlatDatuma)}/>
+            <Row label="Ajánlat státusza (akkor)" value={pillanatkep.ajanlatStatusza}/>
+            <Row label="Nettó összeg"       value={pillanatkep.osszesito?.netto_osszeg ? ft(pillanatkep.osszesito.netto_osszeg) : null}/>
+            <Row label="Bruttó összeg"      value={pillanatkep.osszesito?.brutto_osszeg ? ft(pillanatkep.osszesito.brutto_osszeg) : null} bold/>
+            <Row label="Pillanatkép készült" value={fmtDatum(pillanatkep.keszult)}/>
+            <p style={{ fontSize:11, color:"#7C3AED", marginTop:8, lineHeight:1.5 }}>
+              Ez az adat a projekt létrehozásakor rögzült és változatlan marad – az ajánlat
+              vagy az anyagárak későbbi módosítása nem írja felül.
+            </p>
+          </div>
+        )}
 
         {/* ── Pénzügy összefoglaló – részletek a Pénzügy tabon ── */}
         {kalk && (

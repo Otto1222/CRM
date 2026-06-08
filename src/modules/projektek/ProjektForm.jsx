@@ -9,6 +9,7 @@ import {
   hasAnyagelszamolasiMod, validateAnyagelszamolasiModStatusValtas,
 } from "./projekt.schema.js";
 import { migrateProjektForrasFromRekord, validateProjektForrás, FORRAS_ELLENORZES_SZUKSEGES } from "../../lib/workflowRules.js";
+import { createAjanlatPillanatkep } from "../ajanla tok/ajanlat.schema.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { getAktivCsapatok } from "../csapatok/csapat.service.js";
 import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
@@ -94,6 +95,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     adminReviewRequired: projekt?.adminReviewRequired || false,
     projektTipus: projekt?.projektTipus || (ajanlatElofolt ? "Saját projekt" : ""),
     ajanlatId: projekt?.ajanlatId || ajanlatElofolt?.id || null,
+    elfogadottAjanlatPillanatkep: projekt?.elfogadottAjanlatPillanatkep || null,
     fovKapcsolattarto: projekt?.fovKapcsolattarto || "",
     fovFizetesiHatarido: projekt?.fovFizetesiHatarido || "",
     fovMegjegyzes: projekt?.fovMegjegyzes || "",
@@ -271,6 +273,17 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
       setHiba(validation.message);
       return;
     }
+    // Fázis 4A: saját munka csak elfogadott ajánlatból jöhet létre – mentéskor
+    // újra ellenőrizzük, hogy a kiválasztott ajánlat még mindig elérhető és
+    // elfogadott (közben módosulhatott a státusza, vagy más projekthez köthették).
+    let valasztottAjanlat = null;
+    if (form.forrás === "sajat_ajanlat") {
+      valasztottAjanlat = elfogadottAjanlatok.find(a => a.id === form.ajanlatId) || null;
+      if (isNew && !valasztottAjanlat) {
+        setHiba("A kiválasztott ajánlat már nem érhető el (közben megváltozott a státusza, vagy már köthették más projekthez). Válassz egy másik elfogadott ajánlatot.");
+        return;
+      }
+    }
     setSaving(true);
     try {
       const data = {
@@ -286,6 +299,13 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
         },
       };
       delete data.megjegyzes;
+      // Fázis 4A: az immutábilis pillanatkép kizárólag itt, a projekt
+      // létrehozásának pillanatában készül – mély másolat (deep clone),
+      // semmilyen referenciát nem oszt meg az élő ajánlattal vagy az
+      // anyagtörzzsel, ezért későbbi módosításuk nem érheti el.
+      if (isNew && form.forrás === "sajat_ajanlat" && valasztottAjanlat) {
+        data.elfogadottAjanlatPillanatkep = createAjanlatPillanatkep(valasztottAjanlat);
+      }
       let saved;
       if (isNew) {
         saved = createProjekt({ ...data, driveProjektMappa: "kérve" }, currentUser?.name || "");
@@ -456,7 +476,15 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                       if (f.id === "belso_munka") {
                         setForm(p => ({ ...p, forrás: f.id, clientNev: "E.D.I. Solutions Kft.", clientId: "", clientCim: "", clientTel: "", clientEmail: "", ajanlatId: null }));
                       } else if (f.id === "sajat_ajanlat") {
-                        setForm(p => ({ ...p, forrás: f.id, clientNev: p.clientNev === "E.D.I. Solutions Kft." ? "" : p.clientNev }));
+                        setForm(p => ({
+                          ...p,
+                          forrás: f.id,
+                          clientNev: p.clientNev === "E.D.I. Solutions Kft." ? "" : p.clientNev,
+                          // Fázis 4A: saját munkánál (elfogadott ajánlatból) az anyagelszámolási
+                          // mód egyértelmű – mi vesszük az anyagot, mi adjuk el – ezért itt
+                          // (és csak itt) automatikusan beállítható, admin-felülvizsgálat nélkül.
+                          ...(isNew ? { anyagelszamolasiMod: "SAJAT_ANYAG_PROFIT", adminReviewRequired: false } : {}),
+                        }));
                       } else {
                         upd("forrás", f.id);
                       }
