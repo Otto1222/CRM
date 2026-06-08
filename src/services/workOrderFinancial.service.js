@@ -6,7 +6,7 @@
  * AV (csapat bér): AV szabályok preferáltak; fallback a régi dijTipus mezőkre.
  */
 
-import { loadFovallalkozok, loadSzabalyok } from "../modules/fovallalkozok/fovallalkozo.service.js";
+import { loadFovallalkozok, loadSzabalyok, findSzabaly } from "../modules/fovallalkozok/fovallalkozo.service.js";
 import { calcOsszesSzabaly, findEgyezoSzabalyok, calcSzabalyOsszeg, szabalyLeiras, ELSZAMOLASI_MODOK } from "../modules/fovallalkozok/elszamolasiMotor.js";
 import { calcAnyagkoltseg } from "../lib/anyagtorzs.js";
 import { getKivitelezesiCsomagByProjektId } from "../modules/kivitelezesi_csomag/kivitelezesiCsomag.service.js";
@@ -512,4 +512,31 @@ export function saveMunkalapElszamolas(munkalapId, elszamolas) {
   } catch (e) {
     console.warn("[workOrderFinancial] saveMunkalapElszamolas hiba:", e);
   }
+}
+
+// ─── Projekt pénzügy inicializálás ─────────────────────────────────────────
+
+/**
+ * autoFillPenzugy – projekt létrehozáskor / FV vagy munkatípus váltáskor
+ * tölti be az elszámolási szabály alapértékeit és null-ra reseteli a kézi override mezőket.
+ * Motor C paritás: azonos logika mint financialCalculation.service.js autoFillPenzugy().
+ *
+ * @param {string} fovallalkoziId
+ * @param {string} munkatipus
+ * @param {object} [meglevo={}]
+ * @returns {object}
+ */
+export function autoFillPenzugy(fovallalkoziId, munkatipus, meglevo = {}) {
+  const sz = findSzabaly(fovallalkoziId, munkatipus);
+  return {
+    ...meglevo,
+    fovallalkoziId,
+    munkatipus,
+    elszamolasiSzabalyId: sz?.id || "",
+    felultBevitel:    null,
+    keziCsapatBer:    null,
+    keziUtikoltség:   null,
+    keziAnyagkoltség: null,
+    keziKartérités:   null,
+  };
 }

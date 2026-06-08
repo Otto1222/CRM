@@ -12,7 +12,7 @@ import { migrateProjektForrasFromRekord, validateProjektForrás, FORRAS_ELLENORZ
 import { createAjanlatPillanatkep } from "../ajanla tok/ajanlat.schema.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { getAktivCsapatok } from "../csapatok/csapat.service.js";
-import { autoFillPenzugy } from "../../services/financialCalculation.service.js";
+import { autoFillPenzugy } from "../../services/workOrderFinancial.service.js";
 import { calcProjektElszamolas, buildInput } from "../../services/settlementCalculator.js";
 import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
 import { createProjekt, updateProjekt } from "./projekt.service.js";
