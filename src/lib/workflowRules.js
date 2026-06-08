@@ -65,19 +65,19 @@ export const ANYAGELSZAMOLASI_MODOK = [
     id: "SAJAT_ANYAG_PROFIT",
     label: "Saját anyag – profit elszámolás",
     color: "#2563EB", bg: "#EFF6FF",
-    desc: "Az E.D.I. szállítja az anyagot, az anyagmarzs saját bevétel – jellemzően saját ajánlatos munkánál",
+    desc: "Mi vesszük az anyagot, mi adjuk el – anyaghaszon ÉS munkadíj-haszon is van",
   },
   {
-    id: "FOVALLALKOZOI_ANYAG_ELSZAMOLAS",
-    label: "Fővállalkozói anyagelszámolás",
+    id: "FOVALLALKOZO_HOZOTT_ANYAG",
+    label: "Fővállalkozó hozott anyaga",
     color: "#7C3AED", bg: "#F5F3FF",
-    desc: "Az anyagköltség a fővállalkozó elszámolási szabálya szerint kerül elszámolásra",
+    desc: "A fővállalkozó adja az anyagot, csak darabszám / mennyiség elszámolás – nincs anyaghaszon, munkadíj-haszon van",
   },
   {
-    id: "NINCS_ANYAGKOLTSEG",
-    label: "Nincs elszámolandó anyagköltség",
-    color: "#059669", bg: "#ECFDF5",
-    desc: "A projektben nincs anyagbeszerzés / -elszámolás (pl. tisztán munkadíjas belső munka)",
+    id: "FOVALLALKOZO_NULLAS_TOVABBSZAMLAZAS",
+    label: "Fővállalkozói nullás továbbszámlázás",
+    color: "#D97706", bg: "#FFFBEB",
+    desc: "A fővállalkozótól fix áron vesszük, ugyanannyiért számlázzuk tovább – anyaghaszon 0 Ft, munkadíj-haszon van",
   },
 ];
 
