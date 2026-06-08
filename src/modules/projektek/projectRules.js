@@ -21,6 +21,13 @@ export {
   migrateProjektForras,
   migrateProjektForrasFromRekord,
   migrateMunkalapStatus,
+  // D1 – Anyagelszámolási mód
+  ANYAGELSZAMOLAS_NINCS_KIVALASZTVA,
+  ANYAGELSZAMOLASI_MODOK,
+  getAnyagelszamolasiModConfig,
+  hasAnyagelszamolasiMod,
+  migrateAnyagelszamolasiMod,
+  validateAnyagelszamolasiModStatusValtas,
 } from "../../lib/workflowRules.js";
 
 // ─── Projekt validáció – régi API alias ──────────────────────────────────

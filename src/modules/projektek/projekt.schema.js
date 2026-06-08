@@ -14,9 +14,16 @@ export {
   getProjektTipus,
   migrateProjektStatus,
   migrateProjektForras,
+  // D1 – Anyagelszámolási mód (nincs automatikus default!)
+  ANYAGELSZAMOLAS_NINCS_KIVALASZTVA,
+  ANYAGELSZAMOLASI_MODOK,
+  getAnyagelszamolasiModConfig,
+  hasAnyagelszamolasiMod,
+  migrateAnyagelszamolasiMod,
+  validateAnyagelszamolasiModStatusValtas,
 } from "../../lib/workflowRules.js";
 
-export const PROJEKT_SCHEMA_VERSION = "2.0";
+export const PROJEKT_SCHEMA_VERSION = "2.1";
 
 export const PROJEKT_TIPUSOK = [
   "Napelem telepítés",
@@ -65,6 +72,12 @@ export const PROJEKT_SCHEMA = {
   megjegyzesek:        [],
   esemenynaplo:        [],
   forrás:              "",
+  // D1: kötelező választás projekt létrehozáskor – NINCS automatikus default
+  // (egy téves "SAJAT_ANYAG_PROFIT" alapérték fővállalkozói munkánál hibás
+  // profitot számolna – pénzügyi katasztrófa). Migrált régi projektek is
+  // ide kerülnek, adminReviewRequired = true jelzéssel.
+  anyagelszamolasiMod: "NINCS_KIVALASZTVA",
+  adminReviewRequired: false,
   projektTipus:        "",
   ajanlatId:           null,
   fovKapcsolattarto:   "",

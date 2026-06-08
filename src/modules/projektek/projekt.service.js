@@ -3,7 +3,7 @@
  * Projekt CRUD – minden projektművelet itt.
  */
 import { PROJEKT_SCHEMA } from "./projekt.schema.js";
-import { migrateProjektStatus, migrateProjektForrasFromRekord } from "../../lib/workflowRules.js";
+import { migrateProjektStatus, migrateProjektForrasFromRekord, migrateAnyagelszamolasiMod } from "../../lib/workflowRules.js";
 import { createBackup } from "../../lib/backupService.js";
 import { driveSave } from "../../lib/driveApi.js";
 
@@ -24,8 +24,13 @@ function migrateProjekt(p) {
   const ms = migrateProjektStatus(p.status);
   // Okos forrás-migráció: garanciális/javítási esetén a rekord adatai döntenek
   const mf = migrateProjektForrasFromRekord(p);
-  if (ms === p.status && mf === p.forrás) return p;
-  return { ...p, status: ms, forrás: mf };
+  // D1: anyagelszámolási mód migráció – nincs automatikus default,
+  // a régi rekordok NINCS_KIVALASZTVA + adminReviewRequired jelzést kapnak
+  const am = migrateAnyagelszamolasiMod(p);
+  if (ms === p.status && mf === p.forrás
+    && am.anyagelszamolasiMod === p.anyagelszamolasiMod
+    && am.adminReviewRequired === !!p.adminReviewRequired) return p;
+  return { ...p, status: ms, forrás: mf, ...am };
 }
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────

@@ -52,6 +52,73 @@ export const PROJEKT_FORRAS = [
   },
 ];
 
+// ─── Anyagelszámolási mód (D1) ────────────────────────────────────────────
+// FONTOS: NINCS automatikus default! Ha a rendszer "SAJAT_ANYAG_PROFIT"-ot
+// adna alapértékként, az fővállalkozói munkánál téves profitot számolna –
+// pénzügyi szempontból súlyos hiba. Ezért a projekt csak akkor léphet
+// kivitelezési / aktív státuszba, ha a mód kifejezetten ki lett választva.
+
+export const ANYAGELSZAMOLAS_NINCS_KIVALASZTVA = "NINCS_KIVALASZTVA";
+
+export const ANYAGELSZAMOLASI_MODOK = [
+  {
+    id: "SAJAT_ANYAG_PROFIT",
+    label: "Saját anyag – profit elszámolás",
+    color: "#2563EB", bg: "#EFF6FF",
+    desc: "Az E.D.I. szállítja az anyagot, az anyagmarzs saját bevétel – jellemzően saját ajánlatos munkánál",
+  },
+  {
+    id: "FOVALLALKOZOI_ANYAG_ELSZAMOLAS",
+    label: "Fővállalkozói anyagelszámolás",
+    color: "#7C3AED", bg: "#F5F3FF",
+    desc: "Az anyagköltség a fővállalkozó elszámolási szabálya szerint kerül elszámolásra",
+  },
+  {
+    id: "NINCS_ANYAGKOLTSEG",
+    label: "Nincs elszámolandó anyagköltség",
+    color: "#059669", bg: "#ECFDF5",
+    desc: "A projektben nincs anyagbeszerzés / -elszámolás (pl. tisztán munkadíjas belső munka)",
+  },
+];
+
+export function getAnyagelszamolasiModConfig(modId) {
+  if (!modId || modId === ANYAGELSZAMOLAS_NINCS_KIVALASZTVA) {
+    return { color: "#DC2626", bg: "#FEF2F2", label: "⚠ Nincs kiválasztva – kötelező megadni" };
+  }
+  return ANYAGELSZAMOLASI_MODOK.find(m => m.id === modId) || { color: "#64748B", bg: "#F8FAFC", label: modId };
+}
+
+/** Igaz, ha a projektnek érvényes (ténylegesen kiválasztott) anyagelszámolási módja van. */
+export function hasAnyagelszamolasiMod(projekt) {
+  return !!projekt?.anyagelszamolasiMod && projekt.anyagelszamolasiMod !== ANYAGELSZAMOLAS_NINCS_KIVALASZTVA;
+}
+
+/**
+ * Migráció: a meglévő (anyagelszámolási mód nélküli) projektrekordok NEM
+ * kaphatnak automatikus módot – ehelyett NINCS_KIVALASZTVA + admin
+ * felülvizsgálati jelző, hogy az admin/PM kézzel sorolja be őket.
+ */
+export function migrateAnyagelszamolasiMod(projekt) {
+  if (hasAnyagelszamolasiMod(projekt)) {
+    return { anyagelszamolasiMod: projekt.anyagelszamolasiMod, adminReviewRequired: !!projekt.adminReviewRequired };
+  }
+  return { anyagelszamolasiMod: ANYAGELSZAMOLAS_NINCS_KIVALASZTVA, adminReviewRequired: true };
+}
+
+// Azok a projekt-státuszok, amelyekbe a projekt csak akkor léphet át,
+// ha az anyagelszámolási mód már ki van választva ("Létrehozva" a kivétel).
+export const ANYAGELSZAMOLAS_KOTELEZO_STATUSOK = PROJEKT_STATUSZOK
+  .map(s => s.id)
+  .filter(id => id !== "Létrehozva");
+
+export function validateAnyagelszamolasiModStatusValtas(projekt, ujStatus) {
+  if (!ANYAGELSZAMOLAS_KOTELEZO_STATUSOK.includes(ujStatus)) return { ok: true, message: "" };
+  if (!hasAnyagelszamolasiMod(projekt)) {
+    return { ok: false, message: "A projekt nem léphet aktív / kivitelezési státuszba, amíg az anyagelszámolási mód nincs kiválasztva." };
+  }
+  return { ok: true, message: "" };
+}
+
 // ─── Munkalap típusok (garancia/javítás = munkalap típus, nem forrás) ─────
 
 export const MUNKALAP_TIPUSOK = [
@@ -267,6 +334,9 @@ export function isInstallerVisibleWorkorder(workorder, currentUser) {
 export function validateProjektForrás(form) {
   const { forrás, ajanlatId, penzugy, kulsoAzonosito } = form;
   if (!forrás) return { ok: false, message: "A projekt forrásának megadása kötelező." };
+  // D1 megjegyzés: az anyagelszámolási mód kötelező-választás validációja a
+  // mezőt megjelenítő UI-val EGYÜTT kerül bekötésre (következő fázis) –
+  // ld. validateAnyagelszamolasiModStatusValtas() a workflowRules.js-ben.
 
   if (forrás === "sajat_ajanlat") {
     if (!ajanlatId)              return { ok: false, message: "Saját ajánlat projektnél kötelező elfogadott ajánlatot kiválasztani." };
