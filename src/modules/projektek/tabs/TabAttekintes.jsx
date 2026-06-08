@@ -2,7 +2,7 @@ import { C, FONT } from "../../../lib/constants.js";
 import { calcProjektPenzugy } from "../../../lib/costEngine.js";
 import { calcEsmentProjektPenzugy } from "../../../services/workOrderFinancial.service.js";
 import { ft } from "../../../lib/helpers.js";
-import { getStatusConfig } from "../projekt.schema.js";
+import { getStatusConfig, getAnyagelszamolasiModConfig, hasAnyagelszamolasiMod } from "../projekt.schema.js";
 import { formatProjectType } from "../../../lib/projectTypeFormatter.js";
 
 function Row({ label, value, bold }) {
@@ -20,6 +20,7 @@ export default function TabAttekintes({ projekt, munkalapok }) {
   const penz    = calcProjektPenzugy(mls);
   const kalk    = projekt.penzugy?.fovallalkoziId ? calcEsmentProjektPenzugy(projekt) : null;
   const stCfg   = getStatusConfig(projekt.status);
+  const anyagCfg = getAnyagelszamolasiModConfig(projekt.anyagelszamolasiMod);
   const aktiv   = mls.filter(m=>!["Lezárva","Számlázva","Ellenőrzés alatt"].includes(m.status)).length;
 
   return (
@@ -38,6 +39,14 @@ export default function TabAttekintes({ projekt, munkalapok }) {
           <Row label="Telepítési cím"   value={projekt.telepitesiCim}/>
           <Row label="Projektvezető"    value={projekt.projektvezetoNev}/>
           <Row label="Csapat"           value={projekt.csapatNev}/>
+          <div style={{ display:"flex", gap:12, padding:"8px 0" }}>
+            <span style={{ fontSize:12, color:"#64748B", fontWeight:600, minWidth:160 }}>Anyagelszámolási mód</span>
+            {hasAnyagelszamolasiMod(projekt) ? (
+              <span style={{ fontSize:13, fontWeight:700, color: anyagCfg.color }}>{anyagCfg.label}</span>
+            ) : (
+              <span style={{ fontSize:12, fontWeight:700, color:"#DC2626" }}>⚠ Admin ellenőrzés szükséges – nincs beállítva</span>
+            )}
+          </div>
         </div>
       </div>
 

@@ -63,13 +63,13 @@ export const ANYAGELSZAMOLAS_NINCS_KIVALASZTVA = "NINCS_KIVALASZTVA";
 export const ANYAGELSZAMOLASI_MODOK = [
   {
     id: "SAJAT_ANYAG_PROFIT",
-    label: "Saját anyag – profit elszámolás",
+    label: "Saját anyag profit számítással",
     color: "#2563EB", bg: "#EFF6FF",
     desc: "Mi vesszük az anyagot, mi adjuk el – anyaghaszon ÉS munkadíj-haszon is van",
   },
   {
     id: "FOVALLALKOZO_HOZOTT_ANYAG",
-    label: "Fővállalkozó hozott anyaga",
+    label: "Fővállalkozói hozott anyag",
     color: "#7C3AED", bg: "#F5F3FF",
     desc: "A fővállalkozó adja az anyagot, csak darabszám / mennyiség elszámolás – nincs anyaghaszon, munkadíj-haszon van",
   },

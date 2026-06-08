@@ -3,7 +3,11 @@ import { X, Save, Navigation, TrendingUp } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { loadLocal, saveLocal } from "../../lib/localDb.js";
-import { PROJEKT_STATUSZOK, PROJEKT_FORRAS, getProjektTipus } from "./projekt.schema.js";
+import {
+  PROJEKT_STATUSZOK, PROJEKT_FORRAS, getProjektTipus,
+  ANYAGELSZAMOLAS_NINCS_KIVALASZTVA, ANYAGELSZAMOLASI_MODOK,
+  hasAnyagelszamolasiMod, validateAnyagelszamolasiModStatusValtas,
+} from "./projekt.schema.js";
 import { migrateProjektForrasFromRekord, validateProjektForrás, FORRAS_ELLENORZES_SZUKSEGES } from "../../lib/workflowRules.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { getAktivCsapatok } from "../csapatok/csapat.service.js";
@@ -86,6 +90,8 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     forrás: projekt
       ? migrateProjektForrasFromRekord(projekt)
       : (ajanlatElofolt ? "sajat_ajanlat" : ""),
+    anyagelszamolasiMod: projekt?.anyagelszamolasiMod || ANYAGELSZAMOLAS_NINCS_KIVALASZTVA,
+    adminReviewRequired: projekt?.adminReviewRequired || false,
     projektTipus: projekt?.projektTipus || (ajanlatElofolt ? "Saját projekt" : ""),
     ajanlatId: projekt?.ajanlatId || ajanlatElofolt?.id || null,
     fovKapcsolattarto: projekt?.fovKapcsolattarto || "",
@@ -247,6 +253,17 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     }
     if (form.forrás === FORRAS_ELLENORZES_SZUKSEGES) {
       setHiba("A projekt forrása még nincs meghatározva. Válassz egyet a három forrás közül, mielőtt mentesz.");
+      return;
+    }
+    // D1: anyagelszámolási mód – kötelező új projekt létrehozásakor (nincs automatikus default)
+    if (isNew && !hasAnyagelszamolasiMod(form)) {
+      setHiba("Az anyagelszámolási mód kiválasztása kötelező új projekt létrehozásakor.");
+      return;
+    }
+    // D1: aktív / kivitelezési státuszba csak kiválasztott anyagelszámolási móddal léphet a projekt
+    const anyagModValidacio = validateAnyagelszamolasiModStatusValtas(form, form.status);
+    if (!anyagModValidacio.ok) {
+      setHiba(anyagModValidacio.message);
       return;
     }
     const validation = validateProjektForrás(form);
@@ -499,6 +516,45 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                   🏢 Belső munka – garancia, javítás, karbantartás. Megrendelő: <strong>E.D.I. Solutions Kft.</strong> (automatikus). Nincs ügyfél, nincs ajánlat.
                 </p>
               </div>
+            )}
+          </div>
+
+          {/* ── Anyagelszámolási mód (kötelező – D1) ── */}
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>
+              Anyagelszámolási mód *
+            </p>
+
+            {/* Migrált / admin ellenőrzést igénylő projekt – kötelező figyelmeztetés */}
+            {(form.anyagelszamolasiMod === ANYAGELSZAMOLAS_NINCS_KIVALASZTVA || form.adminReviewRequired) && (
+              <div style={{ background:"#FEF2F2", border:"2px solid #DC2626", borderRadius:10, padding:"12px 16px", marginBottom:12, fontSize:13, color:"#991B1B", fontWeight:700 }}>
+                ⚠ Admin ellenőrzés szükséges: az anyagelszámolási mód nincs beállítva.
+                <div style={{ fontWeight:500, fontSize:12, marginTop:4, lineHeight:1.5 }}>
+                  Válaszd ki az alábbi módok közül a megfelelőt – e nélkül a projekt nem léphet kivitelezési / aktív státuszba.
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {ANYAGELSZAMOLASI_MODOK.map(m => {
+                const active = form.anyagelszamolasiMod === m.id;
+                return (
+                  <button key={m.id} type="button"
+                    onClick={() => {
+                      setForm(p => ({ ...p, anyagelszamolasiMod: m.id, adminReviewRequired: false }));
+                      if (hiba) setHiba("");
+                    }}
+                    title={m.desc}
+                    style={{ padding: "8px 16px", borderRadius: 9, border: `2px solid ${active ? m.color : "#E2E8F0"}`, background: active ? m.bg : "#fff", color: active ? m.color : "#64748B", fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer", fontFamily: FONT, transition: "all .15s" }}>
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+            {hasAnyagelszamolasiMod(form) && (
+              <p style={{ fontSize: 11, color: "#64748B", marginTop: 6 }}>
+                {ANYAGELSZAMOLASI_MODOK.find(m => m.id === form.anyagelszamolasiMod)?.desc}
+              </p>
             )}
           </div>
 
