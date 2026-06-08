@@ -6,6 +6,7 @@ import { loadLocal } from "../../lib/localDb";
 import {
   FO_TETELEK, AJANLAT_STATUSZOK, makeFoTetelek, DEFAULT_KIVI_KALKULATOR,
   computeFoTetelek, computeKiviOsszeg,
+  CEGES_ALAP_ANYAG_HASZON_PCT, calcEladasiAr, calcHaszonFt, alacsonyAnyagHaszon,
 } from "./ajanlat.schema";
 import { createAjanlat, updateAjanlat } from "./ajanlat.service";
 import { printAjanlat } from "./ajanlatPrint";
@@ -50,10 +51,20 @@ function loadAnyagtorzs(kategoria) {
 }
 
 // fo_tetelek backward compat merge: régi rekordok megkapják az új mezőket
+//
+// Ajánlat V2 – profitlogika migráció (Fázis 3A, idempotens, transform-on-read):
+//   haszonPct               = 30, ha hiányzik
+//   beszerzesiArPillanatkep = marad null, ha a régi tételen nem létezett ilyen mező
+//                             (régi ajánlatoknál sosem volt beszerzési ár tárolva –
+//                             nincs mit pillanatképezni, a "ha van" feltétel itt hamis)
+//   eladasiAr               = a meglévő netto_egysegar marad (ez a fogalmilag
+//                             ugyanaz – ld. schema megjegyzés); ha 0 lenne ÉS
+//                             van pillanatkép, a képlettel számolva pótlódik
+//   haszonFt                = számolt, csak ha van pillanatkép – egyébként 0
 function mergeFoTetelek(saved) {
   return saved.map(t => {
     const def = FO_TETELEK.find(f => f.id === t.id);
-    return {
+    const merged = {
       anyagtorzs_id:    null,
       tipus:            "",
       mennyiseg:        "",
@@ -62,6 +73,21 @@ function mergeFoTetelek(saved) {
       ugyfel_leiras:    def?.ugyfel_leiras_default || "",
       belso_megjegyzes: "",
       ...t,
+    };
+    const haszonPct = merged.haszonPct ?? CEGES_ALAP_ANYAG_HASZON_PCT;
+    const beszerzesiArPillanatkep = merged.beszerzesiArPillanatkep ?? null;
+    let eladasiAr = Number(merged.netto_egysegar) || 0;
+    if (!eladasiAr && beszerzesiArPillanatkep != null) {
+      eladasiAr = calcEladasiAr(beszerzesiArPillanatkep, haszonPct);
+    }
+    return {
+      ...merged,
+      haszonPct,
+      beszerzesiArPillanatkep,
+      netto_egysegar: eladasiAr,
+      haszonFt: merged.haszonFt ?? (
+        beszerzesiArPillanatkep != null ? calcHaszonFt(eladasiAr, beszerzesiArPillanatkep, merged.mennyiseg) : 0
+      ),
     };
   });
 }
@@ -98,6 +124,32 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
     const afa   = netto * (Number(form.afa_szazalek) || 0) / 100;
     return { fo, netto, afa, brutto: netto + afa };
   }, [form]);
+
+  // Ajánlat V2 – profitlogika (Fázis 3A): belső profit-összesítő.
+  // Csak az anyagtörzsből választott (beszerzési ár pillanatképpel rendelkező)
+  // tételeknek van ismert költségbázisuk – a "teljes ajánlat profit" ezért az
+  // anyaghaszon és a kivitelezés-munkadíj (kivi_beuzem, kivi:true) összege.
+  // Az egyéb összesített kategóriáknak (ügyintézés, villanyszerelés, védelmi
+  // eszközök) nincs nyilvántartott beszerzési költségük, így az árbevételükben
+  // szerepelnek, de a profitszámításban nem – ez tudatos egyszerűsítés.
+  const profitOsszesito = useMemo(() => {
+    const aktivak = computed.fo.filter(t => t.aktiv);
+    let beszerzesOssz = 0, eladasOssz = 0, anyagHaszonFt = 0;
+    aktivak.forEach(t => {
+      if (t.beszerzesiArPillanatkep != null) {
+        const db = Number(t.mennyiseg) || 0;
+        beszerzesOssz += t.beszerzesiArPillanatkep * db;
+        eladasOssz    += (Number(t.netto_egysegar) || 0) * db;
+        anyagHaszonFt += t.haszonFt || 0;
+      }
+    });
+    const munkadijOsszeg   = aktivak.find(t => FO_TETELEK.find(f => f.id === t.id)?.kivi)?.netto_osszeg || 0;
+    const anyagHaszonPct   = beszerzesOssz > 0 ? (anyagHaszonFt / beszerzesOssz) * 100 : 0;
+    const teljesProfitFt   = anyagHaszonFt + munkadijOsszeg;
+    const teljesArbevetel  = computed.netto;
+    const teljesProfitPct  = teljesArbevetel > 0 ? (teljesProfitFt / teljesArbevetel) * 100 : 0;
+    return { beszerzesOssz, eladasOssz, anyagHaszonFt, anyagHaszonPct, munkadijOsszeg, teljesProfitFt, teljesProfitPct };
+  }, [computed]);
 
   function upd(k, v) { setForm(p => ({ ...p, [k]: v })); if (hiba) setHiba(""); }
 
@@ -148,12 +200,20 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
     const item = items.find(t => t.id === anyagtorzsId);
     if (!item) { updFo(foTetelId, "anyagtorzs_id", ""); return; }
     const def = FO_TETELEK.find(f => f.id === foTetelId);
+    // Ajánlat V2 – profitlogika (Fázis 3A): kiválasztáskor pillanatkép készül
+    // a beszerzési árról és a haszonkulcsról – ez később már nem változik,
+    // még akkor sem, ha az anyagtörzsben módosul az ár.
+    const beszerzesiAr = Number(item.netto_egysegar) || 0;
+    const haszonPct    = item.alapHaszonkulcsPct ?? CEGES_ALAP_ANYAG_HASZON_PCT;
+    const eladasiAr    = item.javasoltEladasiAr ?? calcEladasiAr(beszerzesiAr, haszonPct);
     updFoFields(foTetelId, {
       anyagtorzs_id:  item.id,
       tipus:          item.tipus || "",
       egyseg:         item.egyseg || "db",
-      netto_egysegar: Number(item.netto_egysegar) || 0,
+      netto_egysegar: eladasiAr,
       ugyfel_leiras:  item.ugyfel_leiras || def?.ugyfel_leiras_default || "",
+      beszerzesiArPillanatkep: beszerzesiAr,
+      haszonPct:               haszonPct,
     });
   }
 
@@ -321,6 +381,48 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
             )}
           </div>
         </div>
+
+        {/* Ajánlat V2 – profitlogika (Fázis 3A): csak anyagtörzsből választott
+            tételeknél van ismert beszerzési-ár pillanatkép – ekkor a PM
+            szerkesztheti a haszonkulcsot, ami újraszámolja az eladási árat. */}
+        {foTetel.beszerzesiArPillanatkep != null && (
+          <div style={{ marginTop: 10, background: "#FFFFFF", border: `1px solid ${C.border}`, borderRadius: 9, padding: "10px 12px" }}>
+            <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
+              Anyag haszon (belső, nem jelenik meg az ügyfélnek)
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              <div>
+                <Label>Beszerzési ár (pillanatkép)</Label>
+                <div style={{ ...INP, background: "#F3F4F6", color: C.muted, display: "flex", alignItems: "center" }}>
+                  {ft(foTetel.beszerzesiArPillanatkep)}
+                </div>
+              </div>
+              <div>
+                <Label>Haszonkulcs (%)</Label>
+                <input type="number" value={foTetel.haszonPct ?? ""} min={0}
+                  onChange={e => {
+                    const pct = Number(e.target.value) || 0;
+                    updFoFields(def.id, {
+                      haszonPct:      pct,
+                      netto_egysegar: calcEladasiAr(foTetel.beszerzesiArPillanatkep, pct),
+                    });
+                  }}
+                  placeholder="30" style={INP} />
+              </div>
+              <div>
+                <Label>Anyag haszon (összesen)</Label>
+                <div style={{ ...INP, background: C.accentLight, color: C.accentDark, fontWeight: 700, display: "flex", alignItems: "center" }}>
+                  {ft(foTetel.haszonFt || 0)}
+                </div>
+              </div>
+            </div>
+            {alacsonyAnyagHaszon(foTetel.haszonPct) && (
+              <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: "#B45309", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 7, padding: "7px 10px" }}>
+                ⚠ 30% alatti anyag haszon
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Ügyfélnek látható leírás */}
         <div style={{ marginTop: 10 }}>
@@ -571,6 +673,40 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
             </div>
           );
         })}
+
+        {/* Ajánlat V2 – profitlogika (Fázis 3A): belső profit összesítő – nem PDF tartalom */}
+        <div style={{ marginTop: 18, border: `1.5px dashed ${C.border}`, borderRadius: 10, padding: "14px 16px", background: "#FAFAF9" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+            <Info size={13} />
+            Profit összesítő (belső – nem jelenik meg az ügyfélnek / PDF-ben)
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 10, color: C.muted }}>Összes beszerzési ár</div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>{ft(profitOsszesito.beszerzesOssz)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: C.muted }}>Összes eladási ár</div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>{ft(profitOsszesito.eladasOssz)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: C.muted }}>Anyag haszon</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.accentDark }}>
+                {ft(profitOsszesito.anyagHaszonFt)} <span style={{ fontSize: 11, fontWeight: 600, color: C.muted }}>({profitOsszesito.anyagHaszonPct.toFixed(1)}%)</span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: C.muted }}>Munkadíj összeg (kivitelezés)</div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>{ft(profitOsszesito.munkadijOsszeg)}</div>
+            </div>
+            <div style={{ gridColumn: "span 2" }}>
+              <div style={{ fontSize: 10, color: C.muted }}>Teljes ajánlat profit (anyag haszon + munkadíj)</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: C.accent }}>
+                {ft(profitOsszesito.teljesProfitFt)} <span style={{ fontSize: 12, fontWeight: 700, color: C.muted }}>({profitOsszesito.teljesProfitPct.toFixed(1)}% az ajánlat nettó összegéből)</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

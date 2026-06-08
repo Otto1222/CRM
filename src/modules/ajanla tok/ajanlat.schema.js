@@ -46,10 +46,41 @@ export function makeFoTetelek() {
     egyseg:           "db",
     netto_egysegar:   0,
     netto_osszeg:     0,
+    // ── Ajánlat V2 – profitlogika (Fázis 3A) ──
+    // Az "eladási ár" a meglévő netto_egysegar mezőben tárolódik – nincs
+    // külön "eladasiAr" mező (sem "anyagtorzsId" az anyagtorzs_id mellett),
+    // hogy ne legyen mező-átfedés (ld. Fázis 2B konszolidáció tanulsága).
+    beszerzesiArPillanatkep: null,
+    haszonPct:               null,
+    haszonFt:                0,
     // ügyfél / belső szöveg
     ugyfel_leiras:    f.ugyfel_leiras_default || "",
     belso_megjegyzes: "",
   }));
+}
+
+// ─── Ajánlat V2 – profitlogika (Fázis 3A) ─────────────────────
+// A céges alap anyaghaszon-kulcs – ez alatt figyelmeztetést kap a PM.
+export const CEGES_ALAP_ANYAG_HASZON_PCT = 30;
+
+// eladasiAr = beszerzesiArPillanatkep × (1 + haszonPct / 100)
+// Az eladási ár a tétel netto_egysegar mezőjében tárolódik.
+export function calcEladasiAr(beszerzesiAr, haszonPct) {
+  const ar  = Number(beszerzesiAr) || 0;
+  const pct = Number(haszonPct) || 0;
+  return Math.round(ar * (1 + pct / 100));
+}
+
+// haszonFt = (eladasiAr - beszerzesiArPillanatkep) × mennyiseg
+export function calcHaszonFt(eladasiAr, beszerzesiAr, mennyiseg) {
+  const elado = Number(eladasiAr) || 0;
+  const besz  = Number(beszerzesiAr) || 0;
+  const db    = Number(mennyiseg) || 0;
+  return (elado - besz) * db;
+}
+
+export function alacsonyAnyagHaszon(haszonPct) {
+  return haszonPct != null && Number(haszonPct) < CEGES_ALAP_ANYAG_HASZON_PCT;
 }
 
 export const DEFAULT_KIVI_KALKULATOR = {
@@ -129,7 +160,15 @@ export function computeFoTetelek(fo_tetelek = [], reszlet_tetelek = [], kivi_kal
       if (db > 0 && ar > 0) netto = db * ar;
     }
 
-    return { ...t, netto_osszeg: netto };
+    // ── Ajánlat V2 – profitlogika (Fázis 3A) ──
+    // Csak az anyagtörzsből választott (beszerzési ár pillanatképpel rendelkező)
+    // tételeknél van ismert költségbázis – a haszon mindig a friss netto_egysegar
+    // (= eladási ár), a pillanatkép és a mennyiség alapján számolódik újra.
+    const haszonFt = t.beszerzesiArPillanatkep != null
+      ? calcHaszonFt(t.netto_egysegar, t.beszerzesiArPillanatkep, t.mennyiseg)
+      : (t.haszonFt || 0);
+
+    return { ...t, netto_osszeg: netto, haszonFt };
   });
 }
 
