@@ -5,7 +5,7 @@
 
 import { chromium } from "playwright";
 
-const BASE = "http://localhost:5173";
+const BASE = "http://localhost:3000";
 let pass = 0, fail = 0;
 const errors = [];
 
@@ -89,9 +89,9 @@ const navCheck = await page.evaluate(async () => {
   const telepAllowed  = getAllowedPages("Telepítő");
 
   // Elvárt oldalak
-  const adminExpected  = ["dashboard","ugyfelek","arajanlatok","szerzodesek","projektek","naptar","dokumentumok","szamlak","karteritesek","riportok","csapat","munkalap_sablonok","beallitasok"];
-  const pmExpected     = ["dashboard","ugyfelek","arajanlatok","szerzodesek","projektek","naptar","dokumentumok","szamlak","karteritesek","riportok","csapat","munkalap_sablonok","beallitasok"];
-  const irodaExpected  = ["dashboard","ugyfelek","projektek","naptar","dokumentumok","szamlak","karteritesek","riportok"];
+  const adminExpected  = ["dashboard","ugyfelek","arajanlatok","projektek","naptar","szamlak","karteritesek","riportok","csapat","munkalap_sablonok","beallitasok"];
+  const pmExpected     = ["dashboard","ugyfelek","arajanlatok","projektek","naptar","szamlak","karteritesek","riportok","csapat","munkalap_sablonok","beallitasok"];
+  const irodaExpected  = ["dashboard","ugyfelek","projektek","naptar","szamlak","karteritesek","riportok"];
   const telepExpected  = ["munkalapok"];
 
   function check(allowed, expected) {
@@ -136,21 +136,19 @@ ok("Iroda nem látja: ML Sablonok", navCheck.irodaNemLatjaSablonok);
 section("3 – Routing ellenőrzés");
 
 const routeCheck = await page.evaluate(async () => {
-  // szerzodesek bug fix ellenőrzés
-  // A roles.js-ben "szerzodesek" van (nem "szerzodések")
+  // A menü egyszerűsítés eltávolította a standalone "szerzodesek" és
+  // "dokumentumok" főmenüket – ezek mostantól a projekt tabokban élnek
   const { getAllowedPages } = await import("/src/lib/roles.js");
   const adminPages = getAllowedPages("Admin");
   return {
-    szerzodesekOk: adminPages.includes("szerzodesek"),
-    szerzodesekBugFixed: !adminPages.includes("szerzodések"),
-    dokumentumokOk: adminPages.includes("dokumentumok"),
+    szerzodesekRemoved: !adminPages.includes("szerzodesek") && !adminPages.includes("szerzodések"),
+    dokumentumokRemoved: !adminPages.includes("dokumentumok"),
     munkalapokAdminHas: adminPages.includes("munkalapok"),
   };
 });
 
-ok("Bug fix: 'szerzodesek' (nem 'szerzodések')", routeCheck.szerzodesekOk);
-ok("Bug fix: régi 'szerzodések' eltűnt", routeCheck.szerzodesekBugFixed);
-ok("Új route: 'dokumentumok' létezik", routeCheck.dokumentumokOk);
+ok("Menü egyszerűsítés: 'szerzodesek' főmenü eltávolítva (projekt tabban van)", routeCheck.szerzodesekRemoved);
+ok("Menü egyszerűsítés: 'dokumentumok' főmenü eltávolítva (projekt tabban van)", routeCheck.dokumentumokRemoved);
 ok("Admin: munkalapok routing megmarad (projekt navigációhoz)", routeCheck.munkalapokAdminHas);
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -211,7 +209,7 @@ try {
     ok("Értékesítés csoport látható", sidebarText.includes("Értékesítés"));
     ok("Projektek látható", sidebarText.includes("Projektek"));
     ok("Naptár látható", sidebarText.includes("Naptár"));
-    ok("Dokumentumok látható", sidebarText.includes("Dokumentumok"));
+    ok("'Dokumentumok' NINCS a főmenüben (menü egyszerűsítés – projekt tabban van)", !sidebarText.includes("Dokumentumok"));
     ok("Pénzügy csoport látható", sidebarText.includes("Pénzügy"));
     ok("Beállítások csoport látható", sidebarText.includes("Beállítások"));
 
@@ -313,15 +311,6 @@ try {
           await page.waitForTimeout(500);
           ok("Rendszer (Beállítások) navigáció működik", true);
         }
-      }
-
-      // Dokumentumok
-      const dokumentumBtn = await page.$("button:has-text('Dokumentumok')");
-      if (dokumentumBtn) {
-        await dokumentumBtn.click();
-        await page.waitForTimeout(500);
-        const mainContent = await page.evaluate(() => document.body.innerText);
-        ok("Dokumentumok oldal betölt", mainContent.includes("Dokumentumok"), "ComingSoon vagy valós oldal");
       }
 
   } else {

@@ -7,7 +7,7 @@
 
 import { chromium } from "playwright";
 
-const BASE = "http://localhost:5173";
+const BASE = "http://localhost:3000";
 const ADMIN_USER = "Teszt Admin";
 
 // ─── Segédfüggvények ────────────────────────────────────────────────────────
