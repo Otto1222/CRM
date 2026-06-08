@@ -7,6 +7,7 @@ import {
   FO_TETELEK, AJANLAT_STATUSZOK, makeFoTetelek, DEFAULT_KIVI_KALKULATOR,
   computeFoTetelek, computeKiviOsszeg,
   CEGES_ALAP_ANYAG_HASZON_PCT, calcEladasiAr, calcHaszonFt, alacsonyAnyagHaszon,
+  calcReszletHaszon,
 } from "./ajanlat.schema";
 import { createAjanlat, updateAjanlat } from "./ajanlat.service";
 import { printAjanlat } from "./ajanlatPrint";
@@ -126,30 +127,66 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
   }, [form]);
 
   // Ajánlat V2 – profitlogika (Fázis 3A): belső profit-összesítő.
-  // Csak az anyagtörzsből választott (beszerzési ár pillanatképpel rendelkező)
-  // tételeknek van ismert költségbázisuk – a "teljes ajánlat profit" ezért az
-  // anyaghaszon és a kivitelezés-munkadíj (kivi_beuzem, kivi:true) összege.
-  // Az egyéb összesített kategóriáknak (ügyintézés, villanyszerelés, védelmi
-  // eszközök) nincs nyilvántartott beszerzési költségük, így az árbevételükben
-  // szerepelnek, de a profitszámításban nem – ez tudatos egyszerűsítés.
+  // Fázis 3A + 3B – egységesített profit-összesítő.
+  // Költségbázissal (= ismert beszerzési árral) rendelkező tételek két helyen
+  // fordulhatnak elő:
+  //   - fo_tetelek: anyagtörzsből választott termék → beszerzesiArPillanatkep
+  //   - reszlet_tetelek: PM által manuálisan megadott beszerzesiAr (opcionális)
+  // A "teljes ajánlat profit" ezekből és a kivitelezés-munkadíjból
+  // (kivi_beuzem, kivi:true) áll össze. Amihez nincs ismert beszerzési ár
+  // (sem anyagtörzs-pillanatkép, sem manuálisan megadott összeg), annak
+  // árbevétele külön, "költségbázis nélküli bevétel" sorként jelenik meg –
+  // ez nem profitveszteség, csak nem nyomon követett a haszna.
   const profitOsszesito = useMemo(() => {
     const aktivak = computed.fo.filter(t => t.aktiv);
-    let beszerzesOssz = 0, eladasOssz = 0, anyagHaszonFt = 0;
+    let beszerzesOssz = 0, eladasOssz = 0, anyagHaszonFt = 0, koltsegbazisNelkuliBevetel = 0;
+
     aktivak.forEach(t => {
+      const def = FO_TETELEK.find(f => f.id === t.id);
+      if (def?.kivi) return; // munkadíj – külön kezelve, nem árbevétel-alapú haszon
+
       if (t.beszerzesiArPillanatkep != null) {
         const db = Number(t.mennyiseg) || 0;
         beszerzesOssz += t.beszerzesiArPillanatkep * db;
         eladasOssz    += (Number(t.netto_egysegar) || 0) * db;
         anyagHaszonFt += t.haszonFt || 0;
+        return;
       }
+
+      if (def?.osszetett) {
+        const reszletek = form.reszlet_tetelek.filter(r => r.fotetel === t.id);
+        if (reszletek.length > 0) {
+          reszletek.forEach(r => {
+            const vanKoltsegbazis = r.beszerzesiAr !== null && r.beszerzesiAr !== undefined && r.beszerzesiAr !== "";
+            const db = Number(r.mennyiseg) || 0;
+            if (vanKoltsegbazis) {
+              const { haszonFt } = calcReszletHaszon(r.beszerzesiAr, r.netto_egysegar, r.mennyiseg);
+              beszerzesOssz += (Number(r.beszerzesiAr) || 0) * db;
+              eladasOssz    += (Number(r.netto_egysegar) || 0) * db;
+              anyagHaszonFt += haszonFt;
+            } else {
+              koltsegbazisNelkuliBevetel += Number(r.netto_osszeg) || 0;
+            }
+          });
+          return;
+        }
+      }
+
+      // Nincs anyagtörzs-pillanatkép, nincs (vagy nincs kitöltött) belső bontás
+      koltsegbazisNelkuliBevetel += Number(t.netto_osszeg) || 0;
     });
+
     const munkadijOsszeg   = aktivak.find(t => FO_TETELEK.find(f => f.id === t.id)?.kivi)?.netto_osszeg || 0;
     const anyagHaszonPct   = beszerzesOssz > 0 ? (anyagHaszonFt / beszerzesOssz) * 100 : 0;
     const teljesProfitFt   = anyagHaszonFt + munkadijOsszeg;
     const teljesArbevetel  = computed.netto;
     const teljesProfitPct  = teljesArbevetel > 0 ? (teljesProfitFt / teljesArbevetel) * 100 : 0;
-    return { beszerzesOssz, eladasOssz, anyagHaszonFt, anyagHaszonPct, munkadijOsszeg, teljesProfitFt, teljesProfitPct };
-  }, [computed]);
+    return {
+      beszerzesOssz, eladasOssz, anyagHaszonFt, anyagHaszonPct,
+      munkadijOsszeg, teljesProfitFt, teljesProfitPct,
+      koltsegbazisNelkuliBevetel,
+    };
+  }, [computed, form.reszlet_tetelek]);
 
   function upd(k, v) { setForm(p => ({ ...p, [k]: v })); if (hiba) setHiba(""); }
 
@@ -170,7 +207,9 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
   }
 
   function addReszlet(fotetel) {
-    const item = { id: crypto.randomUUID(), fotetel, nev: "", mennyiseg: 1, egyseg: "db", netto_egysegar: 0, netto_osszeg: 0 };
+    // Fázis 3B: beszerzesiAr opcionális, manuálisan rögzíthető mező –
+    // nincs anyagtörzs-kapcsolat, ezért nem "pillanatkép" (ld. AJANLAT_MEZO_SZOTAR)
+    const item = { id: crypto.randomUUID(), fotetel, nev: "", mennyiseg: 1, egyseg: "db", netto_egysegar: 0, netto_osszeg: 0, beszerzesiAr: null };
     setForm(p => ({ ...p, reszlet_tetelek: [...p.reszlet_tetelek, item] }));
   }
   function updReszlet(id, field, val) {
@@ -460,17 +499,24 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
         <p style={{ fontSize: 11, fontWeight: 700, color: C.textSub, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>
           Belső tételes kalkuláció (nem jelenik meg az ügyfélnek)
         </p>
+        {/* Fázis 3B: a "Beszerzési ár" mező opcionális, manuálisan tölthető –
+            ha a PM kitölti, a haszonkulcs és a haszon Ft visszaszámolódik
+            belőle és az eladási árból (ld. calcReszletHaszon). Ha üres marad,
+            a sor "költségbázis nélküli bevételként" kerül az összesítőbe. */}
         {reszletek.length > 0 && (
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginBottom: 8 }}>
             <thead>
               <tr style={{ background: "#E8F4F4" }}>
-                {["Megnevezés", "Menny.", "Egység", "Nettó egységár", "Összeg", ""].map(h => (
-                  <th key={h} style={{ padding: "6px 8px", textAlign: h === "Összeg" || h === "Nettó egységár" ? "right" : "left", fontSize: 10, fontWeight: 700, color: C.textSub, whiteSpace: "nowrap" }}>{h}</th>
+                {["Megnevezés", "Menny.", "Egység", "Eladási ár (nettó)", "Beszerzési ár (opc.)", "Anyag haszon", "Összeg", ""].map(h => (
+                  <th key={h} style={{ padding: "6px 8px", textAlign: ["Eladási ár (nettó)", "Beszerzési ár (opc.)", "Anyag haszon", "Összeg"].includes(h) ? "right" : "left", fontSize: 10, fontWeight: 700, color: C.textSub, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {reszletek.map(t => (
+              {reszletek.map(t => {
+                const { haszonPct, haszonFt } = calcReszletHaszon(t.beszerzesiAr, t.netto_egysegar, t.mennyiseg);
+                const vanKoltsegbazis = t.beszerzesiAr !== null && t.beszerzesiAr !== undefined && t.beszerzesiAr !== "";
+                return (
                 <tr key={t.id} style={{ borderBottom: `1px solid ${C.border}` }}>
                   <td style={{ padding: "5px 8px" }}>
                     <input value={t.nev} onChange={e => updReszlet(t.id, "nev", e.target.value)}
@@ -489,6 +535,22 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
                     <input type="number" value={t.netto_egysegar} onChange={e => updReszlet(t.id, "netto_egysegar", e.target.value)}
                       min={0} placeholder="0" style={{ ...INP_SM, textAlign: "right" }} />
                   </td>
+                  <td style={{ padding: "5px 8px", width: 130 }}>
+                    <input type="number" value={t.beszerzesiAr ?? ""} min={0}
+                      onChange={e => updReszlet(t.id, "beszerzesiAr", e.target.value === "" ? null : Number(e.target.value) || 0)}
+                      placeholder="nincs megadva" style={{ ...INP_SM, textAlign: "right" }} />
+                  </td>
+                  <td style={{ padding: "5px 8px", width: 130, textAlign: "right", whiteSpace: "nowrap" }}>
+                    {vanKoltsegbazis ? (
+                      <span>
+                        <span style={{ fontWeight: 700, color: alacsonyAnyagHaszon(haszonPct) ? "#B45309" : C.accentDark }}>{ft(haszonFt)}</span>
+                        <span style={{ fontSize: 10, color: C.muted }}> ({haszonPct != null ? haszonPct.toFixed(0) : "—"}%)</span>
+                        {alacsonyAnyagHaszon(haszonPct) && <div style={{ fontSize: 10, fontWeight: 700, color: "#B45309" }}>⚠ 30% alatti anyag haszon</div>}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 11, color: C.muted, fontStyle: "italic" }}>nincs költségbázis</span>
+                    )}
+                  </td>
                   <td style={{ padding: "5px 8px", width: 110, textAlign: "right", fontWeight: 600, color: C.accentDark, whiteSpace: "nowrap" }}>
                     {t.netto_osszeg > 0 ? ft(t.netto_osszeg) : "—"}
                   </td>
@@ -498,7 +560,8 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -706,6 +769,12 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
               </div>
             </div>
           </div>
+          {profitOsszesito.koltsegbazisNelkuliBevetel > 0 && (
+            <div style={{ marginTop: 10, fontSize: 12, color: C.muted, background: "#F3F4F6", border: `1px solid ${C.border}`, borderRadius: 7, padding: "7px 10px" }}>
+              Bevétel költségbázis nélkül: <strong style={{ color: C.text }}>{ft(profitOsszesito.koltsegbazisNelkuliBevetel)}</strong>
+              {" "}— olyan tételek/sorok árbevétele, amelyeknél nincs rögzített beszerzési ár, ezért a hasznuk nem szerepel a fenti profit-mutatókban.
+            </div>
+          )}
         </div>
       </div>
     );

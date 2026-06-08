@@ -83,6 +83,41 @@ export function alacsonyAnyagHaszon(haszonPct) {
   return haszonPct != null && Number(haszonPct) < CEGES_ALAP_ANYAG_HASZON_PCT;
 }
 
+// ─── Fázis 3B – profitlogika kiterjesztés a reszlet_tetelek-re ────
+// A reszlet_tetelek szabad belső bontó sorok (összetett fő tételek alatt) –
+// nincs anyagtörzs-kapcsolatuk, ezért itt a beszerzési ár NEM pillanatkép,
+// hanem a PM által opcionálisan, manuálisan rögzített összeg (mező neve:
+// beszerzesiAr, "...Pillanatkep" utótag nélkül – ld. AJANLAT_MEZO_SZOTAR).
+// A meglévő netto_egysegar marad az eladási ár; a haszonkulcs és a haszon Ft
+// ebből és a beszerzési árból származik vissza (fordított irány a fo_tetelek
+// képletéhez képest, mert itt az eladási ár a PM által közvetlenül megadott
+// elsődleges adat, nem a haszonkulcsból számolt).
+export function calcReszletHaszon(beszerzesiAr, eladasiAr, mennyiseg) {
+  if (beszerzesiAr === null || beszerzesiAr === undefined || beszerzesiAr === "") {
+    return { haszonPct: null, haszonFt: 0 };
+  }
+  const besz  = Number(beszerzesiAr) || 0;
+  const elado = Number(eladasiAr) || 0;
+  const db    = Number(mennyiseg) || 0;
+  return {
+    haszonPct: besz > 0 ? ((elado - besz) / besz) * 100 : null,
+    haszonFt: (elado - besz) * db,
+  };
+}
+
+// ─── Hivatalos mezőnév-szótár (Fázis 3A/3B döntés – nincs duplikáció) ──
+// anyagtorzsId   →  anyagtorzs_id   (meglévő mező, nem hoztunk létre újat)
+// eladasiAr      →  netto_egysegar  (meglévő mező – az "eladási ár" ebben tárolódik,
+//                                    mind fo_tetelek, mind reszlet_tetelek esetén)
+// A "...Pillanatkep" utótag csak ott szerepel, ahol az érték egy másik
+// rekord (anyagtörzs) adatának másolata egy adott pillanatban
+// (fo_tetelek.beszerzesiArPillanatkep). A reszlet_tetelek.beszerzesiAr
+// ezzel szemben elsődleges, manuálisan bevitt adat – nincs mit "pillanatképezni".
+export const AJANLAT_MEZO_SZOTAR = {
+  anyagtorzsId: "anyagtorzs_id",
+  eladasiAr:    "netto_egysegar",
+};
+
 export const DEFAULT_KIVI_KALKULATOR = {
   kezi:                     false,
   panel_db:                 0,
