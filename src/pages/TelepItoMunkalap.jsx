@@ -11,7 +11,7 @@ import FelmeresTelepito from "./FelmeresTelepito";
 import FelmeresFotok from "./FelmeresFotok";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
 import { driveSave, driveVbfSave } from "../lib/driveApi";
-import { calcMunkalapElszamolas, saveMunkalapElszamolas } from "../services/settlementCalculator";
+import { calcMunkalapElszamolas, saveMunkalapElszamolas } from "../services/workOrderFinancial.service.js";
 import {
   getJelenletByMunkalap,
   createJelenletBejegyzes,
