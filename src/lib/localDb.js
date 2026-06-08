@@ -26,6 +26,7 @@ const KEYS = {
   "ajanla tok":                 "ajanla tok",
   edi_ajanlat_sorszam_counter:  "edi_ajanlat_sorszam_counter",
   crm_backups:                  "crm_backups",
+  anyag_ar_verziok:             "anyag_ar_verziok",
 };
 
 // ─── Cross-tab szinkronizáció BroadcastChannel-lel ───────────

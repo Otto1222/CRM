@@ -13,7 +13,18 @@
  * Rekord mezők (ajánlat-kompatibilis):
  *   id, nev, egyseg, netto_egysegar, kategoria, aktiv, megjegyzes
  *   + telepitoi_kategoria (szűrés a telepítő felületen)
+ *
+ * V2 mezők (Fázis 2A – idempotens migráció, ld. migrateAnyagV2):
+ *   alapHaszonkulcsPct, javasoltEladasiAr, telepitokategoria,
+ *   beszallito, kulsoAzonosito, inaktiv
+ *
+ * Árverzió (anyag_ar_verziok, ld. anyagArVerzio.js):
+ *   ha a beszerzési ár, az alap haszonkulcs vagy a javasolt eladási ár
+ *   módosul, a RÉGI érték árverzióként append-only mentésre kerül,
+ *   mielőtt az új ár felülírná az anyagtörzs rekordot – ld. updateAnyag().
+ *   Régi projektek / elfogadott ajánlatok ár-pillanatképei nem változnak.
  */
+import { appendAnyagArVerzio } from "./anyagArVerzio.js";
 
 const KEY = "anyagtorzs";
 const dispatch = () =>
@@ -81,18 +92,51 @@ export const DEFAULT_ANYAGOK = [
   { id: "a053", nev: "Szél bilincs",            egyseg: "db",  netto_egysegar: 0, kategoria: "tartoszerkezet",  telepitoi_kategoria: "tartoszerk_any", aktiv: true },
 ];
 
+// ─── V2 – Javasolt eladási ár számítás ───────────────────────
+// javasoltEladasiAr = nettoBeszerzesiAr × (1 + alapHaszonkulcsPct / 100)
+// (kerekítve – a mező a UI-n kézzel felülírható)
+export function calcJavasoltEladasiAr(nettoBeszerzesiAr, alapHaszonkulcsPct) {
+  const ar  = Number(nettoBeszerzesiAr) || 0;
+  const pct = Number(alapHaszonkulcsPct) || 0;
+  return Math.round(ar * (1 + pct / 100));
+}
+
+// ─── V2 – idempotens mező-migráció (Fázis 2A) ────────────────
+// Csak a HIÁNYZÓ mezőket tölti ki – meglévő értéket sosem ír felül,
+// adatot nem töröl. A migrateOldKeys() mintáját követi (transform-on-read).
+function migrateAnyagV2(a, netto_egysegar) {
+  const alapHaszonkulcsPct = a.alapHaszonkulcsPct ?? 30;
+  const javasoltEladasiAr  = a.javasoltEladasiAr ?? calcJavasoltEladasiAr(netto_egysegar, alapHaszonkulcsPct);
+  return {
+    alapHaszonkulcsPct,
+    javasoltEladasiAr,
+    telepitokategoria: a.telepitokategoria ?? "",
+    beszallito:        a.beszallito ?? "",
+    kulsoAzonosito:    a.kulsoAzonosito ?? "",
+    inaktiv:           a.inaktiv ?? false,
+  };
+}
+
+// Az árváltozást kiváltó mezők – ezek bármelyikének módosulása előtt
+// a régi érték árverzióként rögzül (ld. updateAnyag).
+const ANYAG_AR_MEZOK = ["netto_egysegar", "alapHaszonkulcsPct", "javasoltEladasiAr"];
+
 // ─── CRUD ────────────────────────────────────────────────────
 export function loadAnyagtorzs() {
   try {
     const stored = JSON.parse(localStorage.getItem(KEY) || "null");
     if (Array.isArray(stored) && stored.length > 0) {
       // Visszafelé kompatibilitás: ha régi "kat" mező van, mappeljük "kategoria"-ra
-      return stored.map(a => ({
-        ...a,
-        kategoria:            a.kategoria ?? a.kat ?? "villanyszereles",
-        netto_egysegar:       a.netto_egysegar ?? a.egysegAr ?? 0,
-        telepitoi_kategoria:  a.telepitoi_kategoria ?? a.kat ?? "egyeb",
-      }));
+      return stored.map(a => {
+        const netto_egysegar = a.netto_egysegar ?? a.egysegAr ?? 0;
+        return {
+          ...a,
+          kategoria:            a.kategoria ?? a.kat ?? "villanyszereles",
+          netto_egysegar,
+          telepitoi_kategoria:  a.telepitoi_kategoria ?? a.kat ?? "egyeb",
+          ...migrateAnyagV2(a, netto_egysegar),
+        };
+      });
     }
     localStorage.setItem(KEY, JSON.stringify(DEFAULT_ANYAGOK));
     return DEFAULT_ANYAGOK;
@@ -119,8 +163,31 @@ export function createAnyag(data) {
   return item;
 }
 
-export function updateAnyag(id, updates) {
-  saveAnyagtorzs(loadAnyagtorzs().map(a => a.id === id ? { ...a, ...updates } : a));
+// updates: a módosítandó mezők; meta: { rogzitette, megjegyzes } – opcionális,
+// az árverzió naplóhoz (ki és miért módosította az árat).
+export function updateAnyag(id, updates, meta = {}) {
+  const list     = loadAnyagtorzs();
+  const existing = list.find(a => a.id === id);
+
+  // Árváltozás esetén a RÉGI ár árverzióként append-only mentésre kerül,
+  // MIELŐTT az új ár felülírná az anyagtörzs rekordot (D – Anyagár módosítási szabály).
+  if (existing) {
+    const arValtozott = ANYAG_AR_MEZOK.some(
+      mezo => updates[mezo] !== undefined && Number(updates[mezo]) !== Number(existing[mezo])
+    );
+    if (arValtozott) {
+      appendAnyagArVerzio({
+        anyagtorzsId:       existing.id,
+        nettoBeszerzesiAr:  existing.netto_egysegar,
+        javasoltEladasiAr:  existing.javasoltEladasiAr,
+        alapHaszonkulcsPct: existing.alapHaszonkulcsPct,
+        rogzitette:         meta.rogzitette || "",
+        megjegyzes:         meta.megjegyzes || "",
+      });
+    }
+  }
+
+  saveAnyagtorzs(list.map(a => a.id === id ? { ...a, ...updates } : a));
 }
 
 export function deleteAnyag(id) {

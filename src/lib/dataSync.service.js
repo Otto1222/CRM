@@ -15,6 +15,7 @@ export const SYNC_COLLECTIONS = [
   "csapat_tagok",
   "crm_napelem_users",
   "szamlak",
+  "anyag_ar_verziok",
 ];
 
 // ─── Drive szinkron napló (per-kollekció utolsó szinkron státusz) ─

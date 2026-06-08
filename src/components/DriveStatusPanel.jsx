@@ -18,6 +18,7 @@ const COLLECTION_LABELS = {
   csapatok:              "Csapatok",
   crm_napelem_users:     "CRM Felhasználók",
   szamlak:               "Számlák",
+  anyag_ar_verziok:      "Anyagár verziók",
 };
 
 export default function DriveStatusPanel() {

@@ -10,7 +10,7 @@ import { C, FONT } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import {
   loadAnyagtorzs, saveAnyagtorzs, createAnyag,
-  updateAnyag, deleteAnyag,
+  updateAnyag, deleteAnyag, calcJavasoltEladasiAr,
   AJANLAT_KATEGORIAK, TELEPITOI_KATEGORIAK,
 } from "../lib/anyagtorzs";
 
@@ -56,6 +56,13 @@ function AnyagForm({ anyag, onSave, onClose }) {
     egyseg:               anyag?.egyseg || "db",
     netto_egysegar:       anyag?.netto_egysegar || anyag?.egysegAr || 0,
     megjegyzes:           anyag?.megjegyzes || "",
+    // ── V2 mezők (Fázis 2A) ──
+    alapHaszonkulcsPct:   anyag?.alapHaszonkulcsPct ?? 30,
+    javasoltEladasiAr:    anyag?.javasoltEladasiAr ?? calcJavasoltEladasiAr(anyag?.netto_egysegar || 0, anyag?.alapHaszonkulcsPct ?? 30),
+    telepitokategoria:    anyag?.telepitokategoria || "",
+    beszallito:           anyag?.beszallito || "",
+    kulsoAzonosito:       anyag?.kulsoAzonosito || "",
+    inaktiv:              anyag?.inaktiv ?? false,
   });
   const inp = { width: "100%", boxSizing: "border-box", padding: "9px 12px",
     border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, fontFamily: FONT, outline: "none" };
@@ -93,6 +100,54 @@ function AnyagForm({ anyag, onSave, onClose }) {
             <select value={form.kategoria} onChange={e => setForm(p => ({...p, kategoria: e.target.value}))} style={inp}>
               {AJANLAT_KATEGORIAK.map(k => <option key={k.id} value={k.id}>{k.label}</option>)}
             </select>
+          </div>
+
+          {/* ── V2 mezők (Fázis 2A – Anyagtörzs V2 + árverziók) ── */}
+          <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12, marginTop: 2 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .5, margin: "0 0 10px" }}>Árazás (V2)</p>
+            <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#92400E", marginBottom: 12, lineHeight: 1.5 }}>
+              Ármódosítás esetén a régi ár árverzióként mentésre kerül. Régi projektek és elfogadott ajánlatok árai nem változnak.
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase" }}>Alap haszonkulcs (%)</label>
+                <input type="number" min="0" value={form.alapHaszonkulcsPct}
+                  onChange={e => {
+                    const pct = Number(e.target.value);
+                    setForm(p => ({ ...p, alapHaszonkulcsPct: pct, javasoltEladasiAr: calcJavasoltEladasiAr(p.netto_egysegar, pct) }));
+                  }} style={inp} />
+              </div>
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase" }}>Javasolt eladási ár (Ft)</label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input type="number" min="0" value={form.javasoltEladasiAr}
+                    onChange={e => setForm(p => ({...p, javasoltEladasiAr: Number(e.target.value)}))} style={inp} />
+                  <button type="button" title="Újraszámolás a beszerzési ár és a haszonkulcs alapján"
+                    onClick={() => setForm(p => ({...p, javasoltEladasiAr: calcJavasoltEladasiAr(p.netto_egysegar, p.alapHaszonkulcsPct)}))}
+                    style={{ flexShrink: 0, padding: "0 12px", border: `1.5px solid ${C.border}`, borderRadius: 8, background: "#fff", cursor: "pointer", fontSize: 11, fontWeight: 700, color: C.textSub, fontFamily: FONT }}>
+                    Számol
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase" }}>Beszállító</label>
+                <input value={form.beszallito} onChange={e => setForm(p => ({...p, beszallito: e.target.value}))} placeholder="pl. Solar Distri Kft." style={inp} />
+              </div>
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase" }}>Külső azonosító</label>
+                <input value={form.kulsoAzonosito} onChange={e => setForm(p => ({...p, kulsoAzonosito: e.target.value}))} placeholder="cikkszám / SKU" style={inp} />
+              </div>
+            </div>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase" }}>Telepítő kategória – V2 (szabad szöveg)</label>
+              <input value={form.telepitokategoria} onChange={e => setForm(p => ({...p, telepitokategoria: e.target.value}))} placeholder="pl. tetőre szerelhető" style={inp} />
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: 12, color: C.textSub, cursor: "pointer" }}>
+              <input type="checkbox" checked={form.inaktiv} onChange={e => setForm(p => ({...p, inaktiv: e.target.checked}))} />
+              Inaktív (V2 jelölő – a listában az „Aktív” kapcsoló marad az elsődleges állapotjelző)
+            </label>
           </div>
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
