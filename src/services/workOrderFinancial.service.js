@@ -17,6 +17,28 @@ const TETELEK_KEY = id => `munkalap_tetelek_${id}`;
 const dispatch    = col =>
   window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: col } }));
 
+// ─── Input-aggregátor ─────────────────────────────────────────────────────
+
+/**
+ * Egységes input-aggregátor – projekt, munkalap vagy elszamolasAdatok
+ * objektumból szabálymotor-kompatibilis input objektumot állít elő.
+ * Kezeli a mezőnév-variánsokat (panelDb/darabszam/napelemDb,
+ * akkumulatorDb/akkumulator, smartMeterDb/okosmerő).
+ * Motor B paritás: azonos logika mint settlementCalculator.js buildInput().
+ *
+ * @param {object} source
+ * @returns {{ darabszam, tavKm, inverterDb, akkDb, smartMeterDb }}
+ */
+export function buildInput(source) {
+  return {
+    darabszam:    Number(source.panelDb || source.darabszam || source.napelemDb) || 0,
+    tavKm:        Number(source.tavKm)   || 0,
+    inverterDb:   Number(source.inverterDb) || 0,
+    akkDb:        Number(source.akkumulatorDb || (source.akkumulator ? 1 : 0)) || 0,
+    smartMeterDb: Number(source.smartMeterDb || (source.okosmerő ? 1 : 0)) || 0,
+  };
+}
+
 // ─── Tételek tárolása ─────────────────────────────────────────
 
 export function saveTetelek(projektId, tetelek) {
