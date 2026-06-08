@@ -6,7 +6,7 @@
  */
 import { PENZUGYI_SCHEMA } from "./penzugyi.schema.js";
 import { getBevetelTipus, calcProfit, defaultSzamlazasStatusz } from "../../lib/penzugyiRules.js";
-import { calcProjektVegkalkulacio } from "../../services/financialCalculation.service.js";
+import { calcEsmentProjektPenzugy } from "../../services/workOrderFinancial.service.js";
 import { driveSave } from "../../lib/driveApi.js";
 import { loadProjektek } from "../projektek/projekt.service.js";
 
@@ -110,10 +110,10 @@ export function autoElszamolasElokeszites(projektId, munkalapok, user = "system"
   const projekt = projektek.find(p => p.id === projektId);
   if (!projekt) return null;
 
-  // Meglévő kalkuláció a financialCalculation.service.js-ből
+  // Kalkuláció Motor A-val (workOrderFinancial.service.js)
   let kalk = {};
   try {
-    kalk = calcProjektVegkalkulacio(projekt, munkalapok) || {};
+    kalk = calcEsmentProjektPenzugy(projekt) || {};
   } catch { /* folytatás alapértékekkel */ }
 
   const forrás = projekt.forrás;
