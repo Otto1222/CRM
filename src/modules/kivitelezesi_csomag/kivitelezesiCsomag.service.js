@@ -262,3 +262,63 @@ export function addAnyagszamitoTetelekToKivitelezesiCsomag(csomagId, anyaglista 
 
   return { csomag: updatedCsomag, hozzaadva: ujTetelek, duplikalt };
 }
+
+// ─── Fázis 6A-1 – Telepítő anyagfelhasználás (munkalap-szintű izolált upsert) ─
+
+/**
+ * Telepítő munkalap-szintű anyagfelhasználás rögzítése.
+ *
+ * Minden tételhez upserteli a munkalapFelhasznalas[] tömböt
+ * (munkalapId azonosítja az adott munkalap rekordját),
+ * majd újraszámolja a felhasznaltMennyiseg értékét az összes
+ * munkalap-felhasználás összegeként.
+ *
+ * Több munkalapos projektvédelem: ha 2 munkalap különböző
+ * mennyiséget rögzít ugyanarra a tételre, mindkettő megőrződik –
+ * az összesített felhasznaltMennyiseg a kettő ÖSSZEGE, nem felülírás.
+ *
+ * @param {string} csomagId
+ * @param {string} munkalapId
+ * @param {Array<{tetelId, menny, megjegyzes}>} felhasznalasok
+ * @param {string} [user]
+ */
+export function updateFelhasznaltMennyisegFromMunkalap(csomagId, munkalapId, felhasznalasok = [], user = "") {
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) return null;
+
+  const now = new Date().toISOString();
+
+  const tetelek = (csomag.tetelek || []).map(t => {
+    const fAdat = felhasznalasok.find(f => f.tetelId === t.id);
+    if (!fAdat) return t;
+
+    const meglevo = t.munkalapFelhasznalas || [];
+    const idx     = meglevo.findIndex(f => f.munkalapId === munkalapId);
+    let ujFelhasznalas;
+
+    if (idx >= 0) {
+      ujFelhasznalas = meglevo.map((f, i) =>
+        i === idx
+          ? { ...f, menny: fAdat.menny, megjegyzes: fAdat.megjegyzes || "", rogzitveAt: now }
+          : f
+      );
+    } else {
+      ujFelhasznalas = [...meglevo, {
+        munkalapId,
+        menny:      fAdat.menny,
+        megjegyzes: fAdat.megjegyzes || "",
+        rogzitveAt: now,
+      }];
+    }
+
+    const osszes = ujFelhasznalas.reduce((s, f) => s + (Number(f.menny) || 0), 0);
+
+    return {
+      ...t,
+      munkalapFelhasznalas: ujFelhasznalas,
+      felhasznaltMennyiseg: osszes,
+    };
+  });
+
+  return updateKivitelezesiCsomag(csomagId, { tetelek }, user);
+}
