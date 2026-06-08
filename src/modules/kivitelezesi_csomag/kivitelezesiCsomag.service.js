@@ -10,6 +10,7 @@ import {
   KIVITELEZESI_CSOMAG_SCHEMA,
   KIVITELEZESI_CSOMAG_FORRAS,
   generateKiviTetelekFromAjanlatPillanatkep,
+  createKeziTetelPillanatkep,
 } from "./kivitelezesiCsomag.schema.js";
 
 const KEY = "kivitelezesi_csomagok";
@@ -106,5 +107,31 @@ export function updateKivitelezesiCsomag(id, updates, user = "") {
 export function addTetelToKivitelezesiCsomag(csomagId, tetel, user = "") {
   const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
   if (!csomag) return null;
+  return updateKivitelezesiCsomag(csomagId, { tetelek: [...(csomag.tetelek || []), tetel] }, user);
+}
+
+/**
+ * Kézi tétel hozzáadása a Kivitelezési Csomaghoz – kizárólag létező
+ * anyagtörzs-rekordból (Fázis 4C). Szabad szöveges anyagfelvitel nincs:
+ * a tétel mindig createKeziTetelPillanatkep(...) segítségével, az
+ * anyagtörzs aktuális adatainak egyszeri lemásolásával jön létre.
+ *
+ * Duplikáció-védelem: ha az adott anyagtorzs_id már szerepel a csomag
+ * valamelyik tételében, a függvény hibát dob és NEM vesz fel új sort –
+ * ugyanúgy, ahogy createKivitelezesiCsomagForProjekt is teszi a
+ * projekt-szintű duplikáció esetén (UI ezt elkapja és megjeleníti).
+ */
+export function addKeziTetelToKivitelezesiCsomag(csomagId, anyagtorzsId, mennyisegek = {}, user = "") {
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) {
+    throw new Error("A Kivitelezési Csomag nem található.");
+  }
+  if ((csomag.tetelek || []).some(t => t.anyagtorzs_id === anyagtorzsId)) {
+    throw new Error("Ez az anyag már szerepel a csomagban.");
+  }
+  const tetel = createKeziTetelPillanatkep(anyagtorzsId, mennyisegek);
+  if (!tetel) {
+    throw new Error("A kiválasztott anyag nem található az anyagtörzsben.");
+  }
   return updateKivitelezesiCsomag(csomagId, { tetelek: [...(csomag.tetelek || []), tetel] }, user);
 }

@@ -71,6 +71,7 @@ export function makeUresKiviTetel() {
   return {
     id:                    `ktet_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     anyagtorzs_id:         null,
+    forras:                "",
     cikkszam:              "",
     nev:                   "",
     kategoria:             "",
@@ -123,6 +124,7 @@ export function generateKiviTetelekFromAjanlatPillanatkep(pillanatkep) {
       return {
         id:                    `ktet_${t.id}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         anyagtorzs_id:         t.anyagtorzs_id,
+        forras:                KIVITELEZESI_CSOMAG_FORRAS.AJANLATBOL,
         cikkszam:              anyag?.kulsoAzonosito || "",
         nev:                   t.label || t.tipus || anyag?.nev || "",
         kategoria:             anyag?.telepitoi_kategoria || anyag?.kategoria || "",
@@ -136,6 +138,67 @@ export function generateKiviTetelekFromAjanlatPillanatkep(pillanatkep) {
         visszahozottMennyiseg: 0,
       };
     });
+}
+
+// ─── Fázis 4C – pillanatkép-garancia (ellenőrzés és dokumentáció) ─────────
+//
+// KÉRDÉS: a tételek leíró adatai (cikkszám, megnevezés, kategória, egység,
+// beszerzési ár, eladási ár) valódi PILLANATKÉPEK-e, vagyis egy később
+// módosított anyagtörzs-rekord nem írja-e felül őket utólag?
+//
+// VÁLASZ – igen, garantáltan azok, az alábbi okok miatt:
+//   1. A tétel létrehozásakor (generateKiviTetelekFromAjanlatPillanatkep ÉS
+//      createKeziTetelPillanatkep) a getAnyag(...) hívás eredménye azonnal
+//      egy ÚJ, sima JS-objektumba (a tételbe) másolódik – nem referencia,
+//      hanem érték-másolat (string/number mezők).
+//   2. A tétel ezután KIZÁRÓLAG a kivitelesi_csomagok kollekcióban, a saját
+//      mezőin keresztül érhető el (ld. TabKivitelezesiCsomag.jsx – mindig
+//      `t.cikkszam`, `t.nev`, `t.egysegarPillanatkepEladasi` stb. olvas,
+//      SOHA nem hív getAnyag()-ot megjelenítéskor).
+//   3. A "...Pillanatkep" mező-elnevezési konvenció (ld. ajánlat-pillanatkép,
+//      Fázis 4A) explicit jelzi, hogy az ár-mezők befagyasztott értékek.
+//   4. Az anyagtörzs updateAnyag()-ja a kivitelezesi_csomagok kollekciót
+//      sosem írja vissza – a két kollekció teljesen független egymástól
+//      a létrehozás utáni pillanattól kezdve.
+//
+// KÖVETKEZTETÉS: élő anyagtörzs-módosítás (név, kategória, ár, cikkszám
+// átírása) a már létrehozott tételeket NEM változtatja meg – pontosan
+// úgy, ahogy az elfogadott ajánlat pillanatképe sem változik utólag.
+//
+/**
+ * Kézi tétel pillanatkép-objektum létrehozása egy kiválasztott anyagtörzs-
+ * rekordból (Fázis 4C – kézi tételkezelés fővállalkozói / belső projektekhez).
+ *
+ * Szabad szöveges anyagfelvitel NINCS – a tétel kizárólag létező
+ * anyagtörzs-rekordból generálható (anyagtorzsId kötelező).
+ *
+ * A pillanatkép minden leíró adatot és árat a hívás pillanatában érvényes
+ * anyagtörzs-rekordból másol át (cikkszám, megnevezés, kategória, egység,
+ * beszerzési ár = netto_egysegar, eladási ár = javasoltEladasiAr) – ezután
+ * teljesen független az anyagtörzstől (ld. fenti pillanatkép-garancia).
+ *
+ * Mennyiségek: a hívó csak tervezett és kiadandó mennyiséget adhat meg –
+ * a kiadott / felhasznált / visszahozott mezők 0-ról indulnak.
+ */
+export function createKeziTetelPillanatkep(anyagtorzsId, mennyisegek = {}) {
+  const anyag = getAnyag(anyagtorzsId);
+  if (!anyag) return null;
+  return {
+    id:                    `ktet_${anyag.id}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    anyagtorzs_id:         anyag.id,
+    forras:                KIVITELEZESI_CSOMAG_FORRAS.KEZI,
+    cikkszam:              anyag.kulsoAzonosito || "",
+    nev:                   anyag.nev || "",
+    kategoria:             anyag.telepitoi_kategoria || anyag.kategoria || "",
+    egyseg:                anyag.egyseg || "db",
+    egysegarPillanatkepEladasi:    Number(anyag.javasoltEladasiAr) || 0,
+    egysegarPillanatkepBeszerzesi: Number(anyag.netto_egysegar) || 0,
+    tervezettMennyiseg:    Number(mennyisegek.tervezettMennyiseg) || 0,
+    kiadandoMennyiseg:     Number(mennyisegek.kiadandoMennyiseg) || 0,
+    kiadottMennyiseg:      0,
+    felhasznaltMennyiseg:  0,
+    visszahozottMennyiseg: 0,
+  };
 }
 
 /**

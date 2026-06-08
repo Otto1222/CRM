@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { Package, Plus } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../../lib/constants.js";
+import { getAktivAnyagok } from "../../../lib/anyagtorzs.js";
 import {
   getKivitelezesiCsomagByProjektId,
   createKivitelezesiCsomagForProjekt,
+  addKeziTetelToKivitelezesiCsomag,
 } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import {
   getKivitelezesiCsomagStatusConfig,
@@ -13,17 +15,28 @@ import {
 
 const th = { textAlign: "left", padding: "8px 10px", fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1.5px solid #E2E8F0" };
 const td = { padding: "8px 10px", fontSize: 13, color: "#0F172A", borderBottom: "1px solid #F1F5F9" };
+const inputStyle = { padding: "7px 10px", borderRadius: 7, border: "1.5px solid #E2E8F0", fontSize: 13, fontFamily: FONT, color: "#0F172A" };
 
 export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
   const [csomag, setCsomag] = useState(() => getKivitelezesiCsomagByProjektId(projekt.id));
   const [hiba, setHiba]     = useState("");
   const [letrehozva, setLetrehozva] = useState(false);
 
+  // ── Kézi tétel hozzáadás (Fázis 4C – fővállalkozói / belső projekteknél) ──
+  const [keziAnyagId, setKeziAnyagId]     = useState("");
+  const [keziTervezett, setKeziTervezett] = useState("");
+  const [keziKiadando, setKeziKiadando]   = useState("");
+  const [keziHiba, setKeziHiba]           = useState("");
+
   useEffect(() => {
     setCsomag(getKivitelezesiCsomagByProjektId(projekt.id));
   }, [projekt.id]);
 
   const sajatAjanlatbol = projekt.forrás === "sajat_ajanlat" && !!projekt.elfogadottAjanlatPillanatkep;
+  // Kézi tételfelvitel csak a nem-ajánlatból generált (fővállalkozói / belső,
+  // azaz "kezi" forrású) csomagoknál jelenik meg – a saját ajánlatos csomag
+  // tételei a pillanatképből származnak, ott PM kézi felvitelre nincs szükség.
+  const keziTetelFelvitelEngedve = csomag?.forras !== KIVITELEZESI_CSOMAG_FORRAS.AJANLATBOL;
 
   function handleLetrehozas() {
     setHiba("");
@@ -37,6 +50,27 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
       setLetrehozva(true);
     } catch (err) {
       setHiba(err.message || "A Kivitelezési Csomag létrehozása sikertelen.");
+    }
+  }
+
+  function handleKeziTetelHozzaadas(e) {
+    e.preventDefault();
+    setKeziHiba("");
+    if (!keziAnyagId) {
+      setKeziHiba("Válassz anyagot az anyagtörzsből.");
+      return;
+    }
+    try {
+      const updated = addKeziTetelToKivitelezesiCsomag(
+        csomag.id,
+        keziAnyagId,
+        { tervezettMennyiseg: keziTervezett, kiadandoMennyiseg: keziKiadando },
+        currentUser?.name || ""
+      );
+      setCsomag(updated);
+      setKeziAnyagId(""); setKeziTervezett(""); setKeziKiadando("");
+    } catch (err) {
+      setKeziHiba(err.message || "A tétel hozzáadása sikertelen.");
     }
   }
 
@@ -85,6 +119,48 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
           <span style={{ fontSize: 12, color: "#059669", fontWeight: 700, fontFamily: FONT }}>✅ Csomag létrehozva</span>
         )}
       </div>
+
+      {keziTetelFelvitelEngedve && (
+        <div style={{ background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, padding: 16, marginBottom: 18 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", margin: "0 0 4px", fontFamily: FONT_HEADING }}>
+            Tétel hozzáadása anyagtörzsből
+          </p>
+          <p style={{ fontSize: 12, color: "#94A3B8", margin: "0 0 12px", fontFamily: FONT }}>
+            A tétel kizárólag az anyagtörzsből választható – szabad szöveges anyagfelvitel nincs.
+            A megnevezés, kategória, egység és árak a kiválasztás pillanatában rögzült pillanatképként kerülnek a csomagba.
+          </p>
+          <form onSubmit={handleKeziTetelHozzaadas} style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, fontWeight: 700, color: "#64748B", fontFamily: FONT, minWidth: 240 }}>
+              ANYAG
+              <select value={keziAnyagId} onChange={e => setKeziAnyagId(e.target.value)} style={inputStyle}>
+                <option value="">— válassz anyagot —</option>
+                {getAktivAnyagok().map(a => (
+                  <option key={a.id} value={a.id}>
+                    {(a.kulsoAzonosito ? `${a.kulsoAzonosito} – ` : "") + a.nev} ({a.egyseg})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, fontWeight: 700, color: "#64748B", fontFamily: FONT, width: 130 }}>
+              TERVEZETT MENNYISÉG
+              <input type="number" min="0" step="any" value={keziTervezett}
+                onChange={e => setKeziTervezett(e.target.value)} style={inputStyle} />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, fontWeight: 700, color: "#64748B", fontFamily: FONT, width: 130 }}>
+              KIADANDÓ MENNYISÉG
+              <input type="number" min="0" step="any" value={keziKiadando}
+                onChange={e => setKeziKiadando(e.target.value)} style={inputStyle} />
+            </label>
+            <button type="submit"
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 8, border: "none", background: "#2563EB", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
+              <Plus size={14} /> Hozzáadás
+            </button>
+          </form>
+          {keziHiba && (
+            <p style={{ fontSize: 12, color: "#DC2626", fontWeight: 700, margin: "10px 0 0" }}>{keziHiba}</p>
+          )}
+        </div>
+      )}
 
       {tetelek.length === 0 ? (
         <p style={{ fontSize: 13, color: "#94A3B8", fontFamily: FONT }}>A csomagban még nincs tétel.</p>
