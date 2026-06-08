@@ -12,6 +12,7 @@ import { calcAnyagkoltseg } from "../lib/anyagtorzs.js";
 import { getKivitelezesiCsomagByProjektId } from "../modules/kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import { loadKarteritesek } from "../lib/karterites.js";
 import { getCsapat, loadAvSzabalyok, calcCsapatAlvallalkozoiBer, getAvSzabalyokByCsapat } from "../modules/csapatok/csapat.service.js";
+import { updateItem } from "../lib/localDb.js";
 
 const TETELEK_KEY = id => `munkalap_tetelek_${id}`;
 const dispatch    = col =>
@@ -388,4 +389,127 @@ export function visszaallitTetel(projektId, tetelTipusId) {
   });
   saveTetelek(projektId, updated);
   return updated;
+}
+
+
+// ─── Munkalap-szintű elszámolás – belső segédfüggvények ─────────────────────
+
+// Bevételi tételek a munkalap lezárásához – egyező FV szabályokból, felülírás-napló nélkül.
+function buildMlBeveteliTetelek(fovallalkoziId, munkatipus, input) {
+  const fvSzabalyok = loadSzabalyok();
+  const egyezoFv    = findEgyezoSzabalyok(fovallalkoziId, munkatipus, fvSzabalyok);
+  return egyezoFv.map(sz => {
+    const autoNetto = calcSzabalyOsszeg(sz, input);
+    const modLabel  = ELSZAMOLASI_MODOK.find(m => m.id === sz.mod)?.label || sz.mod || "?";
+    return {
+      szabalyId:        sz.id,
+      megnevezes:       `${sz.munkatipus || "Általános"} – ${modLabel}`,
+      mod:              sz.mod,
+      autoNetto,
+      hasznalandoNetto: autoNetto,
+      megjegyzes:       szabalyLeiras(sz),
+      felulirva:        false,
+      hiany:            autoNetto === 0 && sz.mod === "savos",
+    };
+  });
+}
+
+// AV bér a munkalap elszámolásához – AV szabályok, fallback: régi dijTipus rendszer.
+function calcMlAvBer(csapatId, munkatipus, input, nettoBevitel = 0) {
+  if (!csapatId) return { osszeg: 0, megjegyzes: "" };
+  const avSzabalyok = loadAvSzabalyok();
+  const egyezoAv    = findEgyezoSzabalyok(csapatId, munkatipus, avSzabalyok);
+  if (egyezoAv.length > 0) {
+    const osszeg = egyezoAv.reduce((s, sz) => s + calcSzabalyOsszeg(sz, input), 0);
+    return { osszeg, megjegyzes: egyezoAv.map(szabalyLeiras).join(" + ") };
+  }
+  const csapat = getCsapat(csapatId);
+  if (csapat?.elszamolasAktiv) {
+    return calcCsapatAlvallalkozoiBer(csapat, {
+      nettoBevitel,
+      munkanapok:    1,
+      csapatLetszam: 1,
+      darabszam:     input.darabszam || 1,
+    });
+  }
+  return { osszeg: 0, megjegyzes: "" };
+}
+
+function getMlFvNev(fovallalkoziId) {
+  return loadFovallalkozok().find(f => f.id === fovallalkoziId)?.nev || null;
+}
+
+// ─── Munkalap-szintű elszámolás (Motor B paritás) ───────────────────────────
+
+/**
+ * Munkalap tényleges elszámolása – lezáráskor hívjuk, eredményt a munkalapra mentjük.
+ * Kompatibilis a settlementCalculator.js calcMunkalapElszamolas logikájával.
+ *
+ * @param {object} munkalap
+ * @param {object} [projekt]
+ * @returns {object}
+ */
+export function calcMunkalapElszamolas(munkalap, projekt) {
+  const fovallalkoziId = munkalap.fovallalkoziId || projekt?.penzugy?.fovallalkoziId || "";
+  const munkatipus     = munkalap.munkatipus     || projekt?.penzugy?.munkatipus || munkalap.tipus || "";
+  const csapatId       = munkalap.csapatId       || munkalap.assigneeId || "";
+
+  const ea = munkalap.elszamolasAdatok || {};
+  const input = buildInput({
+    panelDb:       ea.panelDb       || munkalap.panelDb       || projekt?.napelemDb     || 0,
+    inverterDb:    ea.inverterDb    || munkalap.inverterDb    || projekt?.inverterDb    || 0,
+    akkumulatorDb: ea.akkumulatorDb || munkalap.akkumulatorDb || projekt?.akkumulatorDb || 0,
+    smartMeterDb:  ea.smartMeterDb  || munkalap.smartMeterDb  || projekt?.smartMeterDb  || 0,
+    tavKm:         ea.tavKm         || munkalap.tavKm         || projekt?.penzugy?.tavKm || 0,
+  });
+
+  const anyagkoltság = Number(ea.anyagkoltság || munkalap.anyagkoltság || 0);
+
+  const beveteliTetelek = buildMlBeveteliTetelek(fovallalkoziId, munkatipus, input);
+  const bevitel         = beveteliTetelek.reduce((s, t) => s + t.autoNetto, 0);
+
+  const avBerResult      = calcMlAvBer(csapatId, munkatipus, input, bevitel);
+  const alvallalkozoiBer = avBerResult.osszeg;
+
+  const osszesKolts = alvallalkozoiBer + anyagkoltság;
+  const haszon      = bevitel - osszesKolts;
+  const haszonPct   = bevitel > 0 ? Math.round((haszon / bevitel) * 100) : null;
+
+  const fvSzabalyok = loadSzabalyok();
+  const avSzabalyok = loadAvSzabalyok();
+
+  return {
+    munkalapId:    munkalap.id,
+    projektId:     munkalap.projektId || "",
+    kiszamoltAt:   new Date().toISOString(),
+    fovallalkoNev: getMlFvNev(fovallalkoziId),
+    fovallalkoziId, munkatipus, csapatId,
+    inputs:        { ...input, anyagkoltság },
+    bevitel, beveteliTetelek,
+    alvallalkozoiBer,
+    alvallalkozoiBerMj: avBerResult.megjegyzes,
+    anyagkoltság,
+    osszesKolts,
+    haszon, haszonPct,
+    fvSzabalySnapshots: findEgyezoSzabalyok(fovallalkoziId, munkatipus, fvSzabalyok)
+      .map(sz => ({ id: sz.id, mod: sz.mod, munkatipus: sz.munkatipus, leiras: szabalyLeiras(sz) })),
+    avSzabalySnapshots: findEgyezoSzabalyok(csapatId, munkatipus, avSzabalyok)
+      .map(sz => ({ id: sz.id, mod: sz.mod, leiras: szabalyLeiras(sz) })),
+  };
+}
+
+/**
+ * Munkalap elszámolás mentése (lezáráskor).
+ * Beleírja a munkalap.elszamolas mezőbe.
+ * Kompatibilis a settlementCalculator.js saveMunkalapElszamolas logikájával.
+ *
+ * @param {string} munkalapId
+ * @param {object} elszamolas
+ */
+export function saveMunkalapElszamolas(munkalapId, elszamolas) {
+  try {
+    updateItem("munkalapok", munkalapId, { elszamolas });
+  } catch (e) {
+    console.warn("[workOrderFinancial] saveMunkalapElszamolas hiba:", e);
+  }
 }
