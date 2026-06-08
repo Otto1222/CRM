@@ -15,8 +15,12 @@
  *   + telepitoi_kategoria (szűrés a telepítő felületen)
  *
  * V2 mezők (Fázis 2A – idempotens migráció, ld. migrateAnyagV2):
- *   alapHaszonkulcsPct, javasoltEladasiAr, telepitokategoria,
- *   beszallito, kulsoAzonosito, inaktiv
+ *   alapHaszonkulcsPct, javasoltEladasiAr, beszallito, kulsoAzonosito, inaktiv
+ *
+ * Megjegyzés (Fázis 2B – mezőkonszolidáció): a Fázis 2A-ban tévedésből
+ * bevezetett külön "telepitokategoria" mező megszűnt – a telepítői
+ * kategorizálás kizárólagos, hivatalos mezője a már használatban lévő
+ * telepitoi_kategoria (ld. TELEPITOI_KATEGORIAK, getTelepitoriAnyagok).
  *
  * Árverzió (anyag_ar_verziok, ld. anyagArVerzio.js):
  *   ha a beszerzési ár, az alap haszonkulcs vagy a javasolt eladási ár
@@ -110,11 +114,24 @@ function migrateAnyagV2(a, netto_egysegar) {
   return {
     alapHaszonkulcsPct,
     javasoltEladasiAr,
-    telepitokategoria: a.telepitokategoria ?? "",
     beszallito:        a.beszallito ?? "",
     kulsoAzonosito:    a.kulsoAzonosito ?? "",
     inaktiv:           a.inaktiv ?? false,
   };
+}
+
+// ─── Fázis 2B – mezőkonszolidáció ────────────────────────────
+// A Fázis 2A egy külön "telepitokategoria" mezőt vezetett be tévedésből
+// a már létező és ténylegesen használt "telepitoi_kategoria" mellé.
+// Egy mező marad: telepitoi_kategoria (TELEPITOI_KATEGORIAK, getTelepitoriAnyagok).
+// Ha egy rekordon a régi mező üres, de a duplikált "telepitokategoria" ki van
+// töltve, az értékét egyszer átvesszük – utána a rendszer többé nem
+// hivatkozik a duplikált mezőre (transform-on-read, nem töröl adatot).
+function resolveTelepitoiKategoria(a) {
+  const elsodleges = a.telepitoi_kategoria ?? a.kat ?? "";
+  if (elsodleges) return elsodleges;
+  if (a.telepitokategoria) return a.telepitokategoria;
+  return "egyeb";
 }
 
 // Az árváltozást kiváltó mezők – ezek bármelyikének módosulása előtt
@@ -128,13 +145,14 @@ export function loadAnyagtorzs() {
     if (Array.isArray(stored) && stored.length > 0) {
       // Visszafelé kompatibilitás: ha régi "kat" mező van, mappeljük "kategoria"-ra
       return stored.map(a => {
-        const netto_egysegar = a.netto_egysegar ?? a.egysegAr ?? 0;
+        const { telepitokategoria, ...rest } = a; // Fázis 2B – duplikált mező kivezetve
+        const netto_egysegar = rest.netto_egysegar ?? rest.egysegAr ?? 0;
         return {
-          ...a,
-          kategoria:            a.kategoria ?? a.kat ?? "villanyszereles",
+          ...rest,
+          kategoria:            rest.kategoria ?? rest.kat ?? "villanyszereles",
           netto_egysegar,
-          telepitoi_kategoria:  a.telepitoi_kategoria ?? a.kat ?? "egyeb",
-          ...migrateAnyagV2(a, netto_egysegar),
+          telepitoi_kategoria:  resolveTelepitoiKategoria(a),
+          ...migrateAnyagV2(rest, netto_egysegar),
         };
       });
     }

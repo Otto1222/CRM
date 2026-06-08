@@ -59,7 +59,6 @@ function AnyagForm({ anyag, onSave, onClose }) {
     // ── V2 mezők (Fázis 2A) ──
     alapHaszonkulcsPct:   anyag?.alapHaszonkulcsPct ?? 30,
     javasoltEladasiAr:    anyag?.javasoltEladasiAr ?? calcJavasoltEladasiAr(anyag?.netto_egysegar || 0, anyag?.alapHaszonkulcsPct ?? 30),
-    telepitokategoria:    anyag?.telepitokategoria || "",
     beszallito:           anyag?.beszallito || "",
     kulsoAzonosito:       anyag?.kulsoAzonosito || "",
     inaktiv:              anyag?.inaktiv ?? false,
@@ -90,7 +89,7 @@ function AnyagForm({ anyag, onSave, onClose }) {
             </div>
           </div>
           <div>
-            <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase" }}>Telepítő kategória (szűrő a helyszíni felületen)</label>
+            <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase" }}>Telepítői kategória</label>
             <select value={form.telepitoi_kategoria} onChange={e => setForm(p => ({...p, telepitoi_kategoria: e.target.value}))} style={inp}>
               {TELEPITOI_KATEGORIAK.map(k => <option key={k.id} value={k.id}>{k.label}</option>)}
             </select>
@@ -140,11 +139,7 @@ function AnyagForm({ anyag, onSave, onClose }) {
                 <input value={form.kulsoAzonosito} onChange={e => setForm(p => ({...p, kulsoAzonosito: e.target.value}))} placeholder="cikkszám / SKU" style={inp} />
               </div>
             </div>
-            <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase" }}>Telepítő kategória – V2 (szabad szöveg)</label>
-              <input value={form.telepitokategoria} onChange={e => setForm(p => ({...p, telepitokategoria: e.target.value}))} placeholder="pl. tetőre szerelhető" style={inp} />
-            </div>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: 12, color: C.textSub, cursor: "pointer" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2, fontSize: 12, color: C.textSub, cursor: "pointer" }}>
               <input type="checkbox" checked={form.inaktiv} onChange={e => setForm(p => ({...p, inaktiv: e.target.checked}))} />
               Inaktív (V2 jelölő – a listában az „Aktív” kapcsoló marad az elsődleges állapotjelző)
             </label>
