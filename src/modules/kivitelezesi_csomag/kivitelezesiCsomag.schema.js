@@ -32,11 +32,108 @@ export const KIVITELEZESI_CSOMAG_FORRAS = {
   KEZI:           "kezi",             // fővállalkozói / belső – PM kézi tételrögzítéssel
 };
 
+// ─── Fázis 4D – státusz alapok (a csomag belső mennyiség-életútja) ────────
+// A státuszok egy LINEÁRIS, előre haladó folyamatot írnak le – nincs
+// kihagyás és nincs visszalépés (ld. ellenorizStatuszValtas). A sorrend
+// maga a tömb sorrendje, a getKivitelezesiCsomagKovetkezoStatus ebből
+// számolja ki, mi az egyetlen érvényes következő státusz.
 export const KIVITELEZESI_CSOMAG_STATUSZOK = [
-  { id: "Tervezet", szin: "#64748B", bg: "#F8FAFC" },
-  { id: "Aktív",    szin: "#2563EB", bg: "#EFF6FF" },
-  { id: "Lezárt",   szin: "#475569", bg: "#F1F5F9" },
+  { id: "Tervezet",          szin: "#64748B", bg: "#F8FAFC" },
+  { id: "PM jóváhagyta",     szin: "#7C3AED", bg: "#F5F3FF" },
+  { id: "Komissiózás alatt", szin: "#D97706", bg: "#FFFBEB" },
+  { id: "Anyag kiadva",      szin: "#0EA5E9", bg: "#F0F9FF" },
+  { id: "Kivitelezés alatt", szin: "#2563EB", bg: "#EFF6FF" },
+  { id: "Lezárva",           szin: "#475569", bg: "#F1F5F9" },
+  { id: "Elszámolva",        szin: "#16A34A", bg: "#F0FDF4" },
 ];
+
+const KIVITELEZESI_CSOMAG_STATUSZ_SORREND = KIVITELEZESI_CSOMAG_STATUSZOK.map(s => s.id);
+
+/**
+ * A jelenlegi státusz alapján megmondja, mi az EGYETLEN érvényes következő
+ * státusz a lineáris folyamatban. Az utolsó (Elszámolva) után nincs tovább.
+ */
+export function getKivitelezesiCsomagKovetkezoStatus(statusId) {
+  const idx = KIVITELEZESI_CSOMAG_STATUSZ_SORREND.indexOf(statusId);
+  if (idx < 0 || idx === KIVITELEZESI_CSOMAG_STATUSZ_SORREND.length - 1) return null;
+  return KIVITELEZESI_CSOMAG_STATUSZ_SORREND[idx + 1];
+}
+
+/**
+ * Lezárt vagy elszámolt csomagban a mennyiségek (és tételek) normál módon
+ * NEM szerkeszthetők – admin override későbbi fejlesztés tárgya, most
+ * elég a blokkolás (ld. Fázis 4D spec 3. pont).
+ */
+export function isKivitelezesiCsomagSzerkesztesTiltott(statusId) {
+  return statusId === "Lezárva" || statusId === "Elszámolva";
+}
+
+// "Kitöltött" mennyiség = valós, véges szám (a 0 is érvényes, hiszen pl.
+// egy tételből legitim módon nem adtak ki semmit – csak null/undefined/NaN
+// számít hiányzónak).
+function szamMezoKitoltott(ertek) {
+  return typeof ertek === "number" && Number.isFinite(ertek);
+}
+
+/**
+ * Megvizsgálja, hogy a csomag a jelenlegi státuszából átléptethető-e a
+ * kért új státuszba (Fázis 4D spec 2. pont – státuszváltási szabályok).
+ *
+ * Visszaad: { ok: boolean, message: string }
+ *   - ok=false esetén a message a felhasználónak megjelenítendő indoklás.
+ *
+ * A folyamat lineáris: kihagyás és visszalépés nem engedélyezett, az
+ * "Lezárva → Elszámolva" lépést pedig a hívó oldalon (UI/szolgáltatás)
+ * admin/PM jogosultsághoz kell kötni – ez a függvény csak az adat-alapú
+ * feltételeket ellenőrzi.
+ */
+export function ellenorizStatuszValtas(csomag, ujStatus) {
+  const jelenlegi = csomag?.status;
+  const kovetkezo = getKivitelezesiCsomagKovetkezoStatus(jelenlegi);
+
+  if (!kovetkezo) {
+    return { ok: false, message: "Ez a csomag már elérte az utolsó státuszt – további váltás nem lehetséges." };
+  }
+  if (ujStatus !== kovetkezo) {
+    return { ok: false, message: "A státusz csak a sorban következő lépésre léptethető – kihagyás vagy visszalépés nem engedélyezett." };
+  }
+
+  const tetelek = csomag?.tetelek || [];
+
+  switch (jelenlegi) {
+    case "Tervezet":
+      if (tetelek.length === 0) {
+        return { ok: false, message: "A jóváhagyáshoz legalább 1 tétel szükséges a csomagban." };
+      }
+      return { ok: true, message: "" };
+
+    case "PM jóváhagyta":
+      return { ok: true, message: "" };
+
+    case "Komissiózás alatt":
+      if (tetelek.some(t => !szamMezoKitoltott(t.kiadottMennyiseg))) {
+        return { ok: false, message: "Az anyag kiadásához minden tételnél meg kell adni a kiadott mennyiséget." };
+      }
+      return { ok: true, message: "" };
+
+    case "Anyag kiadva":
+      return { ok: true, message: "" };
+
+    case "Kivitelezés alatt":
+      if (tetelek.some(t => !szamMezoKitoltott(t.felhasznaltMennyiseg) || !szamMezoKitoltott(t.visszahozottMennyiseg))) {
+        return { ok: false, message: "A lezáráshoz minden tételnél rögzíteni kell a felhasznált és a visszahozott mennyiséget." };
+      }
+      return { ok: true, message: "" };
+
+    case "Lezárva":
+      // Pénzügyi logika nélkül, kizárólag admin/PM gomb – a jogosultság-
+      // ellenőrzés a service / UI rétegben történik.
+      return { ok: true, message: "" };
+
+    default:
+      return { ok: false, message: "Ismeretlen státusz – a váltás nem engedélyezett." };
+  }
+}
 
 export const KIVITELEZESI_CSOMAG_SCHEMA = {
   id:                 "",

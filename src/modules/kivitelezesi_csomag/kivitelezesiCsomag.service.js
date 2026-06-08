@@ -11,7 +11,17 @@ import {
   KIVITELEZESI_CSOMAG_FORRAS,
   generateKiviTetelekFromAjanlatPillanatkep,
   createKeziTetelPillanatkep,
+  ellenorizStatuszValtas,
+  isKivitelezesiCsomagSzerkesztesTiltott,
 } from "./kivitelezesiCsomag.schema.js";
+
+const MENNYISEGI_MEZOK = [
+  "tervezettMennyiseg",
+  "kiadandoMennyiseg",
+  "kiadottMennyiseg",
+  "felhasznaltMennyiseg",
+  "visszahozottMennyiseg",
+];
 
 const KEY = "kivitelezesi_csomagok";
 
@@ -134,4 +144,65 @@ export function addKeziTetelToKivitelezesiCsomag(csomagId, anyagtorzsId, mennyis
     throw new Error("A kiválasztott anyag nem található az anyagtörzsben.");
   }
   return updateKivitelezesiCsomag(csomagId, { tetelek: [...(csomag.tetelek || []), tetel] }, user);
+}
+
+/**
+ * Kivitelezési Csomag státuszváltása (Fázis 4D – belső mennyiség-életút).
+ *
+ * A folyamat lineáris (Tervezet → PM jóváhagyta → Komissiózás alatt →
+ * Anyag kiadva → Kivitelezés alatt → Lezárva → Elszámolva), kihagyás és
+ * visszalépés nem engedélyezett. Az adat-alapú feltételeket (pl. "legalább
+ * 1 tétel", "minden tételnél kiadottMennyiseg ki van töltve" stb.)
+ * az ellenorizStatuszValtas ellenőrzi – itt csak végrehajtjuk a váltást,
+ * vagy hibát dobunk a sérült feltétel üzenetével (UI elkapja és megjeleníti).
+ *
+ * Tétel SOHA nem törlődik – ez a függvény is csak a status mezőt módosítja.
+ */
+export function setKivitelezesiCsomagStatus(csomagId, ujStatus, user = "") {
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) {
+    throw new Error("A Kivitelezési Csomag nem található.");
+  }
+  const ellenorzes = ellenorizStatuszValtas(csomag, ujStatus);
+  if (!ellenorzes.ok) {
+    throw new Error(ellenorzes.message);
+  }
+  return updateKivitelezesiCsomag(csomagId, { status: ujStatus }, user);
+}
+
+/**
+ * Egy tétel mennyiségi mezőinek szerkesztése (Fázis 4D spec 3. pont):
+ * tervezettMennyiseg, kiadandoMennyiseg, kiadottMennyiseg,
+ * felhasznaltMennyiseg, visszahozottMennyiseg.
+ *
+ * Védelem: Lezárva / Elszámolva státuszban a módosítás TILOS – a függvény
+ * hibát dob, admin override későbbi fejlesztés tárgya (ld.
+ * isKivitelezesiCsomagSzerkesztesTiltott). Tétel nem törlődik, csak a
+ * meglévő tétel mennyiségi mezői frissülnek a megadott (mezőnév → érték)
+ * párok szerint – a leíró adatok (pillanatkép) változatlanok maradnak.
+ *
+ * Az eltérés (kiadott - felhasznált - visszahozott) nem tárolt mező –
+ * mindig a calcKiviTetelEltérés számolja ki a tétel aktuális mennyiségeiből,
+ * így minden mennyiségváltozás után automatikusan naprakész (Fázis 4D 4. pont).
+ */
+export function updateKiviTetelMennyisegek(csomagId, tetelId, mezok = {}, user = "") {
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) {
+    throw new Error("A Kivitelezési Csomag nem található.");
+  }
+  if (isKivitelezesiCsomagSzerkesztesTiltott(csomag.status)) {
+    throw new Error("Lezárt vagy elszámolt csomagban a mennyiségek nem módosíthatók.");
+  }
+  if (!(csomag.tetelek || []).some(t => t.id === tetelId)) {
+    throw new Error("A tétel nem található a csomagban.");
+  }
+  const tetelek = csomag.tetelek.map(t => {
+    if (t.id !== tetelId) return t;
+    const uj = { ...t };
+    for (const mezo of MENNYISEGI_MEZOK) {
+      if (mezo in mezok) uj[mezo] = Number(mezok[mezo]) || 0;
+    }
+    return uj;
+  });
+  return updateKivitelezesiCsomag(csomagId, { tetelek }, user);
 }

@@ -6,16 +6,24 @@ import {
   getKivitelezesiCsomagByProjektId,
   createKivitelezesiCsomagForProjekt,
   addKeziTetelToKivitelezesiCsomag,
+  setKivitelezesiCsomagStatus,
+  updateKiviTetelMennyisegek,
 } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import {
   getKivitelezesiCsomagStatusConfig,
   calcKiviTetelEltérés,
+  getKivitelezesiCsomagKovetkezoStatus,
+  isKivitelezesiCsomagSzerkesztesTiltott,
   KIVITELEZESI_CSOMAG_FORRAS,
 } from "../../kivitelezesi_csomag/kivitelezesiCsomag.schema.js";
 
 const th = { textAlign: "left", padding: "8px 10px", fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1.5px solid #E2E8F0" };
 const td = { padding: "8px 10px", fontSize: 13, color: "#0F172A", borderBottom: "1px solid #F1F5F9" };
 const inputStyle = { padding: "7px 10px", borderRadius: 7, border: "1.5px solid #E2E8F0", fontSize: 13, fontFamily: FONT, color: "#0F172A" };
+const mennyisegInputStyle = { ...inputStyle, width: 64, padding: "4px 6px", textAlign: "right" };
+
+// PM/Admin – ők kezelhetik a csomag státuszát és a mennyiségeket (Fázis 4D).
+const KIVITELEZESI_CSOMAG_KEZELO_SZEREPEK = ["Admin", "Projektmenedzser"];
 
 export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
   const [csomag, setCsomag] = useState(() => getKivitelezesiCsomagByProjektId(projekt.id));
@@ -28,6 +36,10 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
   const [keziKiadando, setKeziKiadando]   = useState("");
   const [keziHiba, setKeziHiba]           = useState("");
 
+  // ── Státusz- és mennyiségkezelés (Fázis 4D) ──
+  const [statuszHiba, setStatuszHiba]   = useState("");
+  const [mennyisegHiba, setMennyisegHiba] = useState("");
+
   useEffect(() => {
     setCsomag(getKivitelezesiCsomagByProjektId(projekt.id));
   }, [projekt.id]);
@@ -37,6 +49,13 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
   // azaz "kezi" forrású) csomagoknál jelenik meg – a saját ajánlatos csomag
   // tételei a pillanatképből származnak, ott PM kézi felvitelre nincs szükség.
   const keziTetelFelvitelEngedve = csomag?.forras !== KIVITELEZESI_CSOMAG_FORRAS.AJANLATBOL;
+
+  const isPMvagyAdmin       = KIVITELEZESI_CSOMAG_KEZELO_SZEREPEK.includes(currentUser?.role);
+  const kovetkezoStatus     = csomag ? getKivitelezesiCsomagKovetkezoStatus(csomag.status) : null;
+  const szerkesztesTiltott  = csomag ? isKivitelezesiCsomagSzerkesztesTiltott(csomag.status) : false;
+  // Mennyiségeket csak PM/Admin szerkesztheti, és csak Lezárva/Elszámolva
+  // státusz előtt – ott a normál módosítás tilos (admin override később).
+  const mennyisegSzerkesztheto = isPMvagyAdmin && !szerkesztesTiltott;
 
   function handleLetrehozas() {
     setHiba("");
@@ -74,6 +93,26 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
     }
   }
 
+  function handleStatuszValtas(ujStatus) {
+    setStatuszHiba("");
+    try {
+      const updated = setKivitelezesiCsomagStatus(csomag.id, ujStatus, currentUser?.name || "");
+      setCsomag(updated);
+    } catch (err) {
+      setStatuszHiba(err.message || "A státuszváltás sikertelen.");
+    }
+  }
+
+  function handleMennyisegValtoztatas(tetelId, mezo, ertek) {
+    setMennyisegHiba("");
+    try {
+      const updated = updateKiviTetelMennyisegek(csomag.id, tetelId, { [mezo]: ertek }, currentUser?.name || "");
+      setCsomag(updated);
+    } catch (err) {
+      setMennyisegHiba(err.message || "A mennyiség módosítása sikertelen.");
+    }
+  }
+
   if (!csomag) {
     return (
       <div style={{ padding: "32px 16px", textAlign: "center" }}>
@@ -102,7 +141,7 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
 
   return (
     <div style={{ padding: "20px 0" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 8, flexWrap: "wrap" }}>
         <span style={{ background: stCfg.bg, color: stCfg.szin, border: `1.5px solid ${stCfg.szin}40`, borderRadius: 20, padding: "4px 14px", fontSize: 13, fontWeight: 700, fontFamily: FONT }}>
           {csomag.status}
         </span>
@@ -118,7 +157,24 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
         {letrehozva && (
           <span style={{ fontSize: 12, color: "#059669", fontWeight: 700, fontFamily: FONT }}>✅ Csomag létrehozva</span>
         )}
+        {isPMvagyAdmin && kovetkezoStatus && (
+          <button type="button" onClick={() => handleStatuszValtas(kovetkezoStatus)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1.5px solid #2563EB", background: "#fff", color: "#2563EB", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: FONT }}>
+            Tovább → {kovetkezoStatus}
+          </button>
+        )}
+        {!kovetkezoStatus && (
+          <span style={{ fontSize: 12, color: "#94A3B8", fontFamily: FONT }}>A csomag elérte az utolsó státuszt.</span>
+        )}
       </div>
+      {statuszHiba && (
+        <p style={{ fontSize: 12, color: "#DC2626", fontWeight: 700, margin: "0 0 14px" }}>{statuszHiba}</p>
+      )}
+      {szerkesztesTiltott && (
+        <p style={{ fontSize: 12, color: "#64748B", fontStyle: "italic", margin: "0 0 14px", fontFamily: FONT }}>
+          A csomag {csomag.status.toLowerCase()} állapotban van – a mennyiségek és tételek normál módon nem módosíthatók.
+        </p>
+      )}
 
       {keziTetelFelvitelEngedve && (
         <div style={{ background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, padding: 16, marginBottom: 18 }}>
@@ -166,6 +222,9 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
         <p style={{ fontSize: 13, color: "#94A3B8", fontFamily: FONT }}>A csomagban még nincs tétel.</p>
       ) : (
         <div style={{ overflowX: "auto" }}>
+          {mennyisegHiba && (
+            <p style={{ fontSize: 12, color: "#DC2626", fontWeight: 700, margin: "0 0 10px" }}>{mennyisegHiba}</p>
+          )}
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT }}>
             <thead>
               <tr>
@@ -184,18 +243,31 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
             <tbody>
               {tetelek.map(t => {
                 const elteres = calcKiviTetelEltérés(t);
+                const mennyisegCella = (mezo) => (
+                  mennyisegSzerkesztheto ? (
+                    <td style={{ ...td, textAlign: "right" }}>
+                      <input type="number" min="0" step="any" value={t[mezo]}
+                        onChange={e => handleMennyisegValtoztatas(t.id, mezo, e.target.value)}
+                        style={mennyisegInputStyle} />
+                    </td>
+                  ) : (
+                    <td style={{ ...td, textAlign: "right" }}>{t[mezo]}</td>
+                  )
+                );
                 return (
                   <tr key={t.id}>
                     <td style={td}>{t.cikkszam || "—"}</td>
                     <td style={td}>{t.nev || "—"}</td>
                     <td style={td}>{t.kategoria || "—"}</td>
                     <td style={td}>{t.egyseg}</td>
-                    <td style={{ ...td, textAlign: "right" }}>{t.tervezettMennyiseg}</td>
-                    <td style={{ ...td, textAlign: "right" }}>{t.kiadandoMennyiseg}</td>
-                    <td style={{ ...td, textAlign: "right" }}>{t.kiadottMennyiseg}</td>
-                    <td style={{ ...td, textAlign: "right" }}>{t.felhasznaltMennyiseg}</td>
-                    <td style={{ ...td, textAlign: "right" }}>{t.visszahozottMennyiseg}</td>
-                    <td style={{ ...td, textAlign: "right", fontWeight: 700, color: elteres !== 0 ? "#DC2626" : "#16A34A" }}>{elteres}</td>
+                    {mennyisegCella("tervezettMennyiseg")}
+                    {mennyisegCella("kiadandoMennyiseg")}
+                    {mennyisegCella("kiadottMennyiseg")}
+                    {mennyisegCella("felhasznaltMennyiseg")}
+                    {mennyisegCella("visszahozottMennyiseg")}
+                    <td style={{ ...td, textAlign: "right", fontWeight: 700, color: elteres !== 0 ? "#DC2626" : "#16A34A" }}>
+                      {elteres > 0 ? `+${elteres}` : elteres}
+                    </td>
                   </tr>
                 );
               })}
