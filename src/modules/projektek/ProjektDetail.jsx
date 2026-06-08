@@ -12,6 +12,7 @@ import TabPenzugy      from "./tabs/TabPenzugy.jsx";
 import TabDokumentumok from "./tabs/TabDokumentumok.jsx";
 import TabKommunikacio from "./tabs/TabKommunikacio.jsx";
 import TabKarteritesek from "./tabs/TabKarteritesek.jsx";
+import TabKivitelezesiCsomag from "./tabs/TabKivitelezesiCsomag.jsx";
 // Legacy imports (back-compat ha valaki direktben hívja)
 import TabRiport       from "./tabs/TabRiport.jsx";
 import TabLmra         from "./tabs/TabLmra.jsx";
@@ -21,6 +22,7 @@ const TABS = [
   { id: "attekintes",   label: "Áttekintés",  icon: "📊" },
   { id: "munkalapok",   label: "Munkalapok",  icon: "🔧" },
   { id: "penzugy",      label: "Pénzügy",     icon: "💰" },
+  { id: "kivitelezesi_csomag", label: "Kivitelezési Csomag", icon: "📦" },
   { id: "dokumentumok", label: "Dokumentumok",icon: "📁" },
   { id: "karteritesek", label: "Kártérítések",icon: "⚠️" },
   { id: "naplo",        label: "Napló",       icon: "💬" },
@@ -75,6 +77,8 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
         return <TabMunkalapok {...props} onNavigate={onNavigateMunkalap} onNewMunkalap={onNewMunkalapForProjekt ? () => onNewMunkalapForProjekt(lokalProjekt) : undefined} />;
       case "penzugy":
         return <TabPenzugy {...props} />;
+      case "kivitelezesi_csomag":
+        return <TabKivitelezesiCsomag {...props} />;
       // Legacy redirects
       case "koltsegek":
       case "szamlazas":
