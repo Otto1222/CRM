@@ -16,6 +16,14 @@ import {
   isKivitelezesiCsomagSzerkesztesTiltott,
   KIVITELEZESI_CSOMAG_FORRAS,
 } from "../../kivitelezesi_csomag/kivitelezesiCsomag.schema.js";
+import {
+  getAnyagelszamolasiModConfig,
+  hasAnyagelszamolasiMod,
+  anyagArakLathatokAModban,
+  anyagHasznotKellSzamolniAModban,
+  csakMennyisegiElszamolasAModban,
+  calculateAnyagProfitByMod,
+} from "../../../lib/workflowRules.js";
 import AnyagszamitoPanel from "./AnyagszamitoPanel.jsx";
 
 const th = { textAlign: "left", padding: "8px 10px", fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1.5px solid #E2E8F0" };
@@ -141,8 +149,33 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
   const stCfg = getKivitelezesiCsomagStatusConfig(csomag.status);
   const tetelek = csomag.tetelek || [];
 
+  // Fázis 5B P0-1 javítás – az anyagelszámolási mód itt dől el ténylegesen,
+  // nem csak UI-mezőként jelenik meg: ez vezérli, hogy a PM/Admin lásson-e
+  // anyagárat/anyaghasznot, és hogy a tételek csak mennyiségi elszámolásra
+  // szolgálnak-e (ld. src/lib/workflowRules.js mód-helperek).
+  const anyagMod = projekt?.anyagelszamolasiMod;
+  const anyagCfg = getAnyagelszamolasiModConfig(anyagMod);
+  const arakLathatok = anyagArakLathatokAModban(anyagMod);
+  const anyagHasznotKellSzamolni = anyagHasznotKellSzamolniAModban(anyagMod);
+  const csakMennyisegiElszamolas = csakMennyisegiElszamolasAModban(anyagMod);
+  const anyagHaszon = calculateAnyagProfitByMod(csomag, anyagMod);
+
   return (
     <div style={{ padding: "20px 0" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap", padding: "10px 14px", borderRadius: 10, background: anyagCfg.bg, border: `1.5px solid ${anyagCfg.color}40` }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, fontFamily: FONT }}>Anyagelszámolási mód</span>
+        {hasAnyagelszamolasiMod(projekt) ? (
+          <>
+            <span style={{ fontSize: 13, fontWeight: 700, color: anyagCfg.color, fontFamily: FONT_HEADING }}>{anyagCfg.label}</span>
+            <span style={{ fontSize: 12, color: "#64748B", fontFamily: FONT }}>{anyagCfg.desc}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: anyagHasznotKellSzamolni ? "#16A34A" : "#64748B", fontFamily: FONT, marginLeft: "auto" }}>
+              Anyaghaszon: {anyagHaszon.toLocaleString("hu-HU")} Ft {!anyagHasznotKellSzamolni && "(rögzítve 0-ra ebben a módban)"}
+            </span>
+          </>
+        ) : (
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#DC2626", fontFamily: FONT }}>⚠ Admin ellenőrzés szükséges – nincs beállítva a projektnél</span>
+        )}
+      </div>
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 8, flexWrap: "wrap" }}>
         <span style={{ background: stCfg.bg, color: stCfg.szin, border: `1.5px solid ${stCfg.szin}40`, borderRadius: 20, padding: "4px 14px", fontSize: 13, fontWeight: 700, fontFamily: FONT }}>
           {csomag.status}
@@ -221,7 +254,7 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
       )}
 
       {isPMvagyAdmin && !szerkesztesTiltott && (
-        <AnyagszamitoPanel csomag={csomag} currentUser={currentUser} onCsomagFrissult={setCsomag} />
+        <AnyagszamitoPanel csomag={csomag} currentUser={currentUser} onCsomagFrissult={setCsomag} anyagelszamolasiMod={anyagMod} />
       )}
 
       {tetelek.length === 0 ? (
@@ -230,6 +263,11 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
         <div style={{ overflowX: "auto" }}>
           {mennyisegHiba && (
             <p style={{ fontSize: 12, color: "#DC2626", fontWeight: 700, margin: "0 0 10px" }}>{mennyisegHiba}</p>
+          )}
+          {csakMennyisegiElszamolas && (
+            <p style={{ fontSize: 12, color: "#7C3AED", fontWeight: 600, margin: "0 0 10px", fontFamily: FONT }}>
+              ℹ️ Ebben a módban a fővállalkozó adja az anyagot – a tételek csak mennyiségi elszámolásra szolgálnak, ár és anyaghaszon nem jelenik meg.
+            </p>
           )}
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT }}>
             <thead>
@@ -244,6 +282,13 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
                 <th style={{ ...th, textAlign: "right" }}>Felhasznált</th>
                 <th style={{ ...th, textAlign: "right" }}>Visszahozott</th>
                 <th style={{ ...th, textAlign: "right" }}>Eltérés</th>
+                {arakLathatok && (
+                  <>
+                    <th style={{ ...th, textAlign: "right" }}>Eladási ár</th>
+                    <th style={{ ...th, textAlign: "right" }}>Beszerzési ár</th>
+                    <th style={{ ...th, textAlign: "right" }}>Anyaghaszon</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -260,6 +305,11 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
                     <td style={{ ...td, textAlign: "right" }}>{t[mezo]}</td>
                   )
                 );
+                const eladasiAr = Number(t.egysegarPillanatkepEladasi) || 0;
+                const beszerzesiAr = Number(t.egysegarPillanatkepBeszerzesi) || 0;
+                const sorHaszon = anyagHasznotKellSzamolni
+                  ? (eladasiAr - beszerzesiAr) * (Number(t.felhasznaltMennyiseg) || 0)
+                  : 0;
                 return (
                   <tr key={t.id}>
                     <td style={td}>{t.cikkszam || "—"}</td>
@@ -274,6 +324,15 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
                     <td style={{ ...td, textAlign: "right", fontWeight: 700, color: elteres !== 0 ? "#DC2626" : "#16A34A" }}>
                       {elteres > 0 ? `+${elteres}` : elteres}
                     </td>
+                    {arakLathatok && (
+                      <>
+                        <td style={{ ...td, textAlign: "right" }}>{eladasiAr.toLocaleString("hu-HU")} Ft</td>
+                        <td style={{ ...td, textAlign: "right" }}>{beszerzesiAr.toLocaleString("hu-HU")} Ft</td>
+                        <td style={{ ...td, textAlign: "right", fontWeight: 700, color: anyagHasznotKellSzamolni ? "#16A34A" : "#64748B" }}>
+                          {sorHaszon.toLocaleString("hu-HU")} Ft
+                        </td>
+                      </>
+                    )}
                   </tr>
                 );
               })}

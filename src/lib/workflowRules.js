@@ -60,26 +60,77 @@ export const PROJEKT_FORRAS = [
 
 export const ANYAGELSZAMOLAS_NINCS_KIVALASZTVA = "NINCS_KIVALASZTVA";
 
+// A 3 érvényes mód azonosítója – innen veszi át minden modul, hogy ne
+// szóródjanak szét "mágikus" string-konstansok (Fázis 5B P0-1 javítás).
+export const ANYAGELSZAMOLASI_MOD_SAJAT_ANYAG_PROFIT = "SAJAT_ANYAG_PROFIT";
+export const ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_HOZOTT_ANYAG = "FOVALLALKOZO_HOZOTT_ANYAG";
+export const ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_NULLAS_TOVABBSZAMLAZAS = "FOVALLALKOZO_NULLAS_TOVABBSZAMLAZAS";
+
 export const ANYAGELSZAMOLASI_MODOK = [
   {
-    id: "SAJAT_ANYAG_PROFIT",
+    id: ANYAGELSZAMOLASI_MOD_SAJAT_ANYAG_PROFIT,
     label: "Saját anyag profit számítással",
     color: "#2563EB", bg: "#EFF6FF",
     desc: "Mi vesszük az anyagot, mi adjuk el – anyaghaszon ÉS munkadíj-haszon is van",
   },
   {
-    id: "FOVALLALKOZO_HOZOTT_ANYAG",
+    id: ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_HOZOTT_ANYAG,
     label: "Fővállalkozói hozott anyag",
     color: "#7C3AED", bg: "#F5F3FF",
     desc: "A fővállalkozó adja az anyagot, csak darabszám / mennyiség elszámolás – nincs anyaghaszon, munkadíj-haszon van",
   },
   {
-    id: "FOVALLALKOZO_NULLAS_TOVABBSZAMLAZAS",
+    id: ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_NULLAS_TOVABBSZAMLAZAS,
     label: "Fővállalkozói nullás továbbszámlázás",
     color: "#D97706", bg: "#FFFBEB",
     desc: "A fővállalkozótól fix áron vesszük, ugyanannyiért számlázzuk tovább – anyaghaszon 0 Ft, munkadíj-haszon van",
   },
 ];
+
+// ─── Fázis 5B – mód-vezérelt UI- és pénzügyi viselkedés (P0-1 javítás) ────
+// Az anyagelszámolási mód itt dől el, hogy a Kivitelezési Csomagban és a
+// pénzügyi előkészítésben milyen logika fusson – nem csak megjelenő UI-mező.
+
+/** Igaz, ha az adott módban a tételeknél árat/profitot kell mutatni a PM/Adminnak. */
+export function anyagArakLathatokAModban(mod) {
+  return mod === ANYAGELSZAMOLASI_MOD_SAJAT_ANYAG_PROFIT
+      || mod === ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_NULLAS_TOVABBSZAMLAZAS;
+}
+
+/** Igaz, ha az adott módban anyaghaszont kell számolni (nem 0 a definíció szerint). */
+export function anyagHasznotKellSzamolniAModban(mod) {
+  return mod === ANYAGELSZAMOLASI_MOD_SAJAT_ANYAG_PROFIT;
+}
+
+/** Igaz, ha az adott módban a tételek csak mennyiségi elszámolásra szolgálnak (ár/profit nélkül). */
+export function csakMennyisegiElszamolasAModban(mod) {
+  return mod === ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_HOZOTT_ANYAG;
+}
+
+/**
+ * Anyaghaszon számítása a kivitelezési csomag tételein, az anyagelszámolási
+ * mód szerint vezérelve – ez akadályozza meg, hogy a rendszer fővállalkozói
+ * hozott anyagra vagy nullás továbbszámlázásra véletlenül anyagprofitot
+ * számoljon (Fázis 5B P0-1 javítás).
+ *
+ *   SAJAT_ANYAG_PROFIT                  → Σ(eladási ár × felhasznált) − Σ(beszerzési ár × felhasznált)
+ *   FOVALLALKOZO_HOZOTT_ANYAG           → 0 (a fővállalkozó adja az anyagot, nincs anyaghaszon)
+ *   FOVALLALKOZO_NULLAS_TOVABBSZAMLAZAS → 0 (fix áron vesszük, ugyanannyiért adjuk tovább)
+ *
+ * A pénzügyi motorok konszolidációja külön fázis – ez csak az előkészítő
+ * helper, amit a P0-1 javítás minimálisan és biztonságosan beköt.
+ */
+export function calculateAnyagProfitByMod(csomag, anyagelszamolasiMod) {
+  if (!anyagHasznotKellSzamolniAModban(anyagelszamolasiMod)) return 0;
+
+  const tetelek = Array.isArray(csomag?.tetelek) ? csomag.tetelek : [];
+  return tetelek.reduce((osszeg, tetel) => {
+    const mennyiseg   = Number(tetel?.felhasznaltMennyiseg)        || 0;
+    const eladasiAr   = Number(tetel?.egysegarPillanatkepEladasi)   || 0;
+    const beszerzesiAr = Number(tetel?.egysegarPillanatkepBeszerzesi) || 0;
+    return osszeg + (eladasiAr - beszerzesiAr) * mennyiseg;
+  }, 0);
+}
 
 export function getAnyagelszamolasiModConfig(modId) {
   if (!modId || modId === ANYAGELSZAMOLAS_NINCS_KIVALASZTVA) {

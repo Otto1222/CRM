@@ -16,6 +16,11 @@ import { Calculator, Plus } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../../lib/constants.js";
 import { addAnyagszamitoTetelekToKivitelezesiCsomag } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import { generateAnyagszamitas, makeUresAnyagszamitoBemenet } from "../../../services/anyagSzamito.service.js";
+import {
+  getAnyagelszamolasiModConfig,
+  csakMennyisegiElszamolasAModban,
+  anyagHasznotKellSzamolniAModban,
+} from "../../../lib/workflowRules.js";
 
 const th = { textAlign: "left", padding: "8px 10px", fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1.5px solid #E2E8F0" };
 const td = { padding: "8px 10px", fontSize: 13, color: "#0F172A", borderBottom: "1px solid #F1F5F9" };
@@ -33,12 +38,19 @@ const ANYAGSZAMITO_MEZOK = [
   { key: "optimalizaloDarabszam", label: "Optimalizáló darabszám", tipus: "szam" },
 ];
 
-export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissult }) {
+export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissult, anyagelszamolasiMod }) {
   const [nyitva, setNyitva]     = useState(false);
   const [bemenet, setBemenet]   = useState(() => makeUresAnyagszamitoBemenet());
   const [elonezet, setElonezet] = useState(null);
   const [eredmeny, setEredmeny] = useState(null);
   const [hiba, setHiba]         = useState("");
+
+  // Fázis 5B P0-1 javítás – a generált anyaglista sorsa a projekt
+  // anyagelszámolási módjától függ: a mód itt dönti el, hogy a PM
+  // milyen tájékoztatást kapjon a jóváhagyás előtt (ld. workflowRules.js).
+  const anyagCfg = getAnyagelszamolasiModConfig(anyagelszamolasiMod);
+  const csakMennyisegi = csakMennyisegiElszamolasAModban(anyagelszamolasiMod);
+  const vanAnyaghaszon = anyagHasznotKellSzamolniAModban(anyagelszamolasiMod);
 
   function handleMezoValtoztatas(kulcs, ertek) {
     setBemenet(prev => ({ ...prev, [kulcs]: ertek }));
@@ -114,6 +126,13 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
             <div style={{ marginTop: 16, background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: 14 }}>
               <p style={{ fontSize: 12, fontWeight: 700, color: "#0F172A", margin: "0 0 10px", fontFamily: FONT_HEADING }}>
                 Előnézet – jóváhagyás előtt még nem kerül a csomagba
+              </p>
+              <p style={{ fontSize: 12, fontWeight: 600, color: anyagCfg.color, margin: "0 0 10px", fontFamily: FONT }}>
+                {csakMennyisegi
+                  ? `ℹ️ ${anyagCfg.label}: a jóváhagyott tételek csak mennyiségi elszámolásra kerülnek be – ár és anyaghaszon nem számít bele a profitba.`
+                  : vanAnyaghaszon
+                    ? `ℹ️ ${anyagCfg.label}: a jóváhagyott tételek a normál anyagárral és anyaghaszon-számítással kerülnek a csomagba.`
+                    : `ℹ️ ${anyagCfg.label}: a jóváhagyott tételek árral kerülnek be, de az anyaghaszon ebben a módban rögzítetten 0 Ft.`}
               </p>
               {elonezet.anyaglista.length === 0 ? (
                 <p style={{ fontSize: 12, color: "#94A3B8", fontFamily: FONT }}>A megadott adatok alapján egyetlen tétel sem generálódott.</p>
