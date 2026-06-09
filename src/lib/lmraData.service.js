@@ -398,7 +398,10 @@ function buildLmraPdfHtml(rec, munkalap, projekt, exportedBy) {
   const munkaszam  = munkalap?.dokumentumszam || munkalap?.munkalapSzam || rec.munkalapId;
   const projektkod = projekt?.projektkod || projekt?.id || "—";
   const csapatNev  = munkalap?.csapatNev || "—";
-  const munkaNap   = munkalap?.munkavegzesDatum || rec.createdAt?.slice(0, 10) || "—";
+  const munkaNap   = munkalap?.datum
+    || munkalap?.befejezesIdopont?.slice(0, 10)
+    || rec.createdAt?.slice(0, 10)
+    || new Date().toISOString().slice(0, 10);
   const kivalasztott = (rec.kockazatok || []).filter(k => k.kivalasztva);
   const szignorok    = (rec.resztvevok  || []).filter(r => r.signed);
 
