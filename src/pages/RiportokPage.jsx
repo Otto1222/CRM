@@ -392,7 +392,7 @@ export default function RiportokPage() {
       }
       const g = groups[csId];
       g.projektek.push({ projekt: p, kalk });
-      const lezart = ["Lezárva", "Kifizetve", "Leszámlázva", "Elkészült"].includes(p.status);
+      const lezart = ["Lezárt", "Lezárva", "Kifizetve", "Leszámlázva", "Elkészült"].includes(p.status);
       if (lezart) g.befejezett++; else g.aktiv++;
       g.osszPanel     += Number(p.penzugy?.darabszam || p.napelemDb || 0);
       g.osszKm        += Number(p.penzugy?.tavKm || 0) * 2;

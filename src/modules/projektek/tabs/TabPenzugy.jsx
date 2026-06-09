@@ -9,7 +9,6 @@ import { Save, Check, Plus, Receipt, RefreshCw, CheckCircle2, AlertTriangle } fr
 import { C, FONT } from "../../../lib/constants.js";
 import { ft } from "../../../lib/helpers.js";
 import { calcEsmentProjektPenzugy, ANYAGKOLTSEG_FORRAS } from "../../../services/workOrderFinancial.service.js";
-import { calcProjektPenzugy }       from "../../../lib/costEngine.js";
 import {
   ELSZAMOLAS_STATUSZOK, SZAMLAZAS_STATUSZOK, TIG_STATUSZOK,
   getElszamolasConfig, getSzamlazasConfig, getTigConfig,
@@ -90,7 +89,6 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
 
   // Kalkulált adatok
   const kalk = projekt.penzugy?.fovallalkoziId ? calcEsmentProjektPenzugy(projekt) : null;
-  const penz = calcProjektPenzugy(projektMls);
   const csapat = getCsapat(projekt.penzugy?.csapatId || projekt.csapatId);
 
   // Számlák

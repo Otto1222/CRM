@@ -1,5 +1,4 @@
 import { C, FONT } from "../../../lib/constants.js";
-import { calcProjektPenzugy } from "../../../lib/costEngine.js";
 import { calcEsmentProjektPenzugy } from "../../../services/workOrderFinancial.service.js";
 import { ft } from "../../../lib/helpers.js";
 import { getStatusConfig, getAnyagelszamolasiModConfig, hasAnyagelszamolasiMod } from "../projekt.schema.js";
@@ -25,7 +24,6 @@ function Row({ label, value, bold }) {
 export default function TabAttekintes({ projekt, munkalapok }) {
   const pillanatkep = projekt.elfogadottAjanlatPillanatkep || null;
   const mls     = (munkalapok||[]).filter(m => m.projektId === projekt.id || projekt.munkalapIds?.includes(m.id));
-  const penz    = calcProjektPenzugy(mls);
   const kalk    = projekt.penzugy?.fovallalkoziId ? calcEsmentProjektPenzugy(projekt) : null;
   const stCfg   = getStatusConfig(projekt.status);
   const anyagCfg = getAnyagelszamolasiModConfig(projekt.anyagelszamolasiMod);

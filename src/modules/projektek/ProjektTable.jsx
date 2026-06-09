@@ -1,6 +1,6 @@
 import { C, FONT } from "../../lib/constants.js";
 import { getStatusConfig } from "./projekt.schema.js";
-import { calcProjektPenzugy } from "../../lib/costEngine.js";
+import { calcEsmentProjektPenzugy } from "../../services/workOrderFinancial.service.js";
 import { ft } from "../../lib/helpers.js";
 
 export default function ProjektTable({ projektek, munkalapok, onSelect, userRole }) {
@@ -24,8 +24,7 @@ export default function ProjektTable({ projektek, munkalapok, onSelect, userRole
             )}
             {projektek.map((p,i) => {
               const stCfg = getStatusConfig(p.status);
-              const mls   = (munkalapok||[]).filter(m=>m.projektId===p.id||p.munkalapIds?.includes(m.id));
-              const penz  = showPenz ? calcProjektPenzugy(mls) : null;
+              const kalk  = showPenz ? (calcEsmentProjektPenzugy(p) || {}) : null;
               return (
                 <tr key={p.id} onClick={()=>onSelect(p)}
                   style={{ borderBottom:"1px solid #F1F5F9", background: i%2===0?"#fff":"#FAFAFA", cursor:"pointer" }}
@@ -44,8 +43,8 @@ export default function ProjektTable({ projektek, munkalapok, onSelect, userRole
                   <td style={{ padding:"11px 12px", color:"#64748B" }}>{p.csapatNev||"—"}</td>
                   {showPenz && <>
                     <td style={{ padding:"11px 12px", color:"#059669" }}>{p.elfogadottAjanlat>0?ft(p.elfogadottAjanlat):"—"}</td>
-                    <td style={{ padding:"11px 12px", fontWeight:700, color:penz?.eredmeny>=0?"#059669":"#DC2626" }}>{penz?.bevetal>0?ft(penz.eredmeny):"—"}</td>
-                    <td style={{ padding:"11px 12px" }}>{penz?.haszonPct!==null&&penz?.bevetal>0?<span style={{ background:penz.nyereseg?"#DCFCE7":"#FEE2E2",color:penz.nyereseg?"#166534":"#991B1B",padding:"2px 7px",borderRadius:20,fontWeight:700,fontSize:11 }}>{penz.haszonPct}%</span>:"—"}</td>
+                    <td style={{ padding:"11px 12px", fontWeight:700, color:(kalk?.haszon||0)>=0?"#059669":"#DC2626" }}>{kalk?.nettoBevitel>0?ft(kalk.haszon):"—"}</td>
+                    <td style={{ padding:"11px 12px" }}>{kalk?.haszonPct!=null&&kalk?.nettoBevitel>0?<span style={{ background:(kalk.haszon||0)>=0?"#DCFCE7":"#FEE2E2",color:(kalk.haszon||0)>=0?"#166534":"#991B1B",padding:"2px 7px",borderRadius:20,fontWeight:700,fontSize:11 }}>{kalk.haszonPct}%</span>:"—"}</td>
                   </>}
                   <td style={{ padding:"11px 12px", color:"#64748B", fontSize:12 }}>{p.tervezettBefejezes||"—"}</td>
                 </tr>
