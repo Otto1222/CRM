@@ -65,7 +65,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
   // Elfogadott ajánlatok (saját ügyfél flow ajanlat-selectorhoz)
   const elfogadottAjanlatok = useMemo(() => {
     try {
-      const all = loadLocal("ajanlatok") || [];
+      const all = loadLocal("ajanla tok") || [];
       const projektek = loadLocal("projektek") || [];
       const linkedIds = new Set(projektek.map(p => p.ajanlatId).filter(Boolean));
       return all.filter(a =>
