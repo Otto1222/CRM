@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { Plus, Search, X, FileText, ArrowRight, CheckCircle, Printer } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { ft } from "../lib/helpers";
@@ -38,7 +39,7 @@ export default function ArajanlaltokPage({ currentUser }) {
   const [ajanlatForProject, setAjanlatForProject] = useState(null);
   const [filterStatus, setFilterStatus]          = useState("Összes");
   const [search, setSearch]                      = useState("");
-  const [statusPicker, setStatusPicker]          = useState(null);
+  const [statusPicker, setStatusPicker]          = useState(null); // null | { id, x, y }
 
   useEffect(() => {
     function refresh() { setAjanlatok(loadAjanlatok()); }
@@ -202,17 +203,23 @@ export default function ArajanlaltokPage({ currentUser }) {
                       {a.osszeg ? ft(Number(a.osszeg)) : "—"}
                     </td>
                     <td style={{ padding: "12px 14px" }}>
-                      <div style={{ position: "relative", display: "inline-block" }}>
-                        <button onClick={() => isAdmin && setStatusPicker(statusPicker === a.id ? null : a.id)}
-                          style={{ background: cfg.bg, color: cfg.szin, border: `1.5px solid ${cfg.szin}40`, borderRadius: 20, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: isAdmin ? "pointer" : "default", fontFamily: FONT }}>
-                          {a.status} {isAdmin && "▾"}
-                        </button>
-                        {isAdmin && statusPicker === a.id && (
-                          <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 50 }}>
-                            <StatusPicker current={a.status} onSelect={s => handleStatusChange(a.id, s)} />
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        onClick={e => {
+                          if (!isAdmin) return;
+                          if (statusPicker?.id === a.id) { setStatusPicker(null); return; }
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const PICKER_H = 230;
+                          const PICKER_W = 185;
+                          const spaceBelow = window.innerHeight - rect.bottom;
+                          const top = spaceBelow >= PICKER_H
+                            ? rect.bottom + 4
+                            : rect.top - PICKER_H - 4;
+                          const left = Math.min(rect.left, window.innerWidth - PICKER_W - 8);
+                          setStatusPicker({ id: a.id, x: left, y: top });
+                        }}
+                        style={{ background: cfg.bg, color: cfg.szin, border: `1.5px solid ${cfg.szin}40`, borderRadius: 20, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: isAdmin ? "pointer" : "default", fontFamily: FONT }}>
+                        {a.status} {isAdmin && "▾"}
+                      </button>
                     </td>
                     <td style={{ padding: "12px 14px", color: C.muted, fontSize: 12 }}>{a.ervenyesseg || "—"}</td>
                     <td style={{ padding: "12px 14px" }}>
@@ -266,8 +273,17 @@ export default function ArajanlaltokPage({ currentUser }) {
         />
       )}
 
-      {statusPicker && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setStatusPicker(null)} />
+      {isAdmin && statusPicker && createPortal(
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 9900 }} onClick={() => setStatusPicker(null)} />
+          <div style={{ position: "fixed", left: statusPicker.x, top: statusPicker.y, zIndex: 9901 }}>
+            <StatusPicker
+              current={ajanlatok.find(a => a.id === statusPicker.id)?.status || ""}
+              onSelect={s => handleStatusChange(statusPicker.id, s)}
+            />
+          </div>
+        </>,
+        document.body
       )}
     </div>
   );
