@@ -27,6 +27,7 @@ const ANYAGKOLTSEG_FORRAS_LABEL = {
   [ANYAGKOLTSEG_FORRAS.MUNKALAP_ANYAGKOLTSEG_TOTAL]:   "Munkalap",
   [ANYAGKOLTSEG_FORRAS.FELHASZNALT_ANYAGOK_LOCAL]:     "Munkalap (helyi adat)",
   [ANYAGKOLTSEG_FORRAS.KEZI_PENZUGYI_ADAT]:            "Kézi adat",
+  [ANYAGKOLTSEG_FORRAS.FOVALLALKOZO_HOZOTT_ANYAG]:     "Hozott anyag (módalapu)",
   [ANYAGKOLTSEG_FORRAS.NINCS_ADAT]:                    "nincs adat",
 };
 
@@ -197,6 +198,9 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
               )}
               {kalk.anyagkoltsegWarning && (
                 <p style={{ fontSize: 11, color: '#D97706', fontWeight: 600, marginTop: 8 }}>⚠ {kalk.anyagkoltsegWarning}</p>
+              )}
+              {kalk.anyagelszamolasiModNote && (
+                <p style={{ fontSize: 11, color: '#2563EB', fontWeight: 600, marginTop: 4 }}>ℹ {kalk.anyagelszamolasiModNote}</p>
               )}
             </div>
           )}

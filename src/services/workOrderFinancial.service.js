@@ -13,6 +13,10 @@ import { getKivitelezesiCsomagByProjektId } from "../modules/kivitelezesi_csomag
 import { loadKarteritesek } from "../lib/karterites.js";
 import { getCsapat, loadAvSzabalyok, calcCsapatAlvallalkozoiBer, getAvSzabalyokByCsapat } from "../modules/csapatok/csapat.service.js";
 import { updateItem } from "../lib/localDb.js";
+import {
+  ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_HOZOTT_ANYAG,
+  ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_NULLAS_TOVABBSZAMLAZAS,
+} from "../lib/workflowRules.js";
 
 const TETELEK_KEY = id => `munkalap_tetelek_${id}`;
 const dispatch    = col =>
@@ -65,6 +69,7 @@ export const ANYAGKOLTSEG_FORRAS = {
   MUNKALAP_ANYAGKOLTSEG_TOTAL:   "MUNKALAP_ANYAGKOLTSEG_TOTAL",
   FELHASZNALT_ANYAGOK_LOCAL:     "FELHASZNALT_ANYAGOK_LOCAL",
   KEZI_PENZUGYI_ADAT:            "KEZI_PENZUGYI_ADAT",
+  FOVALLALKOZO_HOZOTT_ANYAG:     "FOVALLALKOZO_HOZOTT_ANYAG",
   NINCS_ADAT:                    "NINCS_ADAT",
 };
 
@@ -90,6 +95,20 @@ const NEM_ELSODLEGES_FIGYELMEZTETES = "Anyagköltség nem elsődleges forrásbó
  */
 export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
   const { keziAnyagkoltseg } = options;
+  const anyagelszamolasiMod = projekt?.anyagelszamolasiMod;
+  const nullasTovabbszamlazas = anyagelszamolasiMod === ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_NULLAS_TOVABBSZAMLAZAS;
+
+  // 0. Üzleti szabály: FOVALLALKOZO_HOZOTT_ANYAG esetén anyagköltség definíció szerint 0.
+  // Nem fallback – a fővállalkozó adja az anyagot, ezért ez explicit üzleti döntés.
+  if (anyagelszamolasiMod === ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_HOZOTT_ANYAG) {
+    return {
+      ertek: 0,
+      forras: ANYAGKOLTSEG_FORRAS.FOVALLALKOZO_HOZOTT_ANYAG,
+      megbizhatosag: "mod_alapu",
+      warning: null,
+      anyagelszamolasiModNote: "Hozott anyag: anyagköltség nem számolódik a projekt profitba.",
+    };
+  }
 
   // 1. Kézi felülírás – ez egy EXPLICIT PM-döntés, nem csendes fallback.
   if (keziAnyagkoltseg !== null && keziAnyagkoltseg !== undefined) {
@@ -98,6 +117,7 @@ export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
       forras: ANYAGKOLTSEG_FORRAS.KEZI_PENZUGYI_ADAT,
       megbizhatosag: "kezi",
       warning: null,
+      anyagelszamolasiModNote: nullasTovabbszamlazas ? "Nullás továbbszámlázás: anyaghaszon 0 Ft." : null,
     };
   }
 
@@ -117,6 +137,7 @@ export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
       forras: ANYAGKOLTSEG_FORRAS.KIVITELEZESI_CSOMAG_TENYLEGES,
       megbizhatosag: "magas",
       warning: null,
+      anyagelszamolasiModNote: nullasTovabbszamlazas ? "Nullás továbbszámlázás: anyaghaszon 0 Ft." : null,
     };
   }
 
@@ -128,6 +149,7 @@ export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
       forras: ANYAGKOLTSEG_FORRAS.MUNKALAP_ANYAGKOLTSEG_TOTAL,
       megbizhatosag: "kozepes",
       warning: `${NEM_ELSODLEGES_FIGYELMEZTETES} Forrás: munkalap rögzített anyagköltség-összege (nincs tényleges felhasználás a Kivitelezési Csomagban).`,
+      anyagelszamolasiModNote: nullasTovabbszamlazas ? "Nullás továbbszámlázás: anyaghaszon 0 Ft." : null,
     };
   }
 
@@ -146,6 +168,7 @@ export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
       forras: ANYAGKOLTSEG_FORRAS.FELHASZNALT_ANYAGOK_LOCAL,
       megbizhatosag: "alacsony",
       warning: `${NEM_ELSODLEGES_FIGYELMEZTETES} Forrás: ideiglenes, helyi (nem szinkronizált) felhasznált anyag adatok.`,
+      anyagelszamolasiModNote: nullasTovabbszamlazas ? "Nullás továbbszámlázás: anyaghaszon 0 Ft." : null,
     };
   }
 
@@ -155,13 +178,9 @@ export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
     forras: ANYAGKOLTSEG_FORRAS.NINCS_ADAT,
     megbizhatosag: "nincs",
     warning: "Nincs elérhető anyagköltség-adat egyik forrásból sem.",
+    anyagelszamolasiModNote: nullasTovabbszamlazas ? "Nullás továbbszámlázás: anyaghaszon 0 Ft." : null,
   };
 }
-
-/**
- * Projekt pénzügyi kalkuláció – szabályalapú motor.
- * FV szabályok → bevétel; AV szabályok → csapat bér.
- */
 export function calcEsmentProjektPenzugy(projekt) {
   if (!projekt) return null;
   const penzugy = projekt?.penzugy || {};
@@ -275,10 +294,11 @@ export function calcEsmentProjektPenzugy(projekt) {
       m => m.projektId === projekt?.id || (projekt?.munkalapIds || []).includes(m.id)
     );
   } catch {}
-  const anyagkoltsegEredmeny = resolveAnyagkoltsegForras(projektMls, projekt, { keziAnyagkoltseg: keziAnyagkoltság });
-  const anyagkoltság        = anyagkoltsegEredmeny.ertek;
-  const anyagkoltsegForras  = anyagkoltsegEredmeny.forras;
-  const anyagkoltsegWarning = anyagkoltsegEredmeny.warning;
+  const anyagkoltsegEredmeny    = resolveAnyagkoltsegForras(projektMls, projekt, { keziAnyagkoltseg: keziAnyagkoltság });
+  const anyagkoltság            = anyagkoltsegEredmeny.ertek;
+  const anyagkoltsegForras      = anyagkoltsegEredmeny.forras;
+  const anyagkoltsegWarning     = anyagkoltsegEredmeny.warning;
+  const anyagelszamolasiModNote = anyagkoltsegEredmeny.anyagelszamolasiModNote || null;
   let utikoltség = (keziUtikoltség !== null && keziUtikoltség !== undefined) ? Number(keziUtikoltség) : 0;
 
   // ── Csapat bér (FV oldalon) ──────────────────────────────
@@ -334,7 +354,7 @@ export function calcEsmentProjektPenzugy(projekt) {
     beveteliTetelek,
     // Költségek
     csapatBer, utikoltség, anyagkoltság,
-    anyagkoltsegForras, anyagkoltsegWarning,
+    anyagkoltsegForras, anyagkoltsegWarning, anyagelszamolasiModNote,
     emelőgepKoltseg:     Number(emelőgepKoltseg     || 0),
     daruKoltseg:         Number(daruKoltseg         || 0),
     szallasKoltseg:      Number(szallasKoltseg      || 0),
