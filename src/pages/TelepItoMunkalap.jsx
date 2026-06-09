@@ -903,6 +903,9 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
 
   const AnyagokTab=()=>(
     <div style={{ background:"#F1F5F9" }}>
+      <div style={{ background:"#FFF7ED", border:"1px solid #FED7AA", borderRadius:8, padding:"10px 14px", margin:"12px 16px 4px", fontSize:12, color:"#92400E" }}>
+        📋 <strong>Tájékoztató anyaglista</strong> – régi rendszer. A tényleges anyagfelhasználást a <strong>⚙️ Anyagfelhasználás</strong> lapon rögzítsd a Kivitelezési Csomag alapján.
+      </div>
       {(m.anyagok||[]).length===0&&<div style={{ padding:"32px 16px",textAlign:"center",color:C.muted }}><p>Nincsenek anyagok</p></div>}
       {(m.anyagok||[]).map((a,i)=>(
         <div key={i} style={{ padding:"13px 16px",borderBottom:"1px solid #D1D9E6",display:"flex",justifyContent:"space-between" }}>
