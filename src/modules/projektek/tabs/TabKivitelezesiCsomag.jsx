@@ -334,8 +334,16 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
                     {mennyisegCella("kiadottMennyiseg")}
                     {mennyisegCella("felhasznaltMennyiseg")}
                     {mennyisegCella("visszahozottMennyiseg")}
-                    <td style={{ ...td, textAlign: "right", fontWeight: 700, color: elteres !== 0 ? "#DC2626" : "#16A34A" }}>
-                      {elteres > 0 ? `+${elteres}` : elteres}
+                    <td style={{ ...td, textAlign: "center" }}>
+                      {elteres === 0 ? (
+                        <span style={{ background: "#DCFCE7", color: "#15803D", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>✓ Rendben</span>
+                      ) : (
+                        <span
+                          style={{ background: "#FEE2E2", color: "#B91C1C", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700, display: "inline-block" }}
+                          title={elteres > 0 ? "Hiányzó vagy el nem számolt anyag" : "Adathiba: több lett elszámolva mint kiadva"}>
+                          ⚠ {elteres > 0 ? `+${elteres}` : elteres}
+                        </span>
+                      )}
                     </td>
                     <td style={{ ...td, textAlign: "center" }}>
                       {mennyisegSzerkesztheto ? (
