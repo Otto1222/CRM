@@ -322,3 +322,25 @@ export function updateFelhasznaltMennyisegFromMunkalap(csomagId, munkalapId, fel
 
   return updateKivitelezesiCsomag(csomagId, { tetelek }, user);
 }
+
+// ─── Fázis 6A-2 – Telepítő kiadott mennyiség láthatóság tételenként ──────────
+
+const TELEPITO_LATHATOSAG_ERTEKEK = ["NONE", "KIADOTT_MENNYISEG"];
+
+export function updateKiviTetelLathatosag(csomagId, tetelId, telepitoLathatosag, user = "") {
+  if (!TELEPITO_LATHATOSAG_ERTEKEK.includes(telepitoLathatosag)) {
+    throw new Error("Érvénytelen telepitoLathatosag érték: " + telepitoLathatosag);
+  }
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) throw new Error("A Kivitelezési Csomag nem található.");
+  if (isKivitelezesiCsomagSzerkesztesTiltott(csomag.status)) {
+    throw new Error("Lezárt vagy elszámolt csomagban a tételek nem módosíthatók.");
+  }
+  if (!(csomag.tetelek || []).some(t => t.id === tetelId)) {
+    throw new Error("A tétel nem található a csomagban.");
+  }
+  const tetelek = (csomag.tetelek || []).map(t =>
+    t.id === tetelId ? { ...t, telepitoLathatosag } : t
+  );
+  return updateKivitelezesiCsomag(csomagId, { tetelek }, user);
+}

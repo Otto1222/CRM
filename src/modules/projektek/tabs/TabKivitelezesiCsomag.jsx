@@ -8,6 +8,7 @@ import {
   addKeziTetelToKivitelezesiCsomag,
   setKivitelezesiCsomagStatus,
   updateKiviTetelMennyisegek,
+  updateKiviTetelLathatosag,
 } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import {
   getKivitelezesiCsomagStatusConfig,
@@ -120,6 +121,17 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
       setCsomag(updated);
     } catch (err) {
       setMennyisegHiba(err.message || "A mennyiség módosítása sikertelen.");
+    }
+  }
+
+  function handleLathatosagValtas(tetelId, aktualisLathatosag) {
+    setMennyisegHiba("");
+    try {
+      const uj = aktualisLathatosag === "KIADOTT_MENNYISEG" ? "NONE" : "KIADOTT_MENNYISEG";
+      const updated = updateKiviTetelLathatosag(csomag.id, tetelId, uj, currentUser?.name || "");
+      setCsomag(updated);
+    } catch (err) {
+      setMennyisegHiba(err.message || "A láthatóság módosítása sikertelen.");
     }
   }
 
@@ -282,6 +294,7 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
                 <th style={{ ...th, textAlign: "right" }}>Felhasznált</th>
                 <th style={{ ...th, textAlign: "right" }}>Visszahozott</th>
                 <th style={{ ...th, textAlign: "right" }}>Eltérés</th>
+                <th style={{ ...th, textAlign: "center", width: 110 }}>Telepítő látja kiadott menny.</th>
                 {arakLathatok && (
                   <>
                     <th style={{ ...th, textAlign: "right" }}>Eladási ár</th>
@@ -323,6 +336,20 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
                     {mennyisegCella("visszahozottMennyiseg")}
                     <td style={{ ...td, textAlign: "right", fontWeight: 700, color: elteres !== 0 ? "#DC2626" : "#16A34A" }}>
                       {elteres > 0 ? `+${elteres}` : elteres}
+                    </td>
+                    <td style={{ ...td, textAlign: "center" }}>
+                      {mennyisegSzerkesztheto ? (
+                        <button type="button"
+                          onClick={() => handleLathatosagValtas(t.id, t.telepitoLathatosag || "NONE")}
+                          title={t.telepitoLathatosag === "KIADOTT_MENNYISEG" ? "Látható – kattints az elrejtéshez" : "Rejtett – kattints a megjelenítéshez"}
+                          style={{ background: t.telepitoLathatosag === "KIADOTT_MENNYISEG" ? "#059669" : "#94A3B8", color: "#fff", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+                          {t.telepitoLathatosag === "KIADOTT_MENNYISEG" ? "✓ Látható" : "Rejtett"}
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 11, color: t.telepitoLathatosag === "KIADOTT_MENNYISEG" ? "#059669" : "#94A3B8", fontWeight: 700 }}>
+                          {t.telepitoLathatosag === "KIADOTT_MENNYISEG" ? "✓ Látható" : "Rejtett"}
+                        </span>
+                      )}
                     </td>
                     {arakLathatok && (
                       <>

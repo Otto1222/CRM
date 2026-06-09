@@ -428,6 +428,11 @@ function KivCsomagFelhasznalasTab({ munkalapId, projektId, onSave }) {
                     <span style={{ fontSize: 11, color: C.muted, background: "#F1F5F9", padding: "2px 8px", borderRadius: 20 }}>{t.kategoria}</span>
                   )}
                 </div>
+                {t.telepitoLathatosag === "KIADOTT_MENNYISEG" && (
+                  <div style={{ fontSize: 11, color: "#2563EB", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 6, padding: "3px 8px", marginBottom: 5, display: "inline-block" }}>
+                    Kiadott mennyiség: <strong>{t.kiadottMennyiseg || 0} {t.egyseg}</strong>
+                  </div>
+                )}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", minWidth: 100 }}>Felhasznált</span>
                   <input type="number" min="0" step="any" value={v.menny}
