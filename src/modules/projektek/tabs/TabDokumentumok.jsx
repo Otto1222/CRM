@@ -147,6 +147,9 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
               color="#7C3AED"
               onClick={() => {
                 if (!hasSablon()) { alert("Nincs VBF sablon feltöltve. Beállítások → VBF Sablon."); return; }
+                if (m.date && m.createdAt && m.date < m.createdAt.slice(0, 10)) {
+                  if (!window.confirm(`⚠️ Dátum-eltérés!\n\nA munkalap dátuma (${m.date}) korábbi, mint a munkalap létrehozásának dátuma (${m.createdAt.slice(0, 10)}).\n\nEz visszadátumozásra utalhat. Biztosan exportálod a VBF dokumentumot?`)) return;
+                }
                 generateVbfDocx(m, projekt);
               }} />
           ))}

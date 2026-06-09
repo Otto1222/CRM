@@ -69,11 +69,22 @@ export default function VbfAdminCard({ munkalapId, munkalap: munkalapProp, proje
     return () => window.removeEventListener("crm-db-updated", refresh);
   }, [munkalapId]);
 
+  function checkDatumWarning(ml) {
+    if (!ml.date || !ml.createdAt) return true;
+    if (ml.date < ml.createdAt.slice(0, 10)) {
+      return window.confirm(
+        `⚠️ Dátum-eltérés!\n\nA munkalap dátuma (${ml.date}) korábbi, mint a munkalap létrehozásának dátuma (${ml.createdAt.slice(0, 10)}).\n\nEz visszadátumozásra utalhat. Biztosan exportálod a VBF dokumentumot?`
+      );
+    }
+    return true;
+  }
+
   async function handleLetoltes() {
     setLetoltes(true);
     const ml = munkalapProp
       || (loadLocal("munkalapok") || []).find(m => m.id === munkalapId)
       || { id: munkalapId };
+    if (!checkDatumWarning(ml)) { setLetoltes(false); return; }
     const pr = projektProp
       || (loadLocal("projektek") || []).find(p =>
           p.id === ml.projektId || (p.munkalapIds || []).includes(munkalapId)
@@ -112,6 +123,7 @@ export default function VbfAdminCard({ munkalapId, munkalap: munkalapProp, proje
               <button
                 onClick={async () => {
                   const ml = munkalapProp || (loadLocal("munkalapok")||[]).find(m=>m.id===munkalapId) || {id:munkalapId};
+                  if (!checkDatumWarning(ml)) return;
                   const pr = projektProp  || (loadLocal("projektek")||[]).find(p=>p.id===ml.projektId) || {};
                   await downloadVbfPdf(ml, pr, vbf);
                 }}

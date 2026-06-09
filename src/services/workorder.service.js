@@ -4,6 +4,7 @@ import {
   migrateMunkalapStatus,
 } from "../lib/workflowRules.js";
 import { driveSave } from "../lib/driveApi.js";
+import { nextEdiSorszam } from "../lib/dokumentumszam.js";
 import { syncMunkalapToCalendar, deleteMunkalapFromCalendar } from "./calendarSync.service.js";
 import { updateProjekt } from "../modules/projektek/projekt.service.js";
 
@@ -65,23 +66,26 @@ const TIPUS_ROVID = {
 export function nextWorkorderNumber(projectKod, tipus = "") {
   const rovid = TIPUS_ROVID[tipus] || tipus.toUpperCase().slice(0, 5) || "ML";
   const prefix = `${projectKod}/${rovid}`;
-  const existing = loadWorkorders().filter(w =>
-    w.munkalapSzam?.startsWith(prefix) || w.projektKod === projectKod
-  );
-  return `${prefix}/${String(existing.length + 1).padStart(3, "0")}`;
+  const all = loadWorkorders();
+  const existing = new Set(all.map(w => w.munkalapSzam).filter(Boolean));
+  let seq = all.filter(w => w.munkalapSzam?.startsWith(prefix + "/")).length + 1;
+  let candidate = `${prefix}/${String(seq).padStart(3, "0")}`;
+  while (existing.has(candidate)) {
+    seq++;
+    candidate = `${prefix}/${String(seq).padStart(3, "0")}`;
+  }
+  return candidate;
 }
 
 function normalizeWorkorder(data = {}) {
   const now = new Date().toISOString();
-  return {
+  const result = {
     id: data.id || `ml_${Date.now()}`,
     projektId:    data.projektId    || "",
     projektKod:   data.projektKod   || "",
-    munkalapSzam: data.munkalapSzam || nextWorkorderNumber(data.projektKod || "ML", data.tipus || ""),
     tipus:        data.tipus        || "Kivitelezés",
     munkalapTipus: data.munkalapTipus || data.tipus || "Kivitelezés",
     status:       migrateMunkalapStatus(data.status || "Létrehozva"),
-    // Indoklás (kötelező: Részben kész + Sikertelen esetén)
     indoklas:     data.indoklas     || "",
     datum:        data.datum        || "",
     clientNev:    data.clientNev    || "",
@@ -95,24 +99,52 @@ function normalizeWorkorder(data = {}) {
     csapatNev:    data.csapatNev    || data.assigneeNev || "",
     csapatKiosztasok: data.csapatKiosztasok || [],
     megjegyzes:   data.megjegyzes   || "",
-    // Audit
     createdAt:    data.createdAt    || now,
-    updatedAt:    now,
     createdBy:    data.createdBy    || "",
     updatedBy:    data.updatedBy    || "",
     version:      data.version      || 1,
-    syncStatus:   "synced",
     ...data,
-    // Az audit mezőket NE írja felül a spread
+    // Audit mezők spreaden felülírva – mindig a futáskori érték
     updatedAt:    now,
     syncStatus:   "synced",
   };
+  // munkalapSzam AFTER spread: üres string override esetén is helyes értéket ad
+  if (!result.munkalapSzam) {
+    result.munkalapSzam = nextWorkorderNumber(result.projektKod || "ML", result.tipus || "");
+  }
+  return result;
 }
 
 export function createWorkorder(data, user = "") {
   const now = new Date().toISOString();
+
+  // 1. Munkalapszám generálása (while-looppal védi az ütközést)
+  const munkalapSzam = data.munkalapSzam ||
+    nextWorkorderNumber(data.projektKod || "ML", data.tipus || "");
+
+  // 2. EDI sorszám és dokumentumszám generálása, ha nincs megadva
+  const ediSorszam = data.ediSorszam || nextEdiSorszam();
+  const fovNr = (data.fovallalkoiAzonosito || "").trim();
+  const dokumentumszam = data.dokumentumszam ||
+    (fovNr ? `${munkalapSzam} / ${fovNr}` : munkalapSzam);
+
+  // 3. Ütközésvédelem: race-condition guard a mentés előtt
+  const snapshot = loadWorkorders();
+  const meglevoSzamok      = new Set(snapshot.map(w => w.munkalapSzam).filter(Boolean));
+  const meglevoEdiSzamok   = new Set(snapshot.map(w => w.ediSorszam).filter(Boolean));
+  const meglevoDokSzamok   = new Set(snapshot.map(w => w.dokumentumszam).filter(Boolean));
+  if (meglevoSzamok.has(munkalapSzam))
+    throw new Error(`Ütközés: ${munkalapSzam} munkalapszám már létezik.`);
+  if (meglevoEdiSzamok.has(ediSorszam))
+    throw new Error(`Ütközés: ${ediSorszam} EDI sorszám már létezik.`);
+  if (meglevoDokSzamok.has(dokumentumszam))
+    throw new Error(`Ütközés: ${dokumentumszam} dokumentumszám már létezik.`);
+
   const workorder = normalizeWorkorder({
     ...data,
+    munkalapSzam,
+    ediSorszam,
+    dokumentumszam,
     createdAt: now,
     createdBy: user,
     updatedBy: user,
@@ -122,7 +154,7 @@ export function createWorkorder(data, user = "") {
   const validation = validateWorkorderBeforeSave(workorder);
   if (!validation.ok) throw new Error(validation.message);
 
-  saveWorkorders([workorder, ...loadWorkorders()]);
+  saveWorkorders([workorder, ...snapshot]);
   syncMunkalapToCalendar(workorder).catch(() => {});
   return workorder;
 }
@@ -131,9 +163,17 @@ export function updateWorkorder(id, updates, user = "") {
   const current = getWorkorder(id);
   if (!current) return null;
 
+  // Lezart/befejezett munkalapnal a datum mezo vedett visszadatumozas ellen
+  const _isLezart = current.lezarva === true
+    || !!current.befejezesIdopont
+    || ["Lezárva", "Ellenőrzés alatt", "Számlázva", "Számlázásra kész"].includes(current.status);
+  const safeUpdates = (_isLezart && "date" in updates && updates.date !== current.date)
+    ? (({ date: _d, ...rest }) => rest)(updates)
+    : updates;
+
   const updated = normalizeWorkorder({
     ...current,
-    ...updates,
+    ...safeUpdates,
     id,
     createdAt: current.createdAt,
     createdBy: current.createdBy,
