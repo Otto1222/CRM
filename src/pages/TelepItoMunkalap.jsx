@@ -10,6 +10,7 @@ import LmraTelepltoView from "../components/LmraTelepltoView";
 import FelmeresTelepito from "./FelmeresTelepito";
 import FelmeresFotok from "./FelmeresFotok";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
+import { saveVbf, loadVbf } from "../lib/munkalapDb";
 import { driveSave, driveVbfSave } from "../lib/driveApi";
 import { calcMunkalapElszamolas, saveMunkalapElszamolas } from "../services/workOrderFinancial.service.js";
 import { getKivitelezesiCsomagByProjektId, updateFelhasznaltMennyisegFromMunkalap } from "../modules/kivitelezesi_csomag/kivitelezesiCsomag.service.js";
@@ -68,16 +69,60 @@ const FOTO_KAT = [
 const FOTO_HIANY_OKOK_LIST = ["Nincs ilyen eszköz","Nem releváns a munkatípushoz","Nem látható"];
 
 const VBF_TEMPLATE = {
-  acFeszultseg: { L1:"", L2:"", L3:"" },
-  kismegsInverter: { L1:"", L2:"", L3:"" },
-  kismegsMero: { L1:"", L2:"", L3:"" },
-  panelszam: { ST1:"", ST2:"", ST3:"", ST4:"", ST5:"", ST6:"" },
-  dcFeszultseg: { ST1:"", ST2:"", ST3:"", ST4:"", ST5:"", ST6:"" },
-  hurokellenallas: { L1:"", L2:"", L3:"" },
-  smartMeter:"", akku:"", betapaltDC:"",
-  panelTipus:"", panelVoc:"", panelVmp:"", panelImp:"", panelIsc:"", panelTelj:"",
-  inverterNevleges:"", tuzMegszakito:"",
+  ac_l1:"", ac_l2:"", ac_l3:"",
+  ki_l1:"", ki_l2:"", ki_l3:"",
+  km_l1:"", km_l2:"", km_l3:"",
+  ps_st1:"", ps_st2:"", ps_st3:"", ps_st4:"", ps_st5:"", ps_st6:"",
+  dc_st1:"", dc_st2:"", dc_st3:"", dc_st4:"", dc_st5:"", dc_st6:"",
+  hu_l1:"", hu_l2:"", hu_l3:"",
+  smart_meter:"", akku_db:"", dc_teljesitmeny:"",
+  panel_tipus:"", panel_voc:"", panel_vmp:"", panel_imp:"", panel_isc:"", panel_telj:"",
+  inv_nevleges:"", epulet_alapfoldes:"", tuz_megszakito:"",
 };
+
+// Séma migráció: régi nested (crm_vbf_{id}) → flat (crm_ml_{id}_vbf)
+function migrateVbfNestedToFlat(nested) {
+  if (!nested || typeof nested !== "object") return { ...VBF_TEMPLATE };
+  if ("ac_l1" in nested) return nested;
+  return {
+    ac_l1: nested.acFeszultseg?.L1 ?? "",
+    ac_l2: nested.acFeszultseg?.L2 ?? "",
+    ac_l3: nested.acFeszultseg?.L3 ?? "",
+    ki_l1: nested.kismegsInverter?.L1 ?? "",
+    ki_l2: nested.kismegsInverter?.L2 ?? "",
+    ki_l3: nested.kismegsInverter?.L3 ?? "",
+    km_l1: nested.kismegsMero?.L1 ?? "",
+    km_l2: nested.kismegsMero?.L2 ?? "",
+    km_l3: nested.kismegsMero?.L3 ?? "",
+    ps_st1: nested.panelszam?.ST1 ?? "",
+    ps_st2: nested.panelszam?.ST2 ?? "",
+    ps_st3: nested.panelszam?.ST3 ?? "",
+    ps_st4: nested.panelszam?.ST4 ?? "",
+    ps_st5: nested.panelszam?.ST5 ?? "",
+    ps_st6: nested.panelszam?.ST6 ?? "",
+    dc_st1: nested.dcFeszultseg?.ST1 ?? "",
+    dc_st2: nested.dcFeszultseg?.ST2 ?? "",
+    dc_st3: nested.dcFeszultseg?.ST3 ?? "",
+    dc_st4: nested.dcFeszultseg?.ST4 ?? "",
+    dc_st5: nested.dcFeszultseg?.ST5 ?? "",
+    dc_st6: nested.dcFeszultseg?.ST6 ?? "",
+    hu_l1: nested.hurokellenallas?.L1 ?? "",
+    hu_l2: nested.hurokellenallas?.L2 ?? "",
+    hu_l3: nested.hurokellenallas?.L3 ?? "",
+    smart_meter:     nested.smartMeter      ?? "",
+    akku_db:         nested.akku            ?? "",
+    dc_teljesitmeny: nested.betapaltDC      ?? "",
+    panel_tipus:     nested.panelTipus      ?? "",
+    panel_voc:       nested.panelVoc        ?? "",
+    panel_vmp:       nested.panelVmp        ?? "",
+    panel_imp:       nested.panelImp        ?? "",
+    panel_isc:       nested.panelIsc        ?? "",
+    panel_telj:      nested.panelTelj       ?? "",
+    inv_nevleges:    nested.inverterNevleges ?? "",
+    epulet_alapfoldes: nested.epulet_alapfoldes ?? "",
+    tuz_megszakito:  nested.tuzMegszakito   ?? "",
+  };
+}
 
 function getMunkalapAzonosito(m) {
   return (
@@ -512,7 +557,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
     refreshJelenlet();
   }
 
-  const [vbf, setVbf] = useState(()=>loadLocal(`vbf_${m.id}`)||VBF_TEMPLATE);
+  const [vbf, setVbf] = useState(()=>migrateVbfNestedToFlat(loadVbf(m.id)));
   const [fotok,setFotok] = useState(()=>loadLocal(`fotok_${m.id}`)||Object.fromEntries(FOTO_KAT.map(k=>[k.id,[]])));
   const [fotoHianyOkok, setFotoHianyOkok] = useState(()=>{
     const saved = loadLocal(`foto_hiany_${m.id}`);
@@ -526,15 +571,15 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
 
   useEffect(()=>{ saveLocal(`foto_hiany_${m.id}`,fotoHianyOkok); },[fotoHianyOkok,m.id]);
 
-  function updVbf(section, field, val) {
-    const nv = field ? {...vbf,[section]:{...vbf[section],[field]:val}} : {...vbf,[section]:val};
+  function updVbf(k, val) {
+    const nv = {...vbf, [k]:val};
     setVbf(nv);
-    saveLocal(`vbf_${m.id}`,nv);
+    saveVbf(m.id, nv);
     window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:`vbf_${m.id}`}}));
   }
 
   function checkVbfHianyos() {
-    return Object.values(vbf).flatMap(v=>typeof v==="object"?Object.values(v):[v]).some(v=>v===""||v===null||v===undefined);
+    return Object.values(vbf).some(v=>v===""||v===null||v===undefined);
   }
 
   function handleMegkezdes() {
@@ -719,7 +764,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   }
 
   async function handleVbfMentes() {
-    saveLocal(`vbf_${m.id}`, vbf);
+    saveVbf(m.id, vbf);
     updateItem("munkalapok", m.id, { vbf });
     window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
     setProgress(30);
@@ -940,35 +985,35 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
       <div style={{ background:"#EFF6FF",border:`1px solid #BFDBFE`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#1D4ED8" }}>
         💡 Üres mező = nem releváns. Ha nulla az érték, hagyd üresen.
       </div>
-      <MeroSzakasz title="AC feszültség">{["L1","L2","L3"].map(l=><MeroSor key={l} label={l} value={vbf.acFeszultseg[l]} onCommit={v=>updVbf("acFeszultseg",l,v)} unit="V" piros={figy}/>)}</MeroSzakasz>
-      <MeroSzakasz title="Kismegszakító – Inverternél">{["L1","L2","L3"].map(l=><MeroSor key={l} label={l} value={vbf.kismegsInverter[l]} onCommit={v=>updVbf("kismegsInverter",l,v)} unit="A" piros={figy}/>)}</MeroSzakasz>
-      <MeroSzakasz title="Kismegszakító – Mérőhelynél">{["L1","L2","L3"].map(l=><MeroSor key={l} label={l} value={vbf.kismegsMero[l]} onCommit={v=>updVbf("kismegsMero",l,v)} unit="A" piros={figy}/>)}</MeroSzakasz>
-      <MeroSzakasz title="Panelszám">{["ST1","ST2","ST3","ST4","ST5","ST6"].map(s=><MeroSor key={s} label={s} value={vbf.panelszam[s]} onCommit={v=>updVbf("panelszam",s,v)} unit="db" piros={figy}/>)}</MeroSzakasz>
-      <MeroSzakasz title="DC feszültség">{["ST1","ST2","ST3","ST4","ST5","ST6"].map(s=><MeroSor key={s} label={s} value={vbf.dcFeszultseg[s]} onCommit={v=>updVbf("dcFeszultseg",s,v)} unit="V" piros={figy}/>)}</MeroSzakasz>
-      <MeroSzakasz title="Hurokellenállás">{["L1","L2","L3"].map(l=><MeroSor key={l} label={l} value={vbf.hurokellenallas[l]} onCommit={v=>updVbf("hurokellenallas",l,v)} unit="MΩ" piros={figy}/>)}</MeroSzakasz>
+      <MeroSzakasz title="AC feszültség">{["l1","l2","l3"].map(l=><MeroSor key={l} label={l.toUpperCase()} value={vbf[`ac_${l}`]} onCommit={v=>updVbf(`ac_${l}`,v)} unit="V" piros={figy}/>)}</MeroSzakasz>
+      <MeroSzakasz title="Kismegszakító – Inverternél">{["l1","l2","l3"].map(l=><MeroSor key={l} label={l.toUpperCase()} value={vbf[`ki_${l}`]} onCommit={v=>updVbf(`ki_${l}`,v)} unit="A" piros={figy}/>)}</MeroSzakasz>
+      <MeroSzakasz title="Kismegszakító – Mérőhelynél">{["l1","l2","l3"].map(l=><MeroSor key={l} label={l.toUpperCase()} value={vbf[`km_${l}`]} onCommit={v=>updVbf(`km_${l}`,v)} unit="A" piros={figy}/>)}</MeroSzakasz>
+      <MeroSzakasz title="Panelszám">{["st1","st2","st3","st4","st5","st6"].map(s=><MeroSor key={s} label={s.toUpperCase()} value={vbf[`ps_${s}`]} onCommit={v=>updVbf(`ps_${s}`,v)} unit="db" piros={figy}/>)}</MeroSzakasz>
+      <MeroSzakasz title="DC feszültség">{["st1","st2","st3","st4","st5","st6"].map(s=><MeroSor key={s} label={s.toUpperCase()} value={vbf[`dc_${s}`]} onCommit={v=>updVbf(`dc_${s}`,v)} unit="V" piros={figy}/>)}</MeroSzakasz>
+      <MeroSzakasz title="Hurokellenállás">{["l1","l2","l3"].map(l=><MeroSor key={l} label={l.toUpperCase()} value={vbf[`hu_${l}`]} onCommit={v=>updVbf(`hu_${l}`,v)} unit="MΩ" piros={figy}/>)}</MeroSzakasz>
       <MeroSzakasz title="Smart meter & AKKU">
-        <MeroSor label="SM" value={vbf.smartMeter} onCommit={v=>updVbf("smartMeter",null,v)} unit="db" piros={figy}/>
-        <MeroSor label="AKKU" value={vbf.akku} onCommit={v=>updVbf("akku",null,v)} unit="db" piros={figy}/>
+        <MeroSor label="SM" value={vbf.smart_meter} onCommit={v=>updVbf("smart_meter",v)} unit="db" piros={figy}/>
+        <MeroSor label="AKKU" value={vbf.akku_db} onCommit={v=>updVbf("akku_db",v)} unit="db" piros={figy}/>
       </MeroSzakasz>
       <MeroSzakasz title="Betáplált DC teljesítmény">
-        <MeroSor label="DC" value={vbf.betapaltDC} onCommit={v=>updVbf("betapaltDC",null,v)} unit="Wp" piros={figy}/>
+        <MeroSor label="DC" value={vbf.dc_teljesitmeny} onCommit={v=>updVbf("dc_teljesitmeny",v)} unit="Wp" piros={figy}/>
       </MeroSzakasz>
       <MeroSzakasz title="Panel pontos adatok">
         <div style={{ marginBottom:12 }}>
           <p style={{ fontSize:13,color:C.muted,marginBottom:6 }}>Napelem Típusa <span style={{ fontSize:11,color:"#2563EB" }}>(szöveg)</span></p>
-          <VbfTextInput value={vbf.panelTipus} onCommit={v=>updVbf("panelTipus",null,v)} piros={figy}/>
+          <VbfTextInput value={vbf.panel_tipus} onCommit={v=>updVbf("panel_tipus",v)} piros={figy}/>
         </div>
-        <MeroSor label="Voc" value={vbf.panelVoc} onCommit={v=>updVbf("panelVoc",null,v)} unit="V" piros={figy}/>
-        <MeroSor label="Vmp" value={vbf.panelVmp} onCommit={v=>updVbf("panelVmp",null,v)} unit="V" piros={figy}/>
-        <MeroSor label="Imp" value={vbf.panelImp} onCommit={v=>updVbf("panelImp",null,v)} unit="A" piros={figy}/>
-        <MeroSor label="Isc" value={vbf.panelIsc} onCommit={v=>updVbf("panelIsc",null,v)} unit="A" piros={figy}/>
-        <MeroSor label="Telj." value={vbf.panelTelj} onCommit={v=>updVbf("panelTelj",null,v)} unit="Wp" piros={figy}/>
+        <MeroSor label="Voc" value={vbf.panel_voc} onCommit={v=>updVbf("panel_voc",v)} unit="V" piros={figy}/>
+        <MeroSor label="Vmp" value={vbf.panel_vmp} onCommit={v=>updVbf("panel_vmp",v)} unit="V" piros={figy}/>
+        <MeroSor label="Imp" value={vbf.panel_imp} onCommit={v=>updVbf("panel_imp",v)} unit="A" piros={figy}/>
+        <MeroSor label="Isc" value={vbf.panel_isc} onCommit={v=>updVbf("panel_isc",v)} unit="A" piros={figy}/>
+        <MeroSor label="Telj." value={vbf.panel_telj} onCommit={v=>updVbf("panel_telj",v)} unit="Wp" piros={figy}/>
       </MeroSzakasz>
       <MeroSzakasz title="Inverter pontos adatok">
-        <MeroSor label="kVA" value={vbf.inverterNevleges} onCommit={v=>updVbf("inverterNevleges",null,v)} unit="kVA" piros={figy}/>
+        <MeroSor label="kVA" value={vbf.inv_nevleges} onCommit={v=>updVbf("inv_nevleges",v)} unit="kVA" piros={figy}/>
       </MeroSzakasz>
       <MeroSzakasz title="Tűzeseti adatok">
-        <MeroSor label="A" value={vbf.tuzMegszakito} onCommit={v=>updVbf("tuzMegszakito",null,v)} unit="A" piros={figy}/>
+        <MeroSor label="A" value={vbf.tuz_megszakito} onCommit={v=>updVbf("tuz_megszakito",v)} unit="A" piros={figy}/>
       </MeroSzakasz>
       <button onClick={handleVbfMentes} style={{ width:"100%",padding:"14px",borderRadius:12,border:"none",background:C.accent,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT,marginTop:8,marginBottom:32 }}>
         <Save size={18}/>VBF mentése
