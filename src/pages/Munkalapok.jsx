@@ -1034,7 +1034,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           {m.status === "Ellenőrzés alatt" && ["Projektmenedzser","Admin"].includes(userRole) && (
             <div style={{ marginTop:12, padding:"12px 14px", background:"#FFFBEB", border:"1.5px solid #FCD34D", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <p style={{ fontSize:13, fontWeight:700, color:"#92400E", margin:0 }}>⚠️ Ellenőrzésre vár – PM átvétel szükséges</p>
-              <button onClick={()=>{updateItem("munkalapok",m.id,{status:"Lezárva",statusSzin:"#059669"});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}} style={{ padding:"9px 18px", background:"#059669", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
+              <button onClick={()=>{import("../services/workorder.service.js").then(({updateWorkorder})=>{updateWorkorder(m.id,{status:"Lezárva",statusSzin:"#059669"},userRole);window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(m.projektId){import("../modules/projektek/projektWorkflow.js").then(({syncProjektFromWorkorders})=>{syncProjektFromWorkorders(m.projektId);window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));});}if(onRefresh)onRefresh();});}} style={{ padding:"9px 18px", background:"#059669", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 ✅ Lezárva (munkát átvettem)
               </button>
             </div>
@@ -1042,7 +1042,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           {m.status === "Lezárva" && ["Iroda/Könyvelés","Projektmenedzser","Admin"].includes(userRole) && (
             <div style={{ marginTop:12, padding:"12px 14px", background:"#F0FDF4", border:"1.5px solid #86EFAC", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <p style={{ fontSize:13, fontWeight:700, color:"#166534", margin:0 }}>✅ Lezárva – TIG kiállítható, számlázásra kész</p>
-              <button onClick={()=>{updateItem("munkalapok",m.id,{status:"Számlázva",statusSzin:"#15803D"});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}} style={{ padding:"9px 18px", background:"#15803D", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
+              <button onClick={()=>{import("../services/workorder.service.js").then(({updateWorkorder})=>{updateWorkorder(m.id,{status:"Számlázva",statusSzin:"#15803D"},userRole);window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(m.projektId){import("../modules/projektek/projektWorkflow.js").then(({syncProjektFromWorkorders})=>{syncProjektFromWorkorders(m.projektId);window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));});}if(onRefresh)onRefresh();});}} style={{ padding:"9px 18px", background:"#15803D", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 💰 Számlázva
               </button>
             </div>
