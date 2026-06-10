@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
+import { formatMunkalapAzonosito } from "../lib/azonositoHelper.js";
 import UjrakiosztasModal from "./UjrakiosztasModal";
 import VbfAdminCard from "../components/VbfAdminCard";
 import { getLmraStatus, LMRA_STATUS_LABELS, LMRA_STATUS_COLORS, exportLmraPdfWindow, loadLmraRec, initOrLoadLmraRec, lockLmraForInstaller, reopenLmra } from "../lib/lmraData.service";
@@ -598,7 +599,7 @@ function DetailHeader({ m, client, isMobile }) {
   return (
     <div style={{ background: "#2C4A6E" }}>
       <div style={{ display:"flex", alignItems:"center", gap:10, padding: isMobile ? "12px 16px 8px" : "16px 24px 10px" }}>
-        <span style={{ fontWeight:800, fontSize: isMobile?15:17, color:"#fff" }}>{m.id}</span>
+        <span style={{ fontWeight:800, fontSize: isMobile?15:17, color:"#fff" }}>{formatMunkalapAzonosito(m)}</span>
         {m.cimke&&<CimkeBadge label={m.cimke} color={m.cimkeSzin||C.accent}/>}
         <div style={{ marginLeft:"auto", display:"flex", gap:14 }}>
           {client?.phone&&<a href={`tel:${client.phone}`} style={{ color:"#4ADE80" }}><Phone size={22}/></a>}
@@ -699,9 +700,17 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
             <p style={{ fontSize:13, fontWeight:700, color:"#92400E", margin:"0 0 10px" }}>⚠️ Ellenőrzésre vár – PM átvétel szükséges</p>
             <div style={{ display:"flex", gap:8 }}>
               <button onClick={() => {
-                updateItem("munkalapok", m.id, { status:"Lezárva", statusSzin:"#059669" });
-                window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
-                if(onRefresh) onRefresh();
+                import("../services/workorder.service.js").then(({ updateWorkorder }) => {
+                  updateWorkorder(m.id, { status:"Lezárva", statusSzin:"#059669" }, userRole);
+                  window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
+                  if (m.projektId) {
+                    import("../modules/projektek/projektWorkflow.js").then(({ syncProjektFromWorkorders }) => {
+                      syncProjektFromWorkorders(m.projektId);
+                      window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));
+                    });
+                  }
+                  if(onRefresh) onRefresh();
+                });
               }} style={{ flex:1, padding:"10px", background:"#059669", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 ✅ Lezárva (munkát átvettem)
               </button>
@@ -712,9 +721,17 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
           <div style={{ background:"#F0FDF4", border:"1.5px solid #86EFAC", borderRadius:12, padding:"14px 16px", marginBottom:12 }}>
             <p style={{ fontSize:13, fontWeight:700, color:"#166534", margin:"0 0 10px" }}>✅ Lezárva – számlázásra kész</p>
             <button onClick={() => {
-              updateItem("munkalapok", m.id, { status:"Számlázva", statusSzin:"#15803D" });
+              import("../services/workorder.service.js").then(({ updateWorkorder }) => {
+                updateWorkorder(m.id, { status:"Számlázva", statusSzin:"#15803D" }, userRole);
                 window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
+                if (m.projektId) {
+                  import("../modules/projektek/projektWorkflow.js").then(({ syncProjektFromWorkorders }) => {
+                    syncProjektFromWorkorders(m.projektId);
+                    window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));
+                  });
+                }
                 if(onRefresh) onRefresh();
+              });
             }} style={{ width:"100%", padding:"10px", background:"#15803D", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
               💰 Számlázva
             </button>
