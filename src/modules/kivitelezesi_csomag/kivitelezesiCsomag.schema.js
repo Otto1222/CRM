@@ -226,7 +226,7 @@ export function generateKiviTetelekFromAjanlatPillanatkep(pillanatkep) {
         anyagtorzs_id:         t.anyagtorzs_id ?? null,
         forras:                KIVITELEZESI_CSOMAG_FORRAS.AJANLATBOL,
         cikkszam:              anyag?.kulsoAzonosito || "",
-        nev:                   t.label || t.tipus || anyag?.nev || "",
+        nev:                   t.tipus || t.label || anyag?.nev || "",
         kategoria:             anyag?.telepitoi_kategoria || anyag?.kategoria || t.id || "",
         egyseg:                t.egyseg || anyag?.egyseg || "db",
         egysegarPillanatkepEladasi:    Number(t.netto_egysegar) || Number(t.netto_osszeg) || 0,
