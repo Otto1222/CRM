@@ -367,6 +367,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
   const [sablonMezokErtekek, setSablonMezokErtekek] = useState({});
   const [projektQ, setProjektQ] = useState("");
   const [billingInfo, setBillingInfo] = useState(null); // auto-számított bevétel jelzése
+  const [showReszletek, setShowReszletek] = useState(false);
 
   const [alap, setAlap] = useState(() => {
     const autoUgyszam = initialData?.projektId
@@ -627,18 +628,13 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                           updAlap("projektId", p.id);
                           updAlap("projektMegnevezes", p.nev || p.projektkod);
                           setProjektQ("");
-                          // Auto-kitöltés projektből
                           setUgyfel({ nev: p.clientNev||"", cim: p.telepitesiCim||p.clientCim||"", tel: p.clientTel||"", email: p.clientEmail||"" });
                           if (p.csapatId) updAlap("csapatId", p.csapatId);
                           if (p.tervezettKezdes) updAlap("date", p.tervezettKezdes);
-                          // Auto-generált munkalap sorszám: projektkód/M-001
                           updAlap("ugyszam", genMunkalapKod(p.id, p.projektkod));
-                          // Fővállalkozói azonosító auto-kitöltés
                           const fovAzon = p.penzugy?.fovallalkoziAzonosito || p.fovallalkoiAzonosito || "";
                           if (fovAzon) updAlap("fovallalkoiAzonosito", fovAzon);
-                          // Telepítés típusa auto-kitöltés projektből
                           if (p.telepitesTipusa) updAlap("telepitesTipusa", p.telepitesTipusa);
-                          // Fővállalkozói díj auto-számítás (napelem db × egységár)
                           const billing = calcBillingFromProject(p);
                           if (billing) { updAlap("ar", billing.ar); setBillingInfo(billing.megjegyzes); }
                           else setBillingInfo(null);
@@ -665,54 +661,62 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                 <button onClick={() => { updAlap("projektId",""); updAlap("projektMegnevezes",""); }} style={{ background:"none", border:"none", cursor:"pointer", color:"#94A3B8", fontSize:18, lineHeight:1 }}>×</button>
               </div>
             )}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-              <div>
+
+            {/* Munkaszám info chip – csak ha projekt ki van választva */}
+            {alap.projektId && alap.ugyszam && (
+              <div style={{ background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:9, padding:"8px 14px", marginBottom:12, fontSize:13, color:"#166534", display:"flex", alignItems:"center", gap:8 }}>
+                📋 Munkaszám: <strong style={{ marginLeft:4 }}>{alap.ugyszam}</strong>
+                <span style={{ fontWeight:400, color:"#22C55E", fontSize:12 }}>✓ auto-generált</span>
+              </div>
+            )}
+
+            {/* Munkaszám szerkeszthető – csak ha nincs projekt */}
+            {!alap.projektId && (
+              <div style={{ marginBottom:14 }}>
                 <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>
-                  Munkaszám {alap.projektId ? <span style={{ fontWeight:400, color:"#22C55E" }}>✓ auto-generált</span> : <span style={{ color:C.danger }}> *</span>}
+                  Munkaszám<span style={{ color:C.danger }}> *</span>
                 </label>
                 <input
                   value={alap.ugyszam||""}
                   onChange={e=>updAlap("ugyszam",e.target.value)}
-                  placeholder={alap.projektId ? "E.D.I.001/M-001" : "Válassz projektet fentebb"}
-                  style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${alap.ugyszam ? "#86EFAC" : C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background: alap.ugyszam ? "#F0FDF4" : "#F8FAFC" }}
+                  placeholder="Válassz projektet fentebb"
+                  style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}
                 />
                 {errors.ugyszam&&<p style={{ color:C.danger,fontSize:11,marginTop:4 }}>{errors.ugyszam}</p>}
               </div>
-              <div>
-                <Field label="Dátum" value={alap.date} onChange={v=>updAlap("date",v)} type="date"/>
-                {errors.date&&<p style={{ color:C.danger,fontSize:11,marginTop:-10,marginBottom:10 }}>{errors.date}</p>}
-              </div>
-            </div>
+            )}
 
-            {/* Billing auto-számítás jelzés */}
+            {/* Fővállalkozói díj auto-számítás jelzés */}
             {billingInfo && (
               <div style={{ background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:9, padding:"8px 14px", marginBottom:12, fontSize:13, color:"#166534", fontWeight:600 }}>
                 💡 Fővállalkozói díj auto-számítva: {billingInfo}
               </div>
             )}
 
-            {/* ÜGYFÉL – szabad szöveg + autocomplete */}
-            <UgyfelField value={ugyfEl.nev} onChange={setUgyfel} ugyfelek={data.ugyfelek||[]} />
-            {errors.ugyfel&&<p style={{ color:C.danger,fontSize:11,marginTop:-10,marginBottom:10 }}>{errors.ugyfel}</p>}
+            {/* ═══ KÖTELEZŐ MEZŐK (4 db) ═══ */}
 
-            {/* Ügyfél részletek (ha szabad szöveget ír) */}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-              <Field label="Ügyfél cím" value={ugyfEl.cim} onChange={v=>setUgyfel(p=>({...p,cim:v}))} placeholder="Város, utca, hsz."/>
-              <Field label="Telefonszám" value={ugyfEl.tel} onChange={v=>setUgyfel(p=>({...p,tel:v}))} placeholder="+36…"/>
+            {/* 1. Munkalap típusa */}
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>
+                Munkalap típusa <span style={{ color:C.danger }}>*</span>
+              </label>
+              <select value={alap.munkalapTipus||"Kivitelezés"} onChange={e=>updAlap("munkalapTipus",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
+                {MUNKALAP_TIPUSOK.map(t=><option key={t}>{t}</option>)}
+              </select>
             </div>
-            <Field label="E-mail cím" value={ugyfEl.email} onChange={v=>setUgyfel(p=>({...p,email:v}))} placeholder="ugyfél@email.com" type="email"/>
 
-            <Field label="Projekt megnevezés / Megjegyzés" value={alap.projektMegnevezes} onChange={v=>updAlap("projektMegnevezes",v)} placeholder="Különleges feltételek, megjegyzés…" area/>
-            <Field label="Feladat leírása" value={alap.feladat} onChange={v=>updAlap("feladat",v)} placeholder="pl. Napelem telepítés + akkumulátor"/>
+            {/* 2. Dátum */}
+            <Field label="Tervezett dátum" value={alap.date} onChange={v=>updAlap("date",v)} type="date"/>
+            {errors.date&&<p style={{ color:C.danger,fontSize:11,marginTop:-10,marginBottom:10 }}>{errors.date}</p>}
 
-            {/* CSAPAT – a beállításokból olvassa be */}
+            {/* 3. Csapat / Szerelő */}
             <div style={{ marginBottom:14 }}>
               <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>
                 Szerelő / Csapat<span style={{ color:C.danger }}> *</span>
               </label>
               {csapatok.length === 0 ? (
                 <div style={{ padding:"12px 14px", background:"#FFFBEB", border:`1px solid #FDE68A`, borderRadius:9, fontSize:13, color:C.warning }}>
-                  ⚠️ Nincsenek csapatok beállítva. Menj a <b>Beállítások → Munkakiosztás</b> menübe és add hozzá a csapatokat!
+                  ⚠️ Nincsenek csapatok beállítva. Menj a <b>Beállítások → Munkakiosztás</b> menübe!
                 </div>
               ) : (
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
@@ -733,64 +737,105 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
               {errors.csapat&&<p style={{ color:C.danger,fontSize:11,marginTop:8 }}>{errors.csapat}</p>}
             </div>
 
-            {/* Telepítés típusa – meghatározza az ikont a telepítői nézeten */}
-            <div style={{ marginBottom:14 }}>
-              <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Telepítés típusa</label>
-              <div style={{ display:"flex", gap:8 }}>
-                {[
-                  { id:"Napelem",         ikon:"☀️",  szin:"#F97316" },
-                  { id:"Elektromos töltő",ikon:"⚡",  szin:"#EAB308" },
-                  { id:"Egyéb",           ikon:"🔧", szin:"#64748B" },
-                ].map(t=>(
-                  <button key={t.id} type="button" onClick={()=>updAlap("telepitesTipusa",t.id)}
-                    style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"10px 8px", border:`2px solid ${alap.telepitesTipusa===t.id?t.szin:C.border}`, borderRadius:10, background:alap.telepitesTipusa===t.id?t.szin+"15":"#F8FAFC", cursor:"pointer", fontFamily:FONT, fontWeight:700, fontSize:13, color:alap.telepitesTipusa===t.id?t.szin:C.muted }}>
-                    <span style={{ fontSize:18 }}>{t.ikon}</span> {t.id}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* 4. Feladat leírása */}
+            <Field label="Feladat leírása (opcionális)" value={alap.feladat} onChange={v=>updAlap("feladat",v)} placeholder="pl. Napelem telepítés + akkumulátor" area/>
 
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-              <div style={{ marginBottom:14 }}>
-                <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Munkalap típusa</label>
-                <select value={alap.munkalapTipus || "Első kivitelezés"} onChange={e=>updAlap("munkalapTipus",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
-                  {MUNKALAP_TIPUSOK.map(t=><option key={t}>{t}</option>)}
-                </select>
+            {/* ═══ ÜGYFÉL INFO / SZERKESZTÉS ═══ */}
+
+            {/* Projekt esetén: ügyfél összefoglaló chip (nem mező, csak info) */}
+            {alap.projektId && ugyfEl.nev && (
+              <div style={{ background:"#F8FAFC", border:`1px solid ${C.border}`, borderRadius:9, padding:"10px 14px", marginBottom:14 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                  <span style={{ fontWeight:700, color:C.muted, fontSize:11, textTransform:"uppercase", letterSpacing:.5 }}>👤 Ügyfél (projektből)</span>
+                  <button onClick={()=>setShowReszletek(p=>!p)} style={{ border:"none", background:"none", fontSize:12, color:C.accent, cursor:"pointer", fontFamily:FONT, fontWeight:600 }}>
+                    {showReszletek ? "▲ Elrejt" : "✏️ Szerkesztés / Részletek"}
+                  </button>
+                </div>
+                <p style={{ margin:0, fontWeight:600, fontSize:13, color:C.text }}>{ugyfEl.nev}</p>
+                {ugyfEl.cim && <p style={{ margin:0, fontSize:12, color:C.muted }}>{ugyfEl.cim}</p>}
+                {ugyfEl.tel && <p style={{ margin:"2px 0 0", fontSize:12, color:C.muted }}>{ugyfEl.tel}</p>}
               </div>
-              <Field label="Cimke (pl. Junior Vital)" value={alap.cimke} onChange={v=>updAlap("cimke",v)} placeholder="Junior Vital, Saját Önerős…"/>
-              <div style={{ marginBottom:14 }}>
-                <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Státusz</label>
-                <select value={alap.status} onChange={e=>updAlap("status",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
-                  {WORKFLOW_STATUSES.slice(0,8).map(s=><option key={s}>{s}</option>)}
-                </select>
-                {alap.status === "Felmérés" && (
-                  <div style={{ marginTop:8, padding:"8px 12px", background:"#E0F2FE", borderRadius:8, fontSize:12, color:"#0369A1", display:"flex", alignItems:"flex-start", gap:7, lineHeight:1.5 }}>
-                    <span style={{ fontSize:16, flexShrink:0 }}>📸</span>
-                    <span>A telepítő <b>felmérési fotókat tölthet fel</b>. Az összes korábban feltöltött kép megtekinthető marad minden következő státuszban is.</span>
-                  </div>
-                )}
-                {alap.status === "Kivitelezés" && (
-                  <div style={{ marginTop:8, padding:"8px 12px", background:"#FFF7ED", borderRadius:8, fontSize:12, color:"#9A3412", display:"flex", alignItems:"flex-start", gap:7, lineHeight:1.5 }}>
-                    <span style={{ fontSize:16, flexShrink:0 }}>🔧</span>
-                    <span>A telepítő látja a felmérési fotókat és <b>új kivitelezési képeket tölthet fel</b>.</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <Field label="Értékesítő neve" value={alap.ertekesito} onChange={v=>updAlap("ertekesito",v)} placeholder="Értékesítő neve"/>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            )}
+
+            {/* Ügyfél mezők: mindig látható ha nincs projekt; szerkesztés módban ha van */}
+            {(!alap.projektId || showReszletek) && (
               <div>
-                <label style={{ fontSize:12, fontWeight:700, color:"#64748B", display:"block", marginBottom:5 }}>Fővállalkozói azonosító</label>
-                <input value={alap.fovallalkoiAzonosito||""} onChange={e=>updAlap("fovallalkoiAzonosito",e.target.value)} placeholder="pl. FŐV-2026-145" style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:"1.5px solid #E2E8F0", borderRadius:9, fontSize:14, fontFamily:"inherit", outline:"none" }} />
-                <p style={{ fontSize:10, color:"#94A3B8", marginTop:3 }}>EDI sorszám (E.D.I. 001) mentéskor kap</p>
+                <UgyfelField value={ugyfEl.nev} onChange={setUgyfel} ugyfelek={data.ugyfelek||[]} />
+                {errors.ugyfel&&<p style={{ color:C.danger,fontSize:11,marginTop:-10,marginBottom:10 }}>{errors.ugyfel}</p>}
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <Field label="Ügyfél cím" value={ugyfEl.cim} onChange={v=>setUgyfel(p=>({...p,cim:v}))} placeholder="Város, utca, hsz."/>
+                  <Field label="Telefonszám" value={ugyfEl.tel} onChange={v=>setUgyfel(p=>({...p,tel:v}))} placeholder="+36…"/>
+                </div>
+                <Field label="E-mail cím" value={ugyfEl.email} onChange={v=>setUgyfel(p=>({...p,email:v}))} placeholder="ugyfél@email.com" type="email"/>
               </div>
+            )}
+
+            {/* Részletek toggle – projekt esetén, ha ügyfél sincs */}
+            {alap.projektId && !ugyfEl.nev && (
+              <button onClick={()=>setShowReszletek(p=>!p)} style={{ width:"100%", padding:"10px 14px", background:"#F8FAFC", border:`1.5px solid ${C.border}`, borderRadius:9, cursor:"pointer", fontSize:13, fontFamily:FONT, color:C.muted, fontWeight:600, textAlign:"center", marginBottom:14 }}>
+                {showReszletek ? "▲ Részletek elrejtése" : "▼ Ügyfél, projekt megnevezés, státusz, értékesítő…"}
+              </button>
+            )}
+
+            {/* ═══ RÉSZLETEK (projekt esetén összecsukható) ═══ */}
+
+            {alap.projektId && showReszletek && (
+              <div style={{ borderTop:`1px solid ${C.border}`, margin:"4px 0 16px" }}/>
+            )}
+
+            {(!alap.projektId || showReszletek) && (
               <div>
-                <label style={{ fontSize:12, fontWeight:700, color:"#64748B", display:"block", marginBottom:5 }}>Munkalap típusa</label>
-                <select value={alap.munkalapTipus||"Első kivitelezés"} onChange={e=>updAlap("munkalapTipus",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:"1.5px solid #E2E8F0", borderRadius:9, fontSize:14, fontFamily:"inherit", color:"#0F172A", outline:"none", background:"#F8FAFC" }}>
-                  {MUNKALAP_TIPUSOK.map(t=><option key={t}>{t}</option>)}
-                </select>
+                <Field label="Projekt megnevezés / Megjegyzés" value={alap.projektMegnevezes} onChange={v=>updAlap("projektMegnevezes",v)} placeholder="Különleges feltételek, megjegyzés…" area/>
+
+                {/* Telepítés típusa */}
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Telepítés típusa</label>
+                  <div style={{ display:"flex", gap:8 }}>
+                    {[
+                      { id:"Napelem",          ikon:"☀️", szin:"#F97316" },
+                      { id:"Elektromos töltő", ikon:"⚡", szin:"#EAB308" },
+                      { id:"Egyéb",            ikon:"🔧", szin:"#64748B" },
+                    ].map(t=>(
+                      <button key={t.id} type="button" onClick={()=>updAlap("telepitesTipusa",t.id)}
+                        style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"10px 8px", border:`2px solid ${alap.telepitesTipusa===t.id?t.szin:C.border}`, borderRadius:10, background:alap.telepitesTipusa===t.id?t.szin+"15":"#F8FAFC", cursor:"pointer", fontFamily:FONT, fontWeight:700, fontSize:13, color:alap.telepitesTipusa===t.id?t.szin:C.muted }}>
+                        <span style={{ fontSize:18 }}>{t.ikon}</span> {t.id}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Cimke + Státusz */}
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <Field label="Cimke (pl. Junior Vital)" value={alap.cimke} onChange={v=>updAlap("cimke",v)} placeholder="Junior Vital, Saját Önerős…"/>
+                  <div style={{ marginBottom:14 }}>
+                    <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Státusz</label>
+                    <select value={alap.status} onChange={e=>updAlap("status",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
+                      {WORKFLOW_STATUSES.slice(0,8).map(s=><option key={s}>{s}</option>)}
+                    </select>
+                    {alap.status === "Felmérés" && (
+                      <div style={{ marginTop:8, padding:"8px 12px", background:"#E0F2FE", borderRadius:8, fontSize:12, color:"#0369A1", display:"flex", alignItems:"flex-start", gap:7, lineHeight:1.5 }}>
+                        <span style={{ fontSize:16, flexShrink:0 }}>📸</span>
+                        <span>A telepítő <b>felmérési fotókat tölthet fel</b>. Az összes korábban feltöltött kép megtekinthető marad minden következő státuszban is.</span>
+                      </div>
+                    )}
+                    {alap.status === "Kivitelezés" && (
+                      <div style={{ marginTop:8, padding:"8px 12px", background:"#FFF7ED", borderRadius:8, fontSize:12, color:"#9A3412", display:"flex", alignItems:"flex-start", gap:7, lineHeight:1.5 }}>
+                        <span style={{ fontSize:16, flexShrink:0 }}>🔧</span>
+                        <span>A telepítő látja a felmérési fotókat és <b>új kivitelezési képeket tölthet fel</b>.</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Field label="Értékesítő neve" value={alap.ertekesito} onChange={v=>updAlap("ertekesito",v)} placeholder="Értékesítő neve"/>
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ fontSize:12, fontWeight:700, color:"#64748B", display:"block", marginBottom:5 }}>Fővállalkozói azonosító</label>
+                  <input value={alap.fovallalkoiAzonosito||""} onChange={e=>updAlap("fovallalkoiAzonosito",e.target.value)} placeholder="pl. FŐV-2026-145" style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:"1.5px solid #E2E8F0", borderRadius:9, fontSize:14, fontFamily:"inherit", outline:"none" }} />
+                  <p style={{ fontSize:10, color:"#94A3B8", marginTop:3 }}>EDI sorszám (E.D.I. 001) mentéskor kap</p>
+                </div>
               </div>
-            </div>
+            )}
+
           </div>
         )}
 
