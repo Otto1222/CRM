@@ -10,6 +10,8 @@ import LmraTelepltoView from "../components/LmraTelepltoView";
 import FelmeresTelepito from "./FelmeresTelepito";
 import FelmeresFotok from "./FelmeresFotok";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
+import { updateWorkorder } from "../services/workorder.service.js";
+import { syncProjektFromWorkorders } from "../modules/projektek/projektWorkflow.js";
 import { saveVbf, loadVbf } from "../lib/munkalapDb";
 import { driveSave, driveVbfSave } from "../lib/driveApi";
 import { calcMunkalapElszamolas, saveMunkalapElszamolas } from "../services/workOrderFinancial.service.js";
@@ -598,9 +600,9 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   function doMegkezdes() {
     const ts = new Date().toISOString();
     const ujStatus = ["Kivitelezésre vár","Megkezdésre Vár","Ütemezett","Kiosztásra vár","Létrehozva","Kiosztva csapatnak"].includes(m.status) ? "Folyamatban" : m.status;
-    updateItem("munkalapok", m.id, { megkezdve: true, megkezdesIdopont: ts, status: ujStatus, statusSzin: "#2563EB" });
+    updateWorkorder(m.id, { megkezdve: true, megkezdesIdopont: ts, status: ujStatus, statusSzin: "#2563EB" }, currentUser?.role || "Telepítő");
+    if (m.projektId) syncProjektFromWorkorders(m.projektId);
     window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
-    syncMunkalapokToDrive(); // státusz: Folyamatban → Drive-ra
     setMegkezdve(true);
     setShowLmra(false);
     setActiveTab(3);
@@ -697,15 +699,8 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
       anyagkoltsegeTotal,  // csak az anyagköltség kerül be, nincs km/panel/profit
     };
 
-    updateItem("munkalapok",m.id,updates);
-
-    try {
-      const osszesMl = loadLocal("munkalapok")||[];
-      await driveSave("munkalapok",{munkalapok:osszesMl});
-    } catch(e) {
-      console.warn("[Drive sync]",e);
-    }
-
+    await updateWorkorder(m.id, updates, currentUser?.role || "Telepítő");
+    if (m.projektId) syncProjektFromWorkorders(m.projektId);
     window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok",action:"update",id:m.id}}));
 
     setLezart(true);
