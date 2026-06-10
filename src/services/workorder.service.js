@@ -194,13 +194,16 @@ export function updateWorkorder(id, updates, user = "") {
       updateProjekt(updated.projektId, { status: ujProjektStatusz }, user || "system");
     }
 
-    // Ha projekt "Készre jelentve" lett és minden munkalap lezárva
+    // Ha minden munkalap kész (Lezárva / Számlázva / Számlázásra kész)
     // → automatikus pénzügyi előkészítés (dinamikus import = nincs circular dep)
-    if (ujProjektStatusz === "Készre jelentve") {
+    const KESZ_STATUSZOK = ["Lezárva", "Számlázva", "Számlázásra kész"];
+    const triggersKesz = ujProjektStatusz === "Készre jelentve"
+      || KESZ_STATUSZOK.includes(updates.status);
+    if (triggersKesz) {
       const projektMunkalapok = loadWorkorders().filter(w => w.projektId === updated.projektId);
-      const mindLezarva = projektMunkalapok.length > 0
-        && projektMunkalapok.every(m => m.status === "Lezárva");
-      if (mindLezarva) {
+      const mindKeszen = projektMunkalapok.length > 0
+        && projektMunkalapok.every(m => KESZ_STATUSZOK.includes(m.status));
+      if (mindKeszen) {
         import("../modules/penzugy/penzugyi.service.js")
           .then(({ autoElszamolasElokeszites }) => {
             autoElszamolasElokeszites(updated.projektId, projektMunkalapok, user || "system");
