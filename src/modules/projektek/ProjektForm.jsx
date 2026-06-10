@@ -474,7 +474,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                   <button key={f.id} type="button"
                     onClick={() => {
                       if (f.id === "belso_munka") {
-                        setForm(p => ({ ...p, forrás: f.id, clientNev: "E.D.I. Solutions Kft.", clientId: "", clientCim: "", clientTel: "", clientEmail: "", ajanlatId: null }));
+                        setForm(p => ({ ...p, forrás: f.id, clientNev: "E.D.I. Solutions Kft.", clientId: "", clientCim: "", clientTel: "", clientEmail: "", ajanlatId: null, ...(isNew ? { anyagelszamolasiMod: "FOVALLALKOZO_HOZOTT_ANYAG", adminReviewRequired: false } : {}) }));
                       } else if (f.id === "sajat_ajanlat") {
                         setForm(p => ({
                           ...p,
@@ -547,7 +547,12 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             )}
           </div>
 
-          {/* ── Anyagelszámolási mód (kötelező – D1) ── */}
+          {/* ── Anyagelszámolási mód (kötelező – D1) ──
+               Saját ajánlatnál auto: SAJAT_ANYAG_PROFIT (rejtett)
+               Belső munkánál auto: FOVALLALKOZO_HOZOTT_ANYAG (rejtett)
+               Fővállalkozóinál kötelező választás (megjelenik)
+               Admin ellenőrzés szükséges esetén mindig látható */}
+          {(form.forrás === "fovallalkozoi_munka" || !form.forrás || form.adminReviewRequired) && (
           <div style={{ marginBottom: 16 }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>
               Anyagelszámolási mód *
@@ -585,6 +590,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               </p>
             )}
           </div>
+          )}
 
           <div
             style={{
@@ -601,14 +607,16 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 style={{ ...inp, border: "2px solid #2563EB", fontWeight: 600 }}
               />
             </Field>
-            <Field label="Külső / fővállalkozói azonosító" half>
+            {form.forrás === "fovallalkozoi_munka" && (
+            <Field label="Külső / fővállalkozói azonosító *" half>
               <input
                 value={form.kulsoAzonosito}
                 onChange={e => upd("kulsoAzonosito", e.target.value)}
                 placeholder="pl. FŐV-2026-145"
-                style={inp}
+                style={{ ...inp, border: "2px solid #7C3AED" }}
               />
             </Field>
+            )}
             <Field label="Munkatípus *" half>
               <select value={form.tipus} onChange={e => handleMunkatipus(e.target.value)} style={inp}>
                 <option value="">— Válassz munkatípust —</option>
@@ -644,9 +652,11 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <Field label="Ügyfél neve *" half>
               <input value={form.clientNev} onChange={e => upd("clientNev", e.target.value)} placeholder="Kovács János" style={inp} />
             </Field>
+            {form.forrás === "fovallalkozoi_munka" && (
             <Field label="Megbízó cég neve" half>
               <input value={form.megbizoCeg || ""} onChange={e => upd("megbizoCeg", e.target.value)} placeholder="pl. Green-Home Kft." style={inp} />
             </Field>
+            )}
             <Field label="Kapcsolattartó" half>
               <input value={form.kapcsolattarto} onChange={e => upd("kapcsolattarto", e.target.value)} placeholder="Kapcsolattartó neve" style={inp} />
             </Field>
@@ -678,6 +688,18 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               />
             </Field>
             </>)}
+            {/* Belső munkánál nincs ügyfél section, de telepítési cím kell */}
+            {form.forrás === "belso_munka" && (
+            <Field label="Helyszín / telepítési cím">
+              <AddressSearch
+                value={form.telepitesiCim}
+                onChange={v => upd("telepitesiCim", v)}
+                onSelect={r => upd("telepitesiCim", r.display_name.split(",").slice(0,3).join(",").trim())}
+                placeholder="Hol kell elvégezni a munkát?"
+                style={inp}
+              />
+            </Field>
+            )}
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Csapat
@@ -706,6 +728,8 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 <p style={{ fontSize: 10, color: "#D97706", marginTop: 3 }}>⚠️ Még nincs létrehozva csapat — előbb add hozzá a Csapat menüben</p>
               )}
             </Field>
+            {/* Műszaki adatok – belső munkánál (garancia/javítás) irreleváns */}
+            {form.forrás !== "belso_munka" && (<>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Műszaki adatok
@@ -736,6 +760,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 <span style={{ color:form.autoTolto?"#059669":"#94A3B8", fontWeight:700 }}>{form.autoTolto?"Van":"Nincs"}</span>
               </label>
             </Field>
+            </>)}
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Ütemezés
@@ -747,6 +772,8 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <Field label="Tervezett befejezés" half>
               <input type="date" value={form.tervezettBefejezes} onChange={e => upd("tervezettBefejezes", e.target.value)} style={inp} />
             </Field>
+            {/* Pénzügyi konfiguráció – csak fővállalkozói munkánál releváns */}
+            {form.forrás === "fovallalkozoi_munka" && (<>
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 💰 Pénzügyi konfiguráció
@@ -863,6 +890,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 return null;
               } catch { return null; }
             })()}
+            </>)}
           </div>
         </div>
         <div style={{ padding: "14px 24px", borderTop: "1px solid #E2E8F0", display: "flex", gap: 10, justifyContent: "flex-end" }}>
