@@ -61,9 +61,9 @@ export function createProjektMunkalap(projektId, options = {}) {
 
 // ─── Spec 6. pont: munkalap státusz → projekt státusz ────────
 //
-// Helyszínen lezárva  → projekt: "Ellenőrzésre vár"
-// Jóváhagyva          → projekt: "Elkészült"  (ha minden munkalap jóváhagyva)
-// Számlázásra kész    → projekt: "Leszámlázva" (ha minden munkalap kész)
+// Ellenőrzés alatt   → projekt: "TIG-re vár"
+// Jóváhagyva          → projekt: "Készre jelentve"  (ha minden munkalap jóváhagyva)
+// Számlázásra kész    → projekt: "Számlázható" (ha minden munkalap kész)
 // Folyamatban         → projekt: "Kivitelezés alatt"
 // Befejezett Felmérés → projekt: "Felmérve"    (ha felmérés típus)
 
@@ -90,13 +90,13 @@ export function syncProjektFromWorkorders(projektId) {
   const felmeresKesz    = felmeresMl && ["Befejezett Felmérés", "Helyszínen lezárva", "Jóváhagyva", "Lezárva"].includes(felmeresMl.status);
 
   if (allLezarva) {
-    nextStatus = "Lezárva";
+    nextStatus = "Lezárt";
   } else if (allSzamlazasra) {
-    nextStatus = "Leszámlázva";
+    nextStatus = "Számlázható";
   } else if (allJovahagyva) {
-    nextStatus = "Elkészült";
+    nextStatus = "Készre jelentve";
   } else if (anyEllenorzes || anyHelyszinen) {
-    nextStatus = "Ellenőrzésre vár";
+    nextStatus = "TIG-re vár";
   } else if (anyFolyamatban) {
     nextStatus = "Kivitelezés alatt";
   } else if (felmeresKesz && projekt.status === "Felmérésre vár") {
