@@ -21,6 +21,7 @@ import {
 } from "../../../lib/driveApi.js";
 import { updateProjekt } from "../projekt.service.js";
 import { loadLocal } from "../../../lib/localDb.js";
+import { loadVbf } from "../../../lib/munkalapDb.js";
 import { hasSablon, generateVbfDocx } from "../../../lib/vbfDocxService.js";
 import { hasLmra, loadLmra } from "../../../lib/lmraService.js";
 
@@ -78,7 +79,7 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
 
   // VBF-ek
   const vbfMunkalapok = projektMunkalapok.filter(m => {
-    const vbf = loadLocal(`vbf_${m.id}`);
+    const vbf = loadVbf(m.id);
     return vbf && Object.keys(vbf).length > 0;
   });
 
@@ -150,7 +151,7 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
                 if (m.date && m.createdAt && m.date < m.createdAt.slice(0, 10)) {
                   if (!window.confirm(`⚠️ Dátum-eltérés!\n\nA munkalap dátuma (${m.date}) korábbi, mint a munkalap létrehozásának dátuma (${m.createdAt.slice(0, 10)}).\n\nEz visszadátumozásra utalhat. Biztosan exportálod a VBF dokumentumot?`)) return;
                 }
-                generateVbfDocx(m, projekt);
+                generateVbfDocx(m, projekt, loadVbf(m.id));
               }} />
           ))}
         </div>
