@@ -13,7 +13,7 @@ import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
 import { updateWorkorder } from "../services/workorder.service.js";
 import { syncProjektFromWorkorders } from "../modules/projektek/projektWorkflow.js";
 import { saveVbf, loadVbf } from "../lib/munkalapDb";
-import { driveSave, driveVbfSave } from "../lib/driveApi";
+import { driveSave, driveVbfSave, driveCreateMunkalapFolder, driveUploadFoto } from "../lib/driveApi";
 import { calcMunkalapElszamolas, saveMunkalapElszamolas } from "../services/workOrderFinancial.service.js";
 import { getKivitelezesiCsomagByProjektId, updateFelhasznaltMennyisegFromMunkalap } from "../modules/kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import {
@@ -669,7 +669,16 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
       setProgress(step.pct);
       setProgressMsg(step.msg);
       await new Promise(r=>setTimeout(r,400));
-      if (step.pct===80) await uploadFotokToDrive();
+      if (step.pct===80) {
+        const uploadRes = await uploadFotokToDrive();
+        if (uploadRes && uploadRes.total > 0) {
+          const msg = uploadRes.fail === 0
+            ? `Fotók feltöltve: ${uploadRes.ok}/${uploadRes.total} ✓`
+            : `Fotók: ${uploadRes.ok}/${uploadRes.total} feltöltve, ${uploadRes.fail} sikertelen`;
+          setProgressMsg(msg);
+          await new Promise(r => setTimeout(r, 1500));
+        }
+      }
     }
 
     const ts = new Date().toISOString();
@@ -711,51 +720,28 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   }
 
   async function uploadFotokToDrive() {
-    const scriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
-    if (!scriptUrl) return;
-
-    try {
-      await fetch(scriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"createMunkalapFolder",munkalapId:m.id})});
-      const osszesFoto=Object.entries(fotok).flatMap(([,photos])=>photos.filter(p=>p.fileObj||p.file||(p.url?.startsWith("blob:"))));
-      let n=0;
-
-      for (const foto of osszesFoto) {
-        try {
-          let b64="";
-          const src=foto.fileObj||foto.file;
-
-          if(src){
-            b64=await new Promise(res=>{
-              const r=new FileReader();
-              r.onload=e=>res(e.target.result.split(",")[1]);
-              r.onerror=()=>res("");
-              r.readAsDataURL(src);
-            });
-          } else if(foto.url?.startsWith("blob:")){
-            try {
-              const resp=await fetch(foto.url);
-              const blob=await resp.blob();
-              b64=await new Promise(res=>{
-                const r=new FileReader();
-                r.onload=e=>res(e.target.result.split(",")[1]);
-                r.onerror=()=>res("");
-                r.readAsDataURL(blob);
-              });
-            } catch {}
-          }
-
-          if(!b64) continue;
-
-          await fetch(scriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"saveFoto",munkalapId:m.id,fotoNev:foto.name,fotoBase64:b64,mimeType:foto.type||"image/jpeg"})});
-          n++;
-          setProgressMsg(`Fotók feltöltése… (${n}/${osszesFoto.length})`);
-        } catch {}
-      }
-
-      await fetch(scriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"saveJson",fileName:`vbf_${m.id}.json`,content:vbf})});
-    } catch(e) {
-      console.warn("[Drive upload]",e);
+    const osszesFoto = Object.entries(fotok).flatMap(([, photos]) =>
+      photos.filter(p => p.fileObj || p.file || p.url?.startsWith("blob:"))
+    );
+    let ok = 0, fail = 0;
+    const total = osszesFoto.length;
+    await driveCreateMunkalapFolder(m.id, proj?.projektkod || "").catch(() => {});
+    for (let i = 0; i < osszesFoto.length; i++) {
+      const foto = osszesFoto[i];
+      setProgressMsg(`Fotók feltöltése… (${i + 1}/${total})`);
+      try {
+        let fileObj = foto.fileObj || foto.file;
+        if (!fileObj && foto.url?.startsWith("blob:")) {
+          const blob = await fetch(foto.url).then(r => r.blob()).catch(() => null);
+          if (blob) fileObj = new File([blob], foto.name || `foto_${i}.jpg`, { type: blob.type || "image/jpeg" });
+        }
+        if (!fileObj) { fail++; continue; }
+        const res = await driveUploadFoto(m.id, fileObj);
+        if (res?.ok) ok++; else fail++;
+      } catch { fail++; }
     }
+    await driveVbfSave(m.id, vbf).catch(() => {});
+    return { total, ok, fail };
   }
 
   async function handleVbfMentes() {
