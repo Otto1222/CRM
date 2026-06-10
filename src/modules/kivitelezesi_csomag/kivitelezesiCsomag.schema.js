@@ -21,6 +21,7 @@ import {
   hasAnyagelszamolasiMod,
 } from "../../lib/workflowRules.js";
 import { getAnyag } from "../../lib/anyagtorzs.js";
+import { FO_TETELEK } from "../ajanla tok/ajanlat.schema.js";
 
 export const KIVITELEZESI_CSOMAG_SCHEMA_VERSION = "1.0";
 
@@ -201,35 +202,34 @@ export function calcKiviTetelEltérés(tetel) {
  * Saját ajánlatból induló projektnél a Kivitelezési Csomag tételei az
  * ELFOGADOTT AJÁNLAT PILLANATKÉPÉNEK fo_tetelek listájából generálódnak.
  *
- * Szűrés ("anyag jellegű tétel"): csak azok a fő tételek kerülnek be,
- * amelyeknél van anyagtorzs_id (azaz konkrét anyagtörzs-rekordra mutatnak –
- * ez a séma egyetlen megbízható, egyértelmű jelzője az "anyag jellegnek";
- * a kivitelezés/munkadíj jellegű tételeknek (kivi_beuzem) nincs anyagtorzs_id-juk,
- * ezért kimaradnak).
+ * Szűrés: minden aktív fő tétel bekerül, KIVÉVE a kivi_beuzem munkadíjat
+ * (def.kivi === true). Anyagtörzs ID nélküli tételek (fő anyagok, összesített
+ * segédanyagok) az ajánlati label/ár alapján generálódnak.
  *
  * Árpillanatkép: az eladási és (ha volt) beszerzési ár KIZÁRÓLAG az ajánlat
- * pillanatképéből (netto_egysegar / beszerzesiArPillanatkep) másolódik át –
- * az élő anyagtörzs ára nem kerül beolvasásra. A cikkszám és a kategória
- * (leíró, nem pénzügyi adat) a generálás pillanatában érvényes anyagtörzs-
- * rekordból töltődik fel egyszeri pillanatképként (getAnyag).
+ * pillanatképéből (netto_egysegar / netto_osszeg / beszerzesiArPillanatkep)
+ * másolódik át – az élő anyagtörzs ára nem kerül beolvasásra.
  */
 export function generateKiviTetelekFromAjanlatPillanatkep(pillanatkep) {
   if (!pillanatkep) return [];
   const fo = pillanatkep.fo_tetelek || [];
   return fo
-    .filter(t => t.aktiv && t.anyagtorzs_id != null)
+    .filter(t => {
+      const def = FO_TETELEK.find(f => f.id === t.id);
+      return t.aktiv && !def?.kivi;
+    })
     .map(t => {
-      const anyag = getAnyag(t.anyagtorzs_id);
-      const mennyiseg = Number(t.mennyiseg) || 0;
+      const anyag = t.anyagtorzs_id ? getAnyag(t.anyagtorzs_id) : null;
+      const mennyiseg = Number(t.mennyiseg) || 1;
       return {
         id:                    `ktet_${t.id}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        anyagtorzs_id:         t.anyagtorzs_id,
+        anyagtorzs_id:         t.anyagtorzs_id ?? null,
         forras:                KIVITELEZESI_CSOMAG_FORRAS.AJANLATBOL,
         cikkszam:              anyag?.kulsoAzonosito || "",
         nev:                   t.label || t.tipus || anyag?.nev || "",
-        kategoria:             anyag?.telepitoi_kategoria || anyag?.kategoria || "",
+        kategoria:             anyag?.telepitoi_kategoria || anyag?.kategoria || t.id || "",
         egyseg:                t.egyseg || anyag?.egyseg || "db",
-        egysegarPillanatkepEladasi:    Number(t.netto_egysegar) || 0,
+        egysegarPillanatkepEladasi:    Number(t.netto_egysegar) || Number(t.netto_osszeg) || 0,
         egysegarPillanatkepBeszerzesi: t.beszerzesiArPillanatkep ?? null,
         tervezettMennyiseg:    mennyiseg,
         kiadandoMennyiseg:     0,
