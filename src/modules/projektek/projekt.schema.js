@@ -25,6 +25,24 @@ export {
 
 export const PROJEKT_SCHEMA_VERSION = "2.1";
 
+// penzugy beágyazott objektum alapértékei (projekt.penzugy-on belül)
+export const PENZUGY_DEFAULTS = {
+  fovallalkoziId:       "",
+  munkatipus:           "",
+  elszamolasiSzabalyId: "",
+  tavKm:                0,
+  tavKmForras:          "",  // "auto" | "kezi" | "" – honnan jött az érték
+  tavKmNaplo:           "",  // kézi felülírás indoklása (kötelező ha tavKmForras==="kezi")
+  csapatLetszam:        1,
+  munkanapok:           1,
+  darabszam:            1,
+  felultBevitel:        null,
+  keziCsapatBer:        null,
+  keziUtikoltség:       null,
+  keziAnyagkoltség:     null,
+  keziKartérités:       null,
+};
+
 export const PROJEKT_TIPUSOK = [
   "Napelem telepítés",
   "Napelem csere",

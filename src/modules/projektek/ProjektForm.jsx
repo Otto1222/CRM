@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { X, Save, Navigation, TrendingUp } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
@@ -115,7 +115,9 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
       fovallalkoziId: "",
       munkatipus: "",
       elszamolasiSzabalyId: "",
-      tavKm: 0,
+      tavKm:       projekt?.penzugy?.tavKm        ?? 0,
+      tavKmForras: projekt?.penzugy?.tavKmForras  || "",
+      tavKmNaplo:  projekt?.penzugy?.tavKmNaplo   || "",
       csapatLetszam: 1,
       munkanapok: 1,
       darabszam: 1,
@@ -136,24 +138,48 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
   const [saving, setSaving] = useState(false);
   const [hiba, setHiba] = useState("");
   const [kmCalc, setKmCalc] = useState(false);
+  const kmDebounceRef = useRef(null);
+  const formRef = useRef(form);
+  useEffect(() => { formRef.current = form; }, [form]);
 
-  async function handleKmAutoCalc() {
-    const cim = form.telepitesiCim || form.clientCim;
-    const cs   = csapatok.find(c => c.id === form.csapatId);
-    if (!cim || !cs?.telephely) {
-      setHiba("A km auto-számításhoz szükséges: telepítési cím ÉS kivitelező csapat (indulási telephely).");
+  async function runKmAutoCalc(cim, csapatId, silent = false) {
+    const cs = csapatok.find(c => c.id === csapatId);
+    if (!cim?.trim() || !cs?.telephely) {
+      if (!silent) setHiba("A km auto-számításhoz szükséges: telepítési cím ÉS kivitelező csapat (indulási telephely).");
       return;
     }
     setKmCalc(true);
     const res = await calcRoundTripKm(cs.telephely, cim);
     setKmCalc(false);
     if (!res) {
-      setHiba("Km kiszámítás sikertelen – ellenőrizd a cím helyesírást.");
+      if (!silent) setHiba("Km kiszámítás sikertelen – ellenőrizd a cím helyesírást.");
       return;
     }
-    updPenz("tavKm", res.oda);
-    setHiba("");
+    setForm(p => ({
+      ...p,
+      penzugy: { ...p.penzugy, tavKm: res.oda, tavKmForras: "auto", tavKmNaplo: "" },
+    }));
+    if (!silent) setHiba("");
   }
+
+  async function handleKmAutoCalc() {
+    await runKmAutoCalc(form.telepitesiCim || form.clientCim, form.csapatId, false);
+  }
+
+  // Auto-trigger: csapatId vagy cím változásakor automatikusan futtatja az OSRM számítást,
+  // de csak ha nincs kézi felülírás (tavKmForras !== "kezi")
+  useEffect(() => {
+    if (form.forrás !== "fovallalkozoi_munka") return;
+    const cim = form.telepitesiCim || form.clientCim;
+    if (!cim?.trim() || !form.csapatId) return;
+    if (kmDebounceRef.current) clearTimeout(kmDebounceRef.current);
+    kmDebounceRef.current = setTimeout(() => {
+      const f = formRef.current;
+      if (f.penzugy?.tavKmForras === "kezi") return;
+      runKmAutoCalc(f.telepitesiCim || f.clientCim, f.csapatId, true);
+    }, 1200);
+    return () => clearTimeout(kmDebounceRef.current);
+  }, [form.csapatId, form.telepitesiCim, form.clientCim, form.forrás]);
   function upd(k, v) {
     setForm(p => ({ ...p, [k]: v }));
     if (hiba) setHiba("");
@@ -271,6 +297,12 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     const validation = validateProjektForrás(form);
     if (!validation.ok) {
       setHiba(validation.message);
+      return;
+    }
+    if (form.forrás === "fovallalkozoi_munka" &&
+        form.penzugy?.tavKmForras === "kezi" &&
+        !form.penzugy?.tavKmNaplo?.trim()) {
+      setHiba("Kézzel módosított km esetén az indoklás kitöltése kötelező (Km napló mező).");
       return;
     }
     // Fázis 4A: saját munka csak elfogadott ajánlatból jöhet létre – mentéskor
@@ -809,15 +841,49 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             </Field>
             <Field label="Távolság (km, oda)" half>
               <div style={{ display: "flex", gap: 6 }}>
-                <input type="number" value={form.penzugy.tavKm || ""} onChange={e => updPenz("tavKm", e.target.value)} placeholder="0" style={{ ...inp, flex: 1 }} />
+                <input
+                  type="number"
+                  value={form.penzugy.tavKm || ""}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setForm(p => ({
+                      ...p,
+                      penzugy: {
+                        ...p.penzugy,
+                        tavKm: val === "" ? 0 : Number(val),
+                        tavKmForras: "kezi",
+                      },
+                    }));
+                  }}
+                  placeholder="0"
+                  style={{ ...inp, flex: 1, borderColor: form.penzugy.tavKmForras === "kezi" ? "#F59E0B" : "#E2E8F0" }}
+                />
                 <button type="button" onClick={handleKmAutoCalc} disabled={kmCalc}
                   title="Automatikus km-számítás a csapat telephely → telepítési cím alapján (OSRM)"
                   style={{ padding: "0 10px", background: kmCalc ? "#94A3B8" : "#2563EB", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, fontFamily: FONT }}>
                   <Navigation size={13}/>{kmCalc ? "…" : "Auto"}
                 </button>
               </div>
-              <p style={{ fontSize: 10, color: "#64748B", marginTop: 3 }}>Oda km – az elszámolás oda-vissza számolja</p>
+              {form.penzugy.tavKmForras === "auto" && (() => {
+                const cs = csapatok.find(c => c.id === form.csapatId);
+                return <p style={{ fontSize: 10, color: "#059669", marginTop: 3, fontWeight: 600 }}>✓ Auto számított · {cs?.telephely || "?"} → {form.telepitesiCim || form.clientCim || "?"}</p>;
+              })()}
+              {form.penzugy.tavKmForras === "kezi" && <p style={{ fontSize: 10, color: "#D97706", marginTop: 3, fontWeight: 700 }}>⚠ Kézzel felülírva – indoklás szükséges</p>}
+              {!form.penzugy.tavKmForras && <p style={{ fontSize: 10, color: "#94A3B8", marginTop: 3 }}>Nincs számítva – mentés előtt adj meg értéket vagy kattints Auto-ra</p>}
             </Field>
+            {form.penzugy.tavKmForras === "kezi" && (
+            <Field label="Km felülírás indoka *" half>
+              <input
+                value={form.penzugy.tavKmNaplo || ""}
+                onChange={e => {
+                  const v = e.target.value;
+                  setForm(p => ({ ...p, penzugy: { ...p.penzugy, tavKmNaplo: v } }));
+                }}
+                placeholder="pl. valós útvonal eltér, kerülő, torlódás…"
+                style={{ ...inp, borderColor: !form.penzugy.tavKmNaplo?.trim() ? "#FCA5A5" : "#86EFAC" }}
+              />
+            </Field>
+            )}
             <Field label="Csapatlétszám (fő)" half>
               <input type="number" value={form.penzugy.csapatLetszam || 1} onChange={e => updPenz("csapatLetszam", e.target.value)} placeholder="1" style={inp} />
             </Field>
