@@ -152,53 +152,30 @@ export default function App() {
       try {
         const synced = await syncAllFromDrive();
 
+        // Segédfüggvény: [] truthy JS-ben, ezért a sima || operátor csendben lenyomná
+        // a lokális adatot, ha a Drive szinkron üres tömböt ad vissza.
+        // Ez csak akkor veszi a synced értéket, ha az valóban tartalmaz rekordot.
+        const pick = (synced, local, prev, empty = []) =>
+          Array.isArray(synced) && synced.length > 0
+            ? synced
+            : (local || prev || empty);
+
         setData(prev => ({
           ...prev,
-          projektek:
-            synced.projektek ||
-            loadLocal("projektek") ||
-            prev.projektek ||
-            [],
-          munkalapok:
-            synced.munkalapok ||
-            loadLocal("munkalapok") ||
-            prev.munkalapok ||
-            [],
-          ugyfelek:
-            synced.ugyfelek ||
-            loadLocal("ugyfelek") ||
-            prev.ugyfelek ||
-            [],
+          projektek:            pick(synced.projektek,            loadLocal("projektek"),            prev.projektek),
+          munkalapok:           pick(synced.munkalapok,           loadLocal("munkalapok"),           prev.munkalapok),
+          ugyfelek:             pick(synced.ugyfelek,             loadLocal("ugyfelek"),             prev.ugyfelek),
+          munkatipusok:         pick(synced.munkatipusok,         loadLocal("munkatipusok"),         prev.munkatipusok),
+          fovallalkozok:        pick(synced.fovallalkozok,        loadLocal("fovallalkozok"),        prev.fovallalkozok),
+          elszamolasi_szabalyok:pick(synced.elszamolasi_szabalyok,loadLocal("elszamolasi_szabalyok"),prev.elszamolasi_szabalyok),
+          karteritesek:         pick(synced.karteritesek,         loadLocal("karteritesek"),         prev.karteritesek),
+          sablonok:             pick(synced.sablonok,             loadLocal("sablonok"),             prev.sablonok),
+          // beallitasok: object típus, nem array – az eredeti || logika helyes marad
           beallitasok:
             synced.beallitasok ||
             loadLocal("beallitasok") ||
             prev.beallitasok ||
             {},
-          munkatipusok:
-            synced.munkatipusok ||
-            loadLocal("munkatipusok") ||
-            prev.munkatipusok ||
-            [],
-          fovallalkozok:
-            synced.fovallalkozok ||
-            loadLocal("fovallalkozok") ||
-            prev.fovallalkozok ||
-            [],
-          elszamolasi_szabalyok:
-            synced.elszamolasi_szabalyok ||
-            loadLocal("elszamolasi_szabalyok") ||
-            prev.elszamolasi_szabalyok ||
-            [],
-          karteritesek:
-            synced.karteritesek ||
-            loadLocal("karteritesek") ||
-            prev.karteritesek ||
-            [],
-          sablonok:
-            synced.sablonok ||
-            loadLocal("sablonok") ||
-            prev.sablonok ||
-            [],
         }));
 
         if (driveAvailable()) setDrive("ok");
