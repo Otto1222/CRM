@@ -141,6 +141,9 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
   const kmDebounceRef = useRef(null);
   const formRef = useRef(form);
   useEffect(() => { formRef.current = form; }, [form]);
+  const [ugyfélOpen, setUgyfélOpen] = useState(true);
+  const [extraCostOpen, setExtraCostOpen] = useState(false);
+  const formBlocked = isNew && form.forrás === "sajat_ajanlat" && !form.ajanlatId;
 
   async function runKmAutoCalc(cim, csapatId, silent = false) {
     const cs = csapatok.find(c => c.id === csapatId);
@@ -271,10 +274,15 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
       telepitesiCim: p.telepitesiCim || a.clientCim || "",
       elfogadottAjanlat: a.osszeg || p.elfogadottAjanlat || 0,
     }));
+    if (isNew) setUgyfélOpen(false);
     if (hiba) setHiba("");
   }
 
   async function handleSave() {
+    if (isNew && form.forrás === "sajat_ajanlat" && !form.ajanlatId) {
+      setHiba("Először válassz elfogadott ajánlatot a folytatáshoz.");
+      return;
+    }
     if (!form.nev?.trim()) {
       setHiba("A projekt neve kötelező.");
       return;
@@ -447,7 +455,12 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               margin: 0,
             }}
           >
-            {isNew ? "Új projekt" : "Projekt szerkesztése"}
+            {isNew
+              ? (form.forrás === "sajat_ajanlat" ? "Új projekt – Saját ajánlat"
+                : form.forrás === "fovallalkozoi_munka" ? "Új projekt – Fővállalkozói munka"
+                : form.forrás === "belso_munka" ? "Új projekt – Belső munka"
+                : "Új projekt")
+              : "Projekt szerkesztése"}
           </h2>
           <button
             type="button"
@@ -552,6 +565,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                       ))}
                     </select>
                     {form.ajanlatId && <p style={{ fontSize: 11, color: "#059669", margin: "4px 0 0", fontWeight: 600 }}>✅ Ügyfél adatok automatikusan betöltve az ajánlatból</p>}
+                    {!form.ajanlatId && <p style={{ fontSize: 12, color: "#1D4ED8", margin: "6px 0 0", fontWeight: 600 }}>⬇ Válassz ajánlatot a folytatáshoz – az adatok automatikusan kitöltődnek.</p>}
                   </>
                 )}
               </div>
@@ -584,7 +598,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                Belső munkánál auto: FOVALLALKOZO_HOZOTT_ANYAG (rejtett)
                Fővállalkozóinál kötelező választás (megjelenik)
                Admin ellenőrzés szükséges esetén mindig látható */}
-          {(form.forrás === "fovallalkozoi_munka" || !form.forrás || form.adminReviewRequired) && (
+          {(form.forrás === "fovallalkozoi_munka" || !form.forrás || form.adminReviewRequired) && !formBlocked && (
           <div style={{ marginBottom: 16 }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>
               Anyagelszámolási mód *
@@ -624,7 +638,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
           </div>
           )}
 
-          <div
+          {!formBlocked && <div
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
@@ -667,11 +681,19 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               </select>
             </Field>
             {form.forrás !== "belso_munka" && (<>
-            <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
+            <div style={{ gridColumn: "span 2", borderTop: "1px solid #E2E8F0", paddingTop: 14, display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: form.forrás === "sajat_ajanlat" && form.ajanlatId ? 0 : 10 }}>
                 Ügyfél adatok
+                {!ugyfélOpen && form.clientNev && <span style={{ fontWeight: 500, color: "#374151", marginLeft: 8, textTransform: "none", fontSize: 12 }}>· {form.clientNev}</span>}
               </p>
+              {form.forrás === "sajat_ajanlat" && form.ajanlatId && (
+                <button type="button" onClick={() => setUgyfélOpen(o => !o)}
+                  style={{ fontSize: 11, color: "#2563EB", background: "none", border: "none", cursor: "pointer", fontWeight: 700, paddingBottom: 10 }}>
+                  {ugyfélOpen ? "▲ Összecsuk" : "▼ Megnyit"}
+                </button>
+              )}
             </div>
+            {(ugyfélOpen || form.forrás !== "sajat_ajanlat" || !form.ajanlatId) && <>
             <Field label="Ügyfél kiválasztása (opcionális)">
               <select value={form.clientId} onChange={handleUgyfél} style={inp}>
                 <option value="">— Válassz a listából —</option>
@@ -718,7 +740,11 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 placeholder="Ha eltér a lakcímtől"
                 style={inp}
               />
+              {form.clientCim && form.telepitesiCim && form.clientCim === form.telepitesiCim && (
+                <p style={{ fontSize: 10, color: "#059669", marginTop: 3, fontWeight: 600 }}>✓ Azonos az ügyfél lakcímével</p>
+              )}
             </Field>
+            </>}
             </>)}
             {/* Belső munkánál nincs ügyfél section, de telepítési cím kell */}
             {form.forrás === "belso_munka" && (
@@ -890,6 +916,13 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <Field label="Munkanapok száma" half>
               <input type="number" value={form.penzugy.munkanapok || 1} onChange={e => updPenz("munkanapok", e.target.value)} placeholder="1" style={inp} />
             </Field>
+            <div style={{ gridColumn: "span 2", marginTop: 4 }}>
+              <button type="button" onClick={() => setExtraCostOpen(o => !o)}
+                style={{ background: "none", border: "1px solid #E2E8F0", borderRadius: 8, cursor: "pointer", fontSize: 12, color: "#7C3AED", fontWeight: 700, padding: "6px 12px", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
+                {extraCostOpen ? "▼" : "▶"} Részletes költségek (emelőgép, daru, szállás…)
+              </button>
+            </div>
+            {extraCostOpen && (<>
             <Field label="Emelőgép (Ft)" half>
               <input type="number" value={form.penzugy.emelőgepKoltseg || ""} onChange={e => updPenz("emelőgepKoltseg", e.target.value)} placeholder="0" style={inp} />
             </Field>
@@ -908,8 +941,9 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <Field label="Egyéb költség (Ft)" half>
               <input type="number" value={form.penzugy.egyebKoltseg || ""} onChange={e => updPenz("egyebKoltseg", e.target.value)} placeholder="0" style={inp} />
             </Field>
-            <Field label="Elfogadott ajánlat (Ft)" half>
-              <input type="number" value={form.elfogadottAjanlat} onChange={e => upd("elfogadottAjanlat", e.target.value)} placeholder="0" style={inp} />
+            </>)}
+            <Field label="Szerződéses összeg *" half>
+              <input type="number" value={form.elfogadottAjanlat} onChange={e => upd("elfogadottAjanlat", e.target.value)} placeholder="0" style={{ ...inp, border: "2px solid #2563EB", fontWeight: 600 }} />
             </Field>
 
             {/* Várható bevétel preview */}
@@ -957,7 +991,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               } catch { return null; }
             })()}
             </>)}
-          </div>
+          </div>}
         </div>
         <div style={{ padding: "14px 24px", borderTop: "1px solid #E2E8F0", display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button type="button" onClick={onClose} style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #E2E8F0", background: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
