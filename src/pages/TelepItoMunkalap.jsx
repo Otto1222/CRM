@@ -79,8 +79,35 @@ const VBF_TEMPLATE = {
   hu_l1:"", hu_l2:"", hu_l3:"",
   smart_meter:"", akku_db:"", dc_teljesitmeny:"",
   panel_tipus:"", panel_voc:"", panel_vmp:"", panel_imp:"", panel_isc:"", panel_telj:"",
-  inv_nevleges:"", epulet_alapfoldes:"", tuz_megszakito:"",
+  inv_nevleges:"", tuz_megszakito:"",
+  // epulet_alapfoldes intentionally removed – VbfJegyzokonyv-only field, no input here
 };
+
+// Kötelező mezők: ezek hiánya blokkolja a lezárást.
+// Opcionális mezők (ps_st2-6, dc_st2-6, hu_l2-3, smart_meter, akku_db) üren hagyhatók.
+const VBF_KOTELEZO_MEZOK = [
+  { key: "ac_l1",          label: "AC feszültség L1" },
+  { key: "ac_l2",          label: "AC feszültség L2" },
+  { key: "ac_l3",          label: "AC feszültség L3" },
+  { key: "ki_l1",          label: "Kismegszakító (Inverter) L1" },
+  { key: "ki_l2",          label: "Kismegszakító (Inverter) L2" },
+  { key: "ki_l3",          label: "Kismegszakító (Inverter) L3" },
+  { key: "km_l1",          label: "Kismegszakító (Mérőhely) L1" },
+  { key: "km_l2",          label: "Kismegszakító (Mérőhely) L2" },
+  { key: "km_l3",          label: "Kismegszakító (Mérőhely) L3" },
+  { key: "ps_st1",         label: "Panelszám ST1" },
+  { key: "dc_st1",         label: "DC feszültség ST1" },
+  { key: "hu_l1",          label: "Hurokellenállás L1" },
+  { key: "dc_teljesitmeny",label: "Betáplált DC teljesítmény" },
+  { key: "panel_tipus",    label: "Panel típusa" },
+  { key: "panel_voc",      label: "Panel Voc" },
+  { key: "panel_vmp",      label: "Panel Vmp" },
+  { key: "panel_imp",      label: "Panel Imp" },
+  { key: "panel_isc",      label: "Panel Isc" },
+  { key: "panel_telj",     label: "Panel teljesítmény" },
+  { key: "inv_nevleges",   label: "Inverter névleges teljesítmény" },
+  { key: "tuz_megszakito", label: "Tűzeseti megszakító" },
+];
 
 // Séma migráció: régi nested (crm_vbf_{id}) → flat (crm_ml_{id}_vbf)
 function migrateVbfNestedToFlat(nested) {
@@ -121,7 +148,6 @@ function migrateVbfNestedToFlat(nested) {
     panel_isc:       nested.panelIsc        ?? "",
     panel_telj:      nested.panelTelj       ?? "",
     inv_nevleges:    nested.inverterNevleges ?? "",
-    epulet_alapfoldes: nested.epulet_alapfoldes ?? "",
     tuz_megszakito:  nested.tuzMegszakito   ?? "",
   };
 }
@@ -580,8 +606,14 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
     window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:`vbf_${m.id}`}}));
   }
 
+  function getVbfHianyzoMezok() {
+    return VBF_KOTELEZO_MEZOK.filter(f => {
+      const v = vbf[f.key];
+      return v === undefined || v === null || v === "";
+    });
+  }
   function checkVbfHianyos() {
-    return Object.values(vbf).some(v=>v===""||v===null||v===undefined);
+    return getVbfHianyzoMezok().length > 0;
   }
 
   function handleMegkezdes() {
@@ -615,9 +647,11 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   }
 
   function handleBefejezesKezdete() {
-    if (checkVbfHianyos()) {
+    const hianyzoMezok = getVbfHianyzoMezok();
+    if (hianyzoMezok.length > 0) {
       setFigy(true);
-      alert("⚠️ Lezárás sikertelen!\n\nA VBF Jegyzőkönyv nincs teljesen kitöltve.\nHagyd üresen a nem releváns mezőket – azok nem blokkolják a lezárást.");
+      const mezokSzoveg = hianyzoMezok.map(f => `• ${f.label}`).join("\n");
+      alert(`⚠️ Lezárás sikertelen!\n\nA VBF Jegyzőkönyvből hiányzó kötelező mezők:\n${mezokSzoveg}\n\nAz opcionális mezőket (pl. extra stringek, smart meter, akku) üresen lehet hagyni.`);
       return;
     }
 
@@ -1065,7 +1099,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
           <div style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
             <p style={{ fontSize:15,fontWeight:700,color:C.text,marginBottom:12 }}>✅ Munka ellenőrzése</p>
             {[
-              {label:"VBF Jegyzőkönyv",ok:ell_vbfOk,info:"A VBF fülön töltsd ki"},
+              {label:"VBF Jegyzőkönyv",ok:ell_vbfOk,info:ell_vbfOk?"":getVbfHianyzoMezok().map(f=>f.label).join(", ")},
               {label:`Fotók (${ell_osszesFoto} db)`,ok:ell_osszesFoto>0,info:"Min. 1 fotó szükséges"},
               {label:"Megjegyzés megadva",ok:ell_megjegyzesMegvan,info:"Legalább egy karakter"},
               {label:"Fotó nélküli kategóriák indokolva",ok:ell_mindenKatOk||ell_hianyosKat.length===0,info:`${ell_hianyosKat.filter(k=>!fotoHianyOkok[k.id]).length} kategória indoklás hiányzik`},
