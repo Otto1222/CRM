@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check, Calculator } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Calculator } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { ft } from "../../lib/helpers.js";
 import {
@@ -24,6 +24,16 @@ const FL = ({ label, children, half, full }) => (
     {children}
   </div>
 );
+
+const ALAPMENNYISEG_OPCIOK = [
+  { value: "",               label: "Darabszám (alapértelmezett)" },
+  { value: "panel_db",       label: "Napelem db" },
+  { value: "inverter_db",    label: "Inverter db" },
+  { value: "akku_db",        label: "Akkumulátor db" },
+  { value: "smart_meter_db", label: "Smart meter / energiamérő db" },
+  { value: "tavKm",          label: "Távolság km" },
+  { value: "fix",            label: "Fix díj" },
+];
 
 // ─── Sáv szerkesztő ───────────────────────────────────────────
 
@@ -90,13 +100,17 @@ function SavokSzerkeszto({ savok, onChange }) {
 // ─── Tesztelő panel ───────────────────────────────────────────
 
 function KalkulacioTesztelo({ szabaly }) {
-  const [db,  setDb]  = useState(10);
-  const [km,  setKm]  = useState(50);
+  const [db, setDb] = useState(10);
+  const [km, setKm] = useState(50);
 
   if (!szabaly?.mod) return null;
-  const needsDb = ["darab", "savos"].includes(szabaly.mod);
-  const needsKm = ["km", "fix_kiszallas"].includes(szabaly.mod);
-  const eredmeny = calcSzabalyOsszeg(szabaly, { darabszam: db, tavKm: km });
+  const needsDb    = ["darab", "savos"].includes(szabaly.mod);
+  const needsKm    = ["km", "fix_kiszallas"].includes(szabaly.mod);
+  const aktAlap    = szabaly.alapMennyiseg || "";
+  const dbInputKey = aktAlap && aktAlap !== "tavKm" && aktAlap !== "fix" ? aktAlap : "darabszam";
+  const dbLabel    = ALAPMENNYISEG_OPCIOK.find(o => o.value === aktAlap)?.label || "Darabszám";
+  const testInput  = { darabszam: db, tavKm: km, [dbInputKey]: db };
+  const eredmeny   = calcSzabalyOsszeg(szabaly, testInput);
 
   return (
     <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "12px 14px", marginTop: 12 }}>
@@ -106,7 +120,7 @@ function KalkulacioTesztelo({ szabaly }) {
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         {needsDb && (
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#374151" }}>
-            Darabszám:
+            {dbLabel}:
             <input type="number" min={0} value={db} onChange={e => setDb(Number(e.target.value))}
               style={{ ...inp, width: 72, padding: "5px 8px" }} />
           </label>
@@ -138,13 +152,16 @@ function KalkulacioTesztelo({ szabaly }) {
   );
 }
 
-// ─── Elszámolási szabály form ─────────────────────────────────
+// ─── Díjtétel form ────────────────────────────────────────────
 
 function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
   const isNew = !szabaly?.id;
 
   const [f, setF] = useState({
     tulajdonosId,
+    profilNev:     szabaly?.profilNev     || "",
+    megnevezes:    szabaly?.megnevezes    || "",
+    alapMennyiseg: szabaly?.alapMennyiseg || "",
     munkatipus:    szabaly?.munkatipus    || "",
     aktiv:         szabaly?.aktiv         ?? true,
     mod:           szabaly?.mod           || "fix",
@@ -166,7 +183,7 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
           <h3 style={{ fontFamily: FONT_HEADING, fontSize: 16, fontWeight: 800, margin: 0 }}>
-            {isNew ? "Új elszámolási szabály" : "Szabály szerkesztése"}
+            {isNew ? "Új díjtétel" : "Díjtétel szerkesztése"}
           </h3>
           <button onClick={onClose} style={{ padding: "4px 8px", border: "none", background: "none", cursor: "pointer", color: "#94A3B8" }}>
             <X size={16} />
@@ -174,6 +191,30 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 14px" }}>
+
+          {/* Profil neve */}
+          <FL label="Profil neve (csoportosításhoz, opcionális)">
+            <input value={f.profilNev} onChange={e => u("profilNev", e.target.value)}
+              placeholder="pl. Green-Home Napelemes 2026" style={inp} />
+          </FL>
+
+          {/* Díjtétel neve */}
+          <FL label="Díjtétel neve (opcionális)">
+            <input value={f.megnevezes} onChange={e => u("megnevezes", e.target.value)}
+              placeholder="pl. Akkumulátor szerelési díj" style={inp} />
+          </FL>
+
+          {/* Mennyiségi alap */}
+          <FL label="Mennyiségi alap">
+            <select value={f.alapMennyiseg} onChange={e => u("alapMennyiseg", e.target.value)} style={inp}>
+              {ALAPMENNYISEG_OPCIOK.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <p style={{ fontSize: 11, color: "#64748B", margin: "4px 0 0" }}>
+              Darab / sávos módnál: melyik projektmezőből vegye a mennyiséget
+            </p>
+          </FL>
 
           {/* Munkatípus */}
           <FL label="Munkatípus">
@@ -279,12 +320,15 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
   );
 }
 
-// ─── Szabály kártya ───────────────────────────────────────────
+// ─── Díjtétel kártya ──────────────────────────────────────────
 
 function SzabalyKartya({ sz, onEdit, onDelete, onToggle }) {
-  const modInfo = ELSZAMOLASI_MODOK.find(m => m.id === sz.mod);
-  const leiras  = szabalyLeiras(sz);
-  const savokDb = sz.mod === "savos" ? (sz.savok?.length || 0) : null;
+  const modInfo  = ELSZAMOLASI_MODOK.find(m => m.id === sz.mod);
+  const leiras   = szabalyLeiras(sz);
+  const savokDb  = sz.mod === "savos" ? (sz.savok?.length || 0) : null;
+  const alapInfo = sz.alapMennyiseg
+    ? ALAPMENNYISEG_OPCIOK.find(o => o.value === sz.alapMennyiseg)
+    : null;
 
   return (
     <div style={{
@@ -296,13 +340,23 @@ function SzabalyKartya({ sz, onEdit, onDelete, onToggle }) {
       opacity: sz.aktiv ? 1 : 0.65,
     }}>
       <div style={{ flex: 1 }}>
+        {sz.megnevezes && (
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 3 }}>
+            {sz.megnevezes}
+          </div>
+        )}
         <div style={{ display: "flex", gap: 7, alignItems: "center", marginBottom: 4, flexWrap: "wrap" }}>
-          <span style={{ fontWeight: 700, fontSize: 13, color: "#0F172A" }}>
+          <span style={{ fontWeight: sz.megnevezes ? 500 : 700, fontSize: 12, color: sz.megnevezes ? "#64748B" : "#0F172A" }}>
             {sz.munkatipus || "Általános (minden típusra)"}
           </span>
           <span style={{ fontSize: 11, background: "#EFF6FF", color: "#2563EB", padding: "1px 8px", borderRadius: 20, fontWeight: 700 }}>
             {modInfo?.label || sz.mod}
           </span>
+          {alapInfo && (
+            <span style={{ fontSize: 11, background: "#F5F3FF", color: "#7C3AED", padding: "1px 8px", borderRadius: 20, fontWeight: 600 }}>
+              {alapInfo.label}
+            </span>
+          )}
           {!sz.aktiv && <span style={{ fontSize: 10, background: "#F1F5F9", color: "#94A3B8", padding: "1px 7px", borderRadius: 20 }}>Inaktív</span>}
         </div>
         <div style={{ fontSize: 12, color: "#475569", display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -310,7 +364,6 @@ function SzabalyKartya({ sz, onEdit, onDelete, onToggle }) {
           {savokDb !== null && <span>{savokDb} sáv</span>}
           {sz.megjegyzes && <span style={{ color: "#94A3B8" }}>{sz.megjegyzes}</span>}
         </div>
-        {/* Sávok összefoglalás */}
         {sz.mod === "savos" && (sz.savok || []).length > 0 && (
           <div style={{ marginTop: 6, display: "flex", gap: 4, flexWrap: "wrap" }}>
             {(sz.savok || []).map((s, i) => (
@@ -342,11 +395,11 @@ function SzabalyKartya({ sz, onEdit, onDelete, onToggle }) {
 // ─── Fővállalkozó sor ─────────────────────────────────────────
 
 function FvSor({ fv, onUpdate, onDelete }) {
-  const [open,    setOpen]    = useState(false);
-  const [editFv,  setEditFv]  = useState(false);
-  const [ujSz,    setUjSz]    = useState(false);
-  const [szerkSz, setSzerkSz] = useState(null);
-  const [fvForm,  setFvForm]  = useState({ nev: fv.nev, rovidites: fv.rovidites || "", megjegyzes: fv.megjegyzes || "" });
+  const [open,      setOpen]      = useState(false);
+  const [editFv,    setEditFv]    = useState(false);
+  const [ujSz,      setUjSz]      = useState(false);
+  const [szerkSz,   setSzerkSz]   = useState(null);
+  const [fvForm,    setFvForm]    = useState({ nev: fv.nev, rovidites: fv.rovidites || "", megjegyzes: fv.megjegyzes || "" });
   const [szabalyok, setSzabalyok] = useState(() => getSzabalyokByFovallalkozo(fv.id));
 
   function refresh() { setSzabalyok(getSzabalyokByFovallalkozo(fv.id)); }
@@ -360,6 +413,22 @@ function FvSor({ fv, onUpdate, onDelete }) {
   }
 
   const aktivSzabaly = szabalyok.filter(s => s.aktiv !== false).length;
+
+  // Csoportosítás profilNev szerint; névtelenek a végére kerülnek
+  function groupByProfil(lista) {
+    const groups = {};
+    lista.forEach(sz => {
+      const key = sz.profilNev?.trim() || "";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(sz);
+    });
+    const named  = Object.keys(groups).filter(k => k !== "").sort();
+    const result = named.map(k => ({ profilNev: k, tetelek: groups[k] }));
+    if (groups[""]) result.push({ profilNev: "", tetelek: groups[""] });
+    return result;
+  }
+
+  const profilCsoportok = groupByProfil(szabalyok);
 
   return (
     <div style={{ background: "#fff", border: `1.5px solid ${open ? "#2563EB" : C.border}`, borderRadius: 12, marginBottom: 10, overflow: "hidden", opacity: fv.aktiv ? 1 : .6 }}>
@@ -379,7 +448,7 @@ function FvSor({ fv, onUpdate, onDelete }) {
               {fv.aktiv ? "Aktív" : "Inaktív"}
             </span>
             <span style={{ fontSize: 12, color: "#64748B" }}>
-              {aktivSzabaly} aktív szabály
+              {aktivSzabaly} aktív díjtétel
             </span>
           </div>
           {fv.megjegyzes && (
@@ -431,44 +500,61 @@ function FvSor({ fv, onUpdate, onDelete }) {
         </div>
       )}
 
-      {/* Szabályok */}
+      {/* Díjtételek – profilNev szerint csoportosítva */}
       {open && (
         <div style={{ borderTop: "1px solid #F1F5F9", padding: "14px 18px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>Elszámolási szabályok</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>Díjtételek</span>
               <span style={{ fontSize: 12, color: "#64748B", marginLeft: 6 }}>
-                ({szabalyok.length} db — egy szabály = egy munkatípus + egy elszámolási mód)
+                ({szabalyok.length} db — egy díjtétel = egy munkatípus + egy számítási mód)
               </span>
             </div>
             <button onClick={() => setUjSz(true)}
               style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", background: "#2563EB", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: FONT }}>
-              <Plus size={12} /> Új szabály
+              <Plus size={12} /> Új díjtétel
             </button>
           </div>
 
           {szabalyok.length === 0 ? (
             <div style={{ textAlign: "center", padding: "20px 0", color: "#94A3B8" }}>
-              <p style={{ fontSize: 13, fontWeight: 600 }}>Még nincs szabály</p>
-              <p style={{ fontSize: 12, marginTop: 4 }}>Add hozzá az „Új szabály" gombbal</p>
+              <p style={{ fontSize: 13, fontWeight: 600 }}>Még nincs díjtétel</p>
+              <p style={{ fontSize: 12, marginTop: 4 }}>Add hozzá az „Új díjtétel" gombbal</p>
             </div>
           ) : (
-            szabalyok.map(sz => (
-              <SzabalyKartya
-                key={sz.id}
-                sz={sz}
-                onEdit={() => setSzerkSz(sz)}
-                onDelete={() => { if (window.confirm("Törlöd ezt a szabályt?")) { deleteSzabaly(sz.id); refresh(); } }}
-                onToggle={() => { updateSzabaly(sz.id, { aktiv: !sz.aktiv }); refresh(); }}
-              />
+            profilCsoportok.map(({ profilNev, tetelek }) => (
+              <div key={profilNev || "__nincs__"} style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  {profilNev ? (
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#7C3AED", background: "#F5F3FF", padding: "3px 10px", borderRadius: 20, border: "1px solid #DDD6FE" }}>
+                      {profilNev}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#94A3B8", fontStyle: "italic" }}>
+                      Profil nélküli / régi szabályok
+                    </span>
+                  )}
+                  <span style={{ fontSize: 11, color: "#94A3B8" }}>({tetelek.length} tétel)</span>
+                </div>
+                {tetelek.map(sz => (
+                  <SzabalyKartya
+                    key={sz.id}
+                    sz={sz}
+                    onEdit={() => setSzerkSz(sz)}
+                    onDelete={() => { if (window.confirm("Törlöd ezt a díjtételt?")) { deleteSzabaly(sz.id); refresh(); } }}
+                    onToggle={() => { updateSzabaly(sz.id, { aktiv: !sz.aktiv }); refresh(); }}
+                  />
+                ))}
+              </div>
             ))
           )}
 
           {/* Súgó */}
           <div style={{ marginTop: 12, padding: "10px 14px", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 9, fontSize: 12, color: "#1E40AF" }}>
-            <strong>Több szabály is lehet ugyanahhoz a munkatípushoz</strong> – pl. egy sávos díj + egy fix kiszállási díj.
+            <strong>Több díjtétel is lehet ugyanahhoz a munkatípushoz</strong> – pl. egy sávos díj + egy fix kiszállási díj.
             Mindkettő összeadódik a projekt kalkulációban.
-            Ha van pontos munkatípus egyezés, az általános szabályok nem lépnek életbe.
+            Ha van pontos munkatípus egyezés, az általános díjtételek nem lépnek életbe.
+            Profilnévvel csoportosítsd a díjtételeket (pl. évenként, munkafázis szerint).
           </div>
         </div>
       )}
@@ -517,10 +603,10 @@ export default function FovallalkozoPage({ userRole }) {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
           <h1 style={{ fontFamily: FONT_HEADING, fontSize: 22, fontWeight: 800, margin: "0 0 4px" }}>
-            Fővállalkozók & Elszámolási szabályok
+            Fővállalkozók & Díjtételek
           </h1>
           <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
-            Szabályalapú elszámolási motor – Fix, Darabszám×Ft, Sávos, Km, Fix kiszállás
+            Szabályalapú elszámolási motor – profilonként csoportosított díjtételek
           </p>
         </div>
         {isAdmin && (
