@@ -29,8 +29,17 @@ export const ELSZAMOLASI_SZABALY_SCHEMA = {
   munkatipus:    "",      // "" = általános (minden munkatípusra)
   aktiv:         true,
 
+  // Csoportosítás / megnevezés (UI display, a motor nem használja)
+  profilNev:     "",      // pl. "Green-Home Napelemes 2026" – opcionális, admin tölti
+  megnevezes:    "",      // pl. "Akkumulátor szerelési díj" – a tétel neve
+
   // Elszámolási mód – egy szabályhoz egy mód
   mod:           "fix",   // "fix" | "darab" | "savos" | "km" | "fix_kiszallas"
+
+  // Mennyiségi alap – melyik inputból számoljon a motor (darab/savos módhoz)
+  // "" → backward compat: marad input.darabszam
+  // Érvényes értékek: "panel_db" | "akku_db" | "smart_meter_db" | "inverter_db" | "darabszam"
+  alapMennyiseg: "",
 
   // mod = "fix"
   fixOsszeg:     0,

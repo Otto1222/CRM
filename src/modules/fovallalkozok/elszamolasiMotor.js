@@ -41,7 +41,10 @@ export const ELSZAMOLASI_MODOK = [
  */
 export function calcSzabalyOsszeg(szabaly, input = {}) {
   if (!szabaly || szabaly.aktiv === false) return 0;
-  const darabszam = Number(input.darabszam) || 0;
+  // alapMennyiseg: ha meg van adva, abból veszi a mennyiséget; ha nincs → darabszam (backward compat)
+  const darabszam = szabaly.alapMennyiseg
+    ? (Number(input[szabaly.alapMennyiseg]) || 0)
+    : (Number(input.darabszam)              || 0);
   const tavKm     = Number(input.tavKm)     || 0;
 
   // Backward compatibility: régi szabályok ahol nincs mod, de van nettoBevitel
