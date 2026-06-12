@@ -68,6 +68,48 @@ function hasData(value) {
   return true;
 }
 
+/**
+ * ID-alapú merge: Drive + lokális adatok egyesítése, soha nem töröl lokális rekordot.
+ * Csak tömbös kollekciókon fut (rekordok id mezővel).
+ *
+ * Szabályok:
+ *   - Drive-ban van, lokálisan nincs → Drive rekord marad
+ *   - Lokálisan van, Drive-ban nincs → lokális rekord megmarad (soha nem töröl)
+ *   - Mindkettőben van → updatedAt alapján a frissebb nyer; ha egyik sem rendelkezik
+ *     updatedAt mezővel → lokális marad
+ */
+function mergeByIdUpdatedAt(driveArr, localArr) {
+  const merged = new Map();
+
+  driveArr.forEach(r => { if (r?.id) merged.set(r.id, r); });
+
+  localArr.forEach(r => {
+    if (!r?.id) return;
+    if (!merged.has(r.id)) {
+      merged.set(r.id, r);
+      return;
+    }
+    const drive = merged.get(r.id);
+    const driveTs = drive.updatedAt  ? new Date(drive.updatedAt).getTime()  : 0;
+    const localTs = r.updatedAt      ? new Date(r.updatedAt).getTime()      : 0;
+    if (localTs > driveTs) merged.set(r.id, r);
+  });
+
+  const result = Array.from(merged.values());
+
+  if (result.length > driveArr.length) {
+    const added = result.length - driveArr.length;
+    console.warn(`[dataSync] merge: ${added} lokális rekord nincs Drive-on (${added} hozzáadva)`);
+    try {
+      window.dispatchEvent(new CustomEvent("crm-sync-warning", {
+        detail: { collection: "unknown", localOnly: added }
+      }));
+    } catch {}
+  }
+
+  return result;
+}
+
 // ─── Betöltés ─────────────────────────────────────────────────
 
 export async function loadCollection(collection) {
@@ -78,6 +120,11 @@ export async function loadCollection(collection) {
     const driveData    = unwrap(collection, drivePayload);
 
     if (hasData(driveData)) {
+      if (Array.isArray(driveData) && Array.isArray(localData) && localData.length > 0) {
+        const merged = mergeByIdUpdatedAt(driveData, localData);
+        saveLocal(collection, merged);
+        return merged;
+      }
       saveLocal(collection, driveData);
       return driveData;
     }
