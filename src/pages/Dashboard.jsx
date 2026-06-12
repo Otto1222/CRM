@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+﻿import { useState, useMemo, useEffect } from "react";
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Clock, Wrench, Building2, FileText, Users, BarChart3 } from "lucide-react";
 import { C, FONT, FONT_HEADING, STATUS_CFG } from "../lib/constants";
 import { ft } from "../lib/helpers";
@@ -7,6 +7,7 @@ import { canSeePrice } from "../lib/roles";
 import { loadLocal } from "../lib/localDb";
 import { calcEsmentProjektPenzugy } from "../services/workOrderFinancial.service.js";
 import { calcDashboardPenzugyiKpik } from "../modules/penzugy/penzugyi.service.js";
+import { formatMunkalapAzonosito } from "../lib/azonositoHelper.js";
 
 // ─── Egyszerű stat kártya (NEM tartalmaz kártérítés kódot) ───
 function StatCard({ label, value, sub, color, bg, icon: Icon }) {
@@ -168,7 +169,7 @@ export default function Dashboard({ user }) {
   const [filterStatus, setFilterStatus] = useState("Összes");
   const [munkalapok, setMunkalapok]     = useState(() => loadLocal("munkalapok")   || []);
   const [projektek, setProjektek]       = useState(() => loadLocal("projektek")    || []);
-  const [ajanlatok, setAjanlatok]       = useState(() => loadLocal("ajanla tok")   || []);
+  const [ajanlatok, setAjanlatok]       = useState(() => loadLocal("ajanlatok")   || []);
   const [karteritesek, setKarteritesek] = useState(() => loadKarteritesek());
 
   const isAdmin = canSeePrice(user?.role);
@@ -178,7 +179,7 @@ export default function Dashboard({ user }) {
     function refresh() {
       setMunkalapok(loadLocal("munkalapok")  || []);
       setProjektek(loadLocal("projektek")    || []);
-      setAjanlatok(loadLocal("ajanla tok")   || []);
+      setAjanlatok(loadLocal("ajanlatok")   || []);
       setKarteritesek(loadKarteritesek());
     }
     window.addEventListener("crm-db-updated", refresh);
@@ -474,8 +475,8 @@ export default function Dashboard({ user }) {
                   ...(isAdmin && m.bevetal > 0 ? { borderLeft:`3px solid ${m.nyereseg?"#22C55E":"#EF4444"}` } : {}),
                 }}>
                   <td style={{ padding:"12px 14px" }}>
-                    <p style={{ fontWeight:700, color:"#2563EB", margin:0, fontSize:13 }}>{m.dokumentumszam || m.ediSorszam || m.id}</p>
-                    {m.dokumentumszam && <p style={{ fontSize:10, color:"#94A3B8", margin:0 }}>{m.id}</p>}
+                    <p style={{ fontWeight:700, color:"#2563EB", margin:0, fontSize:13 }}>{formatMunkalapAzonosito(m)}</p>
+
                   </td>
                   <td style={{ padding:"12px 14px", color:"#0F172A", fontWeight:500 }}>{m.clientNev || "—"}</td>
                   <td style={{ padding:"12px 14px" }}><StatusBadge s={m.status||"Ütemezett"}/></td>

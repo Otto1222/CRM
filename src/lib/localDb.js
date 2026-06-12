@@ -23,7 +23,7 @@ const KEYS = {
   szamlak:                     "szamlak",
   edi_sorszam_counter:         "edi_sorszam_counter",
   edi_projekt_sorszam_counter:  "edi_projekt_sorszam_counter",
-  "ajanla tok":                 "ajanla tok",
+  ajanlatok:                    "ajanlatok",
   edi_ajanlat_sorszam_counter:  "edi_ajanlat_sorszam_counter",
   crm_backups:                  "crm_backups",
   anyag_ar_verziok:             "anyag_ar_verziok",
@@ -72,6 +72,15 @@ function migrateOldKeys() {
       }
     } catch {}
   });
+
+  // P0-2: "ajanla tok" (szóközös, hibás kulcs) → "ajanlatok"
+  try {
+    const old = localStorage.getItem("ajanla tok");
+    if (old && !localStorage.getItem("ajanlatok")) {
+      localStorage.setItem("ajanlatok", old);
+      localStorage.removeItem("ajanla tok");
+    }
+  } catch {}
 }
 migrateOldKeys();
 

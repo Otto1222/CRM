@@ -1,6 +1,6 @@
 import { loadLocal, saveLocal, addItem, removeItem, updateItem } from "../../lib/localDb.js";
 
-const KEY = "ajanla tok";
+const KEY = "ajanlatok";
 const COUNTER_KEY = "edi_ajanlat_sorszam_counter";
 
 function nextAjanlatkod() {

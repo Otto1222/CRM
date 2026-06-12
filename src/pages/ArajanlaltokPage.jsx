@@ -4,10 +4,10 @@ import { Plus, Search, X, FileText, ArrowRight, CheckCircle, Printer } from "luc
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import { loadLocal } from "../lib/localDb";
-import { AJANLAT_STATUSZOK, getAjanlatStatusConfig } from "../modules/ajanla tok/ajanlat.schema";
-import { loadAjanlatok, updateAjanlat, deleteAjanlat } from "../modules/ajanla tok/ajanlat.service";
-import { printAjanlat } from "../modules/ajanla tok/ajanlatPrint";
-import AjanlatEditor from "../modules/ajanla tok/AjanlatEditor";
+import { AJANLAT_STATUSZOK, getAjanlatStatusConfig } from "../modules/ajanlatok/ajanlat.schema";
+import { loadAjanlatok, updateAjanlat, deleteAjanlat } from "../modules/ajanlatok/ajanlat.service";
+import { printAjanlat } from "../modules/ajanlatok/ajanlatPrint";
+import AjanlatEditor from "../modules/ajanlatok/AjanlatEditor";
 import ProjektForm from "../modules/projektek/ProjektForm";
 
 function StatusBadge({ status }) {

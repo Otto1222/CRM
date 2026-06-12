@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+﻿import { useState, useMemo, useEffect, useRef } from "react";
 import { X, Save, Navigation, TrendingUp } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
@@ -9,7 +9,7 @@ import {
   hasAnyagelszamolasiMod, validateAnyagelszamolasiModStatusValtas,
 } from "./projekt.schema.js";
 import { migrateProjektForrasFromRekord, validateProjektForrás, FORRAS_ELLENORZES_SZUKSEGES } from "../../lib/workflowRules.js";
-import { createAjanlatPillanatkep } from "../ajanla tok/ajanlat.schema.js";
+import { createAjanlatPillanatkep } from "../ajanlatok/ajanlat.schema.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { getAktivCsapatok } from "../csapatok/csapat.service.js";
 import { autoFillPenzugy } from "../../services/workOrderFinancial.service.js";
@@ -65,7 +65,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
   // Elfogadott ajánlatok (saját ügyfél flow ajanlat-selectorhoz)
   const elfogadottAjanlatok = useMemo(() => {
     try {
-      const all = loadLocal("ajanla tok") || [];
+      const all = loadLocal("ajanlatok") || [];
       const projektek = loadLocal("projektek") || [];
       const linkedIds = new Set(projektek.map(p => p.ajanlatId).filter(Boolean));
       return all.filter(a =>

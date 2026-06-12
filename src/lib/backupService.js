@@ -22,7 +22,9 @@ const MAIN_KEYS = [
   "crm_karteritesek",
   "sablonok",
   "edi_sorszam_counter",
+  "edi_ajanlat_sorszam_counter",
   "crm_schema_version",
+  "ajanlatok",
 ];
 
 const PREFIX_GROUPS = {
@@ -79,7 +81,9 @@ function collectLocalStorageSnapshot() {
     ugyfelek: getFirstAvailable(["ugyfelek", "crm_ugyfelek"], []),
     beallitasok: getFirstAvailable(["beallitasok", "crm_beallitasok"], {}),
     sablonok: getFirstAvailable(["sablonok"], []),
+    ajanlatok: getFirstAvailable(["ajanlatok"], []),
     ediSorszamCounter: getFirstAvailable(["edi_sorszam_counter"], null),
+    ediAjanlatSorszamCounter: getFirstAvailable(["edi_ajanlat_sorszam_counter"], null),
     vbf: {},
     fotok: {},
     felhasznaltAnyagok: {},
@@ -175,7 +179,9 @@ export function restoreBackup(backupId) {
       ugyfelek: "ugyfelek",
       beallitasok: "beallitasok",
       sablonok: "sablonok",
+      ajanlatok: "ajanlatok",
       ediSorszamCounter: "edi_sorszam_counter",
+      ediAjanlatSorszamCounter: "edi_ajanlat_sorszam_counter",
     };
 
     Object.entries(restoreMap).forEach(([backupKey, storageKey]) => {

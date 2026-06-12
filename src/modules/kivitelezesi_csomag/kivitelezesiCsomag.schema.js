@@ -21,7 +21,7 @@ import {
   hasAnyagelszamolasiMod,
 } from "../../lib/workflowRules.js";
 import { getAnyag } from "../../lib/anyagtorzs.js";
-import { FO_TETELEK } from "../ajanla tok/ajanlat.schema.js";
+import { FO_TETELEK } from "../ajanlatok/ajanlat.schema.js";
 
 export const KIVITELEZESI_CSOMAG_SCHEMA_VERSION = "1.0";
 
