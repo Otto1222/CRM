@@ -38,12 +38,23 @@ import { updateItem } from "../lib/localDb.js";
 // ─── Segéd: input összeállítása ───────────────────────────────
 
 export function buildInput(source) {
+  // Régi és új mezőneveket egyaránt elfogad; új snake_case nevek élveznek prioritást
+  const panel_db       = Number(source.panel_db       || source.panelDb       || source.darabszam   || source.napelemDb) || 0;
+  const akku_db        = Number(source.akku_db        || source.akkDb         || source.akkumulatorDb || (source.akkumulator ? 1 : 0)) || 0;
+  const smart_meter_db = Number(source.smart_meter_db || source.smartMeterDb  || (source.okosmerő   ? 1 : 0)) || 0;
+  const inverter_db    = Number(source.inverter_db    || source.inverterDb)   || 0;
   return {
-    darabszam:  Number(source.panelDb || source.darabszam || source.napelemDb) || 0,
-    tavKm:      Number(source.tavKm)   || 0,
-    inverterDb: Number(source.inverterDb) || 0,
-    akkDb:      Number(source.akkumulatorDb || (source.akkumulator ? 1 : 0)) || 0,
-    smartMeterDb: Number(source.smartMeterDb || (source.okosmerő ? 1 : 0)) || 0,
+    // Régi nevek – backward compat (meglévő szabályok, meglévő kód)
+    darabszam:    panel_db,
+    tavKm:        Number(source.tavKm) || 0,
+    akkDb:        akku_db,
+    smartMeterDb: smart_meter_db,
+    inverterDb:   inverter_db,
+    // Új snake_case nevek – alapMennyiseg mezőhöz (calcSzabalyOsszeg használja)
+    panel_db,
+    akku_db,
+    smart_meter_db,
+    inverter_db,
   };
 }
 
@@ -126,6 +137,12 @@ export function calcProjektElszamolas(projekt, munkalapok = []) {
 
   // Input összeállítása a projekt adataiból
   const input = buildInput({
+    // Új mezők (Commit 3-ban ProjektForm tölti; most üresek, a fallback-ek kezelik)
+    panel_db:       penzugy.panel_db,
+    akku_db:        penzugy.akku_db,
+    smart_meter_db: penzugy.smart_meter_db,
+    inverter_db:    penzugy.inverter_db,
+    // Régi fallback mezők
     panelDb:       penzugy.darabszam || projekt.napelemDb || 0,
     inverterDb:    projekt.inverterDb || 0,
     akkumulatorDb: projekt.akkumulatorDb || (projekt.akkumulator ? 1 : 0),
@@ -236,6 +253,12 @@ export function calcMunkalapElszamolas(munkalap, projekt) {
   // Tényleges mennyiségek (prioritás: munkalap.elszamolasAdatok, majd munkalap direkten, majd projekt)
   const ea = munkalap.elszamolasAdatok || {};
   const input = buildInput({
+    // Új mezők (Commit 3 után elszamolasAdatok-ból is érkezhetnek)
+    panel_db:       ea.panel_db       || munkalap.panel_db,
+    akku_db:        ea.akku_db        || munkalap.akku_db,
+    smart_meter_db: ea.smart_meter_db || munkalap.smart_meter_db,
+    inverter_db:    ea.inverter_db    || munkalap.inverter_db,
+    // Régi fallback mezők
     panelDb:       ea.panelDb       || munkalap.panelDb       || projekt?.napelemDb    || 0,
     inverterDb:    ea.inverterDb    || munkalap.inverterDb    || projekt?.inverterDb   || 0,
     akkumulatorDb: ea.akkumulatorDb || munkalap.akkumulatorDb || projekt?.akkumulatorDb|| 0,
