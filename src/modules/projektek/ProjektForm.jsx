@@ -111,27 +111,33 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     tervezettKezdes: projekt?.tervezettKezdes || "",
     tervezettBefejezes: projekt?.tervezettBefejezes || "",
     elfogadottAjanlat: projekt?.elfogadottAjanlat || ajanlatElofolt?.osszeg || 0,
-    penzugy: projekt?.penzugy || {
-      fovallalkoziId: "",
-      munkatipus: "",
-      elszamolasiSzabalyId: "",
-      tavKm:       projekt?.penzugy?.tavKm        ?? 0,
-      tavKmForras: projekt?.penzugy?.tavKmForras  || "",
-      tavKmNaplo:  projekt?.penzugy?.tavKmNaplo   || "",
-      csapatLetszam: 1,
-      munkanapok: 1,
-      darabszam: 1,
-      felultBevitel: null,
-      keziCsapatBer: null,
-      keziUtikoltség: null,
-      keziAnyagkoltség: null,
-      keziKartérités: null,
-      emelőgepKoltseg:     projekt?.penzugy?.emelőgepKoltseg     || 0,
-      daruKoltseg:         projekt?.penzugy?.daruKoltseg         || 0,
-      szallasKoltseg:      projekt?.penzugy?.szallasKoltseg      || 0,
-      bereltEszkozKoltseg: projekt?.penzugy?.bereltEszkozKoltseg || 0,
-      irodaAdminKoltseg:   projekt?.penzugy?.irodaAdminKoltseg   || 0,
-      egyebKoltseg:        projekt?.penzugy?.egyebKoltseg        || 0,
+    penzugy: {
+      ...(projekt?.penzugy || {
+        fovallalkoziId: "",
+        munkatipus: "",
+        elszamolasiSzabalyId: "",
+        tavKm:       0,
+        tavKmForras: "",
+        tavKmNaplo:  "",
+        csapatLetszam: 1,
+        munkanapok: 1,
+        darabszam: 1,
+        felultBevitel: null,
+        keziCsapatBer: null,
+        keziUtikoltség: null,
+        keziAnyagkoltség: null,
+        keziKartérités: null,
+        emelőgepKoltseg:     0,
+        daruKoltseg:         0,
+        szallasKoltseg:      0,
+        bereltEszkozKoltseg: 0,
+        irodaAdminKoltseg:   0,
+        egyebKoltseg:        0,
+      }),
+      panel_db:       projekt?.penzugy?.panel_db       ?? projekt?.napelemDb     ?? 0,
+      akku_db:        projekt?.penzugy?.akku_db        ?? projekt?.akkumulatorDb ?? 0,
+      smart_meter_db: projekt?.penzugy?.smart_meter_db ?? projekt?.smartMeterDb  ?? 0,
+      inverter_db:    projekt?.penzugy?.inverter_db    ?? projekt?.inverterDb    ?? 0,
     },
     megjegyzes: "",
   });
@@ -916,6 +922,25 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <Field label="Munkanapok száma" half>
               <input type="number" value={form.penzugy.munkanapok || 1} onChange={e => updPenz("munkanapok", e.target.value)} placeholder="1" style={inp} />
             </Field>
+            <div style={{ gridColumn: "span 2", background: "#F5F3FF", border: "1.5px solid #DDD6FE", borderRadius: 10, padding: "14px 16px 10px", marginTop: 4 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#7C3AED", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 12px" }}>
+                Elszámolási mennyiségek
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
+                <Field label="Panel / napelem db" half>
+                  <input type="number" min="0" value={form.penzugy.panel_db ?? ""} onChange={e => updPenz("panel_db", e.target.value)} placeholder="0" style={inp} />
+                </Field>
+                <Field label="Akkumulátor db" half>
+                  <input type="number" min="0" value={form.penzugy.akku_db ?? ""} onChange={e => updPenz("akku_db", e.target.value)} placeholder="0" style={inp} />
+                </Field>
+                <Field label="Smart meter db" half>
+                  <input type="number" min="0" value={form.penzugy.smart_meter_db ?? ""} onChange={e => updPenz("smart_meter_db", e.target.value)} placeholder="0" style={inp} />
+                </Field>
+                <Field label="Inverter db" half>
+                  <input type="number" min="0" value={form.penzugy.inverter_db ?? ""} onChange={e => updPenz("inverter_db", e.target.value)} placeholder="0" style={inp} />
+                </Field>
+              </div>
+            </div>
             <div style={{ gridColumn: "span 2", marginTop: 4 }}>
               <button type="button" onClick={() => setExtraCostOpen(o => !o)}
                 style={{ background: "none", border: "1px solid #E2E8F0", borderRadius: 8, cursor: "pointer", fontSize: 12, color: "#7C3AED", fontWeight: 700, padding: "6px 12px", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
