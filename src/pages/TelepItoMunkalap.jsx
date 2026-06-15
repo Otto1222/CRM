@@ -31,8 +31,8 @@ const SERIAL_CATEGORIES = ["inverter","akkumulátor","akkumulator","okosmérő",
 
 function requiresSerial(nev) {
   if (!nev) return false;
-  const n = nev.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-  return SERIAL_CATEGORIES.some(k => n.includes(k.normalize("NFD").replace(/[\u0300-\u036f]/g,"")));
+  const n = nev.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  return SERIAL_CATEGORIES.some(k => n.includes(k.normalize("NFD").replace(/[̀-ͯ]/g,"")));
 }
 
 // ─── Fotó kategóriák ──────────────────────────────────────────
@@ -525,7 +525,7 @@ function KivCsomagFelhasznalasTab({ munkalapId, projektId, onSave }) {
         style={{ width: "100%", padding: "14px", borderRadius: 12, border: "none",
           background: mentve ? "#059669" : C.accent, color: "#fff", fontWeight: 700, fontSize: 16,
           cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: FONT }}>
-        <Save size={18} />{mentve ? "Mentve \u2713" : "Anyagfelhasználás mentése"}
+        <Save size={18} />{mentve ? "Mentve ✓" : "Anyagfelhasználás mentése"}
       </button>
     </div>
   );
@@ -541,7 +541,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   const isLezartStatus = (ml) =>
     ml.lezarva ||
     ml.status==="Befejezett" ||
-    ml.status==="Ellenőrzés alatt" ||
+    ml.status==="Meghiúsult" ||
     ml.status==="Lezárva" ||
     ml.status==="Számlázva";
 
@@ -812,7 +812,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
       <div style={{ padding:24,textAlign:"center" }}>
         <Lock size={48} color={C.muted} style={{ opacity:.3,display:"block",margin:"0 auto 16px" }}/>
         <p style={{ fontWeight:700,fontSize:18,color:C.text,marginBottom:8 }}>
-          {m.status==="Lezárva"||m.status==="Számlázva" ? `Munka ${m.status}` : "Munka lezárva – Ellenőrzés alatt"}
+          {["Lezárva","Számlázva","Meghiúsult"].includes(m.status) ? `Munka ${m.status}` : "Munka lezárva – Ellenőrzés alatt"}
         </p>
         <p style={{ fontSize:14,color:C.muted,marginBottom:8 }}>Befejezve: {m.befejezesIdopont?new Date(m.befejezesIdopont).toLocaleString("hu-HU"):"—"}</p>
         {m.megjegyzes&&<div style={{ background:"#F8FAFC",border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 16px",margin:"0 auto",maxWidth:400,textAlign:"left" }}><p style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Megjegyzés:</p><p style={{ fontSize:14,color:C.text }}>{m.megjegyzes}</p></div>}
@@ -966,8 +966,12 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
       <div style={{ background:"#FFF7ED", border:"1px solid #FED7AA", borderRadius:8, padding:"10px 14px", margin:"12px 16px 4px", fontSize:12, color:"#92400E" }}>
         📋 <strong>Tájékoztató anyaglista</strong> – régi rendszer. A tényleges anyagfelhasználást a <strong>⚙️ Anyagfelhasználás</strong> lapon rögzítsd a Kivitelezési Csomag alapján.
       </div>
-      {(m.anyagok||[]).length===0&&<div style={{ padding:"32px 16px",textAlign:"center",color:C.muted }}><p>Nincsenek anyagok</p></div>}
-      {(m.anyagok||[]).map((a,i)=>(
+      {(m.anyagok||[]).length===0 ? (
+        <div style={{ padding:"32px 16px", textAlign:"center", color:C.muted }}>
+          <p style={{ fontSize:14, fontWeight:600, marginBottom:6 }}>Az anyagfelhasználás az új rendszerben a Kivitelezési Csomag alapján történik.</p>
+          <p style={{ fontSize:12 }}>Az anyagokat a ⚙️ Anyagfelhasználás lapon rögzítsd.</p>
+        </div>
+      ) : (m.anyagok||[]).map((a,i)=>(
         <div key={i} style={{ padding:"13px 16px",borderBottom:"1px solid #D1D9E6",display:"flex",justifyContent:"space-between" }}>
           <p style={{ fontWeight:600,fontSize:14,color:C.text,flex:1,paddingRight:16 }}>{a.nev}</p>
           <p style={{ fontWeight:700,fontSize:14,color:C.text,whiteSpace:"nowrap" }}>{a.menny} {a.egyseg}</p>
