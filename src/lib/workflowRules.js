@@ -198,7 +198,8 @@ export const WORKORDER_STATUSES_VISIBLE_TO_INSTALLER = [
 ];
 
 export const WORKORDER_STATUSES_HIDDEN_FROM_INSTALLER = [
-  "Lezárva", "Sikertelen",
+  "Lezárva", "Sikertelen", "Ellenőrzés alatt",
+  "Befejezett", "Meghiúsult", "Számlázva", "Befejezett Felmérés",
 ];
 
 export const INSTALLER_SETTABLE_STATUSES = [
