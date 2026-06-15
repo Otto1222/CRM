@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Clock, Wrench, Building2, FileText, Users, BarChart3 } from "lucide-react";
 import { C, FONT, FONT_HEADING, STATUS_CFG } from "../lib/constants";
 import { ft } from "../lib/helpers";
@@ -191,7 +191,7 @@ export default function Dashboard({ user }) {
   }, []);
 
   const stats = useMemo(() => {
-    const aktiv      = munkalapok.filter(m => !["Lezárva","Számlázva","Meghiúsult","Befejezett"].includes(m.status)).length;
+    const aktiv      = munkalapok.filter(m => !["Lezárva","Számlázva","Meghiúsult","Befejezett","Befejezett Felmérés"].includes(m.status)).length;
     const ellenorzes = munkalapok.filter(m => m.status === "Ellenőrzés alatt").length;
     const lezarva    = munkalapok.filter(m => m.status === "Lezárva").length;
     const felmeres   = munkalapok.filter(m => m.status === "Felmérés" || m.status === "Befejezett Felmérés").length;
