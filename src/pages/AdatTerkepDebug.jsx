@@ -430,7 +430,7 @@ function KapcsolatokTab({ projektek }) {
                   <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{cs.id}</span>
                   {" — "}statusz: <strong>{cs.statusz || "?"}</strong>
                   {" — "}munkatipus: {cs.munkatipus || "?"}
-                  {" — "}anyagok: {(cs.anyagok || []).length} db
+                  {" — "}tételek: {(cs.tetelek || []).length} db
                   {" — "}ar: {cs.veglegesAr ?? cs.osszesAr ?? "?"}
                 </div>
               ))}
