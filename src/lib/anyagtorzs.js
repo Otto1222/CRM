@@ -27,6 +27,16 @@
  *   módosul, a RÉGI érték árverzióként append-only mentésre kerül,
  *   mielőtt az új ár felülírná az anyagtörzs rekordot – ld. updateAnyag().
  *   Régi projektek / elfogadott ajánlatok ár-pillanatképei nem változnak.
+ *
+ * TS-1 bővítés (tartószerkezet kalkulátor):
+ *   pmMegnevezes: PM és telepítő felé egyszerűsített megnevezés
+ *     (pl. "Alumínium sín" az "Alumínium sín 40×40" helyett).
+ *   logikaiTermek: motor-hivatkozás kulcs (több cikkszám → egy logikai termék).
+ *   Új rekordok: a054 Síntoldó, a055 Mini sín, a056 Mini sín csavar,
+ *     a057 Univerzális leszorító.
+ *   loadAnyagtorzs() idempotens seed: az új rekordokat meglévő localStorage
+ *     adathoz hozzáfűzi, ha hiányoznak. transform-on-read: pmMegnevezes /
+ *     logikaiTermek a DEFAULT_ANYAGOK-ból töltődik, ha a tárolt rekordból hiányzik.
  */
 import { appendAnyagArVerzio } from "./anyagArVerzio.js";
 
@@ -89,11 +99,16 @@ export const DEFAULT_ANYAGOK = [
   { id: "a040", nev: "Bilincs 40mm",            egyseg: "db",  netto_egysegar: 0, kategoria: "villanyszereles", telepitoi_kategoria: "rogzito",       aktiv: true },
   { id: "a041", nev: "Kábelrögzítő",            egyseg: "db",  netto_egysegar: 0, kategoria: "villanyszereles", telepitoi_kategoria: "rogzito",       aktiv: true },
   { id: "a042", nev: "Csavarkészlet",           egyseg: "kész",netto_egysegar: 0, kategoria: "villanyszereles", telepitoi_kategoria: "rogzito",       aktiv: true },
-  // Tartószerkezet anyagok
-  { id: "a050", nev: "Alumínium sín 40×40",     egyseg: "m",   netto_egysegar: 0, kategoria: "tartoszerkezet",  telepitoi_kategoria: "tartoszerk_any", aktiv: true },
-  { id: "a051", nev: "Tetőhorog",               egyseg: "db",  netto_egysegar: 0, kategoria: "tartoszerkezet",  telepitoi_kategoria: "tartoszerk_any", aktiv: true },
-  { id: "a052", nev: "Közép bilincs",           egyseg: "db",  netto_egysegar: 0, kategoria: "tartoszerkezet",  telepitoi_kategoria: "tartoszerk_any", aktiv: true },
-  { id: "a053", nev: "Szél bilincs",            egyseg: "db",  netto_egysegar: 0, kategoria: "tartoszerkezet",  telepitoi_kategoria: "tartoszerk_any", aktiv: true },
+  // Tartószerkezet anyagok – pmMegnevezes: PM és telepítő egyszerűsített neve;
+  // logikaiTermek: motor-hivatkozás kulcs (több cikkszám → egy logikai termék)
+  { id: "a050", nev: "Alumínium sín 40×40",   pmMegnevezes: "Alumínium sín",        logikaiTermek: "aluminium_sin",    egyseg: "m",  netto_egysegar: 0, kategoria: "tartoszerkezet", telepitoi_kategoria: "tartoszerk_any", aktiv: true },
+  { id: "a051", nev: "Tetőhorog",             pmMegnevezes: "Tetőhorog",             logikaiTermek: "tetohorog",        egyseg: "db", netto_egysegar: 0, kategoria: "tartoszerkezet", telepitoi_kategoria: "tartoszerk_any", aktiv: true },
+  { id: "a052", nev: "Közép bilincs",         pmMegnevezes: "Köztes leszorító",      logikaiTermek: "koztes_leszorito", egyseg: "db", netto_egysegar: 0, kategoria: "tartoszerkezet", telepitoi_kategoria: "tartoszerk_any", aktiv: true },
+  { id: "a053", nev: "Szél bilincs",          pmMegnevezes: "Végleszorító",          logikaiTermek: "veg_leszorito",    egyseg: "db", netto_egysegar: 0, kategoria: "tartoszerkezet", telepitoi_kategoria: "tartoszerk_any", aktiv: true },
+  { id: "a054", nev: "Síntoldó",              pmMegnevezes: "Síntoldó",              logikaiTermek: "sintoldo",         egyseg: "db", netto_egysegar: 0, kategoria: "tartoszerkezet", telepitoi_kategoria: "tartoszerk_any", aktiv: true },
+  { id: "a055", nev: "Mini sín",              pmMegnevezes: "Mini sín",              logikaiTermek: "mini_sin",         egyseg: "db", netto_egysegar: 0, kategoria: "tartoszerkezet", telepitoi_kategoria: "tartoszerk_any", aktiv: true },
+  { id: "a056", nev: "Mini sín csavar",       pmMegnevezes: "Mini sín csavar",       logikaiTermek: "mini_sin_csavar",  egyseg: "db", netto_egysegar: 0, kategoria: "tartoszerkezet", telepitoi_kategoria: "tartoszerk_any", aktiv: true },
+  { id: "a057", nev: "Univerzális leszorító", pmMegnevezes: "Univerzális leszorító", logikaiTermek: "univ_leszorito",   egyseg: "db", netto_egysegar: 0, kategoria: "tartoszerkezet", telepitoi_kategoria: "tartoszerk_any", aktiv: true },
 ];
 
 // ─── V2 – Javasolt eladási ár számítás ───────────────────────
@@ -144,17 +159,32 @@ export function loadAnyagtorzs() {
     const stored = JSON.parse(localStorage.getItem(KEY) || "null");
     if (Array.isArray(stored) && stored.length > 0) {
       // Visszafelé kompatibilitás: ha régi "kat" mező van, mappeljük "kategoria"-ra
-      return stored.map(a => {
+      const mapped = stored.map(a => {
         const { telepitokategoria, ...rest } = a; // Fázis 2B – duplikált mező kivezetve
         const netto_egysegar = rest.netto_egysegar ?? rest.egysegAr ?? 0;
+        const defaultRec = DEFAULT_ANYAGOK.find(d => d.id === rest.id);
         return {
           ...rest,
           kategoria:            rest.kategoria ?? rest.kat ?? "villanyszereles",
           netto_egysegar,
           telepitoi_kategoria:  resolveTelepitoiKategoria(a),
           ...migrateAnyagV2(rest, netto_egysegar),
+          // TS-1: pmMegnevezes / logikaiTermek – ha hiányzik a tárolt rekordból,
+          // a DEFAULT_ANYAGOK megfelelő rekordjából tölti (transform-on-read)
+          pmMegnevezes:  rest.pmMegnevezes  ?? defaultRec?.pmMegnevezes  ?? "",
+          logikaiTermek: rest.logikaiTermek ?? defaultRec?.logikaiTermek ?? "",
         };
       });
+      // TS-1: idempotens seed – az új anyagkódok (a054–a057) hozzáfűzése,
+      // ha még nem szerepelnek a tárolt listában
+      const storedIds = new Set(mapped.map(a => a.id));
+      const hianyzok  = DEFAULT_ANYAGOK.filter(a => !storedIds.has(a.id));
+      if (hianyzok.length > 0) {
+        const merged = [...mapped, ...hianyzok];
+        localStorage.setItem(KEY, JSON.stringify(merged));
+        return merged;
+      }
+      return mapped;
     }
     localStorage.setItem(KEY, JSON.stringify(DEFAULT_ANYAGOK));
     return DEFAULT_ANYAGOK;
