@@ -232,7 +232,7 @@ export function generateKiviTetelekFromAjanlatPillanatkep(pillanatkep) {
         egysegarPillanatkepEladasi:    Number(t.netto_egysegar) || Number(t.netto_osszeg) || 0,
         egysegarPillanatkepBeszerzesi: t.beszerzesiArPillanatkep ?? null,
         tervezettMennyiseg:    mennyiseg,
-        kiadandoMennyiseg:     0,
+        kiadandoMennyiseg:     mennyiseg,
         kiadottMennyiseg:      0,
         felhasznaltMennyiseg:  0,
         visszahozottMennyiseg: 0,
