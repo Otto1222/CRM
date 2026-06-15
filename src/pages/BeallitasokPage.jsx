@@ -18,6 +18,7 @@ import SablonKezelo from "./SablonKezelo";
 import BackupKezelo from "./BackupKezelo";
 import CsapatokPage from "../modules/csapatok/CsapatokPage";
 import AnyagtorzsPage from "./AnyagtorzsPage";
+import AdatTerkepDebug from "./AdatTerkepDebug";
 
 const MENU_ITEMS = [
   {
@@ -123,6 +124,15 @@ const MENU_ITEMS = [
     icon: BookOpen,
     color: "#0891B2",
     bg: "#ECFEFF",
+  },
+  {
+    id: "adatterkep",
+    label: "Adattérkép / Debug",
+    desc: "localStorage kulcsok, rekordszámok, Drive sync és backup állapot, kapcsolati vizsgálat – csak olvasás",
+    icon: Settings,
+    color: "#7C3AED",
+    bg: "#F5F3FF",
+    adminOnly: true,
   },
 ];
 
@@ -240,6 +250,14 @@ export default function BeallitasokPage({ currentUser }) {
         <div style={{ padding: "0 28px" }}>
           <JegyzokonyviBeallitasok />
         </div>
+      </div>
+    );
+  }
+  if (aktiv === "adatterkep" && role === "Admin") {
+    return (
+      <div>
+        <BackBtn onClick={() => setAktiv(null)} label="Adattérkép / Debug" />
+        <AdatTerkepDebug />
       </div>
     );
   }
