@@ -1072,7 +1072,7 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
       {activeTab===0&&<InfoTab/>}
       {activeTab===1&&<AnyagokTab/>}
       {activeTab===2&&<FelmeresTab/>}
-      {megkezdve&&activeTab===3&&<KivCsomagFelhasznalasTab munkalapId={m.id} projektId={m.projektId} onSave={()=>{}}/>}
+      {megkezdve&&activeTab===3&&<KivCsomagFelhasznalasTab munkalapId={m.id} projektId={m.projektId||proj?.id} onSave={()=>{}}/>}
       {megkezdve&&activeTab===4&&<VbfTab/>}
       {megkezdve&&activeTab===5&&<FotokTab/>}
       {megkezdve&&activeTab===6&&(
