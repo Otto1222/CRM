@@ -209,9 +209,15 @@ export default function NaptarPage({ data, currentUser, onNavigate }) {
   // Csak saját munkalapok a Telepítő számára
   const filterUserId = currentUser?.role === "Telepítő" ? currentUser?.id : null;
 
+  // Árva munkalapok kizárása (projektId hiányzik vagy nem létező projektre mutat)
+  const aktivMunkalapok = useMemo(() => {
+    const pIds = new Set((data?.projektek || []).map(p => p.id));
+    return (data?.munkalapok || []).filter(m => m.projektId && pIds.has(m.projektId) && !m.torolt && !m.archiv);
+  }, [data]);
+
   const allEvents = useMemo(() =>
-    buildCalendarEvents(data?.projektek || [], data?.munkalapok || [], manEvents, filterUserId),
-    [data, manEvents, filterUserId]
+    buildCalendarEvents(data?.projektek || [], aktivMunkalapok, manEvents, filterUserId),
+    [data?.projektek, aktivMunkalapok, manEvents, filterUserId]
   );
 
   const calDays = useMemo(() => getCalendarDays(viewYear, viewMonth), [viewYear, viewMonth]);
