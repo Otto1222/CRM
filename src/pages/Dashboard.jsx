@@ -191,7 +191,11 @@ export default function Dashboard({ user }) {
   }, []);
 
   const stats = useMemo(() => {
-    const aktiv      = munkalapok.filter(m => !["Lezárva","Számlázva","Meghiúsult","Befejezett","Befejezett Felmérés"].includes(m.status)).length;
+    const projektIds = new Set(projektek.map(p => p.id));
+    const aktiv      = munkalapok.filter(m =>
+      m.projektId && projektIds.has(m.projektId) && !m.torolt && !m.archiv &&
+      !["Lezárva","Számlázva","Meghiúsult","Befejezett","Befejezett Felmérés"].includes(m.status)
+    ).length;
     const ellenorzes = munkalapok.filter(m => m.status === "Ellenőrzés alatt").length;
     const lezarva    = munkalapok.filter(m => m.status === "Lezárva").length;
     const felmeres   = munkalapok.filter(m => m.status === "Felmérés" || m.status === "Befejezett Felmérés").length;
@@ -204,7 +208,7 @@ export default function Dashboard({ user }) {
       (m.munkaeroDij||0) + (m.kiszallasiDij||0) + (m.egyebKolts||0), 0);
     const elfKart    = karteritesek.filter(k=>k.elfogadott===true).reduce((s,k)=>s+k.osszeg,0);
     return { aktiv, ellenorzes, lezarva, felmeres, osszesBev, osszesCost, elfKartEritesek: elfKart, eredmeny: osszesBev - osszesCost - elfKart };
-  }, [munkalapok, karteritesek]);
+  }, [munkalapok, karteritesek, projektek]);
 
   const tableData = useMemo(() => {
     return munkalapok
