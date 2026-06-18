@@ -376,11 +376,13 @@ function AdatTorlesPanel() {
   const [done, setDone]       = useState(false);
 
   const TORLENDO = [
-    { key: "ugyfelek",    label: "Ügyfelek",   ertek: [] },
-    { key: "munkalapok",  label: "Munkalapok", ertek: [] },
-    { key: "projektek",   label: "Projektek",  ertek: [] },
-    { key: "szamlak",     label: "Számlák",    ertek: [] },
-    { key: "karteritesek",label: "Kártérítések",ertek:[] },
+    { key: "ugyfelek",              label: "Ügyfelek",                ertek: [] },
+    { key: "munkalapok",            label: "Munkalapok",              ertek: [] },
+    { key: "projektek",             label: "Projektek",               ertek: [] },
+    { key: "ajanlatok",             label: "Ajánlatok",               ertek: [] },
+    { key: "kivitelezesi_csomagok", label: "Kivitelezési csomagok",   ertek: [] },
+    { key: "szamlak",               label: "Számlák",                 ertek: [] },
+    { key: "karteritesek",          label: "Kártérítések",            ertek: [] },
   ];
 
   function handleTorles() {
@@ -400,9 +402,9 @@ function AdatTorlesPanel() {
         <span style={{ fontWeight: 800, fontSize: 15, color: "#DC2626" }}>Operatív adatok törlése</span>
       </div>
       <p style={{ fontSize: 13, color: "#7F1D1D", marginBottom: 12, lineHeight: 1.6 }}>
-        Ez a funkció törli az összes ügyfelet, munkalapot, projektet, számlát és kártérítést a böngészőből.
+        Ez a funkció törli az összes ügyfelet, munkalapot, projektet, ajánlatot, kivitelezési csomagot, számlát és kártérítést a böngészőből.
         A beállítások, felhasználók, fővállalkozók és munkatípusok <strong>megmaradnak</strong>.<br />
-        A Drive-on tárolt adatokat ez nem törli — ott manuálisan kell.
+        A Drive-on tárolt adatokat ez nem törli — belépéskor visszatöltődnek. Teljes törléshez használd a "Teljes tesztadat törlés" funkciót.
       </p>
       <p style={{ fontSize: 12, color: "#64748B", marginBottom: 8 }}>
         Törlendő: {TORLENDO.map(t => t.label).join(", ")}
