@@ -459,6 +459,133 @@ function KapcsolatokTab({ projektek }) {
   );
 }
 
+// ─── Arva rekordok tab ────────────────────────────────────────────────────
+function ArvaRekordokTab() {
+  const projektek  = lsJson("projektek");
+  const munkalapok = lsJson("munkalapok");
+  const csomagok   = lsJson("kivitelezesi_csomagok");
+
+  const projektIds = new Set(projektek.map(p => p.id));
+
+  const arvaMunkalapok = munkalapok.filter(m =>
+    !m.projektId || !projektIds.has(m.projektId) || m.torolt || m.archiv
+  );
+
+  const arvaCsomagok = csomagok.filter(c =>
+    !c.projektId || !projektIds.has(c.projektId)
+  );
+
+  const pirosBadge = { display:"inline-block", padding:"2px 8px", borderRadius:6, fontSize:11, fontWeight:700, background:"#FEE2E2", color:"#991B1B" };
+  const zoldBadge  = { display:"inline-block", padding:"2px 8px", borderRadius:6, fontSize:11, fontWeight:700, background:"#DCFCE7", color:"#166534" };
+
+  const thP = { ...S.th, color:"#991B1B" };
+  const trP = { borderBottom:"1px solid #FECACA", background:"#FFF5F5" };
+
+  return (
+    <div style={{ padding:"20px 24px" }}>
+      <div style={{ display:"flex", gap:12, marginBottom:24, flexWrap:"wrap" }}>
+        <span style={arvaMunkalapok.length > 0 ? pirosBadge : zoldBadge}>
+          Munkalapok: {arvaMunkalapok.length > 0 ? `${arvaMunkalapok.length} arva` : "OK"}
+        </span>
+        <span style={arvaCsomagok.length > 0 ? pirosBadge : zoldBadge}>
+          Kivi csomagok: {arvaCsomagok.length > 0 ? `${arvaCsomagok.length} arva` : "OK"}
+        </span>
+      </div>
+
+      {/* Arva munkalapok */}
+      <div style={{ marginBottom:28 }}>
+        <p style={{ fontSize:11, fontWeight:700, color: arvaMunkalapok.length > 0 ? "#991B1B" : "#166534", textTransform:"uppercase", letterSpacing:0.7, margin:"0 0 10px" }}>
+          Árva munkalapok ({arvaMunkalapok.length} db)
+        </p>
+        {arvaMunkalapok.length === 0 ? (
+          <div style={{ padding:"14px 16px", background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:8, fontSize:12, color:"#166534" }}>
+            Nincs árva munkalap — minden munkalaphoz létező projekt tartozik.
+          </div>
+        ) : (
+          <div style={{ overflowX:"auto", border:"1px solid #FECACA", borderRadius:10 }}>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+              <thead>
+                <tr style={{ background:"#FEF2F2", borderBottom:"2px solid #FECACA" }}>
+                  <th style={thP}>Munkalap ID</th>
+                  <th style={thP}>Státusz</th>
+                  <th style={thP}>projektId</th>
+                  <th style={{ ...thP, textAlign:"center" }}>torolt</th>
+                  <th style={{ ...thP, textAlign:"center" }}>archiv</th>
+                  <th style={thP}>Gyökérok</th>
+                </tr>
+              </thead>
+              <tbody>
+                {arvaMunkalapok.map(m => {
+                  const ok = !m.projektId ? "Hiányzó projektId"
+                    : !projektIds.has(m.projektId) ? "projektId nem létező projektre mutat"
+                    : m.torolt ? "torolt===true"
+                    : "archiv===true";
+                  return (
+                    <tr key={m.id} style={trP}>
+                      <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700, color:"#991B1B" }}>{m.id?.slice(-8) || "—"}</td>
+                      <td style={S.td}>{m.status || "—"}</td>
+                      <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>
+                        {m.projektId || <em style={{ color:"#DC2626" }}>HIÁNYZIK</em>}
+                      </td>
+                      <td style={{ ...S.td, textAlign:"center" }}>{m.torolt ? "🔴 igen" : "—"}</td>
+                      <td style={{ ...S.td, textAlign:"center" }}>{m.archiv ? "🔴 igen" : "—"}</td>
+                      <td style={{ ...S.td, color:"#DC2626", fontSize:11 }}>{ok}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Arva kivi csomagok */}
+      <div>
+        <p style={{ fontSize:11, fontWeight:700, color: arvaCsomagok.length > 0 ? "#991B1B" : "#166534", textTransform:"uppercase", letterSpacing:0.7, margin:"0 0 10px" }}>
+          Árva kivitelezési csomagok ({arvaCsomagok.length} db)
+        </p>
+        {arvaCsomagok.length === 0 ? (
+          <div style={{ padding:"14px 16px", background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:8, fontSize:12, color:"#166534" }}>
+            Nincs árva kivitelezési csomag.
+          </div>
+        ) : (
+          <div style={{ overflowX:"auto", border:"1px solid #FECACA", borderRadius:10 }}>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+              <thead>
+                <tr style={{ background:"#FEF2F2", borderBottom:"2px solid #FECACA" }}>
+                  <th style={thP}>Csomag ID</th>
+                  <th style={thP}>Státusz</th>
+                  <th style={thP}>projektId</th>
+                  <th style={thP}>Gyökérok</th>
+                </tr>
+              </thead>
+              <tbody>
+                {arvaCsomagok.map(c => {
+                  const ok = !c.projektId ? "Hiányzó projektId" : "projektId nem létező projektre mutat";
+                  return (
+                    <tr key={c.id} style={trP}>
+                      <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700, color:"#991B1B" }}>{c.id?.slice(-8) || "—"}</td>
+                      <td style={S.td}>{c.statusz || "—"}</td>
+                      <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>
+                        {c.projektId || <em style={{ color:"#DC2626" }}>HIÁNYZIK</em>}
+                      </td>
+                      <td style={{ ...S.td, color:"#DC2626", fontSize:11 }}>{ok}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginTop:20, padding:"10px 14px", background:"#FFFBEB", border:"1px solid #FCD34D", borderRadius:8, fontSize:11, color:"#92400E" }}>
+        <strong>Árva rekord</strong>: olyan munkalap vagy csomag, amelynek projektId-je hiányzik, nem létező projektre mutat, vagy torolt/archiv jelölésű. Nem törölhetők innen — a szűrők kizárják őket a számításokból.
+      </div>
+    </div>
+  );
+}
+
 // ─── Fo komponens ─────────────────────────────────────────────────────────
 export default function AdatTerkepDebug() {
   const [tab, setTab] = useState("kulcsok");
@@ -513,10 +640,14 @@ export default function AdatTerkepDebug() {
         <button style={tabGombStil("kapcsolatok")} onClick={() => setTab("kapcsolatok")}>
           Kapcsolati vizsgálat
         </button>
+        <button style={tabGombStil("arva")} onClick={() => setTab("arva")}>
+          Árva rekordok
+        </button>
       </div>
 
       {tab === "kulcsok"     && <KulcsokTab snapshot={snapshot} frissitve={frissitve} />}
       {tab === "kapcsolatok" && <KapcsolatokTab projektek={projektek} />}
+      {tab === "arva"        && <ArvaRekordokTab />}
     </div>
   );
 }
