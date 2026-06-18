@@ -2,7 +2,6 @@ import { useState } from "react";
 import { C, FONT } from "../lib/constants";
 
 // ─── Statikus metaadat (service fajlok alapjan karbantartott) ─────────────
-// Backup: backupService.js MAIN_KEYS + PREFIX_GROUPS
 const BACKUP_KULCSOK = new Set([
   "projektek","munkalapok","ugyfelek","beallitasok","karteritesek","sablonok",
   "ajanlatok","edi_sorszam_counter","edi_ajanlat_sorszam_counter","crm_schema_version",
@@ -12,7 +11,6 @@ const BACKUP_PREFIXEK = [
   "karterites_","crm_karterites_",
 ];
 
-// Drive sync: per-service driveSave() hivasok alapjan (kozelito lista)
 const DRIVE_SYNC_KULCSOK = new Set([
   "projektek","munkalapok","ugyfelek","beallitasok","karteritesek","sablonok",
   "ajanlatok","kivitelezesi_csomagok","fovallalkozok","elszamolasi_szabalyok",
@@ -306,7 +304,6 @@ function KapcsolatokTab({ projektek }) {
 
       {projekt && (
         <div>
-          {/* Projekt alap adatok */}
           <div style={{
             background: "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 10,
             padding: "14px 18px", marginBottom: 20,
@@ -332,7 +329,6 @@ function KapcsolatokTab({ projektek }) {
             </div>
           </div>
 
-          {/* Kapcsolati vizsgalat */}
           <div style={{
             background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10,
             padding: "16px 20px", marginBottom: 16,
@@ -350,7 +346,6 @@ function KapcsolatokTab({ projektek }) {
               }
               pirosaHa={false}
             />
-
             <KapcsolatSor
               cimke="Elfogadott ajanlat pillanatkep"
               van={vanPillanatkep}
@@ -360,7 +355,6 @@ function KapcsolatokTab({ projektek }) {
               }
               pirosaHa={false}
             />
-
             <KapcsolatSor
               cimke={`Kivitelezesi csomag (${kapcs_csom.length} db)`}
               van={kapcs_csom.length > 0}
@@ -370,7 +364,6 @@ function KapcsolatokTab({ projektek }) {
               }
               pirosaHa={(projekt.forras || projekt.forrás) === "sajat_ajanlat"}
             />
-
             <KapcsolatSor
               cimke={`Munkalapok (${kapcs_ml.length} db)`}
               van={kapcs_ml.length > 0}
@@ -380,7 +373,6 @@ function KapcsolatokTab({ projektek }) {
               }
               pirosaHa={false}
             />
-
             <KapcsolatSor
               cimke="Penzugyi mod (anyagelszamolasiMod)"
               van={vanPenzugyi}
@@ -390,7 +382,6 @@ function KapcsolatokTab({ projektek }) {
               }
               pirosaHa={false}
             />
-
             <KapcsolatSor
               cimke={`Esemenynaplo (${(projekt.esemenynaplo || []).length} bejegyzes)`}
               van={(projekt.esemenynaplo || []).length > 0}
@@ -400,14 +391,12 @@ function KapcsolatokTab({ projektek }) {
               }
               pirosaHa={false}
             />
-
             <KapcsolatSor
               cimke={`Megjegyzesek (${(projekt.megjegyzesek || []).length} db)`}
               van={(projekt.megjegyzesek || []).length > 0}
               szoveg={null}
               pirosaHa={false}
             />
-
             <KapcsolatSor
               cimke={`Munkalap ID lista (munkalapIds: ${(projekt.munkalapIds || []).length} db)`}
               van={(projekt.munkalapIds || []).length > 0}
@@ -419,7 +408,6 @@ function KapcsolatokTab({ projektek }) {
             />
           </div>
 
-          {/* Kivitelezesi csomagok reszletesen */}
           {kapcs_csom.length > 0 && (
             <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "14px 18px", marginBottom: 16 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#166534", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 10px" }}>
@@ -437,7 +425,6 @@ function KapcsolatokTab({ projektek }) {
             </div>
           )}
 
-          {/* Munkalapok reszletesen */}
           {kapcs_ml.length > 0 && (
             <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "14px 18px" }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "#1D4ED8", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 10px" }}>
@@ -459,13 +446,62 @@ function KapcsolatokTab({ projektek }) {
   );
 }
 
+// ─── Arva rekordok segéd – per-munkalap kulcsok scan ─────────────────────
+const CRM_ML_TYPES = ["vbf", "photos", "state", "felmeres_fotok"];
+
+function extractMunkalapIdFromCrmMl(key) {
+  const withoutPrefix = key.slice("crm_ml_".length);
+  for (const typ of CRM_ML_TYPES) {
+    if (withoutPrefix.endsWith("_" + typ)) {
+      return { id: withoutPrefix.slice(0, withoutPrefix.length - typ.length - 1), tipus: typ };
+    }
+  }
+  return { id: withoutPrefix, tipus: "ismeretlen" };
+}
+
+function scanArvaPerMunkalapKulcsok(munkalapIds) {
+  const arva = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+    if (key.startsWith("crm_ml_")) {
+      const { id, tipus } = extractMunkalapIdFromCrmMl(key);
+      if (!munkalapIds.has(id)) arva.push({ key, munkalapId: id, tipus, kategoria: "crm_ml_" });
+    } else if (key.startsWith("lmra_rec_")) {
+      const id = key.slice("lmra_rec_".length);
+      if (!munkalapIds.has(id)) arva.push({ key, munkalapId: id, tipus: "lmra_rec", kategoria: "lmra_rec_" });
+    } else if (key.startsWith("lmra_") && !key.startsWith("lmra_rec_")) {
+      const id = key.slice("lmra_".length);
+      if (!munkalapIds.has(id)) arva.push({ key, munkalapId: id, tipus: "lmra_legacy", kategoria: "lmra_" });
+    }
+  }
+  return arva;
+}
+
+function scanArvaNaptarEsemenyek(munkalapIds, projektIds) {
+  try {
+    const esemenyek = JSON.parse(localStorage.getItem("naptar_esemenyek") || "[]");
+    return esemenyek.filter(ev => {
+      const hasMlRef = !!ev.munkalapId || !!ev.ref?.munkalapId;
+      const hasProjRef = !!ev.projektId || !!ev.ref?.projektId;
+      if (!hasMlRef && !hasProjRef) return false;
+      const mlId = ev.munkalapId || ev.ref?.munkalapId;
+      const projId = ev.projektId || ev.ref?.projektId;
+      if (mlId && !munkalapIds.has(mlId)) return true;
+      if (projId && !projektIds.has(projId)) return true;
+      return false;
+    });
+  } catch { return []; }
+}
+
 // ─── Arva rekordok tab ────────────────────────────────────────────────────
 function ArvaRekordokTab() {
   const projektek  = lsJson("projektek");
   const munkalapok = lsJson("munkalapok");
   const csomagok   = lsJson("kivitelezesi_csomagok");
 
-  const projektIds = new Set(projektek.map(p => p.id));
+  const projektIds   = new Set(projektek.map(p => p.id));
+  const munkalapIds  = new Set(munkalapok.map(m => m.id));
 
   const arvaMunkalapok = munkalapok.filter(m =>
     !m.projektId || !projektIds.has(m.projektId) || m.torolt || m.archiv
@@ -475,112 +511,146 @@ function ArvaRekordokTab() {
     !c.projektId || !projektIds.has(c.projektId)
   );
 
+  const arvaPerMlKulcsok   = scanArvaPerMunkalapKulcsok(munkalapIds);
+  const arvaNaptarEsemenyek = scanArvaNaptarEsemenyek(munkalapIds, projektIds);
+
   const pirosBadge = { display:"inline-block", padding:"2px 8px", borderRadius:6, fontSize:11, fontWeight:700, background:"#FEE2E2", color:"#991B1B" };
   const zoldBadge  = { display:"inline-block", padding:"2px 8px", borderRadius:6, fontSize:11, fontWeight:700, background:"#DCFCE7", color:"#166534" };
-
   const thP = { ...S.th, color:"#991B1B" };
   const trP = { borderBottom:"1px solid #FECACA", background:"#FFF5F5" };
 
+  function ArvaTabla({ cim, sorok, fejlec, sorRender, uresUzenet }) {
+    return (
+      <div style={{ marginBottom:28 }}>
+        <p style={{ fontSize:11, fontWeight:700, color: sorok.length > 0 ? "#991B1B" : "#166534", textTransform:"uppercase", letterSpacing:0.7, margin:"0 0 10px" }}>
+          {cim} ({sorok.length} db)
+        </p>
+        {sorok.length === 0 ? (
+          <div style={{ padding:"14px 16px", background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:8, fontSize:12, color:"#166534" }}>
+            {uresUzenet}
+          </div>
+        ) : (
+          <div style={{ overflowX:"auto", border:"1px solid #FECACA", borderRadius:10 }}>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+              <thead>
+                <tr style={{ background:"#FEF2F2", borderBottom:"2px solid #FECACA" }}>
+                  {fejlec.map(f => <th key={f} style={thP}>{f}</th>)}
+                </tr>
+              </thead>
+              <tbody>{sorok.map(sorRender)}</tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding:"20px 24px" }}>
-      <div style={{ display:"flex", gap:12, marginBottom:24, flexWrap:"wrap" }}>
+      {/* Összefoglaló badges */}
+      <div style={{ display:"flex", gap:10, marginBottom:24, flexWrap:"wrap" }}>
         <span style={arvaMunkalapok.length > 0 ? pirosBadge : zoldBadge}>
-          Munkalapok: {arvaMunkalapok.length > 0 ? `${arvaMunkalapok.length} arva` : "OK"}
+          Munkalapok: {arvaMunkalapok.length > 0 ? `${arvaMunkalapok.length} árva` : "OK"}
         </span>
         <span style={arvaCsomagok.length > 0 ? pirosBadge : zoldBadge}>
-          Kivi csomagok: {arvaCsomagok.length > 0 ? `${arvaCsomagok.length} arva` : "OK"}
+          Kivi csomagok: {arvaCsomagok.length > 0 ? `${arvaCsomagok.length} árva` : "OK"}
+        </span>
+        <span style={arvaPerMlKulcsok.length > 0 ? pirosBadge : zoldBadge}>
+          Per-ML kulcsok: {arvaPerMlKulcsok.length > 0 ? `${arvaPerMlKulcsok.length} árva` : "OK"}
+        </span>
+        <span style={arvaNaptarEsemenyek.length > 0 ? pirosBadge : zoldBadge}>
+          Naptár esemény: {arvaNaptarEsemenyek.length > 0 ? `${arvaNaptarEsemenyek.length} árva` : "OK"}
         </span>
       </div>
 
-      {/* Arva munkalapok */}
-      <div style={{ marginBottom:28 }}>
-        <p style={{ fontSize:11, fontWeight:700, color: arvaMunkalapok.length > 0 ? "#991B1B" : "#166534", textTransform:"uppercase", letterSpacing:0.7, margin:"0 0 10px" }}>
-          Árva munkalapok ({arvaMunkalapok.length} db)
-        </p>
-        {arvaMunkalapok.length === 0 ? (
-          <div style={{ padding:"14px 16px", background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:8, fontSize:12, color:"#166534" }}>
-            Nincs árva munkalap — minden munkalaphoz létező projekt tartozik.
-          </div>
-        ) : (
-          <div style={{ overflowX:"auto", border:"1px solid #FECACA", borderRadius:10 }}>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
-              <thead>
-                <tr style={{ background:"#FEF2F2", borderBottom:"2px solid #FECACA" }}>
-                  <th style={thP}>Munkalap ID</th>
-                  <th style={thP}>Státusz</th>
-                  <th style={thP}>projektId</th>
-                  <th style={{ ...thP, textAlign:"center" }}>torolt</th>
-                  <th style={{ ...thP, textAlign:"center" }}>archiv</th>
-                  <th style={thP}>Gyökérok</th>
-                </tr>
-              </thead>
-              <tbody>
-                {arvaMunkalapok.map(m => {
-                  const ok = !m.projektId ? "Hiányzó projektId"
-                    : !projektIds.has(m.projektId) ? "projektId nem létező projektre mutat"
-                    : m.torolt ? "torolt===true"
-                    : "archiv===true";
-                  return (
-                    <tr key={m.id} style={trP}>
-                      <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700, color:"#991B1B" }}>{m.id?.slice(-8) || "—"}</td>
-                      <td style={S.td}>{m.status || "—"}</td>
-                      <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>
-                        {m.projektId || <em style={{ color:"#DC2626" }}>HIÁNYZIK</em>}
-                      </td>
-                      <td style={{ ...S.td, textAlign:"center" }}>{m.torolt ? "🔴 igen" : "—"}</td>
-                      <td style={{ ...S.td, textAlign:"center" }}>{m.archiv ? "🔴 igen" : "—"}</td>
-                      <td style={{ ...S.td, color:"#DC2626", fontSize:11 }}>{ok}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Árva munkalapok */}
+      <ArvaTabla
+        cim="Árva munkalapok"
+        sorok={arvaMunkalapok}
+        fejlec={["Munkalap ID","Státusz","projektId","torolt","archiv","Gyökérok"]}
+        uresUzenet="Nincs árva munkalap — minden munkalaphoz létező projekt tartozik."
+        sorRender={m => {
+          const ok = !m.projektId ? "Hiányzó projektId"
+            : !projektIds.has(m.projektId) ? "projektId nem létező projektre mutat"
+            : m.torolt ? "torolt===true"
+            : "archiv===true";
+          return (
+            <tr key={m.id} style={trP}>
+              <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700, color:"#991B1B" }}>{m.id?.slice(-8)||"—"}</td>
+              <td style={S.td}>{m.status||"—"}</td>
+              <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>
+                {m.projektId || <em style={{ color:"#DC2626" }}>HIÁNYZIK</em>}
+              </td>
+              <td style={{ ...S.td, textAlign:"center" }}>{m.torolt ? "🔴 igen" : "—"}</td>
+              <td style={{ ...S.td, textAlign:"center" }}>{m.archiv ? "🔴 igen" : "—"}</td>
+              <td style={{ ...S.td, color:"#DC2626", fontSize:11 }}>{ok}</td>
+            </tr>
+          );
+        }}
+      />
 
-      {/* Arva kivi csomagok */}
-      <div>
-        <p style={{ fontSize:11, fontWeight:700, color: arvaCsomagok.length > 0 ? "#991B1B" : "#166534", textTransform:"uppercase", letterSpacing:0.7, margin:"0 0 10px" }}>
-          Árva kivitelezési csomagok ({arvaCsomagok.length} db)
-        </p>
-        {arvaCsomagok.length === 0 ? (
-          <div style={{ padding:"14px 16px", background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:8, fontSize:12, color:"#166534" }}>
-            Nincs árva kivitelezési csomag.
-          </div>
-        ) : (
-          <div style={{ overflowX:"auto", border:"1px solid #FECACA", borderRadius:10 }}>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
-              <thead>
-                <tr style={{ background:"#FEF2F2", borderBottom:"2px solid #FECACA" }}>
-                  <th style={thP}>Csomag ID</th>
-                  <th style={thP}>Státusz</th>
-                  <th style={thP}>projektId</th>
-                  <th style={thP}>Gyökérok</th>
-                </tr>
-              </thead>
-              <tbody>
-                {arvaCsomagok.map(c => {
-                  const ok = !c.projektId ? "Hiányzó projektId" : "projektId nem létező projektre mutat";
-                  return (
-                    <tr key={c.id} style={trP}>
-                      <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700, color:"#991B1B" }}>{c.id?.slice(-8) || "—"}</td>
-                      <td style={S.td}>{c.statusz || "—"}</td>
-                      <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>
-                        {c.projektId || <em style={{ color:"#DC2626" }}>HIÁNYZIK</em>}
-                      </td>
-                      <td style={{ ...S.td, color:"#DC2626", fontSize:11 }}>{ok}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Árva kivitelezési csomagok */}
+      <ArvaTabla
+        cim="Árva kivitelezési csomagok"
+        sorok={arvaCsomagok}
+        fejlec={["Csomag ID","Státusz","projektId","Gyökérok"]}
+        uresUzenet="Nincs árva kivitelezési csomag."
+        sorRender={c => {
+          const ok = !c.projektId ? "Hiányzó projektId" : "projektId nem létező projektre mutat";
+          return (
+            <tr key={c.id} style={trP}>
+              <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700, color:"#991B1B" }}>{c.id?.slice(-8)||"—"}</td>
+              <td style={S.td}>{c.statusz||"—"}</td>
+              <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>
+                {c.projektId || <em style={{ color:"#DC2626" }}>HIÁNYZIK</em>}
+              </td>
+              <td style={{ ...S.td, color:"#DC2626", fontSize:11 }}>{ok}</td>
+            </tr>
+          );
+        }}
+      />
 
-      <div style={{ marginTop:20, padding:"10px 14px", background:"#FFFBEB", border:"1px solid #FCD34D", borderRadius:8, fontSize:11, color:"#92400E" }}>
-        <strong>Árva rekord</strong>: olyan munkalap vagy csomag, amelynek projektId-je hiányzik, nem létező projektre mutat, vagy torolt/archiv jelölésű. Nem törölhetők innen — a szűrők kizárják őket a számításokból.
+      {/* Árva per-munkalap kulcsok */}
+      <ArvaTabla
+        cim="Per-munkalap kulcsok árva munkalaphoz"
+        sorok={arvaPerMlKulcsok}
+        fejlec={["localStorage kulcs","Típus","Munkalap ID","Megjegyzés"]}
+        uresUzenet="Nincs árva per-munkalap kulcs (crm_ml_*, lmra_rec_*)."
+        sorRender={r => (
+          <tr key={r.key} style={trP}>
+            <td style={{ ...S.td, fontFamily:"monospace", fontSize:11, color:"#991B1B" }}>{r.key}</td>
+            <td style={{ ...S.td, fontSize:11 }}>{r.tipus}</td>
+            <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>{r.munkalapId}</td>
+            <td style={{ ...S.td, color:"#DC2626", fontSize:11 }}>Munkalap nem található a munkalapok listában</td>
+          </tr>
+        )}
+      />
+
+      {/* Árva naptár események */}
+      <ArvaTabla
+        cim="Árva kézi naptár események"
+        sorok={arvaNaptarEsemenyek}
+        fejlec={["Esemény ID","Cím","Hivatkozott ML/Proj ID","Gyökérok"]}
+        uresUzenet="Nincs árva naptár esemény (naptar_esemenyek)."
+        sorRender={ev => {
+          const mlId   = ev.munkalapId || ev.ref?.munkalapId;
+          const projId = ev.projektId  || ev.ref?.projektId;
+          const ok = mlId && !munkalapIds.has(mlId)
+            ? "munkalapId nem létező munkalapra mutat"
+            : "projektId nem létező projektre mutat";
+          return (
+            <tr key={ev.id} style={trP}>
+              <td style={{ ...S.td, fontFamily:"monospace", fontSize:11, color:"#991B1B" }}>{ev.id?.slice(-8)||"—"}</td>
+              <td style={S.td}>{ev.title||ev.cim||"—"}</td>
+              <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>{mlId||projId||"—"}</td>
+              <td style={{ ...S.td, color:"#DC2626", fontSize:11 }}>{ok}</td>
+            </tr>
+          );
+        }}
+      />
+
+      <div style={{ marginTop:8, padding:"10px 14px", background:"#FFFBEB", border:"1px solid #FCD34D", borderRadius:8, fontSize:11, color:"#92400E" }}>
+        <strong>Árva rekord</strong>: hiányzó vagy érvénytelen projektId/munkalapId hivatkozás. Az adatok csak olvashatók innen — törléshez használd a Beállítások / Teljes tesztadat törlés funkciót.
       </div>
     </div>
   );
@@ -609,7 +679,6 @@ export default function AdatTerkepDebug() {
 
   return (
     <div style={{ fontFamily: FONT, paddingBottom: 40 }}>
-      {/* Figyelmeztetés */}
       <div style={{
         margin: "0 24px 20px", marginTop: 20,
         padding: "12px 16px", background: "#FFFBEB",
@@ -629,7 +698,6 @@ export default function AdatTerkepDebug() {
         </div>
       </div>
 
-      {/* Tabok */}
       <div style={{
         borderBottom: `1px solid ${C.border}`, display: "flex", gap: 2,
         background: "#F8FAFC", margin: "0 24px",
