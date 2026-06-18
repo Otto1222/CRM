@@ -3,6 +3,7 @@ import {
   Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink, Upload, CheckCircle2, Save, Check, X, UserPlus, Pencil,
 } from "lucide-react";
 import { loadLocal, saveLocal } from "../lib/localDb";
+import { clearCollection } from "../lib/dataSync.service";
 import {
   hasSablon, saveSablon, deleteSablon, getSablonMeta,
   readFileAsBase64, VBF_PLACEHOLDER_DOCS,
@@ -323,6 +324,7 @@ export default function BeallitasokPage({ currentUser }) {
       </div>
 
       {role === "Admin" && <AdatTorlesPanel />}
+      {role === "Admin" && <TeljesTorlesPanel />}
     </div>
   );
 }
@@ -429,6 +431,156 @@ function AdatTorlesPanel() {
           >
             Törlés
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Admin: Teljes tesztadat törlés ──────────────────────────
+const TELJES_FO_KULCSOK = [
+  "projektek", "ajanlatok", "ugyfelek", "munkalapok",
+  "kivitelezesi_csomagok", "szamlak", "karteritesek",
+];
+const TELJES_LOKALIS_KULCSOK = [
+  "naptar_esemenyek", "edi_projekt_sorszam_counter",
+  "edi_sorszam_counter", "edi_ajanlat_sorszam_counter",
+];
+const TELJES_PREFIXEK = [
+  "crm_ml_", "crm_vbf_", "vbf_", "fotok_", "crm_fotok_",
+  "lmra_", "lmra_rec_", "projekt_pillanatkep_",
+];
+const TELJES_JELSZO = "TESZTADAT TORLES";
+
+function TeljesTorlesPanel() {
+  const [lepes, setLepes]     = useState("idle"); // idle|confirm1|confirm2|running|done
+  const [jelszo, setJelszo]   = useState("");
+  const [eredmeny, setEredmeny] = useState(null);
+
+  function resetAll() { setLepes("idle"); setJelszo(""); setEredmeny(null); }
+
+  async function handleTorles() {
+    if (jelszo !== TELJES_JELSZO) return;
+    setLepes("running");
+    setJelszo("");
+
+    let foDriveOk = 0, foDriveHiba = 0, prefixTorolve = 0;
+    const driveHibak = [];
+
+    // 1. Fő üzleti kulcsok: localStorage + Drive
+    for (const col of TELJES_FO_KULCSOK) {
+      try {
+        const res = await clearCollection(col);
+        if (res.driveSaved) foDriveOk++;
+        else { foDriveHiba++; driveHibak.push(`${col}: ${res.driveError || "hiba"}`); }
+      } catch (e) {
+        foDriveHiba++;
+        driveHibak.push(`${col}: ${e.message}`);
+      }
+    }
+
+    // 2. Lokális-only kulcsok (nincs Drive párjuk)
+    TELJES_LOKALIS_KULCSOK.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+
+    // 3. Prefix-scan: crm_ml_*, lmra_rec_*, fotok_* stb.
+    const torloKulcsok = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && TELJES_PREFIXEK.some(p => k.startsWith(p))) torloKulcsok.push(k);
+    }
+    torloKulcsok.forEach(k => { try { localStorage.removeItem(k); prefixTorolve++; } catch {} });
+
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "all" } }));
+    setEredmeny({ foDriveOk, foDriveHiba, foDb: TELJES_FO_KULCSOK.length, prefixTorolve, driveHibak });
+    setLepes("done");
+  }
+
+  const btnStyle = (aktiv) => ({
+    padding: "9px 20px", border: "none", borderRadius: 8, cursor: aktiv ? "pointer" : "default",
+    fontWeight: 700, fontSize: 13, fontFamily: FONT,
+    background: aktiv ? "#7C3AED" : "#C4B5FD", color: "#fff",
+  });
+
+  return (
+    <div style={{ marginTop: 20, padding: "20px 24px", border: "2px solid #7C3AED", borderRadius: 14, background: "#FAF5FF" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+        <Trash2 size={20} color="#7C3AED" />
+        <span style={{ fontWeight: 800, fontSize: 15, color: "#7C3AED" }}>Teljes tesztadat törlés</span>
+        <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: "#EDE9FE", color: "#5B21B6" }}>Admin</span>
+      </div>
+      <p style={{ fontSize: 13, color: "#4C1D95", marginBottom: 8, lineHeight: 1.6 }}>
+        Törli az összes üzleti adatot <strong>localStorage-ból ÉS Drive-ról</strong> egyaránt.
+        Belépés után sem töltődik vissza semmi. Nem törli: felhasználók, csapatok, fővállalkozók, beállítások, munkatípusok.
+      </p>
+      <p style={{ fontSize: 11, color: "#6D28D9", marginBottom: 12 }}>
+        Törlendő fő kulcsok: {TELJES_FO_KULCSOK.join(", ")} + naptár + számlálók<br />
+        Prefix törlés: {TELJES_PREFIXEK.join(", ")}
+      </p>
+
+      {lepes === "idle" && (
+        <button onClick={() => setLepes("confirm1")} style={btnStyle(true)}>
+          Törlés indítása…
+        </button>
+      )}
+
+      {lepes === "confirm1" && (
+        <div style={{ background: "#FEF3C7", border: "1px solid #FCD34D", borderRadius: 10, padding: "14px 18px" }}>
+          <p style={{ fontWeight: 700, fontSize: 13, color: "#78350F", margin: "0 0 12px" }}>
+            ⚠️ Ez a művelet VISSZAFORDÍTHATATLAN. Minden üzleti adat elvész — Drive-ról sem töltődik vissza!
+          </p>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={resetAll} style={{ ...btnStyle(true), background: "#6B7280" }}>Mégsem</button>
+            <button onClick={() => setLepes("confirm2")} style={{ ...btnStyle(true), background: "#DC2626" }}>
+              Igen, törlöm
+            </button>
+          </div>
+        </div>
+      )}
+
+      {lepes === "confirm2" && (
+        <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: "14px 18px" }}>
+          <p style={{ fontWeight: 700, fontSize: 13, color: "#7F1D1D", margin: "0 0 10px" }}>
+            Második megerősítés: írd be pontosan: <code style={{ background: "#FEE2E2", padding: "1px 6px", borderRadius: 4 }}>{TELJES_JELSZO}</code>
+          </p>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <input
+              value={jelszo}
+              onChange={e => setJelszo(e.target.value)}
+              placeholder={TELJES_JELSZO}
+              autoFocus
+              style={{ padding: "8px 12px", border: "1.5px solid #FECACA", borderRadius: 8, fontSize: 13, fontFamily: FONT, outline: "none", width: 220 }}
+            />
+            <button onClick={handleTorles} disabled={jelszo !== TELJES_JELSZO} style={btnStyle(jelszo === TELJES_JELSZO)}>
+              Teljes törlés
+            </button>
+            <button onClick={resetAll} style={{ ...btnStyle(true), background: "#6B7280" }}>Mégsem</button>
+          </div>
+        </div>
+      )}
+
+      {lepes === "running" && (
+        <div style={{ padding: "12px 0", fontSize: 13, color: "#5B21B6", fontWeight: 600 }}>
+          Törlés folyamatban… (Drive szinkron)
+        </div>
+      )}
+
+      {lepes === "done" && eredmeny && (
+        <div style={{ background: "#ECFDF5", border: "1px solid #6EE7B7", borderRadius: 10, padding: "14px 18px" }}>
+          <p style={{ fontWeight: 700, fontSize: 13, color: "#065F46", margin: "0 0 8px" }}>Törlés kész</p>
+          <ul style={{ fontSize: 12, color: "#047857", margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
+            <li>Fő kulcsok ürítve (localStorage): {eredmeny.foDb} db</li>
+            <li>Drive szinkron sikeres: {eredmeny.foDriveOk} / {eredmeny.foDb} kulcs</li>
+            {eredmeny.foDriveHiba > 0 && (
+              <li style={{ color: "#DC2626" }}>
+                Drive hiba: {eredmeny.foDriveHiba} kulcs — {eredmeny.driveHibak.join("; ")}
+              </li>
+            )}
+            <li>Prefix kulcsok törölve (localStorage): {eredmeny.prefixTorolve} db</li>
+          </ul>
+          <p style={{ fontSize: 11, color: "#065F46", margin: "10px 0 0" }}>
+            Frissítsd az oldalt (F5) a teljes hatáshoz. Belépés után az adatok már nem töltődnek vissza.
+          </p>
+          <button onClick={resetAll} style={{ marginTop: 10, ...btnStyle(true), background: "#059669" }}>OK</button>
         </div>
       )}
     </div>
