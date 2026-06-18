@@ -184,6 +184,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
   const filtered = data.munkalapok.filter(m => {
     if (userRole === "Telepítő" && currentUser) {
       if (!isInstallerVisibleWorkorder(m, currentUser)) return false;
+      if (!m.projektId || !data.projektek?.some(p => p.id === m.projektId)) return false;
     }
 
     const clientNev = m.clientNev || data.ugyfelek?.find(u => u.id === m.clientId)?.name || "";
