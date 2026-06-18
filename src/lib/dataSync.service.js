@@ -187,6 +187,44 @@ export async function saveCollection(collection, data) {
   return { localSaved: true, driveSaved, driveError, data };
 }
 
+/**
+ * Szándékos admin törlés: üres értéket ment lokálisan ÉS Drive-ra.
+ * Megkerüli a saveCollection üres-tömb védelmét.
+ * Csak explicit admin "Teljes tesztadat törlés" akcióból hívható!
+ * @returns {{ localSaved: boolean, driveSaved: boolean, driveError: string|null }}
+ */
+export async function clearCollection(collection) {
+  const emptyVal = emptyValue(collection);
+  saveLocal(collection, emptyVal);
+
+  let driveSaved = false;
+  let driveError = null;
+
+  try {
+    const res = await driveSave(collection, { [collection]: emptyVal });
+    if (res.offline) {
+      driveError = "Drive nem érhető el (offline vagy nincs konfigurálva)";
+    } else if (res.ok) {
+      driveSaved = true;
+      updateSyncLog(collection, true);
+    } else {
+      driveError = res.error || "Ismeretlen Drive hiba";
+      updateSyncLog(collection, false, driveError);
+    }
+  } catch (e) {
+    driveError = e.message;
+    updateSyncLog(collection, false, e.message);
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("crm-db-updated", {
+      detail: { collection, action: "clear", fromDataSync: true },
+    })
+  );
+
+  return { localSaved: true, driveSaved, driveError };
+}
+
 // ─── Szinkronizálás ───────────────────────────────────────────
 
 export async function syncAllFromDrive() {
