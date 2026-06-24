@@ -28,6 +28,7 @@ import NaptarPage from "./pages/NaptarPage.jsx";
 import KarteritesekPage from "./pages/KarteritesekTab.jsx";
 import MunkalapSablonokPage from "./modules/munkalap_sablonok/MunkalapSablonokPage.jsx";
 import { initSablonok, getAktivSablonok } from "./modules/munkalap_sablonok/munkalapSablon.service.js";
+import JobProgressModal from "./components/JobProgressModal";
 
 const PAGE_TITLES = {
   dashboard:         "Dashboard",
@@ -455,6 +456,7 @@ export default function App() {
       )}
 
       <PwaInstallBanner />
+      <JobProgressModal />
     </div>
   );
 }

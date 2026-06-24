@@ -1,5 +1,6 @@
 import { driveLoad, driveSave } from "./driveApi";
 import { loadLocal, saveLocal } from "./localDb";
+import { startJob, updateJob, finishJob } from "./jobProgress";
 
 export const SYNC_COLLECTIONS = [
   "projektek",
@@ -204,13 +205,24 @@ export async function clearCollection(collection) {
 // ─── Szinkronizálás ───────────────────────────────────────────
 
 export async function syncAllFromDrive() {
+  const jobId = startJob("Drive szinkronizálás", {
+    steps: [...SYNC_COLLECTIONS, "pillanatkepek"],
+  });
+
   const result = {};
 
-  for (const collection of SYNC_COLLECTIONS) {
+  for (let i = 0; i < SYNC_COLLECTIONS.length; i++) {
+    const collection = SYNC_COLLECTIONS[i];
+    updateJob(jobId, { currentStep: i, stepLabel: collection });
     result[collection] = await loadCollection(collection);
+    updateJob(jobId, {
+      currentStep: i + 1,
+      stepResult:  { label: collection, status: "ok" },
+    });
   }
 
   // Pillanatkepek visszaállítása Drive-ból (egyedi localStorage kulcsokra)
+  updateJob(jobId, { stepLabel: "pillanatkepek" });
   try {
     const drivePayload  = await driveLoad("pillanatkepek");
     const pillanatkepek = unwrap("pillanatkepek", drivePayload);
@@ -220,7 +232,10 @@ export async function syncAllFromDrive() {
       });
       result.pillanatkepek = pillanatkepek;
     }
-  } catch {}
+    updateJob(jobId, { stepResult: { label: "pillanatkepek", status: "ok" } });
+  } catch {
+    updateJob(jobId, { stepResult: { label: "pillanatkepek", status: "error", error: "Betöltési hiba" } });
+  }
 
   // Counter öngyógyítás: ha localStorage törlődött, a valós adatokból állítja helyre
   const projektek = result.projektek || [];
@@ -246,6 +261,8 @@ export async function syncAllFromDrive() {
     }
   }
 
+  finishJob(jobId, { summary: `${SYNC_COLLECTIONS.length + 1} kollekció betöltve` });
+
   return result;
 }
 
@@ -254,15 +271,42 @@ export async function syncAllFromDrive() {
  * @returns {{ results: Object, allOk: boolean }}
  */
 export async function syncAllToDrive() {
+  const jobId = startJob("Drive: minden mentése", {
+    steps: [...SYNC_COLLECTIONS],
+  });
+
   const results = {};
   let   allOk   = true;
+  let   okCount = 0;
+  let   errCount = 0;
 
-  for (const collection of SYNC_COLLECTIONS) {
+  for (let i = 0; i < SYNC_COLLECTIONS.length; i++) {
+    const collection = SYNC_COLLECTIONS[i];
+    updateJob(jobId, { currentStep: i, stepLabel: collection });
+
     const data = loadLocal(collection) ?? emptyValue(collection);
     const res  = await saveCollection(collection, data);
     results[collection] = res;
-    if (!res.driveSaved) allOk = false;
+
+    const stepOk = res.driveSaved || (!res.driveError);
+    if (!stepOk) { allOk = false; errCount++; }
+    else okCount++;
+
+    updateJob(jobId, {
+      currentStep: i + 1,
+      stepResult:  {
+        label:  collection,
+        status: stepOk ? "ok" : "error",
+        error:  res.driveError || null,
+      },
+    });
   }
+
+  finishJob(jobId, {
+    summary: errCount > 0
+      ? `${okCount} mentve, ${errCount} hibás`
+      : `${okCount} kollekció mentve`,
+  });
 
   return { results, allOk };
 }
