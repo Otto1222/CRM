@@ -11,6 +11,28 @@ import { createKivitelezesiCsomagForProjekt } from "../kivitelezesi_csomag/kivit
 const KEY         = "projektek";
 const COUNTER_KEY = "edi_projekt_sorszam_counter";
 
+// ─── Dátum validáció ──────────────────────────────────────────────────────
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Tervezett kezdés validáció – YYYY-MM-DD string összehasonlítás, timezone-mentes.
+ * @returns {{ ok: boolean, error: string|null }}
+ */
+export function validateProjektDatum(data) {
+  if (!data.tervezettKezdes) return { ok: true, error: null };
+  if (data.tervezettKezdes < todayStr()) {
+    return {
+      ok:    false,
+      error: "A projekt tervezett kezdése nem lehet korábbi, mint a mai nap.",
+    };
+  }
+  return { ok: true, error: null };
+}
+
 // ─── Szinkron figyelmeztetés ──────────────────────────────────────────────
 
 function notifySyncFailed() {
@@ -79,6 +101,9 @@ export function formatProjektAzonosito(projektkod, kulsoAzonosito = "") {
 // ─── Létrehozás ───────────────────────────────────────────────────────────
 
 export function createProjekt(data, createdBy = "") {
+  const _dv = validateProjektDatum(data);
+  if (!_dv.ok) throw new Error(_dv.error);
+
   createBackup("Projekt létrehozás előtt");
   const now = new Date().toISOString();
   const projekt = {
@@ -126,6 +151,11 @@ export function createProjekt(data, createdBy = "") {
 // ─── Frissítés ────────────────────────────────────────────────────────────
 
 export function updateProjekt(id, updates, user = "") {
+  if (updates.tervezettKezdes !== undefined) {
+    const _dv = validateProjektDatum(updates);
+    if (!_dv.ok) throw new Error(_dv.error);
+  }
+
   const list = loadProjektek();
   const idx  = list.findIndex(p => p.id === id);
   if (idx < 0) return null;

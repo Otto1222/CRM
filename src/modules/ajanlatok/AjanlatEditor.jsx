@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+﻿import { useState, useMemo } from "react";
 import { ArrowLeft, Save, Printer, Plus, Trash2, ChevronDown, ChevronRight, Info, Package } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants";
 import { ft } from "../../lib/helpers";
@@ -9,7 +9,7 @@ import {
   CEGES_ALAP_ANYAG_HASZON_PCT, calcEladasiAr, calcHaszonFt, alacsonyAnyagHaszon,
   calcReszletHaszon,
 } from "./ajanlat.schema";
-import { createAjanlat, updateAjanlat } from "./ajanlat.service";
+import { createAjanlat, updateAjanlat, validateAjanlatDatum, defaultErvenyesseg } from "./ajanlat.service";
 import { printAjanlat } from "./ajanlatPrint";
 
 const INP = {
@@ -108,7 +108,7 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
     clientTel:    ajanlat?.clientTel   || "",
     clientEmail:  ajanlat?.clientEmail || "",
     clientCim:    ajanlat?.clientCim   || "",
-    ervenyesseg:  ajanlat?.ervenyesseg || "",
+    ervenyesseg:  ajanlat?.ervenyesseg || (isNew ? defaultErvenyesseg() : ""),
     megjegyzes:   ajanlat?.megjegyzes  || "",
     status:       ajanlat?.status      || "Piszkozat",
     afa_szazalek: ajanlat?.afa_szazalek ?? 27,
@@ -259,6 +259,8 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
   function handleSave() {
     if (!form.nev?.trim())       { setHiba("Az ajánlat megnevezése kötelező."); setTab(0); return; }
     if (!form.clientNev?.trim()) { setHiba("Az ügyfél neve kötelező."); setTab(0); return; }
+    const datumV = validateAjanlatDatum(form);
+    if (!datumV.ok) { setHiba(datumV.error); setTab(0); return; }
     const saveData = { ...form, fo_tetelek: computed.fo, osszeg: computed.netto };
     if (isNew) createAjanlat(saveData, currentUser);
     else updateAjanlat(ajanlat.id, saveData);
@@ -312,7 +314,7 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
         </div>
         <div>
           <Label>Érvényesség</Label>
-          <input type="date" value={form.ervenyesseg} onChange={e => upd("ervenyesseg", e.target.value)} style={INP} />
+          <input type="date" value={form.ervenyesseg} onChange={e => upd("ervenyesseg", e.target.value)} min={new Date().toISOString().slice(0,10)} style={INP} />
         </div>
         <div style={{ gridColumn: "span 2" }}>
           <Label>Cím</Label>

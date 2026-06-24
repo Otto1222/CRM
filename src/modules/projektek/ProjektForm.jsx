@@ -15,7 +15,7 @@ import { getAktivCsapatok } from "../csapatok/csapat.service.js";
 import { autoFillPenzugy } from "../../services/workOrderFinancial.service.js";
 import { calcProjektElszamolas, buildInput } from "../../services/settlementCalculator.js";
 import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
-import { createProjekt, updateProjekt } from "./projekt.service.js";
+import { createProjekt, updateProjekt, validateProjektDatum } from "./projekt.service.js";
 import { createInitialWorkorderForProject } from "../../services/projectWorkorder.service.js";
 import { driveCreateProjektFolder } from "../../lib/driveApi.js";
 import {
@@ -322,6 +322,8 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     // Fázis 4A: saját munka csak elfogadott ajánlatból jöhet létre – mentéskor
     // újra ellenőrizzük, hogy a kiválasztott ajánlat még mindig elérhető és
     // elfogadott (közben módosulhatott a státusza, vagy más projekthez köthették).
+    const datumV = validateProjektDatum(form);
+    if (!datumV.ok) { setHiba(datumV.error); return; }
     let valasztottAjanlat = null;
     if (form.forrás === "sajat_ajanlat") {
       valasztottAjanlat = elfogadottAjanlatok.find(a => a.id === form.ajanlatId) || null;
@@ -831,7 +833,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               </p>
             </div>
             <Field label="Tervezett kezdés" half>
-              <input type="date" value={form.tervezettKezdes} onChange={e => upd("tervezettKezdes", e.target.value)} style={inp} />
+              <input type="date" value={form.tervezettKezdes} onChange={e => upd("tervezettKezdes", e.target.value)} min={new Date().toISOString().slice(0,10)} style={inp} />
             </Field>
             <Field label="Tervezett befejezés" half>
               <input type="date" value={form.tervezettBefejezes} onChange={e => upd("tervezettBefejezes", e.target.value)} style={inp} />
