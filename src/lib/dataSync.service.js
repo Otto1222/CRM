@@ -143,11 +143,14 @@ export async function loadCollection(collection) {
 
 /**
  * Kollekció mentése lokálisan + Drive-ra.
- * @returns {{ localSaved: true, driveSaved: boolean, driveError: string|null, data }}
+ * @param {object} [opts]
+ * @param {boolean} [opts.force]  - ha true, az üres-tömb védelem kikerülhető (csak admin törlésből hívható)
+ * @param {string}  [opts.action] - crm-db-updated esemény action mezője (alapértelmezett: "save")
+ * @returns {{ localSaved: boolean, driveSaved: boolean, driveError: string|null, data }}
  */
-export async function saveCollection(collection, data) {
-  // KRITIKUS: üres adat soha ne írja felül a meglévő adatot
-  if (Array.isArray(data) && data.length === 0) {
+export async function saveCollection(collection, data, opts = {}) {
+  // KRITIKUS: üres adat soha ne írja felül a meglévő adatot — kivéve opts.force = true esetén
+  if (!opts.force && Array.isArray(data) && data.length === 0) {
     const existing = loadLocal(collection);
     if (Array.isArray(existing) && existing.length > 0) {
       console.warn(`[dataSync] MEGAKADÁLYOZVA: üres [] felülírna ${existing.length} rekordot (${collection})`);
@@ -180,7 +183,7 @@ export async function saveCollection(collection, data) {
 
   window.dispatchEvent(
     new CustomEvent("crm-db-updated", {
-      detail: { collection, action: "save", fromDataSync: true },
+      detail: { collection, action: opts.action || "save", fromDataSync: true },
     })
   );
 
@@ -189,40 +192,13 @@ export async function saveCollection(collection, data) {
 
 /**
  * Szándékos admin törlés: üres értéket ment lokálisan ÉS Drive-ra.
- * Megkerüli a saveCollection üres-tömb védelmét.
+ * Pontosan ugyanazon a kóduton megy át mint saveCollection – nincs külön fetch logika.
  * Csak explicit admin "Teljes tesztadat törlés" akcióból hívható!
- * @returns {{ localSaved: boolean, driveSaved: boolean, driveError: string|null }}
+ * @returns {{ localSaved: boolean, driveSaved: boolean, driveError: string|null, data }}
  */
 export async function clearCollection(collection) {
   const emptyVal = emptyValue(collection);
-  saveLocal(collection, emptyVal);
-
-  let driveSaved = false;
-  let driveError = null;
-
-  try {
-    const res = await driveSave(collection, { [collection]: emptyVal });
-    if (res.offline) {
-      driveError = "Drive nem érhető el (offline vagy nincs konfigurálva)";
-    } else if (res.ok) {
-      driveSaved = true;
-      updateSyncLog(collection, true);
-    } else {
-      driveError = res.error || "Ismeretlen Drive hiba";
-      updateSyncLog(collection, false, driveError);
-    }
-  } catch (e) {
-    driveError = e.message;
-    updateSyncLog(collection, false, e.message);
-  }
-
-  window.dispatchEvent(
-    new CustomEvent("crm-db-updated", {
-      detail: { collection, action: "clear", fromDataSync: true },
-    })
-  );
-
-  return { localSaved: true, driveSaved, driveError };
+  return saveCollection(collection, emptyVal, { force: true, action: "clear" });
 }
 
 // ─── Szinkronizálás ───────────────────────────────────────────

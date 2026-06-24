@@ -470,7 +470,12 @@ function TeljesTorlesPanel() {
     // 1. Fő üzleti kulcsok: localStorage + Drive
     for (const col of TELJES_FO_KULCSOK) {
       try {
-        const res = await clearCollection(col);
+        let res = await clearCollection(col);
+        // Retry once on Drive error – Apps Script cold start esetén az első hívás hibázhat
+        if (!res.driveSaved && res.driveError && !res.driveError.includes("offline")) {
+          await new Promise(r => setTimeout(r, 1500));
+          res = await clearCollection(col);
+        }
         if (res.driveSaved) foDriveOk++;
         else { foDriveHiba++; driveHibak.push(`${col}: ${res.driveError || "hiba"}`); }
       } catch (e) {
