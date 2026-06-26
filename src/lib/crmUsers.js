@@ -45,11 +45,6 @@ export async function hashPw(pw) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** P0-001: nincs beégetett default jelszó – mindig false */
-export function hasDefaultPasswords() {
-  return false;
-}
-
 /** Bejelentkezés ellenőrzése – username vagy teljes névvel */
 export async function checkLogin(username, password) {
   const users = getUsers();
