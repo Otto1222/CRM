@@ -102,6 +102,7 @@ export default function App() {
   const [sablonValaszto, setSablonValaszto] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [storageError, setStorageError] = useState(null);
 
   useEffect(() => { localStorage.removeItem("__crm_test_session__"); }, []);
 
@@ -114,6 +115,13 @@ export default function App() {
       window.removeEventListener("online",  goOnline);
       window.removeEventListener("offline", goOffline);
     };
+  }, []);
+
+  // Tárolási hiba (sérült adat / megtelt tárhely) – látható jelzés a néma adatvesztés ellen
+  useEffect(() => {
+    const onStorageError = (e) => setStorageError(e.detail || { type: "write" });
+    window.addEventListener("crm-storage-error", onStorageError);
+    return () => window.removeEventListener("crm-storage-error", onStorageError);
   }, []);
 
   useEffect(() => {
@@ -415,6 +423,30 @@ export default function App() {
           onClose={() => { setShowNew(false); setUjMunkalapInit(null); }}
           initialData={ujMunkalapInit}
         />
+      )}
+
+      {/* Tárolási hiba jelző – sérült adat / megtelt tárhely (NÉMA adatvesztés ellen) */}
+      {storageError && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 10000,
+          background: "#7F1D1D", color: "#fff",
+          padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between",
+          fontSize: 13, fontWeight: 700, fontFamily: "system-ui, sans-serif", gap: 12,
+        }}>
+          <span>
+            {storageError.type === "quota"
+              ? `⛔ A böngésző tárhelye megtelt – a(z) "${storageError.key}" mentése NEM sikerült! Az adat NINCS elmentve. Készíts mentést és szabadíts fel helyet, mielőtt folytatod.`
+              : storageError.type === "parse" || storageError.type === "overwrite-blocked"
+              ? `⛔ Sérült adat észlelve: "${storageError.key}". A rendszer megőrizte a korábbi adatot és LEÁLLÍTOTTA a felülírást. Ne ments tovább – töltsd újra az oldalt vagy állíts vissza mentésből.`
+              : `⛔ Mentési hiba: "${storageError.key}". Az adat lehet, hogy NEM mentődött el.`}
+          </span>
+          <button
+            onClick={() => setStorageError(null)}
+            style={{ padding: "3px 8px", background: "transparent", color: "#fff", border: "1px solid #fff", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 12, flexShrink: 0 }}
+          >
+            ✕
+          </button>
+        </div>
       )}
 
       {/* Offline jelző */}

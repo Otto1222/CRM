@@ -84,20 +84,67 @@ function migrateOldKeys() {
 }
 migrateOldKeys();
 
-export function loadLocal(key) {
-  const storageKey = KEYS[key] || `crm_${key}`;
+// ─── Tárolási hibajelzés (a néma adatvesztés ellen) ───────────
+// parse-hiba / quota-hiba esetén:
+//  (1) a sérült nyers adatot megőrizzük (helyreállíthatóság),
+//  (2) eseményt küldünk a UI-nak (látható hibasáv),
+//  (3) a sérült kulcs felülírását blokkoljuk (force nélkül),
+//      hogy egy elavult/üres állapot ne törölje a megőrzött adatot.
+const _corruptedKeys = new Set();
+
+function emitStorageError(key, type, extra) {
   try {
-    const raw = localStorage.getItem(storageKey);
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) { console.warn("[localDb load]", key, e); return null; }
+    window.dispatchEvent(new CustomEvent("crm-storage-error", {
+      detail: { key, type, ...(extra || {}) },
+    }));
+  } catch {}
 }
 
-export function saveLocal(key, data) {
+export function isKeyCorrupted(key) {
   const storageKey = KEYS[key] || `crm_${key}`;
+  return _corruptedKeys.has(storageKey);
+}
+
+export function loadLocal(key) {
+  const storageKey = KEYS[key] || `crm_${key}`;
+  let raw = null;
+  try {
+    raw = localStorage.getItem(storageKey);
+    if (raw == null) return null;
+    const parsed = JSON.parse(raw);
+    // sikeres olvasás → ha korábban sérültnek jelöltük, feloldjuk
+    _corruptedKeys.delete(storageKey);
+    return parsed;
+  } catch (e) {
+    console.error("[localDb load] SÉRÜLT JSON:", key, e);
+    // a sérült nyers adat megőrzése, hogy NE vesszen el felülíráskor
+    try {
+      if (raw) localStorage.setItem(`${storageKey}__corrupt_${Date.now()}`, raw);
+    } catch {}
+    _corruptedKeys.add(storageKey);
+    emitStorageError(key, "parse");
+    return null;
+  }
+}
+
+export function saveLocal(key, data, opts) {
+  const storageKey = KEYS[key] || `crm_${key}`;
+  // A sérült kulcs felülírásának blokkolása (force nélkül)
+  if (_corruptedKeys.has(storageKey) && !(opts && opts.force)) {
+    console.error("[localDb save] BLOKKOLVA – sérült kulcs felülírása megakadályozva:", key);
+    emitStorageError(key, "overwrite-blocked");
+    return false;
+  }
   try {
     localStorage.setItem(storageKey, JSON.stringify(data));
+    if (opts && opts.force) _corruptedKeys.delete(storageKey);
     return true;
-  } catch (e) { console.warn("[localDb save]", key, e); return false; }
+  } catch (e) {
+    console.error("[localDb save] MENTÉSI HIBA:", key, e);
+    const quota = e && (e.name === "QuotaExceededError" || e.code === 22 || e.code === 1014);
+    emitStorageError(key, quota ? "quota" : "write", { message: e && e.message });
+    return false;
+  }
 }
 
 export function addItem(collection, item) {
@@ -106,7 +153,9 @@ export function addItem(collection, item) {
   const next = idx >= 0
     ? current.map((i, j) => j === idx ? { ...i, ...item } : i)
     : [item, ...current];
-  saveLocal(collection, next);
+  // Ha a mentés nem sikerült (sérült kulcs / quota), NE jelezzünk sikert
+  // és NE írjuk felül az állapotot – így nem veszik el korábbi adat.
+  if (!saveLocal(collection, next)) return current;
   const detail = { collection, action: "add", id: item.id };
   window.dispatchEvent(new CustomEvent("crm-db-updated", { detail }));
   broadcastChange(detail);
@@ -116,7 +165,7 @@ export function addItem(collection, item) {
 export function removeItem(collection, id) {
   const current = loadLocal(collection) || [];
   const next = current.filter(i => i.id !== id);
-  saveLocal(collection, next);
+  if (!saveLocal(collection, next)) return current;
   const detail = { collection, action: "remove", id };
   window.dispatchEvent(new CustomEvent("crm-db-updated", { detail }));
   broadcastChange(detail);
@@ -126,7 +175,7 @@ export function removeItem(collection, id) {
 export function updateItem(collection, id, updates) {
   const current = loadLocal(collection) || [];
   const next = current.map(i => i.id === id ? { ...i, ...updates } : i);
-  saveLocal(collection, next);
+  if (!saveLocal(collection, next)) return current;
   const detail = { collection, action: "update", id };
   // Helyi tab
   window.dispatchEvent(new CustomEvent("crm-db-updated", { detail }));
