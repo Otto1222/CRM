@@ -7,7 +7,7 @@ import { getHomePage } from "./lib/roles";
 import { loadLocal, saveLocal } from "./lib/localDb";
 import { syncAllFromDrive, syncAllToDrive } from "./lib/dataSync.service";
 import { migrateTelepitoCsapatok } from "./lib/csapatMigracio";
-import { deleteWorkorder } from "./services/workorder.service";
+import { deleteWorkorder, createWorkorder } from "./services/workorder.service";
 import { linkMunkalap } from "./modules/projektek/projekt.service";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
@@ -233,31 +233,29 @@ export default function App() {
     setTimeout(() => setDrive("idle"), 3000);
   }
 
-  async function handleNewMunkalap(formData) {
-    const today = new Date().toISOString().slice(0, 10);
+  function handleNewMunkalap(formData) {
+    // A védett creatoron át: munkalapszám/EDI/dokumentumszám ütközésvédelem,
+    // normalizálás és megerősített mentés (quota/sérülés esetén hibát dob).
+    let created;
+    try {
+      created = createWorkorder(formData, user?.name || "");
+    } catch (e) {
+      console.warn("[handleNewMunkalap]", e);
+      alert("A munkalap mentése nem sikerült:\n" + (e?.message || "ismeretlen hiba"));
+      return;
+    }
 
-    const newItem = {
-      ...formData,
-      createdAt: formData.createdAt || today,
-      updatedAt: today,
-    };
-
-    const current = loadLocal("munkalapok") || data.munkalapok || [];
-    const newList = [...current, newItem];
-
-    setData(prev => ({ ...prev, munkalapok: newList }));
-    saveLocal("munkalapok", newList);
-
-    await saveCollection("munkalapok", newList);
+    // React state frissítése a ténylegesen perzisztált listából
+    setData(prev => ({ ...prev, munkalapok: loadLocal("munkalapok") || prev.munkalapok || [] }));
 
     // Projekt munkalapIds frissítése ha projekthez tartozik
-    if (newItem.projektId) {
-      linkMunkalap(newItem.projektId, newItem.id);
+    if (created.projektId) {
+      linkMunkalap(created.projektId, created.id);
     }
 
     setShowNew(false);
     setPage("munkalapok");
-    setSel(newItem);
+    setSel(created);
   }
 
   function handleDeleteMunkalap(m) {

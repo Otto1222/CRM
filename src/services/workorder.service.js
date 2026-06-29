@@ -4,6 +4,7 @@ import {
   migrateMunkalapStatus,
 } from "../lib/workflowRules.js";
 import { driveSave } from "../lib/driveApi.js";
+import { saveLocal } from "../lib/localDb.js";
 import { nextEdiSorszam } from "../lib/dokumentumszam.js";
 import { syncMunkalapToCalendar, deleteMunkalapFromCalendar } from "./calendarSync.service.js";
 import { updateProjekt } from "../modules/projektek/projekt.service.js";
@@ -34,9 +35,15 @@ export function loadWorkorders() {
 }
 
 export function saveWorkorders(list) {
-  localStorage.setItem(KEY, JSON.stringify(list));
+  // Megerősített helyi mentés: quota/sérülés esetén false-t ad és hibasávot jelez
+  // (localDb.saveLocal), így NEM jelzünk hamis sikert és nem írunk felül sérült adatot.
+  if (!saveLocal("munkalapok", list)) return false;
   dispatch("munkalapok");
-  driveSave("munkalapok", { munkalapok: list }).catch(() => notifySyncFailed());
+  // Drive: a {ok:false} is hiba (nem csak a reject) → valódi hibajelzés
+  driveSave("munkalapok", { munkalapok: list })
+    .then(res => { if (res && !res.ok && !res.offline) notifySyncFailed(); })
+    .catch(() => notifySyncFailed());
+  return true;
 }
 
 export function getWorkorder(id) {
@@ -154,7 +161,8 @@ export function createWorkorder(data, user = "") {
   const validation = validateWorkorderBeforeSave(workorder);
   if (!validation.ok) throw new Error(validation.message);
 
-  saveWorkorders([workorder, ...snapshot]);
+  if (!saveWorkorders([workorder, ...snapshot]))
+    throw new Error("A munkalap mentése nem sikerült (tárhely megtelt vagy sérült helyi adat).");
   syncMunkalapToCalendar(workorder).catch(() => {});
   return workorder;
 }

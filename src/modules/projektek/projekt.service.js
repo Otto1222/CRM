@@ -6,6 +6,7 @@ import { PROJEKT_SCHEMA } from "./projekt.schema.js";
 import { migrateProjektStatus, migrateProjektForrasFromRekord, migrateAnyagelszamolasiMod } from "../../lib/workflowRules.js";
 import { createBackup } from "../../lib/backupService.js";
 import { driveSave } from "../../lib/driveApi.js";
+import { saveLocal } from "../../lib/localDb.js";
 import { createKivitelezesiCsomagForProjekt } from "../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 
 const KEY         = "projektek";
@@ -74,9 +75,13 @@ export function loadProjektek() {
 }
 
 export function saveProjektek(list) {
-  localStorage.setItem(KEY, JSON.stringify(list));
+  // Megerősített helyi mentés: quota/sérülés esetén false + hibasáv (localDb.saveLocal)
+  if (!saveLocal("projektek", list)) return false;
   dispatch("projektek");
-  driveSave("projektek", { projektek: list }).catch(() => notifySyncFailed());
+  driveSave("projektek", { projektek: list })
+    .then(res => { if (res && !res.ok && !res.offline) notifySyncFailed(); })
+    .catch(() => notifySyncFailed());
+  return true;
 }
 
 export function getProjekt(id) {
