@@ -114,7 +114,7 @@ function LmraMunkalapCard({ munkalap, projekt, currentUser, open, onToggle }) {
       ...r,
       kockazatok: [
         ...r.kockazatok,
-        { id: `egyedi_${Date.now()}`, szoveg: szoveg.trim(), kivalasztva: true, megelozoIntezkedes: "", egyedi: true },
+        { id: `egyedi_${crypto.randomUUID()}`, szoveg: szoveg.trim(), kivalasztva: true, megelozoIntezkedes: "", egyedi: true },
       ],
     }));
     setDirty(true);

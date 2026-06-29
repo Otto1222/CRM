@@ -109,7 +109,7 @@ export function createProjekt(data, createdBy = "") {
   const projekt = {
     ...PROJEKT_SCHEMA,
     ...data,
-    id:             `prj_${Date.now()}`,
+    id:             `prj_${crypto.randomUUID()}`,
     projektkod:     data.projektkod || nextProjektkod(),
     kulsoAzonosito: data.kulsoAzonosito || "",
     munkalapIds:    data.munkalapIds || [],
@@ -121,7 +121,7 @@ export function createProjekt(data, createdBy = "") {
     syncStatus:     "synced",
     esemenynaplo: [
       {
-        id: `ev_${Date.now()}`,
+        id: `ev_${crypto.randomUUID()}`,
         datum: now,
         user: createdBy,
         esemeny: "Projekt létrehozva",
@@ -166,7 +166,7 @@ export function updateProjekt(id, updates, user = "") {
 
   if (updates.status && updates.status !== old.status) {
     naplobej.push({
-      id: `ev_${Date.now()}`,
+      id: `ev_${crypto.randomUUID()}`,
       datum: now,
       user,
       esemeny: "Státusz változás",
@@ -176,7 +176,7 @@ export function updateProjekt(id, updates, user = "") {
 
   if (updates.csapatNev && updates.csapatNev !== old.csapatNev) {
     naplobej.push({
-      id: `ev_${Date.now() + 1}`,
+      id: `ev_${crypto.randomUUID()}`,
       datum: now,
       user,
       esemeny: "Csapat módosítva",
@@ -257,7 +257,7 @@ export function unlinkMunkalap(projektId, munkalapId) {
 export function addMegjegyzes(projektId, szoveg, user = "") {
   const p = getProjekt(projektId);
   if (!p) return null;
-  const bej = { id: `m_${Date.now()}`, datum: new Date().toISOString(), user, szoveg };
+  const bej = { id: `m_${crypto.randomUUID()}`, datum: new Date().toISOString(), user, szoveg };
   return updateProjekt(projektId, { megjegyzesek: [...(p.megjegyzesek || []), bej] }, user);
 }
 

@@ -57,7 +57,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
   function addAnyag() {
     if (!ujNev.trim()) return;
     setPlusAnyagok(p => [...p, {
-      id: `pa_${Date.now()}`,
+      id: `pa_${crypto.randomUUID()}`,
       nev: ujNev.trim(),
       menny: ujMenny,
       egyseg: ujEgyseg,

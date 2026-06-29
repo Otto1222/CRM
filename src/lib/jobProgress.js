@@ -38,7 +38,7 @@ export function getJobs() { return [..._jobs]; }
  * @returns {string} jobId – átadandó updateJob / finishJob / failJob hívásoknak
  */
 export function startJob(label, opts = {}) {
-  const id = `job_${++_seq}_${Date.now()}`;
+  const id = `job_${++_seq}_${crypto.randomUUID()}`;
   const steps = opts.steps || [];
   const totalSteps = opts.totalSteps ?? (steps.length > 0 ? steps.length : null);
 

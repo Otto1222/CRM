@@ -80,7 +80,7 @@ export function nextWorkorderNumber(projectKod, tipus = "") {
 function normalizeWorkorder(data = {}) {
   const now = new Date().toISOString();
   const result = {
-    id: data.id || `ml_${Date.now()}`,
+    id: data.id || `ml_${crypto.randomUUID()}`,
     projektId:    data.projektId    || "",
     projektKod:   data.projektKod   || "",
     tipus:        data.tipus        || "Kivitelezés",

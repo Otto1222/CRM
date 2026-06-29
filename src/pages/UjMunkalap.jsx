@@ -445,7 +445,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
     const veglegesUgyszam = alap.ugyszam || generaltEdi;
 
     const ml = {
-      id:                `ml_${Date.now()}`,  // egyedi belső ID (nem tartalmaz "/" karaktert)
+      id:                `ml_${crypto.randomUUID()}`,  // egyedi belső ID (nem tartalmaz "/" karaktert)
       ugyszam:           veglegesUgyszam,
       cimke:             alap.cimke,
       cimkeSzin:         alap.cimkeSzin,

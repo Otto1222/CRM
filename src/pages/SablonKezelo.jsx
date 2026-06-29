@@ -213,7 +213,7 @@ export default function SablonKezelo({ userRole }) {
     createBackup("Sablon mentés előtt");
     const list = sablon.id
       ? sablonok.map(s => s.id===sablon.id ? sablon : s)
-      : [...sablonok, { ...sablon, id:`sbl_${Date.now()}`, createdAt:new Date().toISOString() }];
+      : [...sablonok, { ...sablon, id:`sbl_${crypto.randomUUID()}`, createdAt:new Date().toISOString() }];
     saveSablonok(list);
     setSablonok(list);
     setSzerkeszt(null);

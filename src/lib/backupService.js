@@ -123,7 +123,7 @@ function collectLocalStorageSnapshot() {
 export function createBackup(label = "", { saveToDrive = false } = {}) {
   try {
     const snapshot = {
-      id: `bk_${Date.now()}`,
+      id: `bk_${crypto.randomUUID()}`,
       label: label || `Mentés ${new Date().toLocaleString("hu-HU")}`,
       createdAt: new Date().toISOString(),
       version: getSchemaVersion(),

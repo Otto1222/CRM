@@ -133,7 +133,7 @@ export async function registerUser({ name, username, email, password, role }) {
   const roleColor = ROLES.find(r => r.value === role)?.color || "#2563EB";
 
   const newUser = {
-    id: `u_${Date.now()}`,
+    id: `u_${crypto.randomUUID()}`,
     name, username, email, role,
     initials, color: roleColor,
     passwordHash: pwHash,

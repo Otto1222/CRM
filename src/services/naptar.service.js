@@ -21,7 +21,7 @@ export function loadManualEvents() {
 
 export function saveManualEvent(ev) {
   const all = loadManualEvents();
-  const withId = { ...ev, id: ev.id || `nev_${Date.now()}` };
+  const withId = { ...ev, id: ev.id || `nev_${crypto.randomUUID()}` };
   const idx = all.findIndex(e => e.id === withId.id);
   const updated = idx >= 0
     ? all.map((e, i) => i === idx ? withId : e)

@@ -76,7 +76,7 @@ export function createSablon(data, user = "") {
   const sablon = {
     ...MUNKALAP_SABLON_SCHEMA,
     ...data,
-    id:        `sbl_${Date.now()}`,
+    id:        `sbl_${crypto.randomUUID()}`,
     gyari:     false,
     createdAt: now,
     updatedAt: now,
@@ -136,7 +136,7 @@ export function masolSablon(id, user = "") {
   }));
   const masolat = {
     ...eredeti,
-    id:             `sbl_${Date.now()}`,
+    id:             `sbl_${crypto.randomUUID()}`,
     nev:            `${eredeti.nev} (másolat)`,
     gyari:          false,
     aktiv:          true,

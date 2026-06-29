@@ -92,7 +92,7 @@ export default function JegyzokonyviBeallitasok() {
   }
 
   function addSablon() {
-    const id = `sablon_${Date.now()}`;
+    const id = `sablon_${crypto.randomUUID()}`;
     setB(p => ({
       ...p,
       szovegSablonok: [...p.szovegSablonok, { id, nev:"Új sablon", szoveg:"" }],

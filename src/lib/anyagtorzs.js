@@ -206,7 +206,7 @@ export function getAnyag(id) {
 
 export function createAnyag(data) {
   const list = loadAnyagtorzs();
-  const item = { ...data, id: `a_${Date.now()}`, aktiv: true };
+  const item = { ...data, id: `a_${crypto.randomUUID()}`, aktiv: true };
   saveAnyagtorzs([...list, item]);
   return item;
 }

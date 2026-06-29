@@ -373,7 +373,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
           const fv = fovallalkozok.find(f => f.id === (data.penzugy?.fovallalkoziId || ""));
           const forras = fv?.rovidites || (fv ? (fv.nev||"").slice(0,4).toUpperCase() : "Saját");
           const newU = {
-            id: `ugy_${Date.now()}`,
+            id: `ugy_${crypto.randomUUID()}`,
             name: data.clientNev,
             phone: data.clientTel || "",
             email: data.clientEmail || "",

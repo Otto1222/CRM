@@ -93,7 +93,7 @@ function UgyfelForm({ ugyfel, onClose, onSaved }) {
 
     let updated;
     if (isNew) {
-      const newItem = { ...form, id: `ugy_${Date.now()}`, createdAt: now, updatedAt: now };
+      const newItem = { ...form, id: `ugy_${crypto.randomUUID()}`, createdAt: now, updatedAt: now };
       updated = [...list, newItem];
       onSaved(newItem);
     } else {

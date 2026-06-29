@@ -38,7 +38,7 @@ export function createMunkatipus(data) {
   createBackup("Munkatípus létrehozás előtt");
   const item = {
     ...MUNKATIPUS_SCHEMA, ...data,
-    id: `mt_${Date.now()}`,
+    id: `mt_${crypto.randomUUID()}`,
     createdAt: new Date().toISOString(),
   };
   saveMunkatipusok([...loadMunkatipusok(), item]);

@@ -96,7 +96,7 @@ export function generateBeveteliTetelek(kontextus, inputok = {}) {
       : null;
 
     tetelek.push({
-      id:            `t_${tetelDef.id || tetelDef.tetelTipusId}_${Date.now()}`,
+      id:            `t_${tetelDef.id || tetelDef.tetelTipusId}_${crypto.randomUUID()}`,
       tetelTipusId:  tetelDef.tetelTipusId,
       megnevezes,
       autoNetto,
