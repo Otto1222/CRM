@@ -1,6 +1,6 @@
-import { driveLoad, driveSave } from "./driveApi";
+import { driveLoad, driveLoadStatus, driveSave } from "./driveApi";
 import { loadLocal, saveLocal } from "./localDb";
-import { startJob, updateJob, finishJob } from "./jobProgress";
+import { startJob, updateJob, finishJob, failJob } from "./jobProgress";
 
 export const SYNC_COLLECTIONS = [
   "projektek",
@@ -114,27 +114,51 @@ function mergeByIdUpdatedAt(driveArr, localArr) {
 // ─── Betöltés ─────────────────────────────────────────────────
 
 export async function loadCollection(collection) {
+  return (await loadCollectionWithStatus(collection)).data;
+}
+
+/**
+ * Mint loadCollection, de visszaadja a Drive-betöltés tényleges állapotát is,
+ * hogy a szinkron-job NE mutasson hamis "ok"-ot Drive-hiba esetén.
+ * @returns {{ data:any, status:"drive"|"merged"|"empty"|"offline"|"error", error?:string }}
+ */
+export async function loadCollectionWithStatus(collection) {
   const localData = loadLocal(collection);
 
+  let r;
   try {
-    const drivePayload = await driveLoad(collection);
-    const driveData    = unwrap(collection, drivePayload);
-
-    if (hasData(driveData)) {
-      if (Array.isArray(driveData) && Array.isArray(localData) && localData.length > 0) {
-        const merged = mergeByIdUpdatedAt(driveData, localData);
-        saveLocal(collection, merged);
-        return merged;
-      }
-      saveLocal(collection, driveData);
-      return driveData;
-    }
+    r = await driveLoadStatus(collection);
   } catch (e) {
-    console.warn(`[dataSync] Drive betöltési hiba: ${collection}`, e);
+    r = { ok: false, content: null, error: e.message };
   }
 
-  if (localData !== null && localData !== undefined) return localData;
+  // Drive nincs konfigurálva → nem hiba, helyi adat marad
+  if (r.offline) {
+    return { data: localData ?? emptyOrSave(collection), status: "offline" };
+  }
 
+  // Valódi Drive-hiba → lokálisra esünk vissza, DE jelezzük
+  if (!r.ok) {
+    console.warn(`[dataSync] Drive betöltési hiba: ${collection}`, r.error);
+    return { data: localData ?? emptyOrSave(collection), status: "error", error: r.error };
+  }
+
+  const driveData = unwrap(collection, r.content);
+  if (hasData(driveData)) {
+    if (Array.isArray(driveData) && Array.isArray(localData) && localData.length > 0) {
+      const merged = mergeByIdUpdatedAt(driveData, localData);
+      saveLocal(collection, merged);
+      return { data: merged, status: "merged" };
+    }
+    saveLocal(collection, driveData);
+    return { data: driveData, status: "drive" };
+  }
+
+  // Drive elérhető, de nincs/üres adat → helyi marad (nem hiba)
+  return { data: localData ?? emptyOrSave(collection), status: "empty" };
+}
+
+function emptyOrSave(collection) {
   const empty = emptyValue(collection);
   saveLocal(collection, empty);
   return empty;
@@ -210,14 +234,18 @@ export async function syncAllFromDrive() {
   });
 
   const result = {};
+  const hibasKollekciok = [];
 
   for (let i = 0; i < SYNC_COLLECTIONS.length; i++) {
     const collection = SYNC_COLLECTIONS[i];
     updateJob(jobId, { currentStep: i, stepLabel: collection });
-    result[collection] = await loadCollection(collection);
+    const r = await loadCollectionWithStatus(collection);
+    result[collection] = r.data;
+    const stepStatus = r.status === "error" ? "error" : "ok";
+    if (r.status === "error") hibasKollekciok.push(collection);
     updateJob(jobId, {
       currentStep: i + 1,
-      stepResult:  { label: collection, status: "ok" },
+      stepResult:  { label: collection, status: stepStatus, error: r.error },
     });
   }
 
@@ -261,7 +289,18 @@ export async function syncAllFromDrive() {
     }
   }
 
-  finishJob(jobId, { summary: `${SYNC_COLLECTIONS.length + 1} kollekció betöltve` });
+  if (hibasKollekciok.length > 0) {
+    // Valódi Drive-hiba történt → a job HIBÁS állapotban marad (nem tűnik el),
+    // és a felhasználó látja, mely kollekciók nem töltődtek be Drive-ról.
+    failJob(jobId, {
+      error: `Drive-betöltési hiba (${hibasKollekciok.length} kollekció helyi adatból): ${hibasKollekciok.join(", ")}`,
+    });
+    window.dispatchEvent(new CustomEvent("crm-sync-warning", {
+      detail: { message: `Néhány kollekció nem töltődött be a Drive-ról (${hibasKollekciok.length}). Helyi adat van használatban – ne ments, amíg a kapcsolat helyre nem áll.` },
+    }));
+  } else {
+    finishJob(jobId, { summary: `${SYNC_COLLECTIONS.length + 1} kollekció betöltve` });
+  }
 
   return result;
 }

@@ -69,6 +69,17 @@ export async function driveLoad(collection) {
   return null;
 }
 
+/**
+ * Mint driveLoad, de megkülönbözteti a hibát az üres/offline esettől.
+ * @returns {{ ok:boolean, offline?:boolean, content:any, error?:string }}
+ */
+export async function driveLoadStatus(collection) {
+  const res = await get({ action: "loadJson", fileName: `${collection}.json` });
+  if (res?.offline) return { ok: false, offline: true, content: null };
+  if (res?.ok)      return { ok: true, content: res.content ?? null };
+  return { ok: false, content: null, error: res?.error || "Drive betöltési hiba" };
+}
+
 /** Mentés Drive-ra – visszaadja az Apps Script tényleges válaszát */
 export async function driveSave(collection, data) {
   return post({ action: "saveJson", fileName: `${collection}.json`, content: data });
