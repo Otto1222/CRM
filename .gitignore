@@ -1,1 +1,17 @@
+# Függőségek
 node_modules
+
+# Build kimenet (a Vercel a buildCommand-dal újragenerálja – nem kell trackelni)
+dist
+
+# Környezeti változók / titkok
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+# Szerkesztő / OS
+.DS_Store
+*.log
