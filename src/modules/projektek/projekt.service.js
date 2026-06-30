@@ -91,10 +91,16 @@ export function getProjekt(id) {
 // ─── Projektkód generálás ─────────────────────────────────────────────────
 
 export function nextProjektkod() {
-  const n = parseInt(localStorage.getItem(COUNTER_KEY) || "0", 10) + 1;
+  let n = parseInt(localStorage.getItem(COUNTER_KEY) || "0", 10) + 1;
+  const fmt = (x) => `E.D.I.${String(x).padStart(3, "0")}`;
+  // A7: ütközés-elkerülés – a már létező projektkódokat átugorjuk
+  try {
+    const used = new Set((loadProjektek() || []).map(p => p.projektkod).filter(Boolean));
+    while (used.has(fmt(n))) n += 1;
+  } catch { /* marad a számláló-alapú érték */ }
   localStorage.setItem(COUNTER_KEY, String(n));
   driveSave("edi_projekt_sorszam_counter", { edi_projekt_sorszam_counter: n }).catch(() => {});
-  return `E.D.I.${String(n).padStart(3, "0")}`;
+  return fmt(n);
 }
 
 export function formatProjektAzonosito(projektkod, kulsoAzonosito = "") {
