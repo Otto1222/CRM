@@ -12,6 +12,7 @@ import { linkMunkalap } from "./modules/projektek/projekt.service";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
+import PageErrorBoundary from "./components/PageErrorBoundary";
 import Dashboard from "./pages/Dashboard";
 import { MunkalapLista, MunkalapDetail } from "./pages/Munkalapok";
 import Ugyfelek from "./pages/Ugyfelek";
@@ -85,13 +86,10 @@ function loadInitialData() {
 }
 
 export default function App() {
-  const [user, setUser] = useState(() => {
-    try {
-      const t = localStorage.getItem("__crm_test_session__");
-      if (t) return JSON.parse(t);
-    } catch {}
-    return null;
-  });
+  // Biztonság (D2): nincs automatikus bejelentkezés localStorage-ból.
+  // A korábbi __crm_test_session__ hook bárkit beléptetett jelszó nélkül,
+  // ha be tudta állítani ezt a kulcsot (privilégium-emelés) – eltávolítva.
+  const [user, setUser] = useState(null);
   const [page, setPage] = useState("dashboard");
   const [sel, setSel] = useState(null);
   const [data, setData] = useState(loadInitialData);
@@ -292,6 +290,7 @@ export default function App() {
       <Sidebar page={page} onNav={nav} user={user} onLogout={logout} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div style={{ flex: 1, overflow: "auto", animation: "fadeIn .25s ease", minWidth: 0 }}>
+        <PageErrorBoundary key={page + (sel?.id || "")}>
         {page === "munkalapok" && sel ? (
           <>
             <TopBar
@@ -412,6 +411,7 @@ export default function App() {
             )}
           </>
         )}
+        </PageErrorBoundary>
       </div>
 
       {showNew && (

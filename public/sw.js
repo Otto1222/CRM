@@ -1,7 +1,7 @@
 // CRM Napelem – Service Worker
 // Stratégia: hashed Vite assets → cache-first; minden más → network-first + cache fallback
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `crm-napelem-${CACHE_VERSION}`;
 
 // Az alkalmazás shell – ezeket tároljuk azonnal telepítéskor
@@ -45,6 +45,17 @@ self.addEventListener('fetch', event => {
   try { url = new URL(request.url); } catch { return; }
   if (url.origin !== location.origin) return;
 
+  // Navigációs kérés (SPA HTML) → MINDIG network-first, a HTML-t SOHA nem cache-eljük.
+  // Így deploy után nem maradhat elavult index.html, ami már nem létező asset-hashekre
+  // hivatkozna (ez okozta a "beragadt" fehér oldalt). Offline: az install-kor előre
+  // cache-elt index.html a tartalék.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
   // Vite content-hashed assets (/assets/…) → cache-first (immutable)
   if (url.pathname.startsWith('/assets/')) {
     event.respondWith(
@@ -52,7 +63,9 @@ self.addEventListener('fetch', event => {
         if (cached) return cached;
         return fetch(request).then(response => {
           if (response.ok) {
-            caches.open(CACHE_NAME).then(c => c.put(request, response.clone()));
+            // FONTOS: szinkron clone, MIELŐTT a body-t a böngésző felhasználná
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(c => c.put(request, copy));
           }
           return response;
         });
@@ -61,23 +74,16 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Minden más → network-first, cache fallback
+  // Minden más GET → network-first, cache fallback (szinkron clone!)
   event.respondWith(
     fetch(request)
       .then(response => {
         if (response.ok) {
-          caches.open(CACHE_NAME).then(c => c.put(request, response.clone()));
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(c => c.put(request, copy));
         }
         return response;
       })
-      .catch(() =>
-        caches.match(request).then(cached => {
-          if (cached) return cached;
-          // Navigációs kéréshez visszaadjuk az index.html-t (SPA offline fallback)
-          if (request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-        })
-      )
+      .catch(() => caches.match(request))
   );
 });
