@@ -7,7 +7,7 @@ import { driveSave } from "../lib/driveApi.js";
 import { saveLocal } from "../lib/localDb.js";
 import { nextEdiSorszam } from "../lib/dokumentumszam.js";
 import { syncMunkalapToCalendar, deleteMunkalapFromCalendar } from "./calendarSync.service.js";
-import { updateProjekt } from "../modules/projektek/projekt.service.js";
+import { updateProjekt, unlinkMunkalap } from "../modules/projektek/projekt.service.js";
 
 const KEY = "munkalapok";
 
@@ -229,4 +229,8 @@ export function deleteWorkorder(id) {
   const toDelete = getWorkorder(id);
   saveWorkorders(loadWorkorders().filter(w => w.id !== id));
   if (toDelete) deleteMunkalapFromCalendar(toDelete).catch(() => {});
+  // A8: a szülő projekt munkalapIds-éből is kivesszük (ne maradjon árva hivatkozás)
+  if (toDelete?.projektId) {
+    try { unlinkMunkalap(toDelete.projektId, id); } catch { /* non-critical */ }
+  }
 }

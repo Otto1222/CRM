@@ -6,7 +6,7 @@ import { PROJEKT_SCHEMA } from "./projekt.schema.js";
 import { migrateProjektStatus, migrateProjektForrasFromRekord, migrateAnyagelszamolasiMod } from "../../lib/workflowRules.js";
 import { createBackup } from "../../lib/backupService.js";
 import { driveSave } from "../../lib/driveApi.js";
-import { saveLocal } from "../../lib/localDb.js";
+import { loadLocal, saveLocal } from "../../lib/localDb.js";
 import { createKivitelezesiCsomagForProjekt } from "../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 
 const KEY         = "projektek";
@@ -222,6 +222,35 @@ export function updateProjekt(id, updates, user = "") {
 export function deleteProjekt(id) {
   createBackup("Projekt törlés előtt");
   saveProjektek(loadProjektek().filter(p => p.id !== id));
+
+  // ─── Cascade takarítás (A8): ne maradjon árva referencia / rekord ───
+  // Dinamikus import a körkörös függőség elkerülésére; try/catch, hogy a
+  // takarítás soha ne törje el magát a törlést. Mindegyik a saját service
+  // mentőjén megy át (local + Drive), így a következő szinkron sem hozza vissza.
+
+  // 1. Gyerek munkalapok projektId/projektKod nullázása
+  try {
+    const mls = loadLocal("munkalapok") || [];
+    if (mls.some(m => m.projektId === id)) {
+      import("../../services/workorder.service.js").then(m => {
+        const list = m.loadWorkorders()
+          .map(w => w.projektId === id ? { ...w, projektId: "", projektKod: "" } : w);
+        m.saveWorkorders(list);
+      }).catch(() => {});
+    }
+  } catch { /* non-critical */ }
+
+  // 2. Pénzügyi rekord törlése
+  import("../penzugy/penzugyi.service.js")
+    .then(m => m.deletePenzugyi(id)).catch(() => {});
+
+  // 3. Kivitelezési csomag törlése
+  import("../kivitelezesi_csomag/kivitelezesiCsomag.service.js").then(m => {
+    if (m.loadKivitelezesiCsomagok && m.saveKivitelezesiCsomagok) {
+      const next = m.loadKivitelezesiCsomagok().filter(k => k.projektId !== id);
+      m.saveKivitelezesiCsomagok(next);
+    }
+  }).catch(() => {});
 }
 
 // ─── Munkalap kapcsolás ───────────────────────────────────────────────────
