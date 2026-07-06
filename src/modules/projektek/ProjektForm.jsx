@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { X, Save, Navigation, TrendingUp } from "lucide-react";
-import { FONT, FONT_HEADING } from "../../lib/constants.js";
+import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { loadLocal, saveLocal } from "../../lib/localDb.js";
 import { PROJEKT_STATUSZOK, PROJEKT_FORRAS, getProjektTipus } from "./projekt.schema.js";

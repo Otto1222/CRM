@@ -4,7 +4,7 @@ import {
   LogOut, Building2, Receipt, FileText, BarChart3, BookOpen, X,
   AlertTriangle, LayoutTemplate, ChevronDown, TrendingUp,
 } from "lucide-react";
-import { C, FONT } from "../lib/constants";
+import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getAllowedPages } from "../lib/roles.js";
 import Avatar from "./Avatar";
 

@@ -370,6 +370,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
 // ═══════════════════════════════════════════════════════════════
 export function UjMunkalapModal({ data, onClose, onSave }) {
   const isMobile = useIsMobile();
+  const USERS = getUsers(); // szerelő/csapat választóhoz (friss adatból)
   const [form, setForm] = useState({
     ugyszam: "", cimke: "Junior Vital", cimkeSzin: "#2563EB",
     projektMegnevezes: "", feladat: "", status: "Megkezdésre Vár",

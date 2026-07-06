@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, Save } from "lucide-react";
-import { FONT } from "../../lib/constants";
+import { C, FONT } from "../../lib/constants";
 import { loadLocal } from "../../lib/localDb";
 import { getAktivFovallalkozok } from "../fovallalkozok/fovallalkozo.service";
 import {

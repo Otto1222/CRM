@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { FONT, FONT_HEADING } from "../../../lib/constants.js";
+import { C, FONT, FONT_HEADING } from "../../../lib/constants.js";
 import { ft } from "../../../lib/helpers.js";
 import { loadAjanlatok } from "../../ajanla tok/ajanlat.service.js";
 import { getAjanlatStatusConfig } from "../../ajanla tok/ajanlat.schema.js";

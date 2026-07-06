@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink, Upload, CheckCircle2, Save, Check, X, UserPlus, Pencil,
+  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink, Upload, CheckCircle2, Save, Check, X, UserPlus, Pencil, AlertTriangle, Package,
 } from "lucide-react";
 import { loadLocal, saveLocal } from "../lib/localDb";
 import { ft } from "../lib/helpers";
@@ -22,6 +22,7 @@ import SablonKezelo from "./SablonKezelo";
 import BackupKezelo from "./BackupKezelo";
 import CsapatokPage from "../modules/csapatok/CsapatokPage";
 import AnyagtorzsPage from "./AnyagtorzsPage";
+import ComingSoon from "./ComingSoon";
 import { migrateMunkalapSzamok } from "../lib/munkalapSzam";
 
 const MENU_ITEMS = [
@@ -286,7 +287,7 @@ export default function BeallitasokPage({ currentUser }) {
     return (
       <div>
         <BackBtn onClick={() => setAktiv(null)} label="Anyagtörzs" />
-        <AnyagtorzsBeallitas />
+        <AnyagtorzsPage />
       </div>
     );
   }
@@ -294,7 +295,7 @@ export default function BeallitasokPage({ currentUser }) {
     return (
       <div>
         <BackBtn onClick={() => setAktiv(null)} label="Ajánlati sablonok" />
-        <AjanlatSablonokBeallitas />
+        <ComingSoon title="Ajánlati sablonok" desc="Elmentett tételsor-sablonok az árajánlat-készítőhöz — hamarosan elérhető." />
       </div>
     );
   }

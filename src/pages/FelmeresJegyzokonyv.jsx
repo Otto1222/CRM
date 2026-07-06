@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { Printer, X } from "lucide-react";
-import { FONT, FONT_HEADING } from "../lib/constants";
+import { C, FONT, FONT_HEADING } from "../lib/constants";
 
 const load = id => { try { const r=localStorage.getItem(id); return r?JSON.parse(r):null; } catch { return null; } };
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import { User, Lock, Eye, EyeOff, LogIn, ChevronRight } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { checkLogin } from "../lib/crmUsers";
 

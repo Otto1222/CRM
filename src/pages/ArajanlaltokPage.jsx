@@ -92,8 +92,9 @@ export default function ArajanlaltokPage({ currentUser }) {
   }
 
   function openEditor(ajanlat) {
-    setEditorAjanlat(ajanlat || null);
-    setShowEditor(true);
+    // editor: null=lista, obj=szerkesztés ({}=új). A korábbi kód nem létező
+    // setEditorAjanlat/setShowEditor settereket hívott → ReferenceError.
+    setEditor(ajanlat || {});
   }
 
   const isAdmin = ["Admin", "Projektmenedzser"].includes(currentUser?.role);
