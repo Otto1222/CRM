@@ -88,7 +88,19 @@ export function saveLocal(key, data) {
   try {
     localStorage.setItem(storageKey, JSON.stringify(data));
     return true;
-  } catch (e) { console.warn("[localDb save]", key, e); return false; }
+  } catch (e) {
+    // NÉMA adatvesztés ellen: a hibát nem nyeljük el csendben, hanem globálisan
+    // jelezzük (a UI feliratkozhat a "crm-storage-error" eseményre). Tipikus ok:
+    // megtelt böngésző-tárhely (QuotaExceededError).
+    console.error("[localDb save FAILED]", key, e);
+    try {
+      const quota = e && (e.name === "QuotaExceededError" || e.code === 22 || e.code === 1014);
+      window.dispatchEvent(new CustomEvent("crm-storage-error", {
+        detail: { key, type: quota ? "quota" : "error", message: e?.message },
+      }));
+    } catch {}
+    return false;
+  }
 }
 
 export function addItem(collection, item) {
@@ -97,7 +109,9 @@ export function addItem(collection, item) {
   const next = idx >= 0
     ? current.map((i, j) => j === idx ? { ...i, ...item } : i)
     : [item, ...current];
-  saveLocal(collection, next);
+  // Ha a mentés nem sikerült (pl. tele tárhely), NE jelezzünk hamis sikert:
+  // a saveLocal már kilőtte a "crm-storage-error" eseményt.
+  if (!saveLocal(collection, next)) return current;
   const detail = { collection, action: "add", id: item.id };
   window.dispatchEvent(new CustomEvent("crm-db-updated", { detail }));
   broadcastChange(detail);
@@ -107,7 +121,7 @@ export function addItem(collection, item) {
 export function removeItem(collection, id) {
   const current = loadLocal(collection) || [];
   const next = current.filter(i => i.id !== id);
-  saveLocal(collection, next);
+  if (!saveLocal(collection, next)) return current;
   const detail = { collection, action: "remove", id };
   window.dispatchEvent(new CustomEvent("crm-db-updated", { detail }));
   broadcastChange(detail);
@@ -117,7 +131,7 @@ export function removeItem(collection, id) {
 export function updateItem(collection, id, updates) {
   const current = loadLocal(collection) || [];
   const next = current.map(i => i.id === id ? { ...i, ...updates } : i);
-  saveLocal(collection, next);
+  if (!saveLocal(collection, next)) return current;
   const detail = { collection, action: "update", id };
   // Helyi tab
   window.dispatchEvent(new CustomEvent("crm-db-updated", { detail }));
