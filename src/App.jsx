@@ -84,13 +84,10 @@ function loadInitialData() {
 }
 
 export default function App() {
-  const [user, setUser] = useState(() => {
-    try {
-      const t = localStorage.getItem("__crm_test_session__");
-      if (t) return JSON.parse(t);
-    } catch {}
-    return null;
-  });
+  // Biztonság: nincs automatikus bejelentkezés localStorage-ból. A korábbi
+  // __crm_test_session__ hook bárkit beléptetett jelszó nélkül, ha be tudta
+  // állítani ezt a kulcsot (privilégium-emelés) – eltávolítva.
+  const [user, setUser] = useState(null);
   const [page, setPage] = useState("dashboard");
   const [sel, setSel] = useState(null);
   const [data, setData] = useState(loadInitialData);
