@@ -1,1 +1,16 @@
+# Függőségek
 node_modules
+
+# Build kimenet – a Vercel a buildCommand-dal (npm run build) minden deploynál
+# újragenerálja, ezért NEM verziókövetjük (eddig 15 stale/broken fájl volt benne)
+dist
+
+# Környezeti változók / titkok
+.env
+.env.*
+!.env.example
+
+# Vercel / editor / OS
+.vercel
+.DS_Store
+*.log
