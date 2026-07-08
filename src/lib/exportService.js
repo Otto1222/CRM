@@ -5,17 +5,31 @@
  */
 
 import * as XLSX from "xlsx";
-import { calcMunkalapPenzugy } from "./costEngine";
+import { calcMunkalapRiportAdat } from "./munkalapRiportHelper.js";
 import { ft } from "./helpers";
 
 // ─── Közös adatmodell (export-független) ────────────────────
 
+function loadProjektById(projektId) {
+  if (!projektId) return null;
+  try {
+    const lista = JSON.parse(localStorage.getItem("projektek") || "[]");
+    return lista.find(p => p.id === projektId) || null;
+  } catch { return null; }
+}
+
+// karteritesek param megtartva a visszafelé kompatibilitáshoz, a helper belsőleg tölti be
 export function munkalapToExportRow(m, karteritesek = []) {
-  const p = calcMunkalapPenzugy(m, karteritesek);
+  const projekt = loadProjektById(m.projektId);
+  const p = calcMunkalapRiportAdat(m, projekt);
+  const isA = p.motor === "A";
+  const a   = p._motorA || {};
+  const d   = p._motorD || {};
+
   return {
     // Azonosítók
-    "EDI Sorszám":           m.ediSorszam || m.dokumentumszam || m.id,
-    "Munkaszám":             m.id,
+    "EDI Sorszám":           m.ediSorszam || m.dokumentumszam || "—",
+    "Munkaszám":             m.munkalapSzam || m.dokumentumszam || m.ediSorszam || "—",
     "Dokumentumszám":        m.dokumentumszam || "",
     "Munkalap típusa":       m.munkalapTipus || "—",
     // Ügyfél
@@ -31,17 +45,20 @@ export function munkalapToExportRow(m, karteritesek = []) {
     "Tervezett dátum":       m.date || "—",
     "Megkezdés dátuma":      m.megkezdesIdopont ? m.megkezdesIdopont.slice(0,10) : "—",
     "Lezárás dátuma":        m.befejezesIdopont ? m.befejezesIdopont.slice(0,10) : "—",
-    // Pénzügy
+    // Pénzügy – normalizált (TabRiport-tal azonos forrás)
     "Bevétel (Ft)":          p.bevetal,
-    "Anyagköltség (Ft)":     p.anyagKolts,
-    "Munkaerő díj (Ft)":     p.munkaeroDij,
-    "Kiszállás (Ft)":        p.kiszDij,
-    "Egyéb költ. (Ft)":      p.egyeb,
-    "Elfogadott kártér. (Ft)": p.kartElf,
+    "Anyagköltség (Ft)":     isA ? (a.anyagkoltság   || 0) : (d.anyagKolts  || 0),
+    "Munkaerő díj (Ft)":     isA ? (a.alvallalkozoiBer|| 0) : (d.munkaeroDij || 0),
+    "Kiszállás (Ft)":        isA ? 0                        : (d.kiszDij     || 0),
+    "Egyéb költ. (Ft)":      isA ? 0                        : (d.egyeb       || 0),
+    "Elfogadott kártér. (Ft)": isA ? 0                      : (d.kartElf     || 0),
     "Összes költség (Ft)":   p.osszesKolts,
     "Eredmény (Ft)":         p.eredmeny,
     "Haszon %":              p.haszonPct !== null ? p.haszonPct + "%" : "—",
     "Nyereséges":            p.nyereseg ? "Igen" : "Nem",
+    // Motor jelölés
+    "Pénzügyi motor":        isA ? "A – Szabályalapú" : "D – Régi motor",
+    "Megjegyzés":            p.warning || "",
   };
 }
 
@@ -59,18 +76,15 @@ export function exportToExcel(munkalapok, karteritesek = [], options = {}) {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, lap);
 
-  // Összesítő lap
-  const sum = munkalapok.reduce((acc, m) => {
-    const p = calcMunkalapPenzugy(m, karteritesek);
-    return {
-      "Összes munkalap":     acc["Összes munkalap"] + 1,
-      "Összes bevétel (Ft)": acc["Összes bevétel (Ft)"] + p.bevetal,
-      "Összes költség (Ft)": acc["Összes költség (Ft)"] + p.osszesKolts,
-      "Összesített eredmény": acc["Összesített eredmény"] + p.eredmeny,
-      "Lezárt munkák":       acc["Lezárt munkák"] + (["Lezárva","Számlázva"].includes(m.status)?1:0),
-      "Aktív munkák":        acc["Aktív munkák"]  + (!["Lezárva","Számlázva","Meghiúsult"].includes(m.status)?1:0),
-    };
-  }, { "Összes munkalap":0, "Összes bevétel (Ft)":0, "Összes költség (Ft)":0, "Összesített eredmény":0, "Lezárt munkák":0, "Aktív munkák":0 });
+  // Összesítő lap – a már kiszámolt rows alapján, nincs kétszeres motor-hívás
+  const sum = rows.reduce((acc, r) => ({
+    "Összes munkalap":      acc["Összes munkalap"]      + 1,
+    "Összes bevétel (Ft)":  acc["Összes bevétel (Ft)"]  + (r["Bevétel (Ft)"]        || 0),
+    "Összes költség (Ft)":  acc["Összes költség (Ft)"]  + (r["Összes költség (Ft)"] || 0),
+    "Összesített eredmény": acc["Összesített eredmény"] + (r["Eredmény (Ft)"]        || 0),
+    "Lezárt munkák":        acc["Lezárt munkák"]  + (["Lezárva","Számlázva"].includes(r["Státusz"]) ? 1 : 0),
+    "Aktív munkák":         acc["Aktív munkák"]   + (!["Lezárva","Számlázva","Meghiúsult"].includes(r["Státusz"]) ? 1 : 0),
+  }), { "Összes munkalap":0, "Összes bevétel (Ft)":0, "Összes költség (Ft)":0, "Összesített eredmény":0, "Lezárt munkák":0, "Aktív munkák":0 });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([sum]), "Összesítő");
 
   XLSX.writeFile(wb, `${fajlnev}_${new Date().toISOString().slice(0,10)}.xlsx`);

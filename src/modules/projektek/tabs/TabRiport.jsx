@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Printer, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../../lib/constants.js";
 import { printMunkalap, printProjektRiport } from "../../../lib/reportService.js";
-import { calcMunkalapPenzugy } from "../../../lib/costEngine.js";
+import { calcMunkalapRiportAdat } from "../../../lib/munkalapRiportHelper.js";
+import { formatMunkalapAzonosito } from "../../../lib/azonositoHelper.js";
 import { ft } from "../../../lib/helpers.js";
 
 function RiportGomb({ label, icon, onClick, color = "#1E3A5F" }) {
@@ -18,9 +19,9 @@ function RiportGomb({ label, icon, onClick, color = "#1E3A5F" }) {
   );
 }
 
-function MunkalapRiportSor({ m, onPrint }) {
+function MunkalapRiportSor({ m, projekt, onPrint }) {
   const [open, setOpen] = useState(false);
-  const p = calcMunkalapPenzugy(m);
+  const p = calcMunkalapRiportAdat(m, projekt);
   const hasVbf   = !!localStorage.getItem(`vbf_${m.id}`);
   const hasAnyag = (() => { try { return JSON.parse(localStorage.getItem(`felh_anyagok_${m.id}`)||"[]").length > 0; } catch { return false; } })();
   const hasFelm  = !!localStorage.getItem(`crm_ml_${m.id}_felm_adat`);
@@ -32,9 +33,24 @@ function MunkalapRiportSor({ m, onPrint }) {
         onClick={() => setOpen(o => !o)}>
         <div style={{ flex:1 }}>
           <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-            <span style={{ fontWeight:700, color:"#2563EB", fontSize:13 }}>{m.dokumentumszam || m.ediSorszam || m.id}</span>
+            <span style={{ fontWeight:700, color:"#2563EB", fontSize:13 }}>{formatMunkalapAzonosito(m)}</span>
             <span style={{ fontSize:11, background:"#F1F5F9", color:"#64748B", padding:"2px 8px", borderRadius:20, fontWeight:600 }}>{m.status}</span>
             <span style={{ fontSize:11, color:"#94A3B8" }}>{m.munkalapTipus || "—"}</span>
+            {p.motor === "D" && (
+              <span
+                title={p.warning}
+                style={{ fontSize:10, background:"#FEF3C7", color:"#92400E", padding:"2px 7px", borderRadius:20, fontWeight:700, cursor:"help" }}
+              >
+                Régi motor
+              </span>
+            )}
+            {p.motor === "A" && (
+              <span
+                style={{ fontSize:10, background:"#DCFCE7", color:"#166534", padding:"2px 7px", borderRadius:20, fontWeight:700 }}
+              >
+                Szabályalapú
+              </span>
+            )}
           </div>
           <p style={{ fontSize:12, color:"#64748B", margin:"3px 0 0" }}>
             {m.clientNev || "—"} · {m.assigneeNev || "—"} · {m.date || "—"}
@@ -137,6 +153,7 @@ export default function TabRiport({ projekt, munkalapok }) {
           <MunkalapRiportSor
             key={m.id}
             m={m}
+            projekt={projekt}
             onPrint={printMunkalap}
           />
         ))

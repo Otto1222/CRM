@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { ArrowLeft, Pencil, Printer, Trash2 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getStatusConfig } from "./projekt.schema.js";
@@ -74,7 +74,7 @@ export default function ProjektDetail({ projekt, munkalapok, onBack, onNavigateM
       case "attekintes":
         return <TabAttekintes {...props} />;
       case "munkalapok":
-        return <TabMunkalapok {...props} onNavigate={onNavigateMunkalap} onNewMunkalap={onNewMunkalapForProjekt ? () => onNewMunkalapForProjekt(lokalProjekt) : undefined} />;
+        return <TabMunkalapok {...props} onNavigate={onNavigateMunkalap} />;
       case "penzugy":
         return <TabPenzugy {...props} />;
       case "kivitelezesi_csomag":

@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+﻿import { useState, useRef, useEffect } from "react";
 import { Camera, Save, ArrowLeft, CheckCircle2, X, Loader2, AlertTriangle, Phone, MapPin, BookOpen } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
+import { formatMunkalapAzonosito } from "../lib/azonositoHelper.js";
 import { updateItem, loadLocal, saveLocal } from "../lib/localDb";
 
 // ─── 7 fotós kategória ────────────────────────────────────────
@@ -398,7 +399,7 @@ export default function FelmeresTelepito({ m, data, onBack }) {
           <button onClick={()=>onBack()} style={{border:"none",background:"none",color:"#94A3B8",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:13,fontFamily:FONT,fontWeight:600}}>
             <ArrowLeft size={18}/> Vissza
           </button>
-          <span style={{fontWeight:800,fontSize:14,color:"#fff",flex:1}}>{m.id}</span>
+          <span style={{fontWeight:800,fontSize:14,color:"#fff",flex:1}}>{formatMunkalapAzonosito(m)}</span>
           <button onClick={()=>window.open("/installer-guide.html","_blank")} title="Telepítői útmutató" style={{border:"none",background:"rgba(255,255,255,0.12)",color:"#fff",cursor:"pointer",borderRadius:8,padding:"5px 8px",display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:600,fontFamily:FONT}}>
             <BookOpen size={15}/> Útmutató
           </button>
