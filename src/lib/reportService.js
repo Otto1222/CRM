@@ -5,8 +5,7 @@
  * Fotók NINCSENEK benne, pénzügy IGEN
  */
 
-import { calcMunkalapPenzugy, calcProjektPenzugy } from "./costEngine.js";
-import { loadKarteritesek } from "./karterites.js";
+import { calcMunkalapRiportAdat } from "./munkalapRiportHelper.js";
 import { ft } from "./helpers.js";
 
 // ─── Adat betöltők ────────────────────────────────────────────
@@ -25,6 +24,14 @@ function loadFelmeresAdat(munkalapId) {
 
 function loadFelmeresNotes(munkalapId) {
   try { return JSON.parse(localStorage.getItem(`crm_ml_${munkalapId}_felm_notes`) || "{}"); } catch { return {}; }
+}
+
+function loadProjektById(projektId) {
+  if (!projektId) return null;
+  try {
+    const lista = JSON.parse(localStorage.getItem("projektek") || "[]");
+    return lista.find(p => p.id === projektId) || null;
+  } catch { return null; }
 }
 
 // ─── HTML szekció építők ──────────────────────────────────────
@@ -179,21 +186,41 @@ function html_felmeres(adatok, notes) {
   );
 }
 
-function html_penzugy(m, karteritesek) {
-  const p = calcMunkalapPenzugy(m, karteritesek);
-  const sorok = [
-    ["Bevétel", ft(p.bevetal), p.bevetal > 0],
-    ["Anyagköltség", ft(p.anyagKolts), p.anyagKolts > 0],
-    ["Munkaerő díj", ft(p.munkaeroDij), p.munkaeroDij > 0],
-    ["Kiszállási díj", ft(p.kiszDij), p.kiszDij > 0],
-    ["Egyéb költség", ft(p.egyeb), p.egyeb > 0],
-    ["Kártérítés (elfogadott)", ft(p.kartElf), p.kartElf > 0],
-    ["Összes költség", `<strong>${ft(p.osszesKolts)}</strong>`, p.osszesKolts > 0],
-    ["Eredmény", `<strong style="color:${p.nyereseg?"#166534":"#991B1B"}">${ft(p.eredmeny)}</strong>`, p.bevetal > 0],
-    ["Haszon %", `<strong>${p.haszonPct !== null ? p.haszonPct + "%" : "—"}</strong>`, p.bevetal > 0],
-  ].filter(([,, show]) => show);
-  if (!sorok.length) return '<p class="ures">Pénzügyi adatok nem rögzítve</p>';
-  return `<table class="adat-t">${sorok.map(([l,v]) =>
+function html_penzugy(m, projekt) {
+  const p = calcMunkalapRiportAdat(m, projekt);
+
+  const motorBadge = p.motor === "A"
+    ? `<span class="motor-a">✓ Szabályalapú számítás (Motor A)</span>`
+    : `<span class="motor-d">⚠ Régi motorból számolva</span>`;
+
+  let sorok;
+  if (p.motor === "A") {
+    const a = p._motorA || {};
+    sorok = [
+      ["Bevétel (nettó, szabályalapú)", ft(p.bevetal), p.bevetal > 0],
+      ["Anyagköltség", ft(a.anyagkoltság || 0), (a.anyagkoltság || 0) > 0],
+      ["Alvállalkozói bér", ft(a.alvallalkozoiBer || 0), (a.alvallalkozoiBer || 0) > 0],
+      ["Összes költség", `<strong>${ft(p.osszesKolts)}</strong>`, p.osszesKolts > 0],
+      ["Eredmény", `<strong style="color:${p.nyereseg?"#166534":"#991B1B"}">${ft(p.eredmeny)}</strong>`, p.bevetal > 0],
+      ["Haszon %", `<strong>${p.haszonPct !== null ? p.haszonPct + "%" : "—"}</strong>`, p.bevetal > 0],
+    ].filter(([,, show]) => show);
+  } else {
+    const d = p._motorD || {};
+    sorok = [
+      ["Bevétel", ft(p.bevetal), p.bevetal > 0],
+      ["Anyagköltség", ft(d.anyagKolts || 0), (d.anyagKolts || 0) > 0],
+      ["Munkaerő díj", ft(d.munkaeroDij || 0), (d.munkaeroDij || 0) > 0],
+      ["Kiszállási díj", ft(d.kiszDij || 0), (d.kiszDij || 0) > 0],
+      ["Egyéb költség", ft(d.egyeb || 0), (d.egyeb || 0) > 0],
+      ["Kártérítés (elfogadott)", ft(d.kartElf || 0), (d.kartElf || 0) > 0],
+      ["Összes költség", `<strong>${ft(p.osszesKolts)}</strong>`, p.osszesKolts > 0],
+      ["Eredmény", `<strong style="color:${p.nyereseg?"#166534":"#991B1B"}">${ft(p.eredmeny)}</strong>`, p.bevetal > 0],
+      ["Haszon %", `<strong>${p.haszonPct !== null ? p.haszonPct + "%" : "—"}</strong>`, p.bevetal > 0],
+    ].filter(([,, show]) => show);
+  }
+
+  if (!sorok.length) return motorBadge + '<p class="ures">Pénzügyi adatok nem rögzítve</p>';
+  return motorBadge + `<table class="adat-t">${sorok.map(([l,v]) =>
     `<tr><td class="l">${l}</td><td class="v">${v}</td></tr>`
   ).join("")}</table>`;
 }
@@ -224,6 +251,8 @@ const CSS = `
   .ures { font-size: 9pt; color: #aaa; font-style: italic; margin: 2mm 0; }
   .footer { margin-top: 10mm; border-top: 0.5pt solid #ddd; padding-top: 3mm; text-align: center; font-size: 8pt; color: #999; }
   .status-badge { display: inline-block; padding: 1mm 4mm; border-radius: 10pt; font-weight: bold; font-size: 9pt; }
+  .motor-a { display:inline-block; font-size:7.5pt; color:#166534; background:#DCFCE7; padding:1mm 3mm; border-radius:2pt; margin-bottom:2mm; }
+  .motor-d { display:inline-block; font-size:7.5pt; color:#92400E; background:#FEF3C7; padding:1mm 3mm; border-radius:2pt; margin-bottom:2mm; }
   .top-info { display: flex; gap: 8mm; margin-bottom: 5mm; }
   .top-info div { flex: 1; }
   @media print { body { padding: 10mm; } h2 { break-before: auto; } }
@@ -231,12 +260,12 @@ const CSS = `
 
 // ─── Egy munkalap riport HTML ─────────────────────────────────
 
-function buildMunkalapHTML(m, karteritesek) {
+function buildMunkalapHTML(m, projekt) {
   const vbf      = loadVbf(m.id);
   const anyagok  = loadAnyagok(m.id);
   const felm     = loadFelmeresAdat(m.id);
   const felmNotes= loadFelmeresNotes(m.id);
-  const penzUgy  = html_penzugy(m, karteritesek);
+  const penzUgy  = html_penzugy(m, projekt);
   const hasFelmeres = felm || Object.keys(felmNotes).length;
 
   return `
@@ -293,12 +322,12 @@ function openPrintWindow(title, bodyHTML) {
  * Egy munkalap teljes riportja
  */
 export function printMunkalap(m) {
-  const kt    = loadKarteritesek();
-  const title = `${m.dokumentumszam || m.id} – ${m.clientNev || "Munkalap riport"}`;
-  const body  = `
+  const projekt = loadProjektById(m.projektId);
+  const title   = `${m.dokumentumszam || m.id} – ${m.clientNev || "Munkalap riport"}`;
+  const body    = `
     <h1>☀️ Munkalap Riport</h1>
     <p class="meta">Projektkód: <strong>${m.projektId || "—"}</strong> &nbsp;|&nbsp; Dátum: <strong>${m.date || "—"}</strong> &nbsp;|&nbsp; Csapat: <strong>${m.assigneeNev || "—"}</strong></p>
-    ${buildMunkalapHTML(m, kt)}
+    ${buildMunkalapHTML(m, projekt)}
   `;
   openPrintWindow(title, body);
 }
@@ -307,9 +336,15 @@ export function printMunkalap(m) {
  * Projekt összes munkalapjának riportja
  */
 export function printProjektRiport(projekt, munkalapok) {
-  const kt   = loadKarteritesek();
-  const mls  = (munkalapok||[]).filter(m => m.projektId===projekt.id || projekt.munkalapIds?.includes(m.id));
-  const osz  = calcProjektPenzugy(mls, null, kt);
+  const mls = (munkalapok||[]).filter(m => m.projektId===projekt.id || projekt.munkalapIds?.includes(m.id));
+  const osz = mls.reduce((acc, m) => {
+    const p = calcMunkalapRiportAdat(m, projekt);
+    return {
+      bevetal:     acc.bevetal     + (p.bevetal     || 0),
+      osszesKolts: acc.osszesKolts + (p.osszesKolts || 0),
+      eredmeny:    acc.eredmeny    + (p.eredmeny    || 0),
+    };
+  }, { bevetal: 0, osszesKolts: 0, eredmeny: 0 });
   const title = `${projekt.projektkod} – ${projekt.nev}`;
 
   const osszesFoglalo = szekcio("📊 Projekt összefoglaló", `
@@ -341,7 +376,7 @@ export function printProjektRiport(projekt, munkalapok) {
     </table>
   `);
 
-  const munkalapBlokkok = mls.map(m => buildMunkalapHTML(m, kt)).join('<div style="page-break-before:always"></div>');
+  const munkalapBlokkok = mls.map(m => buildMunkalapHTML(m, projekt)).join('<div style="page-break-before:always"></div>');
 
   openPrintWindow(title, `
     <h1>☀️ Projekt Riport</h1>

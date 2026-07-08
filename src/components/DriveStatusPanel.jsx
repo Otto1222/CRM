@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { CheckCircle2, XCircle, Wifi, WifiOff, RefreshCw, AlertTriangle, Loader2, Clock, Shield, Search, FolderSearch, Send } from "lucide-react";
+import { CheckCircle2, XCircle, Wifi, WifiOff, RefreshCw, Loader2, Clock, Shield, Search, FolderSearch, Send } from "lucide-react";
 import { drivePing, driveDiagnose, driveTestPost, driveAvailable } from "../lib/driveApi";
 import { SYNC_COLLECTIONS, getSyncLog, syncAllToDrive } from "../lib/dataSync.service";
-import { hasDefaultPasswords } from "../lib/crmUsers";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 
 const COLLECTION_LABELS = {
@@ -32,8 +31,6 @@ export default function DriveStatusPanel() {
   const [syncResult,      setSyncResult]      = useState(null);
   const [syncLoading,     setSyncLoading]     = useState(false);
   const [syncLog,         setSyncLog]         = useState(() => getSyncLog());
-  const [defaultPw]                           = useState(() => hasDefaultPasswords());
-
   const available = driveAvailable();
 
   async function handlePing() {
@@ -97,22 +94,6 @@ export default function DriveStatusPanel() {
       <p style={{ fontSize: 13, color: C.muted, margin: "0 0 22px" }}>
         Kapcsolat ellenőrzés, kollekciónkénti mentési napló, visszaellenőrzés
       </p>
-
-      {/* ── Alapértelmezett jelszó figyelmeztetés ── */}
-      {defaultPw && (
-        <div style={{ background: "#FEF2F2", border: "2px solid #F87171", borderRadius: 12, padding: "14px 18px", marginBottom: 20, display: "flex", gap: 12, alignItems: "flex-start" }}>
-          <AlertTriangle size={20} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
-          <div>
-            <p style={{ fontWeight: 700, color: "#DC2626", margin: "0 0 4px", fontSize: 14 }}>
-              ⛔ Éles teszt előtt kötelező: jelszócsere szükséges!
-            </p>
-            <p style={{ fontSize: 13, color: "#991B1B", margin: 0, lineHeight: 1.6 }}>
-              Egy vagy több felhasználó még az alapértelmezett jelszót használja.
-              Menj a <strong>Beállítások → Felhasználók</strong> menübe és változtasd meg az összes jelszót!
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* ── Drive kapcsolat teszt (ping) ── */}
       <div style={{ background: "#fff", border: `1.5px solid ${C.border}`, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>

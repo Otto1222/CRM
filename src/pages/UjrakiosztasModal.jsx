@@ -1,9 +1,10 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   X, Save, AlertTriangle, Plus, Trash2, Hash,
   Calendar, Users, MessageSquare, Package
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
+import { formatMunkalapAzonosito } from "../lib/azonositoHelper.js";
 import { getSettings } from "../lib/munkakiosztasSettings";
 import { updateItem, loadLocal } from "../lib/localDb";
 import { driveSave } from "../lib/driveApi";
@@ -150,7 +151,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
         <div style={{ padding:"20px 24px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
           <div>
             <h2 style={{ fontFamily:FONT_HEADING, fontSize:19, fontWeight:800, color:C.text }}>Munkalap újrakiosztása</h2>
-            <p style={{ fontSize:13, color:C.muted, marginTop:2 }}>{m.id} · {m.clientNev || m.projektMegnevezes}</p>
+            <p style={{ fontSize:13, color:C.muted, marginTop:2 }}>{formatMunkalapAzonosito(m)} · {m.clientNev || m.projektMegnevezes}</p>
           </div>
           <button onClick={onClose} style={{ border:"none", background:"none", cursor:"pointer", color:C.muted }}>
             <X size={22}/>
@@ -242,7 +243,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
               <div style={{ background:"#F1F5F9", borderRadius:12, padding:"12px 14px", marginBottom:16, fontSize:13, color:C.muted, fontStyle:"italic" }}>
                 📋 Csak olvasható — ezek az adatok nem módosíthatók
               </div>
-              <ReadOnlyField label="Munkaszám" value={m.id}/>
+              <ReadOnlyField label="Munkaszám" value={formatMunkalapAzonosito(m)}/>
               <ReadOnlyField label="Projekt megnevezés" value={m.projektMegnevezes}/>
               <ReadOnlyField label="Feladat" value={m.feladat}/>
               <ReadOnlyField label="Ügyfél" value={m.clientNev}/>

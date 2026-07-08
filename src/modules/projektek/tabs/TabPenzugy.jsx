@@ -18,6 +18,8 @@ import { getPenzugyi, upsertPenzugyi, autoElszamolasElokeszites } from "../../pe
 import { PENZUGYI_SCHEMA }   from "../../penzugy/penzugyi.schema.js";
 import { loadSzamlak, createSzamla } from "../../szamlak/szamla.service.js";
 import { getCsapat }         from "../../csapatok/csapat.service.js";
+import { calcMunkalapRiportAdat } from "../../../lib/munkalapRiportHelper.js";
+import { getAnyagelszamolasiModConfig, hasAnyagelszamolasiMod } from "../../../lib/workflowRules.js";
 
 // Anyagköltség-forrás megjelenítendő rövid neve – P0-2 javítás: a forrás
 // MINDIG látható, hogy pénzügyi vita esetén egyértelmű legyen, honnan jött a szám.
@@ -91,6 +93,12 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
   const kalk = projekt.penzugy?.fovallalkoziId ? calcEsmentProjektPenzugy(projekt) : null;
   const csapat = getCsapat(projekt.penzugy?.csapatId || projekt.csapatId);
 
+  // Anyagelszámolási mód badge config
+  const anyagCfg = getAnyagelszamolasiModConfig(projekt.anyagelszamolasiMod);
+
+  // Motor D fallback munkalapok száma
+  const motorDMunkalapok = projektMls.filter(m => calcMunkalapRiportAdat(m, projekt).motor === "D").length;
+
   // Számlák
   const [szamlak, setSzamlak] = useState([]);
   const [ujOpen, setUjOpen]   = useState(false);
@@ -145,6 +153,27 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
 
   return (
     <div style={{ paddingTop: 14, fontFamily: FONT }}>
+
+      {/* Anyagelszámolási mód badge */}
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10, padding:"9px 14px", borderRadius:10, background: anyagCfg.bg, border:`1.5px solid ${anyagCfg.color}40`, flexWrap:"wrap" }}>
+        <span style={{ fontSize:10, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.6, flexShrink:0 }}>Anyagelszámolási mód</span>
+        {hasAnyagelszamolasiMod(projekt) ? (
+          <span style={{ fontSize:12, fontWeight:700, color: anyagCfg.color }}>{anyagCfg.label}</span>
+        ) : (
+          <span style={{ fontSize:12, fontWeight:700, color:"#DC2626" }}>⚠ Admin ellenőrzés szükséges – nincs beállítva</span>
+        )}
+      </div>
+
+      {/* Motor D fallback figyelmeztetés */}
+      {motorDMunkalapok > 0 && (
+        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, padding:"9px 14px", borderRadius:10, background:"#FEF3C7", border:"1.5px solid #F59E0B" }}>
+          <AlertTriangle size={14} color="#92400E" style={{ flexShrink:0 }} />
+          <span style={{ fontSize:12, fontWeight:600, color:"#92400E" }}>
+            Figyelem: a projekt {motorDMunkalapok} munkalapja még régi pénzügyi motorból (Motor D) számolódik.
+            Rendelj fővállalkozót és munkatípust a munkalapokhoz a pontos számításhoz.
+          </span>
+        </div>
+      )}
 
       {/* Szekció váltó */}
       <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>

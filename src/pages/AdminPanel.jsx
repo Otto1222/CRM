@@ -46,7 +46,6 @@ function UserRow({ user, onSave, onDelete }) {
     if (newPw.trim()) {
       if (newPw.trim().length < 4) { setSaving(false); return; }
       updates.passwordHash    = await hashPw(newPw.trim());
-      updates.defaultPassword = newPw.trim();
     }
     await onSave(user.id, updates);
     setSaving(false);
@@ -112,17 +111,7 @@ function UserRow({ user, onSave, onDelete }) {
           <div style={{ display: "flex", alignItems: "center", gap: 6, background: C.bg, borderRadius: 8, padding: "6px 12px", fontSize: 13 }}>
             <Lock size={13} color={C.muted} />
             <span style={{ color: C.textSub }}>Jelszó:</span>
-            <b style={{ color: C.text, fontFamily: showPw ? FONT : "monospace", letterSpacing: showPw ? 0 : 2 }}>
-              {showPw ? (user.defaultPassword || "••••••••") : "••••••••"}
-            </b>
-            <button onClick={() => setShowPw(p => !p)} style={{ border: "none", background: "none", cursor: "pointer", padding: 0 }}>
-              {showPw ? <EyeOff size={13} color={C.muted} /> : <Eye size={13} color={C.muted} />}
-            </button>
-            {showPw && user.defaultPassword && (
-              <button onClick={() => copyToClipboard(user.defaultPassword)} style={{ border: "none", background: "none", cursor: "pointer", padding: 0 }}>
-                <Copy size={13} color={C.muted} />
-              </button>
-            )}
+            <b style={{ color: C.text, fontFamily: "monospace", letterSpacing: 2 }}>••••••••</b>
           </div>
         </div>
       )}
@@ -245,7 +234,6 @@ export default function AdminPanel({ currentUser }) {
       color:           szin,
       initials,
       passwordHash:    pwHash,
-      defaultPassword: password.trim(),
     };
     const updated = [...users, newUser];
     setUsers(updated);
@@ -275,10 +263,10 @@ export default function AdminPanel({ currentUser }) {
 
   function copyAllCredentials() {
     const text = users.map(u =>
-      `${u.name}\n  Felhasználónév: ${u.username}\n  Jelszó: ${u.defaultPassword || "(nincs megjelenítve)"}\n  Szerepkör: ${u.role}`
+      `${u.name}\n  Felhasználónév: ${u.username}\n  Szerepkör: ${u.role}`
     ).join("\n\n");
     navigator.clipboard?.writeText(text);
-    setToast("Összes adat vágólapra másolva!");
+    setToast("Felhasználói adatok vágólapra másolva!");
     setTimeout(() => setToast(""), 3000);
   }
 

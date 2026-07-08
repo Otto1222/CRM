@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Plus, ExternalLink, FilePlus, Users, ChevronDown, X, Save } from "lucide-react";
-import { C, FONT } from "../../../lib/constants.js";
+import { C, FONT, MUNKALAP_TIPUSOK } from "../../../lib/constants.js";
 import { linkMunkalap, unlinkMunkalap } from "../projekt.service.js";
-import { updateWorkorder } from "../../../services/workorder.service.js";
+import { updateWorkorder, createWorkorder, nextWorkorderNumber } from "../../../services/workorder.service.js";
 import { getAktivCsapatok } from "../../csapatok/csapat.service.js";
 import { CSAPAT_KIOSZTASI_TIPUSOK } from "../../csapatok/csapat.schema.js";
+import { formatMunkalapAzonosito } from "../../../lib/azonositoHelper.js";
 
 // ─── Csapat Kiosztás Panel (PM/Admin kezeli) ─────────────────
 
@@ -60,7 +61,6 @@ function CsapatKiosztasPanel({ munkalap }) {
         <Users size={12} /> Kiosztott csapatok ({kiosztasok.length} db)
       </p>
 
-      {/* Meglévő kiosztások */}
       {kiosztasok.map(k => (
         <div key={k.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderLeft: `3px solid ${k.csapatSzin || "#2563EB"}`, borderRadius: 8, marginBottom: 5 }}>
           <div style={{ flex: 1 }}>
@@ -81,7 +81,6 @@ function CsapatKiosztasPanel({ munkalap }) {
         </div>
       ))}
 
-      {/* Új kiosztás form */}
       <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 12px", marginTop: 8 }}>
         <p style={{ fontSize: 11, fontWeight: 700, color: "#065F46", margin: "0 0 8px" }}>Új csapat kiosztása</p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 6 }}>
@@ -116,9 +115,128 @@ function CsapatKiosztasPanel({ munkalap }) {
   );
 }
 
+// ─── Gyors munkalap létrehozás (inline, projektből) ──────────
+
+function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
+  const csapatok = getAktivCsapatok();
+  const [tipus, setTipus]         = useState("Első kivitelezés");
+  const [datum, setDatum]         = useState("");
+  const [csapatId, setCsapatId]   = useState(projekt.csapatId || "");
+  const [csapatNev, setCsapatNev] = useState(projekt.csapatNev || "");
+  const [megjegyzes, setMegjegyzes] = useState("");
+  const [hiba, setHiba]           = useState("");
+  const [mentve, setMentve]       = useState(false);
+
+  const inpS = {
+    padding: "8px 10px", border: "1.5px solid #E2E8F0", borderRadius: 8,
+    fontSize: 13, fontFamily: FONT, outline: "none", background: "#fff", width: "100%",
+  };
+
+  const preview = nextWorkorderNumber(projekt.projektkod || "ML", tipus);
+
+  function handleCsapatChange(e) {
+    const cs = csapatok.find(c => c.id === e.target.value);
+    setCsapatId(e.target.value);
+    setCsapatNev(cs?.nev || "");
+  }
+
+  function handleSave() {
+    setHiba("");
+    try {
+      const munkalap = createWorkorder({
+        projektId:     projekt.id,
+        projektKod:    projekt.projektkod,
+        tipus,
+        munkalapTipus: tipus,
+        datum,
+        clientNev:     projekt.clientNev     || "",
+        clientCim:     projekt.clientCim     || "",
+        clientTel:     projekt.clientTel     || "",
+        clientEmail:   projekt.clientEmail   || "",
+        telepitesiCim: projekt.telepitesiCim || projekt.clientCim || "",
+        csapatId,
+        csapatNev,
+        assigneeId:    csapatId,
+        assigneeNev:   csapatNev,
+        megjegyzes,
+        status: "Létrehozva",
+      }, currentUser?.nev || "");
+      linkMunkalap(projekt.id, munkalap.id);
+      setMentve(true);
+      setTimeout(() => onDone(), 700);
+    } catch (err) {
+      setHiba(err.message || "Mentési hiba. Próbáld újra.");
+    }
+  }
+
+  return (
+    <div style={{ background: "#F0FDF4", border: "1.5px solid #86EFAC", borderRadius: 12, padding: 16, marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: "#065F46", margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+          <FilePlus size={14} /> Új munkalap – {projekt.projektkod} · {projekt.clientNev || "—"}
+        </p>
+        <button onClick={onCancel} title="Mégsem" style={{ border: "none", background: "none", cursor: "pointer", color: "#64748B", padding: 2 }}>
+          <X size={15} />
+        </button>
+      </div>
+
+      <p style={{ fontSize: 11, color: "#059669", background: "#DCFCE7", padding: "4px 10px", borderRadius: 7, marginBottom: 12, display: "inline-block" }}>
+        Munkalapszám: <strong>{preview}</strong>
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4 }}>
+            Típus <span style={{ color: "#DC2626" }}>*</span>
+          </label>
+          <select value={tipus} onChange={e => setTipus(e.target.value)} style={inpS}>
+            {MUNKALAP_TIPUSOK.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4 }}>Tervezett dátum</label>
+          <input type="date" value={datum} onChange={e => setDatum(e.target.value)} style={inpS} />
+        </div>
+        <div style={{ gridColumn: "span 2" }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4 }}>Csapat</label>
+          <select value={csapatId} onChange={handleCsapatChange} style={inpS}>
+            <option value="">— Nincs csapat kiosztva —</option>
+            {csapatok.map(cs => <option key={cs.id} value={cs.id}>{cs.nev} {cs.tipus === "alvallalkozo" ? "(AV)" : "(Saját)"}</option>)}
+          </select>
+        </div>
+        <div style={{ gridColumn: "span 2" }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 4 }}>Megjegyzés</label>
+          <input value={megjegyzes} onChange={e => setMegjegyzes(e.target.value)} placeholder="Opcionális…" style={inpS} />
+        </div>
+      </div>
+
+      <div style={{ fontSize: 11, color: "#475569", background: "#F8FAFC", borderRadius: 7, padding: "6px 10px", marginBottom: 12 }}>
+        Ügyfél: <strong>{projekt.clientNev || "—"}</strong>
+        {(projekt.telepitesiCim || projekt.clientCim) && (
+          <> · Helyszín: <strong>{projekt.telepitesiCim || projekt.clientCim}</strong></>
+        )}
+      </div>
+
+      {hiba  && <p style={{ color: "#DC2626", fontSize: 12, marginBottom: 8 }}>⚠ {hiba}</p>}
+      {mentve && <p style={{ color: "#059669", fontSize: 12, marginBottom: 8 }}>✓ Munkalap létrehozva – lista frissül…</p>}
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={handleSave} disabled={mentve}
+          style={{ flex: 1, padding: "9px 14px", background: mentve ? "#059669" : "#2563EB", color: "#fff", border: "none", borderRadius: 8, cursor: mentve ? "default" : "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+          <Save size={13} /> {mentve ? "Létrehozva ✓" : "Munkalap létrehozása"}
+        </button>
+        <button onClick={onCancel}
+          style={{ padding: "9px 16px", background: "#F1F5F9", color: "#64748B", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
+          Mégsem
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Fő komponens ─────────────────────────────────────────────
 
-export default function TabMunkalapok({ projekt, munkalapok, onNavigate, onNewMunkalap }) {
+export default function TabMunkalapok({ projekt, munkalapok, onNavigate, currentUser }) {
   const linked = (munkalapok || []).filter(
     (m) => m.projektId === projekt.id || projekt.munkalapIds?.includes(m.id)
   );
@@ -127,11 +245,9 @@ export default function TabMunkalapok({ projekt, munkalapok, onNavigate, onNewMu
     (m) => !m.projektId && !projekt.munkalapIds?.includes(m.id)
   );
 
-  const [showLink, setShowLink] = useState(false);
-  const [expandedId, setExpandedId] = useState(null);
-
-  const getMunkalapAzonosito = (m) =>
-    m.munkalapSzam || m.dokumentumszam || m.ediSorszam || m.id;
+  const [showLink,    setShowLink]    = useState(false);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [expandedId,  setExpandedId]  = useState(null);
 
   return (
     <div style={{ paddingTop: 16 }}>
@@ -140,18 +256,27 @@ export default function TabMunkalapok({ projekt, munkalapok, onNavigate, onNewMu
           Kapcsolódó munkalapok ({linked.length} db)
         </p>
         <div style={{ display: "flex", gap: 8 }}>
-          {onNewMunkalap && (
-            <button onClick={onNewMunkalap}
+          {!showNewForm && (
+            <button onClick={() => { setShowNewForm(true); setShowLink(false); }}
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: "#059669", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
               <FilePlus size={14} /> Új munkalap
             </button>
           )}
-          <button onClick={() => setShowLink(s => !s)}
+          <button onClick={() => { setShowLink(s => !s); setShowNewForm(false); }}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: showLink ? "#F1F5F9" : "#fff", color: "#2563EB", border: "1.5px solid #2563EB", borderRadius: 9, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
             <Plus size={14} /> Meglévő hozzárendelése
           </button>
         </div>
       </div>
+
+      {showNewForm && (
+        <UjMunkalapInlineForm
+          projekt={projekt}
+          currentUser={currentUser}
+          onDone={() => setShowNewForm(false)}
+          onCancel={() => setShowNewForm(false)}
+        />
+      )}
 
       {showLink && unlinked.length > 0 && (
         <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 12, padding: 14, marginBottom: 14 }}>
@@ -159,7 +284,7 @@ export default function TabMunkalapok({ projekt, munkalapok, onNavigate, onNewMu
           {unlinked.slice(0, 20).map((m) => (
             <div key={m.id} onClick={() => { linkMunkalap(projekt.id, m.id); setShowLink(false); }}
               style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderRadius: 8, background: "#fff", border: "1px solid #E2E8F0", marginBottom: 6, cursor: "pointer" }}>
-              <span style={{ fontWeight: 600, fontSize: 13 }}>{getMunkalapAzonosito(m)}</span>
+              <span style={{ fontWeight: 600, fontSize: 13 }}>{formatMunkalapAzonosito(m)}</span>
               <span style={{ fontSize: 12, color: "#64748B" }}>{m.clientNev || "—"} · {m.status}</span>
             </div>
           ))}
@@ -180,7 +305,7 @@ export default function TabMunkalapok({ projekt, munkalapok, onNavigate, onNewMu
                 <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                      <span style={{ fontWeight: 700, color: "#2563EB", fontSize: 13 }}>{getMunkalapAzonosito(m)}</span>
+                      <span style={{ fontWeight: 700, color: "#2563EB", fontSize: 13 }}>{formatMunkalapAzonosito(m)}</span>
                       <span style={{ fontSize: 11, background: "#F1F5F9", color: "#64748B", padding: "2px 8px", borderRadius: 20, fontWeight: 600 }}>{m.status}</span>
                       {m.munkalapTipus && <span style={{ fontSize: 11, color: "#94A3B8" }}>{m.munkalapTipus}</span>}
                       {kiosztasDb > 0 && (

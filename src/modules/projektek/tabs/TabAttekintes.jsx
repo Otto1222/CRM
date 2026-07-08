@@ -45,12 +45,15 @@ export default function TabAttekintes({ projekt, munkalapok }) {
           <Row label="Telepítési cím"   value={projekt.telepitesiCim}/>
           <Row label="Projektvezető"    value={projekt.projektvezetoNev}/>
           <Row label="Csapat"           value={projekt.csapatNev}/>
-          <div style={{ display:"flex", gap:12, padding:"8px 0" }}>
-            <span style={{ fontSize:12, color:"#64748B", fontWeight:600, minWidth:160 }}>Anyagelszámolási mód</span>
+          <div style={{ marginTop:8, padding:"10px 12px", borderRadius:9, background: anyagCfg.bg, border:`1.5px solid ${anyagCfg.color}40` }}>
+            <p style={{ fontSize:10, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.6, margin:"0 0 4px" }}>Anyagelszámolási mód</p>
             {hasAnyagelszamolasiMod(projekt) ? (
-              <span style={{ fontSize:13, fontWeight:700, color: anyagCfg.color }}>{anyagCfg.label}</span>
+              <>
+                <span style={{ fontSize:13, fontWeight:700, color: anyagCfg.color }}>{anyagCfg.label}</span>
+                {anyagCfg.desc && <p style={{ fontSize:11, color:"#64748B", margin:"3px 0 0", lineHeight:1.4 }}>{anyagCfg.desc}</p>}
+              </>
             ) : (
-              <span style={{ fontSize:12, fontWeight:700, color:"#DC2626" }}>⚠ Admin ellenőrzés szükséges – nincs beállítva</span>
+              <span style={{ fontSize:13, fontWeight:700, color:"#DC2626" }}>⚠ Admin ellenőrzés szükséges – nincs beállítva</span>
             )}
           </div>
         </div>
