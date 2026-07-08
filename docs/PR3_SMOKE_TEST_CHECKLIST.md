@@ -115,6 +115,48 @@ várttal szemben).
 | 10.3 | Nézd meg a böngésző konzolt a mentés közben/után | Nincs elkapatlan (uncaught) hiba, a warning/error logok érthetőek | ☐ |
 | 10.4 | Töröld a teszt célból feltöltött mesterséges adatot | A localStorage visszaáll normál méretre, az app további használata zavartalan | ☐ |
 
+## 11. Több böngészőfül teszt (cross-tab szinkron)
+
+| # | Tesztlépés | Elvárt eredmény | PASS/FAIL |
+|---|---|---|---|
+| 11.1 | Nyisd meg ugyanazt a projektet két böngészőfülön (ugyanaz az origin, `BroadcastChannel("crm-db-sync")`) | Mindkét fülön ugyanazok az adatok látszanak | ☐ |
+| 11.2 | Az egyik fülön módosíts egy mezőt (pl. projekt állapot vagy megjegyzés) és mentsd el | A mentés sikeres, nincs hibaüzenet | ☐ |
+| 11.3 | Válts át a másik fülre anélkül, hogy frissítenéd (F5) | A `crm-db-updated` esemény hatására a UI magától frissül, VAGY egyértelmű jelzést kapsz, hogy az adat elavult/frissítés szükséges – néma, észrevétlen elavulás nem elfogadható | ☐ |
+| 11.4 | A második fülön is módosíts egy MÁSIK mezőt ugyanazon a rekordon, mentsd el | A mentés sikeres; ellenőrizd, hogy az első fülön tett módosítás (11.2) nem veszett-e el (mindkét változás megvan, vagy legalább az egyik konzisztensen érvényesül – nincs csendes adatvesztés) | ☐ |
+| 11.5 | Frissítsd mindkét fület (F5) | Mindkét fülön ugyanaz a végállapot jelenik meg (a fülek nem térnek el egymástól) | ☐ |
+
+## 12. Nagy mennyiségű fotó feltöltése
+
+| # | Tesztlépés | Elvárt eredmény | PASS/FAIL |
+|---|---|---|---|
+| 12.1 | Nyiss meg egy munkalapot, tölts fel egymás után 10-15 nagyméretű (pl. 3-5 MB-os) fotót | A feltöltés folyamatosan visszajelez (progress/siker), nem fagy le a UI | ☐ |
+| 12.2 | Közben figyeld a DevTools Console-t és a localStorage méretét (Application → Local Storage) | Látható, hogy a `fotok_<munkalapId>` kulcs mérete nő; ha közelít az 5-10 MB böngésző-limithez, a rendszer ezt észreveszi | ☐ |
+| 12.3 | Tölts fel annyi fotót, hogy ténylegesen elérje/túllépje a localStorage quotát | A felhasználó **egyértelmű hibaüzenetet** kap (nem csak néma `console.warn`) arról, hogy a mentés sikertelen volt | ☐ |
+| 12.4 | Quota túllépés után ellenőrizd a korábban már elmentett fotókat/adatokat | A korábbi, sikeresen elmentett fotók/rekordok NEM sérülnek/vesznek el a sikertelen utolsó mentés miatt | ☐ |
+| 12.5 | Törölj pár fotót, hogy quota alá kerülj, majd próbálj újra menteni | A mentés újra sikeres, a rendszer normál állapotba áll vissza | ☐ |
+
+## 13. Offline → Online round-trip szinkron
+
+| # | Tesztlépés | Elvárt eredmény | PASS/FAIL |
+|---|---|---|---|
+| 13.1 | Kapcsold ki a hálózatot (DevTools → Network → Offline, vagy repülő üzemmód) | A UI jelzi az offline állapotot ("Nincs internetkapcsolat" piros sáv) | ☐ |
+| 13.2 | Offline állapotban végezz módosítást (pl. új munkalap létrehozása vagy meglévő szerkesztése) | A módosítás helyileg elmentődik, a UI nem blokkol, nem dob végzetes hibát | ☐ |
+| 13.3 | Kapcsold vissza a hálózatot | A piros sáv eltűnik, a rendszer észleli az online állapotot | ☐ |
+| 13.4 | Figyeld meg, hogy az offline alatt tett módosítás automatikusan felkerül-e a Drive-ra (Network fül, Apps Script POST hívás), vagy kézi szinkron szükséges-e | A módosítás a Drive-on is megjelenik – automatikusan VAGY a rendszer egyértelműen jelzi, hogy kézi "Drive teljes mentés" szükséges. Néma, észrevétlenül elmaradt szinkron nem elfogadható | ☐ |
+| 13.5 | Egy másik eszközön/böngészőben (vagy inkognitó ablakban) jelentkezz be és nézd meg ugyanazt a rekordot | Az offline alatt tett módosítás látszik – a szinkron ténylegesen célba ért a Drive-on keresztül | ☐ |
+
+## 14. Backup integritás (teljes törlés + restore)
+
+| # | Tesztlépés | Elvárt eredmény | PASS/FAIL |
+|---|---|---|---|
+| 14.1 | Hozz létre backupot ("Mentés most"), miután minden kollekcióban (projektek, munkalapok, ügyfelek, **csapatok, csapat_tagok, crm_napelem_users, szamlak, anyag_ar_verziok, kivitelezesi_csomagok**, ajánlatok, karteritesek stb.) van legalább 1 rekord | A backup sikeresen elkészül | ☐ |
+| 14.2 | DevTools Console-ban futtasd le: `localStorage.clear()` (⚠️ csak teszt/staging környezetben!) | A localStorage teljesen kiürül, az app frissítés után üres/hibás állapotot mutat | ☐ |
+| 14.3 | Töltsd újra az oldalt, jelentkezz be újra (a backup listának Drive-ról vagy a `crm_backups` kulcs újratöltéséből elérhetőnek kell lennie) | A 14.1-ben létrehozott backup megjelenik a listában | ☐ |
+| 14.4 | Válaszd ki a backupot, futtasd le a "Visszaállítás"-t | A visszaállítás sikeres visszajelzést ad | ☐ |
+| 14.5 | Restore után ellenőrizd egyenként DevTools-ban a localStorage kulcsokat: `projektek`, `munkalapok`, `ugyfelek`, `csapatok`, `csapat_tagok`, `crm_napelem_users`, `szamlak`, `anyag_ar_verziok`, `kivitelezesi_csomagok`, `ajanlatok`, `karteritesek` | **Mindegyik kollekció hiánytalanul visszaáll** – ezek jelenleg a `backupService.js` `otherLocalStorage` catch-all mechanizmusán keresztül mentődnek/állnak vissza (nincsenek a `MAIN_KEYS` explicit listában), ezért ez kritikus regressziós teszt: ha valaki a jövőben tévedésből felveszi őket a `MAIN_KEYS`-be explicit mentés nélkül, csendben kiesnének a backupból | ☐ |
+| 14.6 | Jelentkezz be admin userrel a restore után | A bejelentkezés működik, a `crm_napelem_users` visszaállítása nem törte el az authot | ☐ |
+| 14.7 | Ellenőrizd, hogy a restore Drive-szinkront is indított-e (Network fül) | A visszaállított állapot Drive-ra is felkerül, nehogy a következő bejelentkezés régebbi Drive-állapottal írja felül | ☐ |
+
 ---
 
 ## Összegzés
@@ -131,6 +173,10 @@ várttal szemben).
 | 8. Restore működés | ☐ PASS / ☐ FAIL | |
 | 9. Drive sync hiba kezelése | ☐ PASS / ☐ FAIL | |
 | 10. localStorage mentési hiba kezelése | ☐ PASS / ☐ FAIL | |
+| 11. Több böngészőfül teszt | ☐ PASS / ☐ FAIL | |
+| 12. Nagy mennyiségű fotó feltöltése | ☐ PASS / ☐ FAIL | |
+| 13. Offline → Online round-trip szinkron | ☐ PASS / ☐ FAIL | |
+| 14. Backup integritás (teljes törlés + restore) | ☐ PASS / ☐ FAIL | |
 
 **Tesztelő:** _____________
 **Dátum:** _____________
