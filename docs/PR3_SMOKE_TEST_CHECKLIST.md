@@ -22,11 +22,20 @@ kitöltés, mentés, majd a localStorage tényleges tartalmának ellenőrzésév
 környezetben, valódi Drive konfigurációval futtatandók manuálisan újra.
 
 **2 db valódi, megerősített hibát találtunk** (2.3 és 6.2) – lásd a táblázatokban és az
-összegzésben a részleteket. **A PR emiatt draft marad, nincs engedélyezve a merge.**
+összegzésben a részleteket.
 
 Jelmagyarázat: ✅ PASS · ❌ FAIL (valódi hiba) · ⏭️ NEM TESZTELT (staging/Drive szükséges,
 vagy időhiány miatt kimaradt) · ⚠️ RÉSZLEGES (a teszt-szkript hibája miatt nem
 egyértelmű, manuális visszaellenőrzés ajánlott)
+
+## ✅ Javítás + teljes regressziós újrafuttatás (2026-07-08, folytatás)
+
+Mindkét hiba (2.3, 6.2) javítva, majd a **teljes** Playwright smoke teszt csomag
+(mind a 14 szakasz releváns, automatizálható tétele – nem csak a 2 érintett teszt)
+újra lefuttatva a javított kódon. Eredmény: **minden korábban futtatott, merge-gátló
+tétel PASS**, nincs regresszió a javítások mellékhatásaként.
+
+Részletek lásd a szakaszoknál (✅ JAVÍTVA jelöléssel) és az összegzésben.
 
 ---
 
@@ -50,12 +59,12 @@ egyértelmű, manuális visszaellenőrzés ajánlott)
 |---|---|---|---|
 | 2.1 | Nyisd meg a Projektek oldalt | A meglévő projektek listája betöltődik hiba nélkül | ✅ PASS |
 | 2.2 | Hozz létre egy új projektet kötelező mezők nélkül | Validációs hiba jelenik meg, a mentés nem történik meg | ✅ PASS |
-| 2.3 | Hozz létre egy új "Belső munka" projektet Név + Munkatípus kitöltésével | A projekt létrejön | ❌ **FAIL – valódi hiba, lásd lent** |
+| 2.3 | Hozz létre egy új "Belső munka" projektet Név + Munkatípus kitöltésével | A projekt létrejön | ✅ **PASS – JAVÍTVA, lásd lent** |
 | 2.4 | Szerkessz egy meglévő projektet (megnyitás) | A módosítás mentődik, a lista/detail nézet frissül | ✅ PASS |
 | 2.5 | Törölj egy olyan projektet, amelyhez van hozzárendelt munkalap | A projekt törlődik, a hozzá tartozó munkalap `projektId`/`projektKod` mezője nullázódik (cascade törlés), a munkalap maga nem vész el | ✅ PASS |
 | 2.6 | Használd a keresést/szűrést | A találati lista helyesen szűkül | ✅ PASS |
 
-**Szakasz eredménye: ❌ FAIL (5/6 PASS, 1 valódi hiba)**
+**Szakasz eredménye: ✅ PASS (6/6) – javítás után**
 
 ### 🐞 2.3 – Hiba részletei
 
@@ -102,6 +111,26 @@ komponens mount/prop-change idejére is kiterjesztve.
 érkezett a mergebe, a `main` nem módosította ezeket a fájlokat. A hiba tehát már a
 `claude/data-loss-stabilization` ág önálló állapotában is jelen van, de mivel ezt a
 PR-t most teszteljük végig, jelentjük.
+
+#### ✅ Javítás megerősítve
+
+Az auto-mód-beállítás logika **általánosan** került be a `ProjektForm.jsx`
+induló state számításába (nem csak a `belso_munka` esetre) – egy közös
+`getAutoAnyagelszamolasiMod(forrás)` helper (`src/lib/workflowRules.js`) adja vissza az
+egyértelműen levezethető módot `belso_munka` és `sajat_ajanlat` forrásokra, és ez
+**mind a form induló állapotában (ha a forrás előre be van állítva), mind a form belsejében
+történő kattintáskor** lefut – egyetlen közös forrásból, nem duplikált logikával.
+
+Eközben kiderült, hogy **ugyanez a hiba fennállt egy másik útvonalon is**:
+`src/pages/ArajanlaltokPage.jsx` a `ProjektForm`-ot `projekt={null}` +
+`ajanlatElofolt`-tal nyitja meg (`forrás` így `"sajat_ajanlat"`-ra állna be induláskor),
+de a régi kód ott sem futtatta le az auto-módot – a mostani general fix ezt a
+korábban észrevétlen második zsákutcát is megszünteti.
+
+Playwright-teszttel megerősítve: a "Belső munka" gombbal indított új projekt Név +
+Munkatípus kitöltése után **mentés nélküli mód-választás nélkül is sikeresen létrejön**,
+és a detail nézet ténylegesen **"Fővállalkozói hozott anyag"** anyagelszámolási módot
+mutat automatikusan beállítva.
 
 ---
 
@@ -170,11 +199,11 @@ tárgyköre, de érdemes külön ticketet nyitni rá).
 | # | Tesztlépés | Elvárt eredmény | PASS/FAIL |
 |---|---|---|---|
 | 6.1 | Újrakiosztás modal megnyílik, csapatok listázva | Modal megnyílik, csapatlista látszik | ✅ PASS |
-| 6.2 | Csapatváltás mentése frissíti a munkalap csapat-adatait | A kiválasztott csapat ténylegesen bekerül a rekordba | ❌ **FAIL – valódi hiba, lásd lent** |
+| 6.2 | Csapatváltás mentése frissíti a munkalap csapat-adatait | A kiválasztott csapat ténylegesen bekerül a rekordba | ✅ **PASS – JAVÍTVA, lásd lent** |
 | 6.3 | Modal megnyitása, majd "Mégse" | Semmi nem módosul | ⏭️ NEM TESZTELT |
 | 6.4 | Modal bezárása X gombbal | Ugyanúgy nem módosul, mint Mégse esetén | ⏭️ NEM TESZTELT |
 
-**Szakasz eredménye: ❌ FAIL (1 valódi hiba)**
+**Szakasz eredménye: ✅ PASS (2/2 tesztelt) – javítás után**
 
 ### 🐞 6.2 – Hiba részletei
 
@@ -217,6 +246,52 @@ const updates = {
 mezőnek is van önálló, szándékos szerepe egyéni telepítő-hozzárendelésre – ezt
 tisztázni kell a termékfelelőssel, mert jelenleg úgy tűnik, a "csapat" és az "egyéni
 assignee" fogalma összemosódik ebben a komponensben).
+
+#### 🔎 Domain modell tisztázása (kutatás)
+
+Teljes kódbázis-átvizsgálás (assigneeId/assigneeNev/csapatId/csapatNev minden
+olvasási/írási helye) alapján **nincs bizonyíték arra, hogy a két mezőpár két
+különálló, egyidejűleg érvényes fogalmat (pl. "egyéni telepítő" vs. "csapat")
+fejezne ki tudatosan**. A `src/services/workorder.service.js:normalizeWorkorder()`
+már eddig is szinonimaként, kétirányú fallback-kel kezelte őket
+(`assigneeId: data.assigneeId || data.csapatId`, és fordítva) – ez lett most a
+hivatalosan dokumentált, kanonikus modell: **`csapatId`/`csapatNev` a fő mezőpár,
+`assigneeId`/`assigneeNev` egy régebbi szinonima**, amit sok nézet/riport/export
+még olvas, ezért mentéskor mindig mindkettőt egyszerre kell kitölteni.
+
+**Ugyanez a hibaminta 2 másik helyen is előfordult**, ezeket is javítottuk:
+- `src/pages/Munkakiosztas.jsx:197-199` (automatikus munkakiosztás mentése) –
+  `csapatId` **teljesen hiányzott** a mentett munkalap-rekordból (csak
+  `assigneeId`/`assigneeNev`/`csapatNev` volt kitöltve), és mivel ez az útvonal
+  `addItem()`-en (nyers merge) megy át, nem `createWorkorder`-en, a
+  `normalizeWorkorder()` fallback-je **nem** javította ki – ez élesben ténylegesen
+  hiányos rekordokat hozott létre.
+- `src/pages/UjMunkalap.jsx:479-480` (új munkalap kézi form) – csak
+  `assigneeId`/`assigneeNev`-et töltött ki; ez eddig "véletlenül" helyes eredményt
+  adott, mert ez az útvonal `createWorkorder`-en megy át, ami utólag pótolta a
+  `csapatId`-t – de ez törékeny volt (ha az útvonal valaha közvetlen
+  `updateItem`/`addItem`-re váltana, azonnal ugyanaz a hiba jelentkezne, mint az
+  Újrakiosztás modalnál). Defenzív jelleggel most itt is explicit mindkét mezőpár
+  kitöltésre kerül.
+
+**Egy további helyet vizsgáltunk, de szándékosan NEM módosítottunk:**
+`src/pages/Munkalapok.jsx:469-473` – ez egy régebbi, "Szerelő / Csapat" címkéjű
+`<select>`, ami a `USERS` (egyéni felhasználók) listából választva írja az
+`assigneeId`-t. Ez a mező itt **ténylegesen egyéni személyt** azonosít, nem csapatot
+– ha ide is beírnánk a `csapatId`-t, az hibás lenne (egy user ID nem csapat ID).
+Ez a page konceptuálisan más modellt követ, mint a többi (csapat-alapú) hely; ennek
+egységesítése/tisztázása külön termékdöntést igényel, nem ennek a PR-nek a
+tárgyköre – **javasolt külön ticket**.
+
+#### ✅ Javítás megerősítve
+
+`src/pages/UjrakiosztasModal.jsx` `handleSave()` mostantól **egyszerre** írja a
+`csapatId`/`csapatNev` ÉS `assigneeId`/`assigneeNev` mezőket ugyanabból a kiválasztott
+csapatból (`src/pages/UjrakiosztasModal.jsx:102-111`), és az induló `csapatId` state,
+valamint a history-bejegyzés "eredeti csapat" mezője is a kanonikus `csapatNev`-et
+olvassa elsőként. Playwright-teszttel megerősítve: csapatváltás után **mind a
+`csapatNev`, mind az `assigneeNev` mező** a ténylegesen kiválasztott csapatra frissül
+a localStorage-ban.
 
 ---
 
@@ -337,11 +412,11 @@ végigvinni** merge előtt.
 | Terület | Eredmény | Megjegyzés |
 |---|---|---|
 | 1. Login / jogosultság | ✅ PASS | 7/7 |
-| 2. Projektek oldal | ❌ **FAIL** | 2.3 – "Belső munka" új projekt zsákutca (anyagelszámolási mód) |
+| 2. Projektek oldal | ✅ **PASS** | 2.3 javítva és regresszióban megerősítve |
 | 3. Munkalapok oldal | ✅ PASS | lefuttatott tételekre |
 | 4. TabMunkalapok inline form | ✅ PASS | lefuttatott tételekre |
 | 5. AdminPanel | ✅ PASS | lefuttatott tételekre |
-| 6. Újrakiosztás modal | ❌ **FAIL** | 6.2 – csapatváltás rossz mezőbe ír (assigneeId/assigneeNev, nem csapatId/csapatNev) |
+| 6. Újrakiosztás modal | ✅ **PASS** | 6.2 javítva és regresszióban megerősítve |
 | 7. Backup létrehozás | ✅ PASS | Drive-tételek staging-et igényelnek |
 | 8. Restore működés | ✅ PASS | Drive-tételek staging-et igényelnek |
 | 9. Drive sync hiba kezelése | ✅ PASS / ⚠️ | 9.2 manuális visszaellenőrzést igényel |
@@ -351,7 +426,25 @@ végigvinni** merge előtt.
 | 13. Offline → Online round-trip szinkron | ✅ PASS / ⚠️ | Drive-tételek staging-et igényelnek |
 | 14. Backup integritás (teljes törlés + restore) | ✅ PASS (részleges) | kritikus tételek (14.1, 14.2) megerősítve; 14.3–14.7 staging-et igényel |
 
+## Javítás utáni teljes regressziós újrafuttatás (2026-07-08)
+
+A 2.3 és 6.2 javítása után a **teljes** Playwright smoke teszt csomagot újra
+lefuttattuk (nem csak a 2 érintett tesztet) – minden korábban automatizálhatóan
+lefuttatott tétel (1–11, 13, 14 releváns sorai) **változatlanul PASS**, nincs
+regresszió. Az egyetlen átmeneti "FAIL" (2.4) a regressziós futás során egy
+teszt-szkript navigációs sorrend hiba volt (az újonnan létrehozott 2.3-as projekt
+automatikusan megnyitotta a saját detail nézetét, a teszt nem navigált vissza a
+listára előtte) – külön, izolált újrateszttel megerősítve **2.4 valójában PASS**,
+nem app-hiba.
+
+**Minden merge-gátló pont PASS.** A Drive-függő tételek (7.3, 8.5–8.6, 9.4–9.5,
+13.4–13.5, 14.3–14.7) és a 12. szakasz (nagy fotó feltöltés) továbbra is staging
+környezetben, valós Drive-kapcsolattal/képfájlokkal tesztelendők – ezek nem
+blokkolják a review-ba váltást, mivel egyik feltárt hiba sem ezekhez a tételekhez
+kapcsolódott, és a helyi környezet architekturálisan nem alkalmas rájuk.
+
 **Tesztelő:** Claude (automatizált Playwright smoke teszt)
 **Dátum:** 2026-07-08
-**Merge engedélyezve:** ❌ **Nem** – 2 valódi hiba (2.3, 6.2) javítása, valamint a Drive-függő
-és a 12. szakasz manuális tesztjeinek elvégzése szükséges előbb.
+**Merge engedélyezve:** ⚠️ Review-ra kész – a review előtt még javasolt a Drive-függő
+tételek és a 12. szakasz staging környezetben történő manuális elvégzése, de ez már
+nem blokkolja a "Ready for review" váltást.
