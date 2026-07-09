@@ -49,13 +49,34 @@ export function loadLmraRec(munkalapId) {
   catch { return null; }
 }
 
+/**
+ * P0 fix: korábban nem volt try/catch a localStorage.setItem körül – quota
+ * túllépés (pl. felhalmozódó aláírás-képek base64-ben) esetén a kivétel
+ * elkapatlanul a hívó click-eseménykezelőben landolt, a felhasználó számára
+ * úgy tűnt, mintha az aláírás/LMRA mentése megtörtént volna, valójában nem.
+ * Most a saveLocal()-lal azonos mintát követve hibasávot jelzünk és false-t
+ * adunk vissza, hogy a kritikus hívók (pl. aláírás mentése) explicit
+ * figyelmeztethessék a felhasználót.
+ */
 export function saveLmraRec(munkalapId, rec) {
   const updated = { ...rec, updatedAt: new Date().toISOString() };
-  localStorage.setItem(LMRA_REC_KEY(munkalapId), JSON.stringify(updated));
+  try {
+    localStorage.setItem(LMRA_REC_KEY(munkalapId), JSON.stringify(updated));
+  } catch (e) {
+    console.error("[LMRA] Mentési hiba:", e);
+    const quota = e && (e.name === "QuotaExceededError" || e.code === 22 || e.code === 1014);
+    try {
+      window.dispatchEvent(new CustomEvent("crm-storage-error", {
+        detail: { key: `lmra_rec_${munkalapId}`, type: quota ? "quota" : "write", message: e && e.message },
+      }));
+    } catch {}
+    return false;
+  }
   driveSave(`lmra_${munkalapId}`, { lmra: updated })
     .then(res => { if (!res.ok && !res.offline) console.warn("[LMRA Drive]", res.error); })
     .catch(e => console.warn("[LMRA Drive]", e));
   dispatch("lmra");
+  return true;
 }
 
 export function getLmraStatus(munkalapId) {
@@ -324,7 +345,10 @@ export function saveSignature(munkalapId, resztvevoId, signatureData) {
         : r
     ),
   };
-  saveLmraRec(munkalapId, updated);
+  // P0 fix: ha a mentés ténylegesen nem sikerült (quota/sérülés), NE adjunk
+  // vissza "sikeres" objektumot – a hívó ez alapján aláírtnak hinné a
+  // résztvevőt, miközben az aláírás nem mentődött el.
+  if (!saveLmraRec(munkalapId, updated)) return null;
   return updated;
 }
 
@@ -342,7 +366,9 @@ export function closeLmra(munkalapId, closedByName) {
     lezarvaAt: new Date().toISOString(),
     lezartaBy: closedByName || "",
   };
-  saveLmraRec(munkalapId, updated);
+  // P0 fix: ha a mentés nem sikerült, ne jelezzünk "lezárva" sikert – a
+  // felhasználó (jogilag releváns) LMRA-lezárása így elveszne visszajelzés nélkül.
+  if (!saveLmraRec(munkalapId, updated)) return { error: "A mentés nem sikerült (tárhely megtelt vagy sérült adat). Próbáld újra." };
   return updated;
 }
 

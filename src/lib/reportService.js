@@ -302,6 +302,12 @@ function buildMunkalapHTML(m, projekt) {
 
 function openPrintWindow(title, bodyHTML) {
   const w = window.open("", "_blank");
+  // P0 fix: popup-blokkoló esetén window.open null-t ad vissza – e nélkül a
+  // riport/nyomtatás minden hívója összeomlana.
+  if (!w) {
+    alert("Popup blokkolva! Engedélyezd a popupokat ehhez az oldalhoz a nyomtatáshoz.");
+    return;
+  }
   w.document.write(`<!DOCTYPE html><html lang="hu"><head>
     <meta charset="UTF-8">
     <title>${title}</title>

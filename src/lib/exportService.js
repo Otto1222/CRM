@@ -118,6 +118,13 @@ export function exportToPDF(munkalapok, karteritesek = [], options = {}) {
   const totEr   = totBev - totKolt;
 
   const w = window.open("", "_blank");
+  // P0 fix: popup-blokkoló esetén window.open null-t ad vissza – e nélkül a
+  // következő sor összeomlik ("Cannot read properties of null"), és a
+  // felhasználó exportot/nyomtatást egyáltalán nem tud indítani.
+  if (!w) {
+    alert("Popup blokkolva! Engedélyezd a popupokat ehhez az oldalhoz a PDF exporthoz.");
+    return;
+  }
   w.document.write(`<!DOCTYPE html><html lang="hu"><head>
 <meta charset="UTF-8"><title>${cim}</title>
 <style>

@@ -86,6 +86,12 @@ export function exportExcel(munkalapok, fajlnev = "munkalapok_export") {
 export function exportPDF(munkalapok, cim = "Munkalapok összesítő") {
   const karteritesek = loadKarteritesek();
   const w = window.open("", "_blank");
+  // P0 fix: popup-blokkoló esetén window.open null-t ad vissza – e nélkül a
+  // következő sorok összeomlanak, és a nyomtatás/export egyáltalán nem indul.
+  if (!w) {
+    alert("Popup blokkolva! Engedélyezd a popupokat ehhez az oldalhoz a nyomtatáshoz.");
+    return;
+  }
   const osszBev  = munkalapok.reduce((s,m)=>s+(m.ar||0),0);
   const osszKolts= munkalapok.reduce((s,m)=>s+munkalapPenzugyek(m).osszesKolts,0);
   const osszEr   = osszBev - osszKolts;

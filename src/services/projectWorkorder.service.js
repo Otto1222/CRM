@@ -62,13 +62,19 @@ export function createWorkorderFromProject(projekt, options = {}) {
     : [];
 
   if (!currentIds.includes(workorder.id)) {
-    updateProjekt(
-      projekt.id,
-      {
-        munkalapIds: [...currentIds, workorder.id],
-      },
-      options.user || ""
-    );
+    // updateProjekt mentési hiba esetén dob – a munkalap már elmentve, ez csak
+    // a projekt-oldali link, nem szabad emiatt elveszíteni magát a munkalapot
+    try {
+      updateProjekt(
+        projekt.id,
+        {
+          munkalapIds: [...currentIds, workorder.id],
+        },
+        options.user || ""
+      );
+    } catch (e) {
+      console.warn("[createWorkorderFromProject] projekt link mentése sikertelen:", e?.message || e);
+    }
   }
 
   return workorder;

@@ -10,9 +10,10 @@ import {
 } from "./csapat.service.js";
 import { CSAPAT_ELSZAMOLAS_TIPUSOK, CSAPAT_TIPUSOK, CSAPAT_TAG_SZEREPEK } from "./csapat.schema.js";
 import {
-  ELSZAMOLASI_MODOK, ELSZAMOLASI_MUNKATIPUSOK,
+  ELSZAMOLASI_MODOK,
   calcSzabalyOsszeg, szabalyLeiras,
 } from "../fovallalkozok/elszamolasiMotor.js";
+import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
 import AddressSearch from "../../components/AddressSearch.jsx";
 
 const SZINEK = [
@@ -541,6 +542,10 @@ function AvSavokSzerkeszto({ savok, onChange }) {
 function AvSzabalyForm({ szabaly, csapatId, onSave, onClose }) {
   const isNew = !szabaly?.id;
   const inpF = { width: "100%", boxSizing: "border-box", padding: "8px 11px", border: "1.5px solid #E2E8F0", borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none" };
+  // P0 fix: lásd FovallalkozoPage.jsx SzabalyForm ugyanerről a hibáról – a
+  // munkatípus-választónak a projekten ténylegesen tárolt ID-kkal kell
+  // megegyeznie, különben findEgyezoSzabalyok() soha nem talál egyezést.
+  const munkatipusok = getAktivMunkatipusok();
 
   const [f, setF] = useState({
     tulajdonosId:  csapatId,
@@ -576,7 +581,7 @@ function AvSzabalyForm({ szabaly, csapatId, onSave, onClose }) {
             <label style={{ fontSize: 10, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Munkatípus</label>
             <select value={f.munkatipus} onChange={e => u("munkatipus", e.target.value)} style={inpF}>
               <option value="">— Minden munkatípusra (általános) —</option>
-              {ELSZAMOLASI_MUNKATIPUSOK.map(mt => <option key={mt} value={mt}>{mt}</option>)}
+              {munkatipusok.map(t => <option key={t.id} value={t.id}>{t.nev}</option>)}
             </select>
           </div>
           <div style={{ gridColumn: "span 2" }}>
@@ -693,11 +698,14 @@ function AvSzabalyPanel({ csapatId }) {
       ) : (
         szabalyok.map(sz => {
           const modInfo = ELSZAMOLASI_MODOK.find(m => m.id === sz.mod);
+          const munkatipusNev = sz.munkatipus
+            ? (getAktivMunkatipusok().find(t => t.id === sz.munkatipus)?.nev || sz.munkatipus)
+            : "";
           return (
             <div key={sz.id} style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderLeft: "3px solid #7C3AED", borderRadius: 8, padding: "8px 12px", marginBottom: 5, display: "flex", alignItems: "flex-start", gap: 8, opacity: sz.aktiv === false ? .6 : 1 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 2, flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 700, fontSize: 12, color: "#0F172A" }}>{sz.munkatipus || "Általános"}</span>
+                  <span style={{ fontWeight: 700, fontSize: 12, color: "#0F172A" }}>{munkatipusNev || "Általános"}</span>
                   <span style={{ fontSize: 10, background: "#F3E8FF", color: "#7C3AED", padding: "1px 7px", borderRadius: 20, fontWeight: 700 }}>{modInfo?.label || sz.mod}</span>
                   {sz.aktiv === false && <span style={{ fontSize: 10, color: "#94A3B8" }}>Inaktív</span>}
                 </div>

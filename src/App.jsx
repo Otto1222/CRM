@@ -412,12 +412,19 @@ initSablonok();
       </div>
 
       {showNew && (
-        <UjMunkalap
-          data={data}
-          onSave={handleNewMunkalap}
-          onClose={() => { setShowNew(false); setUjMunkalapInit(null); }}
-          initialData={ujMunkalapInit}
-        />
+        // P0 fix: korábban a PageErrorBoundary-n KÍVÜL volt renderelve – egy
+        // itt bekövetkező JS-hiba a legkülső (main.jsx) boundary-t érte volna
+        // el, ami az EGÉSZ appot (sidebar, navigáció) fehér hibaoldalra
+        // cserélte volna, pont azt a fajta teljes-app-összeomlást okozva,
+        // amit a lap-szintű boundary be akar csomagolni.
+        <PageErrorBoundary key="ujmunkalap-modal">
+          <UjMunkalap
+            data={data}
+            onSave={handleNewMunkalap}
+            onClose={() => { setShowNew(false); setUjMunkalapInit(null); }}
+            initialData={ujMunkalapInit}
+          />
+        </PageErrorBoundary>
       )}
 
       {/* Tárolási hiba jelző – sérült adat / megtelt tárhely (NÉMA adatvesztés ellen) */}

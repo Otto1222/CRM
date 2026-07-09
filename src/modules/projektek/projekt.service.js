@@ -140,7 +140,12 @@ export function createProjekt(data, createdBy = "") {
       },
     ],
   };
-  saveProjektek([...loadProjektek(), projekt]);
+  // P0 fix: quota/sérülés esetén saveProjektek false-t ad – ha nem dobunk hibát,
+  // a hívó (ProjektForm) sikeresnek hiszi a létrehozást és bezárja a formot,
+  // miközben a projekt valójában nem mentődött el.
+  if (!saveProjektek([...loadProjektek(), projekt])) {
+    throw new Error("A projekt mentése nem sikerült (tárhely megtelt vagy sérült adat). Ellenőrizd a figyelmeztetést és próbáld újra.");
+  }
 
   // Saját ajánlat projekteknél automatikusan létrehozza a Kivitelezési Csomagot.
   // Hiba esetén console.warn, a projekt létrehozása nem vész el.
@@ -206,7 +211,12 @@ export function updateProjekt(id, updates, user = "") {
   };
 
   list[idx] = updated;
-  saveProjektek(list);
+  // P0 fix: ha a mentés nem sikerül (quota/sérülés), ne adjunk vissza "updated"-et
+  // sikerként – a hívó ez alapján UI-t frissítene és formot zárna be úgy, mintha
+  // a módosítás megtörtént volna, miközben a régi állapot maradt tárolva.
+  if (!saveProjektek(list)) {
+    throw new Error("A projekt mentése nem sikerült (tárhely megtelt vagy sérült adat). Ellenőrizd a figyelmeztetést és próbáld újra.");
+  }
 
   // Lezárásnál automatikus pénzügyi pillanatkép
   const lezaroStatuszok = ["Lezárt", "Számlázható"];
@@ -227,7 +237,13 @@ export function updateProjekt(id, updates, user = "") {
 
 export function deleteProjekt(id) {
   createBackup("Projekt törlés előtt");
-  saveProjektek(loadProjektek().filter(p => p.id !== id));
+  // P0 fix: ha a projekt törlésének mentése nem sikerül (quota/sérülés), a
+  // projekt valójában megmarad – ilyenkor a lenti cascade takarítás NEM
+  // futhat le, különben a "meg nem történt" törlés ellenére elveszne a
+  // gyerek munkalapok projekt-kapcsolata, a pénzügyi rekord és a kivitelezési
+  // csomag, miközben maga a projekt még mindig ott áll a listában (árvaság
+  // fordítva: a szülő él, a gyerekek/kapcsolt rekordok tűnnek el).
+  if (!saveProjektek(loadProjektek().filter(p => p.id !== id))) return;
 
   // ─── Cascade takarítás (A8): ne maradjon árva referencia / rekord ───
   // Dinamikus import a körkörös függőség elkerülésére; try/catch, hogy a

@@ -202,13 +202,21 @@ export function updateWorkorder(id, updates, user = "") {
   if (!validation.ok) throw new Error(validation.message);
 
   const next = loadWorkorders().map(w => w.id === id ? updated : w);
-  saveWorkorders(next);
+  // P0 fix: quota/sérülés esetén saveWorkorders false-t ad (localDb.saveLocal
+  // már jelez hibasávot) – ha ennek ellenére folytatnánk a lenti projekt-státusz
+  // szinkront és pénzügyi előkészítést, azok egy soha el nem mentett állapotra
+  // épülnének. Sok hívó nem csomagolja try/catch-be ezt a hívást, ezért itt
+  // (a createWorkorder-től eltérően) null-lal térünk vissza dobás helyett.
+  if (!saveWorkorders(next)) return null;
 
   // Munkalap státusz → Projekt státusz automata frissítés
   if (updates.status && updates.status !== current.status && updated.projektId) {
     const ujProjektStatusz = getProjectStatusFromWorkorder(updates.status);
     if (ujProjektStatusz) {
-      updateProjekt(updated.projektId, { status: ujProjektStatusz }, user || "system");
+      // updateProjekt mentési hiba esetén dob – ez egy másodlagos szinkron,
+      // nem szabad emiatt elveszíteni a már elmentett munkalap-módosítást
+      try { updateProjekt(updated.projektId, { status: ujProjektStatusz }, user || "system"); }
+      catch (e) { console.warn("[updateWorkorder] projekt-státusz szinkron sikertelen:", e?.message || e); }
     }
 
     // Ha minden munkalap kész (Lezárva / Számlázva / Számlázásra kész)
@@ -236,7 +244,11 @@ export function updateWorkorder(id, updates, user = "") {
 
 export function deleteWorkorder(id) {
   const toDelete = getWorkorder(id);
-  saveWorkorders(loadWorkorders().filter(w => w.id !== id));
+  // P0 fix: ha a törlés mentése nem sikerül (quota/sérülés), a munkalap
+  // valójában megmarad a localStorage-ban – ilyenkor a naptár-törlés és a
+  // projekt-unlink NEM futhat le, különben egy "élő" munkalap veszítené el
+  // a naptár-eseményét és a projekt-kapcsolatát, miközben ő maga nem törlődött.
+  if (!saveWorkorders(loadWorkorders().filter(w => w.id !== id))) return;
   if (toDelete) deleteMunkalapFromCalendar(toDelete).catch(() => {});
   // A8: a szülő projekt munkalapIds-éből is kivesszük (ne maradjon árva hivatkozás)
   if (toDelete?.projektId) {
