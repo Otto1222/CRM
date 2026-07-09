@@ -55,7 +55,7 @@ export function createProjektMunkalap(projektId, options = {}) {
     // updateProjekt mentési hiba esetén dob – a munkalap már elmentve, ez csak
     // a projekt-oldali link, nem szabad emiatt elveszíteni magát a munkalapot
     try { updateProjekt(projekt.id, { munkalapIds: [...currentIds, saved.id] }, options.user || ""); }
-    catch (e) { console.warn("[createInitialWorkorderForProject] projekt link mentése sikertelen:", e?.message || e); }
+    catch (e) { console.warn("[createProjektMunkalap] projekt link mentése sikertelen:", e?.message || e); }
   }
 
   syncProjektFromWorkorders(projekt.id);
