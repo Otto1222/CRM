@@ -24,7 +24,7 @@ function CsapatKiosztasPanel({ munkalap }) {
     if (!ujCsapatId) return;
     const cs = csapatok.find(c => c.id === ujCsapatId);
     const uj = {
-      id:         `kio_${Date.now()}`,
+      id:         `kio_${crypto.randomUUID()}`,
       csapatId:   ujCsapatId,
       csapatNev:  cs?.nev || "",
       csapatSzin: cs?.szin || "#2563EB",

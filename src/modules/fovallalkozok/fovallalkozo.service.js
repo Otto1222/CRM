@@ -46,7 +46,7 @@ export function createFovallalkozo(data) {
   createBackup("Fővállalkozó létrehozás előtt");
   const item = {
     ...FOVALLALKOZO_SCHEMA, ...data,
-    id: `fv_${Date.now()}`,
+    id: `fv_${crypto.randomUUID()}`,
     createdAt: new Date().toISOString(),
   };
   saveFovallalkozok([...loadFovallalkozok(), item]);
@@ -80,7 +80,7 @@ export function createSzabaly(data) {
   createBackup("Elszámolási szabály létrehozás előtt");
   const item = {
     ...ELSZAMOLASI_SZABALY_SCHEMA, ...data,
-    id: `sz_${Date.now()}`,
+    id: `sz_${crypto.randomUUID()}`,
     createdAt: new Date().toISOString(),
   };
   saveSzabalyok([...loadSzabalyok(), item]);

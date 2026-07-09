@@ -132,6 +132,24 @@ export function calculateAnyagProfitByMod(csomag, anyagelszamolasiMod) {
   }, 0);
 }
 
+/**
+ * Azon "forrás" értékeknél, ahol az anyagelszámolási mód egyértelműen levezethető
+ * magából a forrásból, biztonságosan automatikusan beállítható – admin
+ * felülvizsgálat nélkül. Fővállalkozói munkánál (és minden más/ismeretlen
+ * forrásnál) NINCS automatikus mód (lásd a fájl elején lévő FONTOS megjegyzést),
+ * azt mindig kézzel kell kiválasztani.
+ *
+ * Ez a leképezés a ProjektForm forrás-választó gombjainak onClick logikájával
+ * azonos – közös helyre emelve, hogy a form induló állapotában (előre
+ * beállított forrással megnyitva, pl. a Projektek oldal "Belső munka" /
+ * "Fővállalkozói" gombjairól) és kézi átváltáskor is ugyanazt eredményezze.
+ */
+export function getAutoAnyagelszamolasiMod(forrás) {
+  if (forrás === "belso_munka")   return ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_HOZOTT_ANYAG;
+  if (forrás === "sajat_ajanlat") return ANYAGELSZAMOLASI_MOD_SAJAT_ANYAG_PROFIT;
+  return null;
+}
+
 export function getAnyagelszamolasiModConfig(modId) {
   if (!modId || modId === ANYAGELSZAMOLAS_NINCS_KIVALASZTVA) {
     return { color: "#DC2626", bg: "#FEF2F2", label: "⚠ Nincs kiválasztva – kötelező megadni" };

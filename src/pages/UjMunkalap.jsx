@@ -445,7 +445,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
     const veglegesUgyszam = alap.ugyszam || generaltEdi;
 
     const ml = {
-      id:                `ml_${Date.now()}`,  // egyedi belső ID (nem tartalmaz "/" karaktert)
+      id:                `ml_${crypto.randomUUID()}`,  // egyedi belső ID (nem tartalmaz "/" karaktert)
       ugyszam:           veglegesUgyszam,
       cimke:             alap.cimke,
       cimkeSzin:         alap.cimkeSzin,
@@ -475,7 +475,12 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
       dokumentumszam:    alap.fovallalkoiAzonosito?.trim()
         ? `${veglegesUgyszam} / ${alap.fovallalkoiAzonosito.trim()}`
         : veglegesUgyszam,
-      // Csapat – a Telepítő szűrés erre támaszkodik
+      // Csapat – a Telepítő szűrés erre támaszkodik. csapatId/csapatNev a
+      // kanonikus mezőpár, assigneeId/assigneeNev a szinonima – mindkettőt
+      // itt kell kitölteni, nem szabad a createWorkorder normalizálására
+      // hagyatkozni (lásd workorder.service.js normalizeWorkorder komment).
+      csapatId:          alap.csapatId,
+      csapatNev:         csapat?.nev || alap.csapatNev,
       assigneeId:        alap.csapatId,
       assigneeNev:       csapat?.nev || alap.csapatNev,
       // Projekt kapcsolat

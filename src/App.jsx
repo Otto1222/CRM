@@ -6,11 +6,12 @@ import { getHomePage } from "./lib/roles";
 import { loadLocal, saveLocal } from "./lib/localDb";
 import { syncAllFromDrive, syncAllToDrive } from "./lib/dataSync.service";
 import { migrateTelepitoCsapatok } from "./lib/csapatMigracio";
-import { deleteWorkorder } from "./services/workorder.service";
+import { deleteWorkorder, createWorkorder } from "./services/workorder.service";
 import { linkMunkalap } from "./modules/projektek/projekt.service";
 import Login from "./pages/Login";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
+import PageErrorBoundary from "./components/PageErrorBoundary";
 import Dashboard from "./pages/Dashboard";
 import { MunkalapLista, MunkalapDetail } from "./pages/Munkalapok";
 import Ugyfelek from "./pages/Ugyfelek";
@@ -84,13 +85,10 @@ function loadInitialData() {
 }
 
 export default function App() {
-  const [user, setUser] = useState(() => {
-    try {
-      const t = localStorage.getItem("__crm_test_session__");
-      if (t) return JSON.parse(t);
-    } catch {}
-    return null;
-  });
+  // Biztonság (D2): nincs automatikus bejelentkezés localStorage-ból.
+  // A korábbi __crm_test_session__ hook bárkit beléptetett jelszó nélkül,
+  // ha be tudta állítani ezt a kulcsot (privilégium-emelés) – eltávolítva.
+  const [user, setUser] = useState(null);
   const [page, setPage] = useState("dashboard");
   const [sel, setSel] = useState(null);
   const [data, setData] = useState(loadInitialData);
@@ -100,6 +98,7 @@ const [showNew, setShowNew] = useState(false);
   const [sablonValaszto, setSablonValaszto] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [storageError, setStorageError] = useState(null);
 
   useEffect(() => { localStorage.removeItem("__crm_test_session__"); }, []);
 
@@ -112,6 +111,13 @@ const [showNew, setShowNew] = useState(false);
       window.removeEventListener("online",  goOnline);
       window.removeEventListener("offline", goOffline);
     };
+  }, []);
+
+  // Tárolási hiba (sérült adat / megtelt tárhely) – látható jelzés a néma adatvesztés ellen
+  useEffect(() => {
+    const onStorageError = (e) => setStorageError(e.detail || { type: "write" });
+    window.addEventListener("crm-storage-error", onStorageError);
+    return () => window.removeEventListener("crm-storage-error", onStorageError);
   }, []);
 
   useEffect(() => {
@@ -223,31 +229,29 @@ const [showNew, setShowNew] = useState(false);
     setTimeout(() => setDrive("idle"), 3000);
   }
 
-  async function handleNewMunkalap(formData) {
-    const today = new Date().toISOString().slice(0, 10);
+  function handleNewMunkalap(formData) {
+    // A védett creatoron át: munkalapszám/EDI/dokumentumszám ütközésvédelem,
+    // normalizálás és megerősített mentés (quota/sérülés esetén hibát dob).
+    let created;
+    try {
+      created = createWorkorder(formData, user?.name || "");
+    } catch (e) {
+      console.warn("[handleNewMunkalap]", e);
+      alert("A munkalap mentése nem sikerült:\n" + (e?.message || "ismeretlen hiba"));
+      return;
+    }
 
-    const newItem = {
-      ...formData,
-      createdAt: formData.createdAt || today,
-      updatedAt: today,
-    };
-
-    const current = loadLocal("munkalapok") || data.munkalapok || [];
-    const newList = [...current, newItem];
-
-    setData(prev => ({ ...prev, munkalapok: newList }));
-    saveLocal("munkalapok", newList);
-
-    await saveCollection("munkalapok", newList);
+    // React state frissítése a ténylegesen perzisztált listából
+    setData(prev => ({ ...prev, munkalapok: loadLocal("munkalapok") || prev.munkalapok || [] }));
 
     // Projekt munkalapIds frissítése ha projekthez tartozik
-    if (newItem.projektId) {
-      linkMunkalap(newItem.projektId, newItem.id);
+    if (created.projektId) {
+      linkMunkalap(created.projektId, created.id);
     }
 
     setShowNew(false);
     setPage("munkalapok");
-    setSel(newItem);
+    setSel(created);
   }
 
   function handleDeleteMunkalap(m) {
@@ -283,6 +287,7 @@ initSablonok();
       <Sidebar page={page} onNav={nav} user={user} onLogout={logout} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div style={{ flex: 1, overflow: "auto", animation: "fadeIn .25s ease", minWidth: 0 }}>
+        <PageErrorBoundary key={page + (sel?.id || "")}>
         {page === "munkalapok" && sel ? (
           <>
             <TopBar
@@ -403,6 +408,7 @@ initSablonok();
             )}
           </>
         )}
+        </PageErrorBoundary>
       </div>
 
       {showNew && (
@@ -412,6 +418,30 @@ initSablonok();
           onClose={() => { setShowNew(false); setUjMunkalapInit(null); }}
           initialData={ujMunkalapInit}
         />
+      )}
+
+      {/* Tárolási hiba jelző – sérült adat / megtelt tárhely (NÉMA adatvesztés ellen) */}
+      {storageError && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 10000,
+          background: "#7F1D1D", color: "#fff",
+          padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between",
+          fontSize: 13, fontWeight: 700, fontFamily: "system-ui, sans-serif", gap: 12,
+        }}>
+          <span>
+            {storageError.type === "quota"
+              ? `⛔ A böngésző tárhelye megtelt – a(z) "${storageError.key}" mentése NEM sikerült! Az adat NINCS elmentve. Készíts mentést és szabadíts fel helyet, mielőtt folytatod.`
+              : storageError.type === "parse" || storageError.type === "overwrite-blocked"
+              ? `⛔ Sérült adat észlelve: "${storageError.key}". A rendszer megőrizte a korábbi adatot és LEÁLLÍTOTTA a felülírást. Ne ments tovább – töltsd újra az oldalt vagy állíts vissza mentésből.`
+              : `⛔ Mentési hiba: "${storageError.key}". Az adat lehet, hogy NEM mentődött el.`}
+          </span>
+          <button
+            onClick={() => setStorageError(null)}
+            style={{ padding: "3px 8px", background: "transparent", color: "#fff", border: "1px solid #fff", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 12, flexShrink: 0 }}
+          >
+            ✕
+          </button>
+        </div>
       )}
 
       {/* Offline jelző */}

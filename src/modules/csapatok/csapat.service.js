@@ -32,7 +32,7 @@ export function createCsapat(data, createdBy = "") {
   const csapat = {
     ...CSAPAT_SCHEMA,
     ...data,
-    id: `cs_${Date.now()}`,
+    id: `cs_${crypto.randomUUID()}`,
     createdAt: now,
     updatedAt: now,
     createdBy,
@@ -163,7 +163,7 @@ export function getAvSzabalyokByCsapat(csapatId) {
 export function createAvSzabaly(csapatId, data) {
   const item = {
     ...data,
-    id:           `avs_${Date.now()}`,
+    id:           `avs_${crypto.randomUUID()}`,
     tulajdonosId: csapatId,
     createdAt:    new Date().toISOString(),
   };

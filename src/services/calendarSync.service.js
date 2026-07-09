@@ -62,7 +62,7 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-import { loadLocal } from "../lib/localDb.js";
+import { loadLocal, saveLocal } from "../lib/localDb.js";
 import {
   driveSyncCalendarEvent,
   driveDeleteCalendarEvent,
@@ -149,11 +149,12 @@ export async function syncMunkalapToCalendar(m) {
     // (updateItem helyett direkt LS write – elkerüli a felesleges crm-db-updated trigger-t)
     if (res?.ok && res.eventId && res.action === "created") {
       try {
-        const list = JSON.parse(localStorage.getItem("munkalapok") || "[]");
+        // A10: megerősített saveLocal (korrupció/quota-védelem), dispatch nélkül
+        const list = loadLocal("munkalapok") || [];
         const idx  = list.findIndex(w => w.id === m.id);
         if (idx >= 0) {
           list[idx] = { ...list[idx], calendarEventId: res.eventId };
-          localStorage.setItem("munkalapok", JSON.stringify(list));
+          saveLocal("munkalapok", list);
         }
       } catch {}
     }
@@ -177,11 +178,12 @@ export async function deleteMunkalapFromCalendar(m) {
     const res = await driveDeleteCalendarEvent(m.calendarEventId, config.calendarId);
     if (res?.ok) {
       try {
-        const list = JSON.parse(localStorage.getItem("munkalapok") || "[]");
+        // A10: megerősített saveLocal (korrupció/quota-védelem), dispatch nélkül
+        const list = loadLocal("munkalapok") || [];
         const idx  = list.findIndex(w => w.id === m.id);
         if (idx >= 0) {
           list[idx] = { ...list[idx], calendarEventId: null };
-          localStorage.setItem("munkalapok", JSON.stringify(list));
+          saveLocal("munkalapok", list);
         }
       } catch {}
     }

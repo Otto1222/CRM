@@ -24,7 +24,7 @@ export function addKarterites(item) {
   const list = loadKarteritesek();
   const status = item.status || "fuggoben";
   const uj = {
-    id:                        `kt_${Date.now()}`,
+    id:                        `kt_${crypto.randomUUID()}`,
     // Projekt / munkalap hivatkozás
     projektId:                 item.projektId || "",
     workOrderId:               item.workOrderId || item.munkalapId || "",

@@ -45,7 +45,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
   const csapatok  = settings.csapatok || [];
 
   const [datum,        setDatum]       = useState(m.date || "");
-  const [csapatId,     setCsapatId]    = useState(m.assigneeId || "");
+  const [csapatId,     setCsapatId]    = useState(m.csapatId || m.assigneeId || "");
   const [indoklas,     setIndoklas]    = useState("");
   const [plusAnyagok,  setPlusAnyagok] = useState([]);
   const [ujNev,        setUjNev]       = useState("");
@@ -58,7 +58,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
   function addAnyag() {
     if (!ujNev.trim()) return;
     setPlusAnyagok(p => [...p, {
-      id: `pa_${Date.now()}`,
+      id: `pa_${crypto.randomUUID()}`,
       nev: ujNev.trim(),
       menny: ujMenny,
       egyseg: ujEgyseg,
@@ -101,6 +101,14 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
 
     const updates = {
       date:          datum,
+      // csapatId/csapatNev a kanonikus mezőpár (ezt olvassa pl. a TabMunkalapok
+      // fül), assigneeId/assigneeNev a történelmi szinonima (más nézetek,
+      // riportok ezt olvassák) – mindkettőt ugyanabból a kiválasztásból kell
+      // kitölteni, különben a munkalap csapat-adata más nézetekben nem
+      // frissül a "sikeres" újrakiosztás után (lásd workorder.service.js
+      // normalizeWorkorder komment).
+      csapatId:      csapatId,
+      csapatNev:     cs?.nev || "",
       assigneeId:    csapatId,
       assigneeNev:   cs?.nev || "",
       status:        "Megkezdésre Vár",
@@ -114,7 +122,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
         ...(m.ujrakiosztas || []),
         {
           datum: ts,
-          eredetiCsapat:  m.assigneeNev || m.assigneeId || "—",
+          eredetiCsapat:  m.csapatNev || m.assigneeNev || m.csapatId || m.assigneeId || "—",
           ujCsapat:       cs?.nev || csapatId,
           eredetiDatum:   m.date,
           ujDatum:        datum,
@@ -249,7 +257,7 @@ export default function UjrakiosztasModal({ m, data, onClose, onSave }) {
               <ReadOnlyField label="Ügyfél" value={m.clientNev}/>
               <ReadOnlyField label="Cím" value={m.clientCim}/>
               <ReadOnlyField label="Jelenlegi dátum" value={m.date}/>
-              <ReadOnlyField label="Jelenlegi csapat" value={m.assigneeNev}/>
+              <ReadOnlyField label="Jelenlegi csapat" value={m.csapatNev || m.assigneeNev}/>
               <ReadOnlyField label="Értékesítő" value={m.ertekesito}/>
               {m.megkezdesIdopont && (
                 <div style={{ background:"#EFF6FF", borderRadius:10, padding:"12px 14px", marginTop:12, border:"1px solid #BFDBFE" }}>

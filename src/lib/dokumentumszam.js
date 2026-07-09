@@ -10,7 +10,13 @@ const PREFIX = "E.D.I.";
  * Ha eléri 99-t, folytatja 3 jeggyel: E.D.I. 100
  */
 export function nextEdiSorszam() {
-  const counter = (loadLocal(COUNTER_KEY) || 0) + 1;
+  let counter = (loadLocal(COUNTER_KEY) || 0) + 1;
+  // A7: ütközés-elkerülés – ha a generált EDI már szerepel egy munkalapon
+  // (számláló-elcsúszás, reset vagy egyidejű létrehozás miatt), lépjünk tovább.
+  try {
+    const used = new Set((loadLocal("munkalapok") || []).map(m => m.ediSorszam).filter(Boolean));
+    while (used.has(formatEdi(counter))) counter += 1;
+  } catch { /* ha nem olvasható, marad a számláló-alapú érték */ }
   saveLocal(COUNTER_KEY, counter);
   driveSave("edi_sorszam_counter", { edi_sorszam_counter: counter }).catch(() => {});
   return formatEdi(counter);

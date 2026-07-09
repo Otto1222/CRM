@@ -227,7 +227,7 @@ export default function AdminPanel({ currentUser }) {
     const pwHash = await hashPw(password.trim());
     const initials = name.trim().split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
     const newUser = {
-      id:              "u" + Date.now(),
+      id:              "u_" + crypto.randomUUID(),
       name:            name.trim(),
       username:        username.trim().toLowerCase(),
       role,

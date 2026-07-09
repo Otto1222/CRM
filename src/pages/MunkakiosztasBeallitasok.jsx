@@ -76,7 +76,7 @@ export default function MunkakiosztasBeallitasok() {
   // ─── Csapat kezelés ───────────────────────────────────────
   function addCsapat() {
     const next = [...settings.csapatok, {
-      id: `cs_${Date.now()}`, nev: "Új csapat", telephely: "",
+      id: `cs_${crypto.randomUUID()}`, nev: "Új csapat", telephely: "",
       lat: 47.4979, lon: 19.0402, szin: "#64748B",
       hetvegen: false,
       munkatipusok: [],
@@ -117,7 +117,7 @@ export default function MunkakiosztasBeallitasok() {
 
   // ─── Munkatípus kezelés ─────────────────────────────────
   function addTipus() {
-    setSettings(p => ({ ...p, munkatipusok: [...p.munkatipusok, { id:`mt_${Date.now()}`, nev:"Új típus", szin:"#64748B" }] }));
+    setSettings(p => ({ ...p, munkatipusok: [...p.munkatipusok, { id:`mt_${crypto.randomUUID()}`, nev:"Új típus", szin:"#64748B" }] }));
   }
   function delTipus(id) {
     setSettings(p => ({ ...p, munkatipusok: p.munkatipusok.filter(t => t.id !== id) }));

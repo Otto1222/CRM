@@ -9,6 +9,13 @@ import { driveSave } from "./driveApi.js";
 const BACKUP_KEY = "crm_backups";
 const MAX_BACKUPS = 10;
 
+// FONTOS: MAIN_KEYS = azok a kulcsok, amelyeket a snapshot NÉVVEL kezel
+// (collectLocalStorageSnapshot named mezők + restoreBackup restoreMap).
+// Minden MÁS kulcs automatikusan az `otherLocalStorage` catch-all-ba kerül
+// (ld. lent), tehát attól mentődik. Ezért egy kulcsot CSAK akkor szabad ide
+// tenni, ha van explicit mentése+visszaállítása – különben kiesik a catch-all-ból!
+// (A9 javítás: a "karteritesek" korábban itt volt explicit mentés NÉLKÜL,
+//  ezért kimaradt a backupból. Eltávolítva → most a catch-all elkapja.)
 const MAIN_KEYS = [
   "projektek",
   "crm_projektek",
@@ -18,8 +25,6 @@ const MAIN_KEYS = [
   "crm_ugyfelek",
   "beallitasok",
   "crm_beallitasok",
-  "karteritesek",
-  "crm_karteritesek",
   "sablonok",
   "edi_sorszam_counter",
   "edi_ajanlat_sorszam_counter",
@@ -123,7 +128,7 @@ function collectLocalStorageSnapshot() {
 export function createBackup(label = "", { saveToDrive = false } = {}) {
   try {
     const snapshot = {
-      id: `bk_${Date.now()}`,
+      id: `bk_${crypto.randomUUID()}`,
       label: label || `Mentés ${new Date().toLocaleString("hu-HU")}`,
       createdAt: new Date().toISOString(),
       version: getSchemaVersion(),
@@ -197,6 +202,16 @@ export function restoreBackup(backupId) {
     });
 
     window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "all" } }));
+
+    // A9 (ADV-6): a visszaállított állapotot Drive-ra is feltoljuk, különben a
+    // következő bejelentkezés Drive-szinkronja felülírná a restore-t. Dinamikus
+    // import + fire-and-forget, hogy a restore akkor is sikeres legyen, ha nincs Drive.
+    window.dispatchEvent(new CustomEvent("crm-sync-warning", {
+      detail: { message: "Visszaállítás kész – a rendszer most felülírja a Drive-ot a visszaállított állapottal." },
+    }));
+    import("./dataSync.service.js")
+      .then(m => m.syncAllToDrive && m.syncAllToDrive())
+      .catch(() => {});
 
     console.info(`[Backup] ✅ Visszaállítva: ${backupId}`);
     return true;

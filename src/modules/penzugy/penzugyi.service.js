@@ -56,7 +56,7 @@ export function upsertPenzugyi(data, user = "") {
     ...PENZUGYI_SCHEMA,
     ...(existing || {}),
     ...data,
-    id:         existing?.id || `pnz_${Date.now()}`,
+    id:         existing?.id || `pnz_${crypto.randomUUID()}`,
     createdAt:  existing?.createdAt || now,
     updatedAt:  now,
     createdBy:  existing?.createdBy || user,

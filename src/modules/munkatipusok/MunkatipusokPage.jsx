@@ -89,7 +89,7 @@ function MtSor({ mt, onSave, onDelete }) {
   const [form, setForm]   = useState({ nev:mt.nev, leiras:mt.leiras||"", aktiv:mt.aktiv??true, beveteliTetelek:mt.beveteliTetelek||[] });
 
   function addTetel() {
-    const uj = { ...MUNKATIPUS_BEVETELI_TETEL_SCHEMA, id:`bt_${Date.now()}`, tetelTipusId:"napelem_telepites" };
+    const uj = { ...MUNKATIPUS_BEVETELI_TETEL_SCHEMA, id:`bt_${crypto.randomUUID()}`, tetelTipusId:"napelem_telepites" };
     setForm(p => ({ ...p, beveteliTetelek:[...p.beveteliTetelek, uj] }));
   }
   function updateTetel(idx, tetel) {

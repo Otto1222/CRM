@@ -75,7 +75,7 @@ export function createKivitelezesiCsomagForProjekt(projekt, ajanlatPillanatkep =
 
   const csomag = {
     ...KIVITELEZESI_CSOMAG_SCHEMA,
-    id:                 `kcs_${Date.now()}`,
+    id:                 `kcs_${crypto.randomUUID()}`,
     projektId:          projekt.id,
     forras:             automatikus ? KIVITELEZESI_CSOMAG_FORRAS.AJANLATBOL : KIVITELEZESI_CSOMAG_FORRAS.KEZI,
     ajanlatId:          automatikus ? (ajanlatPillanatkep.ajanlatId || projekt.ajanlatId || null) : null,

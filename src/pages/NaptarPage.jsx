@@ -263,7 +263,7 @@ export default function NaptarPage({ data, currentUser, onNavigate }) {
   }
 
   function handleSaveNewEvent(form) {
-    saveManualEvent({ ...form, id: `nev_${Date.now()}` });
+    saveManualEvent({ ...form, id: `nev_${crypto.randomUUID()}` });
     setShowNew(false);
   }
 

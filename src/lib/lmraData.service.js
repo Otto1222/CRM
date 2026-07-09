@@ -498,7 +498,7 @@ export function getAktivTeleppCsapatok() {
 
 export function createTeleppCsapat(nev) {
   const now = new Date().toISOString();
-  const cs  = { id: `tcs_${Date.now()}`, nev: nev.trim(), aktiv: true, createdAt: now, updatedAt: now };
+  const cs  = { id: `tcs_${crypto.randomUUID()}`, nev: nev.trim(), aktiv: true, createdAt: now, updatedAt: now };
   saveTeleppCsapatok([...loadTeleppCsapatok(), cs]);
   return cs;
 }
@@ -533,7 +533,7 @@ export function getAllAktivTagok() {
 
 export function addTeleppTag(csapatId, nev, telefon = "", email = "") {
   const now = new Date().toISOString();
-  const tag = { id: `ttag_${Date.now()}`, csapatId, nev: nev.trim(), telefon, email, aktiv: true, createdAt: now, updatedAt: now };
+  const tag = { id: `ttag_${crypto.randomUUID()}`, csapatId, nev: nev.trim(), telefon, email, aktiv: true, createdAt: now, updatedAt: now };
   saveTeleppTagok([...loadTeleppTagok(), tag]);
   return tag;
 }

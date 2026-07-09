@@ -27,9 +27,17 @@ export const MUNKALAP_SCHEMA = {
   clientCim:        "",
   clientTel:        "",
   clientEmail:      "",
-  // Csapat
+  // Csapat – KI van kiosztva erre a munkalapra.
+  // assigneeId/assigneeNev és csapatId/csapatNev UGYANAZT az adatot fejezik
+  // ki (a hozzárendelt csapat) – nem két külön, egyidejűleg érvényes fogalom.
+  // csapatId/csapatNev a kanonikus pár (ide olvas/ír a Csapatok modul), az
+  // assigneeId/assigneeNev történelmi okokból megmaradt szinonim mezőpár,
+  // amit sok régebbi nézet/riport/export még mindig olvas. Munkalap-mentéskor
+  // MINDKÉT párt egyszerre, ugyanabból a forrásból kell kitölteni – lásd
+  // workorder.service.js:normalizeWorkorder().
   assigneeId:       "",
   assigneeNev:      "",
+  csapatId:         "",
   csapatNev:        "",
   // Dátumok
   date:             "",

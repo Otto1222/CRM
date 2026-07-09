@@ -8,7 +8,7 @@ import {
   ANYAGELSZAMOLAS_NINCS_KIVALASZTVA, ANYAGELSZAMOLASI_MODOK,
   hasAnyagelszamolasiMod, validateAnyagelszamolasiModStatusValtas,
 } from "./projekt.schema.js";
-import { migrateProjektForrasFromRekord, validateProjektForrás, FORRAS_ELLENORZES_SZUKSEGES } from "../../lib/workflowRules.js";
+import { migrateProjektForrasFromRekord, validateProjektForrás, FORRAS_ELLENORZES_SZUKSEGES, getAutoAnyagelszamolasiMod } from "../../lib/workflowRules.js";
 import { createAjanlatPillanatkep } from "../ajanlatok/ajanlat.schema.js";
 import { getAktivFovallalkozok, findSzabaly } from "../fovallalkozok/fovallalkozo.service.js";
 import { getAktivCsapatok } from "../csapatok/csapat.service.js";
@@ -75,6 +75,16 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
       );
     } catch { return []; }
   }, [projekt?.id, projekt?.ajanlatId]);
+  const initialForrás = projekt
+    ? migrateProjektForrasFromRekord(projekt)
+    : (ajanlatElofolt ? "sajat_ajanlat" : "");
+  // Ha a form induláskor már ismert forrással nyílik (pl. a Projektek oldal
+  // "Belső munka" / "Saját ajánlat" gombjairól, projekt.id nélkül), az
+  // egyértelműen levezethető anyagelszámolási mód ugyanúgy auto-beállítódik,
+  // mint amikor a felhasználó a form belsejében kattint a forrás-gombra –
+  // különben új projekt esetén a mentés zsákutcába futna (kötelező mező,
+  // amit a UI ennél a forrásnál nem is ajánl fel kiválasztásra).
+  const initialAutoMod = isNew ? getAutoAnyagelszamolasiMod(initialForrás) : null;
   const [form, setForm] = useState({
     nev: projekt?.nev || ajanlatElofolt?.nev || "",
     kulsoAzonosito: projekt?.kulsoAzonosito || "",
@@ -88,10 +98,8 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     clientEmail: projekt?.clientEmail || ajanlatElofolt?.clientEmail || "",
     kapcsolattarto: projekt?.kapcsolattarto || "",
     telepitesiCim: projekt?.telepitesiCim || ajanlatElofolt?.clientCim || "",
-    forrás: projekt
-      ? migrateProjektForrasFromRekord(projekt)
-      : (ajanlatElofolt ? "sajat_ajanlat" : ""),
-    anyagelszamolasiMod: projekt?.anyagelszamolasiMod || ANYAGELSZAMOLAS_NINCS_KIVALASZTVA,
+    forrás: initialForrás,
+    anyagelszamolasiMod: projekt?.anyagelszamolasiMod || initialAutoMod || ANYAGELSZAMOLAS_NINCS_KIVALASZTVA,
     adminReviewRequired: projekt?.adminReviewRequired || false,
     projektTipus: projekt?.projektTipus || (ajanlatElofolt ? "Saját projekt" : ""),
     ajanlatId: projekt?.ajanlatId || ajanlatElofolt?.id || null,
@@ -373,7 +381,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
           const fv = fovallalkozok.find(f => f.id === (data.penzugy?.fovallalkoziId || ""));
           const forras = fv?.rovidites || (fv ? (fv.nev||"").slice(0,4).toUpperCase() : "Saját");
           const newU = {
-            id: `ugy_${Date.now()}`,
+            id: `ugy_${crypto.randomUUID()}`,
             name: data.clientNev,
             phone: data.clientTel || "",
             email: data.clientEmail || "",
@@ -527,16 +535,16 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                   <button key={f.id} type="button"
                     onClick={() => {
                       if (f.id === "belso_munka") {
-                        setForm(p => ({ ...p, forrás: f.id, clientNev: "E.D.I. Solutions Kft.", clientId: "", clientCim: "", clientTel: "", clientEmail: "", ajanlatId: null, ...(isNew ? { anyagelszamolasiMod: "FOVALLALKOZO_HOZOTT_ANYAG", adminReviewRequired: false } : {}) }));
+                        setForm(p => ({ ...p, forrás: f.id, clientNev: "E.D.I. Solutions Kft.", clientId: "", clientCim: "", clientTel: "", clientEmail: "", ajanlatId: null, ...(isNew ? { anyagelszamolasiMod: getAutoAnyagelszamolasiMod(f.id), adminReviewRequired: false } : {}) }));
                       } else if (f.id === "sajat_ajanlat") {
                         setForm(p => ({
                           ...p,
                           forrás: f.id,
                           clientNev: p.clientNev === "E.D.I. Solutions Kft." ? "" : p.clientNev,
-                          // Fázis 4A: saját munkánál (elfogadott ajánlatból) az anyagelszámolási
-                          // mód egyértelmű – mi vesszük az anyagot, mi adjuk el – ezért itt
-                          // (és csak itt) automatikusan beállítható, admin-felülvizsgálat nélkül.
-                          ...(isNew ? { anyagelszamolasiMod: "SAJAT_ANYAG_PROFIT", adminReviewRequired: false } : {}),
+                          // Az anyagelszámolási mód auto-levezetése getAutoAnyagelszamolasiMod()-ból jön
+                          // (lásd workflowRules.js) – ugyanaz a leképezés fut le itt és a form induló
+                          // állapotában is, ha a forrás előre be van állítva.
+                          ...(isNew ? { anyagelszamolasiMod: getAutoAnyagelszamolasiMod(f.id), adminReviewRequired: false } : {}),
                         }));
                       } else {
                         upd("forrás", f.id);
