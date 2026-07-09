@@ -262,6 +262,11 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
         .filter(r => r.jelenVan !== false)
         .findIndex(r => !r.signed);
       setKivalasztottIdx(remaining === -1 ? 0 : remaining);
+    } else {
+      // P0 fix: korábban itt csendben nem történt semmi, ha a mentés
+      // sikertelen volt (pl. tárhely megtelt) – az aláírás elveszett anélkül,
+      // hogy a telepítő tudott volna róla.
+      alert("Az aláírás mentése nem sikerült (tárhely megtelt vagy sérült adat). Kérlek próbáld újra.");
     }
   }
 

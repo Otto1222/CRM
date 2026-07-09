@@ -7,9 +7,10 @@ import {
   getSzabalyokByFovallalkozo, createSzabaly, updateSzabaly, deleteSzabaly,
 } from "./fovallalkozo.service.js";
 import {
-  ELSZAMOLASI_MODOK, ELSZAMOLASI_MUNKATIPUSOK,
+  ELSZAMOLASI_MODOK,
   calcSzabalyOsszeg, szabalyLeiras,
 } from "./elszamolasiMotor.js";
+import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
 
 const inp = {
   width: "100%", boxSizing: "border-box", padding: "8px 11px",
@@ -156,6 +157,12 @@ function KalkulacioTesztelo({ szabaly }) {
 
 function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
   const isNew = !szabaly?.id;
+  // P0 fix: a munkatípus-választónak a projekten ténylegesen tárolt
+  // munkatípus ID-kkal kell megegyeznie (ProjektForm.jsx a getAktivMunkatipusok()
+  // ID-jét menti a penzugy.munkatipus mezőbe), különben findEgyezoSzabalyok()
+  // (elszamolasiMotor.js) soha nem talál pontos egyezést, és a munkatípusra
+  // szabott díjtétel csendben sosem lép életbe.
+  const munkatipusok = getAktivMunkatipusok();
 
   const [f, setF] = useState({
     tulajdonosId,
@@ -220,8 +227,8 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
           <FL label="Munkatípus">
             <select value={f.munkatipus} onChange={e => u("munkatipus", e.target.value)} style={inp}>
               <option value="">— Minden munkatípusra (általános) —</option>
-              {ELSZAMOLASI_MUNKATIPUSOK.map(mt => (
-                <option key={mt} value={mt}>{mt}</option>
+              {munkatipusok.map(t => (
+                <option key={t.id} value={t.id}>{t.nev}</option>
               ))}
             </select>
           </FL>
@@ -325,6 +332,12 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
 function SzabalyKartya({ sz, onEdit, onDelete, onToggle }) {
   const modInfo  = ELSZAMOLASI_MODOK.find(m => m.id === sz.mod);
   const leiras   = szabalyLeiras(sz);
+  // sz.munkatipus mostantól munkatípus ID (lásd P0 fix) – a kártyán a
+  // megjelenítéshez feloldjuk a nevet; régi, még nem szerkesztett szabályoknál
+  // ez egy korábbi szöveges érték lehet, azt változatlanul kiírjuk (fallback).
+  const munkatipusNev = sz.munkatipus
+    ? (getAktivMunkatipusok().find(t => t.id === sz.munkatipus)?.nev || sz.munkatipus)
+    : "";
   const savokDb  = sz.mod === "savos" ? (sz.savok?.length || 0) : null;
   const alapInfo = sz.alapMennyiseg
     ? ALAPMENNYISEG_OPCIOK.find(o => o.value === sz.alapMennyiseg)
@@ -347,7 +360,7 @@ function SzabalyKartya({ sz, onEdit, onDelete, onToggle }) {
         )}
         <div style={{ display: "flex", gap: 7, alignItems: "center", marginBottom: 4, flexWrap: "wrap" }}>
           <span style={{ fontWeight: sz.megnevezes ? 500 : 700, fontSize: 12, color: sz.megnevezes ? "#64748B" : "#0F172A" }}>
-            {sz.munkatipus || "Általános (minden típusra)"}
+            {munkatipusNev || "Általános (minden típusra)"}
           </span>
           <span style={{ fontSize: 11, background: "#EFF6FF", color: "#2563EB", padding: "1px 8px", borderRadius: 20, fontWeight: 700 }}>
             {modInfo?.label || sz.mod}

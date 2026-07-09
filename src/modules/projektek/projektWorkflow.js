@@ -52,7 +52,10 @@ export function createProjektMunkalap(projektId, options = {}) {
 
   const currentIds = Array.isArray(projekt.munkalapIds) ? projekt.munkalapIds : [];
   if (!currentIds.includes(saved.id)) {
-    updateProjekt(projekt.id, { munkalapIds: [...currentIds, saved.id] }, options.user || "");
+    // updateProjekt mentési hiba esetén dob – a munkalap már elmentve, ez csak
+    // a projekt-oldali link, nem szabad emiatt elveszíteni magát a munkalapot
+    try { updateProjekt(projekt.id, { munkalapIds: [...currentIds, saved.id] }, options.user || ""); }
+    catch (e) { console.warn("[createInitialWorkorderForProject] projekt link mentése sikertelen:", e?.message || e); }
   }
 
   syncProjektFromWorkorders(projekt.id);
@@ -104,7 +107,10 @@ export function syncProjektFromWorkorders(projektId) {
   }
 
   if (nextStatus !== projekt.status) {
-    return updateProjekt(projekt.id, { status: nextStatus }, "workflow_auto");
+    // updateProjekt mentési hiba esetén dob – ez egy automata státusz-szinkron,
+    // nem szabad emiatt elszállnia a hívó munkalap-mentési folyamatnak
+    try { return updateProjekt(projekt.id, { status: nextStatus }, "workflow_auto"); }
+    catch (e) { console.warn("[syncProjektFromWorkorders] státusz-szinkron sikertelen:", e?.message || e); return projekt; }
   }
   return projekt;
 }
