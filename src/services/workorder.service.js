@@ -84,6 +84,15 @@ export function nextWorkorderNumber(projectKod, tipus = "") {
   return candidate;
 }
 
+// Domain modell (2026-07): assigneeId/assigneeNev és csapatId/csapatNev
+// UGYANAZT az adatot fejezik ki (a munkalapra kiosztott csapat) – nem két
+// külön, egyidejűleg érvényes fogalom. csapatId/csapatNev a kanonikus pár,
+// assigneeId/assigneeNev történelmi szinonima, amit sok régebbi nézet/riport/
+// export még olvas. Ezért a lenti fallback mindkét irányban keresztpótolja
+// őket. FONTOS: ez a normalizálás csak a createWorkorder/updateWorkorder
+// útvonalon fut le – aki közvetlenül updateItem()/addItem()-mel ír munkalapot
+// (pl. UjrakiosztasModal, Munkakiosztas), annak MANUÁLISAN kell mindkét párt
+// egyszerre, ugyanabból a forrásból kitöltenie, különben a mezők szétcsúsznak.
 function normalizeWorkorder(data = {}) {
   const now = new Date().toISOString();
   const result = {

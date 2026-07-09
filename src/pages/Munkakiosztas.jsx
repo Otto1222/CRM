@@ -193,10 +193,14 @@ export default function Munkakiosztas() {
         description:       sor.munkatipus || "",
         date:              sor.datum || "",
         ertekesito:        sor.egyeb?.["Értékesítő"] || "",
-        // Csapat
+        // Csapat – mindkét mezőpár ugyanabból a forrásból (lásd
+        // workorder.service.js normalizeWorkorder komment: csapatId/csapatNev
+        // a kanonikus pár, assigneeId/assigneeNev a szinonima, mindkettőt
+        // egyszerre kell kitölteni)
+        csapatId:          csapat?.id || "",
+        csapatNev:         sor.csapatNev,
         assigneeId:        csapat?.id || "",
         assigneeNev:       sor.csapatNev,
-        csapatNev:         sor.csapatNev,
         // Ügyfél szabad szövegként
         clientId:          null,
         clientNev:         sor.egyeb?.["Ügyfél neve"] || sor.egyeb?.["Név"] || "",

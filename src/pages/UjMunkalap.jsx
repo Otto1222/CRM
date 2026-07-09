@@ -475,7 +475,12 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
       dokumentumszam:    alap.fovallalkoiAzonosito?.trim()
         ? `${veglegesUgyszam} / ${alap.fovallalkoiAzonosito.trim()}`
         : veglegesUgyszam,
-      // Csapat – a Telepítő szűrés erre támaszkodik
+      // Csapat – a Telepítő szűrés erre támaszkodik. csapatId/csapatNev a
+      // kanonikus mezőpár, assigneeId/assigneeNev a szinonima – mindkettőt
+      // itt kell kitölteni, nem szabad a createWorkorder normalizálására
+      // hagyatkozni (lásd workorder.service.js normalizeWorkorder komment).
+      csapatId:          alap.csapatId,
+      csapatNev:         csapat?.nev || alap.csapatNev,
       assigneeId:        alap.csapatId,
       assigneeNev:       csapat?.nev || alap.csapatNev,
       // Projekt kapcsolat
