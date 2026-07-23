@@ -127,8 +127,8 @@ export default function ArajanlaltokPage({ currentUser }) {
       {/* Stat kártyák */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
         {[
-          { label: "Kiküldve",   db: stats.kikuld.db,   osszeg: stats.kikuld.osszeg,   color: "#D97706", bg: "#FFFBEB" },
-          { label: "Elfogadva",  db: stats.elfogad.db,  osszeg: stats.elfogad.osszeg,  color: "#059669", bg: "#ECFDF5" },
+          { label: "Kiküldve",   db: stats.kikuld.db,   osszeg: stats.kikuld.osszeg,   color: C.warning, bg: C.warningLight },
+          { label: "Elfogadva",  db: stats.elfogad.db,  osszeg: stats.elfogad.osszeg,  color: C.success, bg: C.successLight },
           { label: "Elutasítva", db: stats.elutasit.db, osszeg: stats.elutasit.osszeg, color: C.danger,  bg: C.dangerLight },
           { label: "Összes",     db: stats.osszes,      osszeg: 0,                     color: C.accent,  bg: C.accentLight },
         ].map(c => (
@@ -224,7 +224,7 @@ export default function ArajanlaltokPage({ currentUser }) {
                     <td style={{ padding: "12px 14px", color: C.muted, fontSize: 12 }}>{a.ervenyesseg || "—"}</td>
                     <td style={{ padding: "12px 14px" }}>
                       {linkedProjekt ? (
-                        <span style={{ background: "#ECFDF5", color: "#059669", border: "1px solid #86EFAC", borderRadius: 8, padding: "3px 8px", fontSize: 11, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ background: C.successLight, color: C.success, border: `1px solid ${C.success}`, borderRadius: 8, padding: "3px 8px", fontSize: 11, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
                           <CheckCircle size={11} /> {linkedProjekt.projektkod}
                         </span>
                       ) : a.status === "Elfogadva" && isAdmin ? (
@@ -242,7 +242,7 @@ export default function ArajanlaltokPage({ currentUser }) {
                             <Printer size={14} />
                           </button>
                           <button onClick={() => setEditor(a)}
-                            style={{ padding: "5px 8px", background: "#F1F5F9", border: "none", borderRadius: 7, cursor: "pointer", color: C.textSub }} title="Szerkesztés">
+                            style={{ padding: "5px 8px", background: C.bg, border: "none", borderRadius: 7, cursor: "pointer", color: C.textSub }} title="Szerkesztés">
                             ✏
                           </button>
                           <button onClick={() => handleDelete(a)}
