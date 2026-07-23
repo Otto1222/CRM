@@ -51,7 +51,7 @@ function Pills({ label, items, value, onChange, disabled }) {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
         {items.map(s => (
           <button key={s.id} onClick={() => !disabled && onChange(s.id)}
-            style={{ padding: "6px 14px", borderRadius: 20, border: `2px solid ${value === s.id ? s.szin : "#E2E8F0"}`,
+            style={{ padding: "6px 14px", borderRadius: 20, border: `2px solid ${value === s.id ? s.szin : C.border}`,
               background: value === s.id ? s.bg : "#fff", color: value === s.id ? s.szin : C.muted,
               fontWeight: value === s.id ? 700 : 400, fontSize: 12, cursor: disabled ? "default" : "pointer", fontFamily: FONT }}>
             {s.id}
@@ -65,11 +65,11 @@ function Pills({ label, items, value, onChange, disabled }) {
 // ─── Számla badge ─────────────────────────────────────────────
 function SzamlaBadge({ statusz }) {
   const cfg = {
-    "Kiállítva":    { bg: "#FFFBEB", color: "#D97706" },
-    "Fizetésre vár":{ bg: "#EFF6FF", color: "#2563EB" },
-    "Fizetve":      { bg: "#ECFDF5", color: "#059669" },
-    "Késedelmes":   { bg: "#FEF2F2", color: "#DC2626" },
-  }[statusz] || { bg: "#F8FAFC", color: "#94A3B8" };
+    "Kiállítva":    { bg: C.warningLight, color: C.warning },
+    "Fizetésre vár":{ bg: C.accentLight, color: C.accent },
+    "Fizetve":      { bg: C.successLight, color: C.success },
+    "Késedelmes":   { bg: C.dangerLight, color: C.danger },
+  }[statusz] || { bg: C.bg, color: C.muted };
   return (
     <span style={{ background: cfg.bg, color: cfg.color, borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>
       {statusz}
@@ -156,19 +156,19 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
 
       {/* Anyagelszámolási mód badge */}
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10, padding:"9px 14px", borderRadius:10, background: anyagCfg.bg, border:`1.5px solid ${anyagCfg.color}40`, flexWrap:"wrap" }}>
-        <span style={{ fontSize:10, fontWeight:700, color:"#64748B", textTransform:"uppercase", letterSpacing:.6, flexShrink:0 }}>Anyagelszámolási mód</span>
+        <span style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.6, flexShrink:0 }}>Anyagelszámolási mód</span>
         {hasAnyagelszamolasiMod(projekt) ? (
           <span style={{ fontSize:12, fontWeight:700, color: anyagCfg.color }}>{anyagCfg.label}</span>
         ) : (
-          <span style={{ fontSize:12, fontWeight:700, color:"#DC2626" }}>⚠ Admin ellenőrzés szükséges – nincs beállítva</span>
+          <span style={{ fontSize:12, fontWeight:700, color:C.danger }}>⚠ Admin ellenőrzés szükséges – nincs beállítva</span>
         )}
       </div>
 
       {/* Motor D fallback figyelmeztetés */}
       {motorDMunkalapok > 0 && (
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, padding:"9px 14px", borderRadius:10, background:"#FEF3C7", border:"1.5px solid #F59E0B" }}>
-          <AlertTriangle size={14} color="#92400E" style={{ flexShrink:0 }} />
-          <span style={{ fontSize:12, fontWeight:600, color:"#92400E" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, padding:"9px 14px", borderRadius:10, background:C.warningLight, border:`1.5px solid ${C.warning}` }}>
+          <AlertTriangle size={14} color={C.warning} style={{ flexShrink:0 }} />
+          <span style={{ fontSize:12, fontWeight:600, color:C.warning }}>
             Figyelem: a projekt {motorDMunkalapok} munkalapja még régi pénzügyi motorból (Motor D) számolódik.
             Rendelj fővállalkozót és munkatípust a munkalapokhoz a pontos számításhoz.
           </span>
@@ -192,42 +192,42 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {/* KPI kártyák */}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <KPI label="Nettó bevétel (terv)" value={ft(kalk?.nettoBevitel || projekt.elfogadottAjanlat || 0)} color="#059669"
+            <KPI label="Nettó bevétel (terv)" value={ft(kalk?.nettoBevitel || projekt.elfogadottAjanlat || 0)} color={C.success}
               sub={projekt.elfogadottAjanlat > 0 ? `Elfogadott ajánlat: ${ft(projekt.elfogadottAjanlat)}` : null} />
-            <KPI label="Összes költség (terv)" value={ft(kalk?.osszesKolts || 0)} color="#DC2626" />
-            <KPI label="Várható haszon" value={ft(profit)} color={profit >= 0 ? "#059669" : "#DC2626"} />
+            <KPI label="Összes költség (terv)" value={ft(kalk?.osszesKolts || 0)} color={C.danger} />
+            <KPI label="Várható haszon" value={ft(profit)} color={profit >= 0 ? C.success : C.danger} />
             <KPI label="Haszonkulcs" value={profitPct !== null ? `${profitPct}%` : "—"}
-              color={profitPct === null ? C.muted : profitPct >= 20 ? "#059669" : profitPct >= 10 ? "#D97706" : "#DC2626"} />
+              color={profitPct === null ? C.muted : profitPct >= 20 ? C.success : profitPct >= 10 ? C.warning : C.danger} />
           </div>
 
           {/* Kalkuláció részlet */}
           {kalk && (
             <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 12, padding: "14px 16px" }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#166534", textTransform: "uppercase", letterSpacing: .7, margin: "0 0 10px" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.success, textTransform: "uppercase", letterSpacing: .7, margin: "0 0 10px" }}>
                 Fővállalkozói kalkuláció – {kalk.fovallalkoNev}
               </p>
               {[
-                ["Nettó bevétel",     kalk.nettoBevitel,      "#059669"],
-                ["Csapat bér",        kalk.csapatBer,         "#DC2626"],
-                kalk.alvallalkozoiBer > 0 ? [`Alvállalkozói díj (${csapat?.nev || ""})`, kalk.alvallalkozoiBer, "#9333EA"] : null,
-                kalk.utikoltség > 0  ? ["Km-díj",             kalk.utikoltség,        "#DC2626"] : null,
-                kalk.anyagkoltság > 0 ? [`Anyagköltség (forrás: ${ANYAGKOLTSEG_FORRAS_LABEL[kalk.anyagkoltsegForras] || kalk.anyagkoltsegForras})`, kalk.anyagkoltság, "#DC2626"] : null,
-                ["Összes ktg (terv)", kalk.osszesKolts,       "#DC2626"],
-                ["Haszon",            kalk.haszon,            kalk.haszon >= 0 ? "#059669" : "#DC2626"],
+                ["Nettó bevétel",     kalk.nettoBevitel,      C.success],
+                ["Csapat bér",        kalk.csapatBer,         C.danger],
+                kalk.alvallalkozoiBer > 0 ? [`Alvállalkozói díj (${csapat?.nev || ""})`, kalk.alvallalkozoiBer, C.accent] : null,
+                kalk.utikoltség > 0  ? ["Km-díj",             kalk.utikoltség,        C.danger] : null,
+                kalk.anyagkoltság > 0 ? [`Anyagköltség (forrás: ${ANYAGKOLTSEG_FORRAS_LABEL[kalk.anyagkoltsegForras] || kalk.anyagkoltsegForras})`, kalk.anyagkoltság, C.danger] : null,
+                ["Összes ktg (terv)", kalk.osszesKolts,       C.danger],
+                ["Haszon",            kalk.haszon,            kalk.haszon >= 0 ? C.success : C.danger],
               ].filter(Boolean).map(([l, v, c]) => (
-                <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #DCFCE7" }}>
+                <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C.successLight}` }}>
                   <span style={{ fontSize: 12, color: "#374151" }}>{l}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: c }}>{ft(v)}</span>
                 </div>
               ))}
               {kalk.hianyosTetelek?.length > 0 && (
-                <p style={{ fontSize: 11, color: "#D97706", marginTop: 8 }}>⚠️ Hiányos konfig: {kalk.hianyosTetelek.join(", ")}</p>
+                <p style={{ fontSize: 11, color: C.warning, marginTop: 8 }}>⚠️ Hiányos konfig: {kalk.hianyosTetelek.join(", ")}</p>
               )}
               {kalk.anyagkoltsegWarning && (
-                <p style={{ fontSize: 11, color: '#D97706', fontWeight: 600, marginTop: 8 }}>⚠ {kalk.anyagkoltsegWarning}</p>
+                <p style={{ fontSize: 11, color: C.warning, fontWeight: 600, marginTop: 8 }}>⚠ {kalk.anyagkoltsegWarning}</p>
               )}
               {kalk.anyagelszamolasiModNote && (
-                <p style={{ fontSize: 11, color: '#2563EB', fontWeight: 600, marginTop: 4 }}>ℹ {kalk.anyagelszamolasiModNote}</p>
+                <p style={{ fontSize: 11, color: C.accent, fontWeight: 600, marginTop: 4 }}>ℹ {kalk.anyagelszamolasiModNote}</p>
               )}
             </div>
           )}
@@ -237,13 +237,13 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
             <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px" }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .7, margin: "0 0 10px" }}>Számlázás összesítő</p>
               <div style={{ display: "flex", gap: 10 }}>
-                <div style={{ flex: 1, background: "#ECFDF5", borderRadius: 9, padding: "10px 14px" }}>
-                  <p style={{ fontSize: 10, color: "#166534", fontWeight: 700, margin: "0 0 2px" }}>FIZETVE</p>
-                  <p style={{ fontSize: 16, fontWeight: 800, color: "#059669", margin: 0 }}>{ft(fizetve)}</p>
+                <div style={{ flex: 1, background: C.successLight, borderRadius: 9, padding: "10px 14px" }}>
+                  <p style={{ fontSize: 10, color: C.success, fontWeight: 700, margin: "0 0 2px" }}>FIZETVE</p>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: C.success, margin: 0 }}>{ft(fizetve)}</p>
                 </div>
-                <div style={{ flex: 1, background: "#FFFBEB", borderRadius: 9, padding: "10px 14px" }}>
-                  <p style={{ fontSize: 10, color: "#92400E", fontWeight: 700, margin: "0 0 2px" }}>KINNLÉVŐ</p>
-                  <p style={{ fontSize: 16, fontWeight: 800, color: "#D97706", margin: 0 }}>{ft(kinnlevo)}</p>
+                <div style={{ flex: 1, background: C.warningLight, borderRadius: 9, padding: "10px 14px" }}>
+                  <p style={{ fontSize: 10, color: C.warning, fontWeight: 700, margin: "0 0 2px" }}>KINNLÉVŐ</p>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: C.warning, margin: 0 }}>{ft(kinnlevo)}</p>
                 </div>
               </div>
             </div>
@@ -276,17 +276,17 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
                     });
                     setMentve(false);
                   }}
-                  style={{ ...inp, background: isAdmin ? "#fff" : "#F8FAFC" }} />
+                  style={{ ...inp, background: isAdmin ? "#fff" : C.bg }} />
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 14, background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between" }}>
+          <div style={{ marginTop: 14, background: C.dangerLight, border: `1px solid ${C.dangerLight}`, borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between" }}>
             <span style={{ fontWeight: 700, fontSize: 13 }}>Összes tényleges költség</span>
-            <span style={{ fontWeight: 800, fontSize: 14, color: "#DC2626" }}>{ft(rec.osszesKoltsegNetto || 0)}</span>
+            <span style={{ fontWeight: 800, fontSize: 14, color: C.danger }}>{ft(rec.osszesKoltsegNetto || 0)}</span>
           </div>
           {isAdmin && (
             <button onClick={handleMentes}
-              style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 7, padding: "11px 22px", background: mentve ? "#059669" : C.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
+              style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 7, padding: "11px 22px", background: mentve ? C.success : C.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
               {mentve ? <><Check size={15} /> Mentve!</> : <><Save size={15} /> Mentés</>}
             </button>
           )}
@@ -297,7 +297,7 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
       {section === "statusz" && (
         <div>
           {isBelso && (
-            <div style={{ background: "#ECFDF5", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#166534", fontWeight: 600 }}>
+            <div style={{ background: C.successLight, border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: C.success, fontWeight: 600 }}>
               🏢 Belső munka – nincs bevétel, számlázható státuszba nem kerülhet.
             </div>
           )}
@@ -316,7 +316,7 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
             <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>Megjegyzés</label>
             <textarea rows={3} disabled={!isAdmin} value={rec.elszamolasNotes || ""}
               onChange={e => { setRec(p => ({...p, elszamolasNotes: e.target.value})); setMentve(false); }}
-              style={{ ...inp, resize: "none", background: isAdmin ? "#fff" : "#F8FAFC" }} />
+              style={{ ...inp, resize: "none", background: isAdmin ? "#fff" : C.bg }} />
           </div>
 
           {isAdmin && (
@@ -326,7 +326,7 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
                 <RefreshCw size={13} /> Auto előkészítés
               </button>
               <button onClick={handleMentes}
-                style={{ flex: 1, padding: "11px", background: mentve ? "#059669" : C.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+                style={{ flex: 1, padding: "11px", background: mentve ? C.success : C.accent, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
                 {mentve ? <><Check size={15} /> Mentve!</> : <><Save size={15} /> Mentés</>}
               </button>
             </div>
@@ -354,7 +354,7 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {szamlak.map(s => (
                 <div key={s.id} style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <Receipt size={16} color={s.tipus === "kimeno" ? "#059669" : "#D97706"} style={{ flexShrink: 0 }} />
+                  <Receipt size={16} color={s.tipus === "kimeno" ? C.success : C.warning} style={{ flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 120 }}>
                     <p style={{ fontWeight: 700, fontSize: 13, color: C.text, margin: 0 }}>{s.szamlaSzam || s.id}</p>
                     <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 0" }}>
