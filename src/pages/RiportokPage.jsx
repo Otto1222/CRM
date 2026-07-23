@@ -18,9 +18,9 @@ function fmtSzam(n) {
 }
 function marginColor(pct) {
   if (pct === null || pct === undefined) return C.muted;
-  if (pct >= 20) return "#059669";
-  if (pct >= 10) return "#D97706";
-  return "#DC2626";
+  if (pct >= 20) return C.success;
+  if (pct >= 10) return C.warning;
+  return C.danger;
 }
 
 // ─── KPI kártya ───────────────────────────────────────────────
@@ -68,7 +68,7 @@ function FvRiportTab({ data, expanded, onToggle }) {
       {/* Fejléc */}
       <div style={{
         display: "grid", gridTemplateColumns: FV_COLS, gap: 0,
-        padding: "10px 16px", borderBottom: `1px solid ${C.border}`, background: "#F8FAFC",
+        padding: "10px 16px", borderBottom: `1px solid ${C.border}`, background: C.bg,
       }}>
         {["", "Fővállalkozó", "Proj.", "Panel db", "Nettó bevétel", "Összes ktg.", "Haszon", "Margin"].map((h, i) => (
           <div key={i} style={{
@@ -91,10 +91,10 @@ function FvRiportTab({ data, expanded, onToggle }) {
               style={{
                 display: "grid", gridTemplateColumns: FV_COLS, gap: 0,
                 padding: "12px 16px", cursor: "pointer", alignItems: "center",
-                background: isOpen ? "#EFF6FF" : "#fff",
+                background: isOpen ? C.accentLight : "#fff",
                 transition: "background .12s",
               }}
-              onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = "#F8FAFC"; }}
+              onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = C.bg; }}
               onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = "#fff"; }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>
@@ -105,7 +105,7 @@ function FvRiportTab({ data, expanded, onToggle }) {
               <div style={{ color: C.textSub, fontSize: 13 }}>{fmtSzam(fv.osszPanel)}</div>
               <div style={{ textAlign: "right", fontWeight: 700, color: C.text, fontSize: 13 }}>{fmtFt(fv.osszBevitel)}</div>
               <div style={{ textAlign: "right", color: C.textSub, fontSize: 13 }}>{fmtFt(fv.osszKolts)}</div>
-              <div style={{ textAlign: "right", fontWeight: 700, fontSize: 13, color: fv.osszHaszon >= 0 ? "#059669" : "#DC2626" }}>
+              <div style={{ textAlign: "right", fontWeight: 700, fontSize: 13, color: fv.osszHaszon >= 0 ? C.success : C.danger }}>
                 {fmtFt(fv.osszHaszon)}
               </div>
               <div style={{ textAlign: "right", fontWeight: 700, fontSize: 13, color: marginColor(avgMargin) }}>
@@ -115,7 +115,7 @@ function FvRiportTab({ data, expanded, onToggle }) {
 
             {/* Projekt részletek */}
             {isOpen && (
-              <div style={{ background: "#F8FAFC", borderTop: `1px solid ${C.border}` }}>
+              <div style={{ background: C.bg, borderTop: `1px solid ${C.border}` }}>
                 {/* Al-fejléc */}
                 <div style={{
                   display: "grid", gridTemplateColumns: FV_DETAIL_COLS, gap: 0,
@@ -123,7 +123,7 @@ function FvRiportTab({ data, expanded, onToggle }) {
                 }}>
                   {["", "Projekt", "Státusz", "Panel", "Km (o-v)", "Nettó bev.", "Haszon", "Margin"].map((h, i) => (
                     <div key={i} style={{
-                      fontSize: 10, fontWeight: 700, color: "#94A3B8",
+                      fontSize: 10, fontWeight: 700, color: C.muted,
                       textTransform: "uppercase", letterSpacing: 0.5,
                       textAlign: i >= 4 ? "right" : "left",
                     }}>{h}</div>
@@ -135,7 +135,7 @@ function FvRiportTab({ data, expanded, onToggle }) {
                     key={p.id}
                     style={{
                       display: "grid", gridTemplateColumns: FV_DETAIL_COLS, gap: 0,
-                      padding: "9px 16px", borderBottom: "1px solid #F1F5F9", alignItems: "center",
+                      padding: "9px 16px", borderBottom: `1px solid ${C.bg}`, alignItems: "center",
                     }}
                   >
                     <div />
@@ -148,7 +148,7 @@ function FvRiportTab({ data, expanded, onToggle }) {
                     <div>
                       <span style={{
                         fontSize: 11, fontWeight: 600, padding: "2px 7px",
-                        borderRadius: 5, background: "#F1F5F9", color: C.textSub,
+                        borderRadius: 5, background: C.bg, color: C.textSub,
                       }}>
                         {p.status || "–"}
                       </span>
@@ -164,7 +164,7 @@ function FvRiportTab({ data, expanded, onToggle }) {
                     </div>
                     <div style={{
                       textAlign: "right", fontWeight: 700, fontSize: 13,
-                      color: (kalk.haszon || 0) >= 0 ? "#059669" : "#DC2626",
+                      color: (kalk.haszon || 0) >= 0 ? C.success : C.danger,
                     }}>
                       {fmtFt(kalk.haszon)}
                     </div>
@@ -204,7 +204,7 @@ function CsapatRiportTab({ data, expanded, onToggle }) {
       {/* Fejléc */}
       <div style={{
         display: "grid", gridTemplateColumns: CS_COLS, gap: 0,
-        padding: "10px 16px", borderBottom: `1px solid ${C.border}`, background: "#F8FAFC",
+        padding: "10px 16px", borderBottom: `1px solid ${C.border}`, background: C.bg,
       }}>
         {["", "Csapat", "Összes proj.", "Befejezett", "Aktív", "Panel db", "Csapatbér"].map((h, i) => (
           <div key={i} style={{
@@ -223,10 +223,10 @@ function CsapatRiportTab({ data, expanded, onToggle }) {
               style={{
                 display: "grid", gridTemplateColumns: CS_COLS, gap: 0,
                 padding: "12px 16px", cursor: "pointer", alignItems: "center",
-                background: isOpen ? "#EFF6FF" : "#fff",
+                background: isOpen ? C.accentLight : "#fff",
                 transition: "background .12s",
               }}
-              onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = "#F8FAFC"; }}
+              onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = C.bg; }}
               onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = "#fff"; }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>
@@ -235,12 +235,12 @@ function CsapatRiportTab({ data, expanded, onToggle }) {
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{
                   width: 10, height: 10, borderRadius: "50%",
-                  background: cs.szin || "#94A3B8", flexShrink: 0,
+                  background: cs.szin || C.muted, flexShrink: 0,
                 }} />
                 <span style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>{cs.nev}</span>
               </div>
               <div style={{ color: C.textSub, fontSize: 13 }}>{cs.projektek.length}</div>
-              <div style={{ fontWeight: 600, color: "#059669", fontSize: 13 }}>{cs.befejezett}</div>
+              <div style={{ fontWeight: 600, color: C.success, fontSize: 13 }}>{cs.befejezett}</div>
               <div style={{ color: cs.aktiv > 0 ? C.accent : C.muted, fontWeight: cs.aktiv > 0 ? 600 : 400, fontSize: 13 }}>
                 {cs.aktiv}
               </div>
@@ -252,14 +252,14 @@ function CsapatRiportTab({ data, expanded, onToggle }) {
 
             {/* Projekt részletek */}
             {isOpen && (
-              <div style={{ background: "#F8FAFC", borderTop: `1px solid ${C.border}` }}>
+              <div style={{ background: C.bg, borderTop: `1px solid ${C.border}` }}>
                 <div style={{
                   display: "grid", gridTemplateColumns: CS_DETAIL_COLS, gap: 0,
                   padding: "8px 16px 6px", borderBottom: `1px solid ${C.border}`,
                 }}>
                   {["", "Projekt", "Státusz", "Panel", "Km (o-v)", "Csapatbér"].map((h, i) => (
                     <div key={i} style={{
-                      fontSize: 10, fontWeight: 700, color: "#94A3B8",
+                      fontSize: 10, fontWeight: 700, color: C.muted,
                       textTransform: "uppercase", letterSpacing: 0.5,
                       textAlign: i >= 4 ? "right" : "left",
                     }}>{h}</div>
@@ -271,7 +271,7 @@ function CsapatRiportTab({ data, expanded, onToggle }) {
                     key={p.id}
                     style={{
                       display: "grid", gridTemplateColumns: CS_DETAIL_COLS, gap: 0,
-                      padding: "9px 16px", borderBottom: "1px solid #F1F5F9", alignItems: "center",
+                      padding: "9px 16px", borderBottom: `1px solid ${C.bg}`, alignItems: "center",
                     }}
                   >
                     <div />
@@ -284,7 +284,7 @@ function CsapatRiportTab({ data, expanded, onToggle }) {
                     <div>
                       <span style={{
                         fontSize: 11, fontWeight: 600, padding: "2px 7px",
-                        borderRadius: 5, background: "#F1F5F9", color: C.textSub,
+                        borderRadius: 5, background: C.bg, color: C.textSub,
                       }}>
                         {p.status || "–"}
                       </span>
@@ -385,7 +385,7 @@ export default function RiportokPage() {
         groups[csId] = {
           csId,
           nev: cs?.nev || (csId === "_nincs" ? "Nincs hozzárendelve" : csId),
-          szin: cs?.szin || "#94A3B8",
+          szin: cs?.szin || C.muted,
           projektek: [], befejezett: 0, aktiv: 0,
           osszPanel: 0, osszKm: 0, osszCsapatBer: 0,
         };
@@ -476,22 +476,22 @@ export default function RiportokPage() {
           color={C.accent}
         />
         <KpiCard
-          icon={<TrendingUp size={20} color="#059669" />}
+          icon={<TrendingUp size={20} color={C.success} />}
           label="Nettó bevétel"
           value={fmtFt(kpi.bevitel)}
-          color="#059669"
+          color={C.success}
         />
         <KpiCard
-          icon={<TrendingUp size={20} color={kpi.haszon >= 0 ? "#059669" : "#DC2626"} />}
+          icon={<TrendingUp size={20} color={kpi.haszon >= 0 ? C.success : C.danger} />}
           label={`Haszon${avgMarginTotal !== null ? "  (" + avgMarginTotal + "%)" : ""}`}
           value={fmtFt(kpi.haszon)}
-          color={kpi.haszon >= 0 ? "#059669" : "#DC2626"}
+          color={kpi.haszon >= 0 ? C.success : C.danger}
         />
         <KpiCard
-          icon={<Sun size={20} color="#D97706" />}
+          icon={<Sun size={20} color={C.warning} />}
           label="Telepített panel"
           value={`${fmtSzam(kpi.panel)} db`}
-          color="#D97706"
+          color={C.warning}
         />
       </div>
 
