@@ -101,6 +101,18 @@ function TelepItoNav({ page, onNav, onClose }) {
       {btn("munkalapok", "Saját munkalapok", FileText)}
       <div style={{ borderTop: `1px solid ${C.sidebarBorder}`, margin: "10px 0" }} />
       <button
+        onClick={() => { window.open("/installer-guide.html", "_blank"); onClose?.(); }}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 11,
+          padding: "10px 12px", borderRadius: 9, border: "none",
+          borderLeft: "3px solid transparent", background: "transparent",
+          color: "#FCD34D", cursor: "pointer", fontSize: 14,
+          fontFamily: FONT, fontWeight: 700,
+        }}
+      >
+        <BookOpen size={17} strokeWidth={2} />Kézikönyv
+      </button>
+      <button
         onClick={() => {
           try {
             const b = JSON.parse(localStorage.getItem("beallitasok") || "{}");
@@ -360,9 +372,9 @@ function SidebarContent({ page, onNav, user, onLogout, onClose }) {
 export default function Sidebar({ page, onNav, user, onLogout, open, onClose }) {
   return (
     <>
-      {/* ── DESKTOP sidebar (≥768px) ── */}
+      {/* ── DESKTOP sidebar ── */}
       <aside style={{
-        width: 240, flexShrink: 0,
+        width: 236, flexShrink: 0,
         background: C.sidebar,
         height: "100vh",
         position: "sticky", top: 0,
@@ -378,8 +390,8 @@ export default function Sidebar({ page, onNav, user, onLogout, open, onClose }) 
           onClick={onClose}
           style={{
             position: "fixed", inset: 0, zIndex: 999,
-            background: "rgba(0,0,0,0.55)",
-            backdropFilter: "blur(2px)",
+            background: "rgba(7,94,86,0.45)",
+            backdropFilter: "blur(3px)",
           }}
         />
       )}
@@ -387,12 +399,12 @@ export default function Sidebar({ page, onNav, user, onLogout, open, onClose }) 
       {/* ── MOBIL drawer ── */}
       <aside style={{
         position: "fixed", top: 0, left: 0, bottom: 0,
-        width: 280, zIndex: 1000,
+        width: 276, zIndex: 1000,
         background: C.sidebar,
         transform: open ? "translateX(0)" : "translateX(-100%)",
         transition: "transform 0.28s cubic-bezier(.4,0,.2,1)",
         display: "flex", flexDirection: "column",
-        boxShadow: open ? "4px 0 32px rgba(0,0,0,0.4)" : "none",
+        boxShadow: open ? "4px 0 32px rgba(0,0,0,0.35)" : "none",
       }} className="sidebar-mobile">
         <SidebarContent page={page} onNav={onNav} user={user} onLogout={onLogout} onClose={onClose} />
       </aside>
