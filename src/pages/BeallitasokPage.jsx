@@ -27,24 +27,24 @@ const MENU_ITEMS = [
     label: "Felhasználók & Szerelő csapatok",
     desc: "CRM login felhasználók, jelszavak, szerepkörök + szerelő csapatok kezelése",
     icon: Users,
-    color: "#2563EB",
-    bg: "#EFF6FF",
+    color: C.accent,
+    bg: C.accentLight,
   },
   {
     id: "fovallalkozok",
     label: "Fővállalkozók & Elszámolási szabályok",
     desc: "Fővállalkozók, km-elszámolás, díjtételek",
     icon: Building2,
-    color: "#059669",
-    bg: "#ECFDF5",
+    color: C.success,
+    bg: C.successLight,
   },
   {
     id: "munkatipusok",
     label: "Munkatípusok",
     desc: "Munkatípus definíciók, bevételi tételek, árlogika",
     icon: Wrench,
-    color: "#7C3AED",
-    bg: "#F5F3FF",
+    color: C.accent,
+    bg: C.accentLight,
   },
   {
     id: "anyagtorzs",
@@ -52,15 +52,15 @@ const MENU_ITEMS = [
     desc: "Villanyszerelési anyagok és egységárak – telepítő ebből választ",
     icon: Settings,
     color: "#0891B2",
-    bg: "#F0F9FF",
+    bg: C.accentLight,
   },
   {
     id: "munkakiosztas",
     label: "Munkakiosztás beállítások",
     desc: "Kiosztási szabályok, csapat kapacitás",
     icon: Settings,
-    color: "#D97706",
-    bg: "#FFFBEB",
+    color: C.warning,
+    bg: C.warningLight,
   },
   {
     id: "jegyzokonyv",
@@ -75,24 +75,24 @@ const MENU_ITEMS = [
     label: "Dokumentum sablonok",
     desc: "Word-szerű sablonszerkesztő, fejléc/lábléc kezelés",
     icon: FileText,
-    color: "#DC2626",
-    bg: "#FEF2F2",
+    color: C.danger,
+    bg: C.dangerLight,
   },
   {
     id: "lmra",
     label: "LMRA – Kockázatbecslés",
     desc: "Last Minute Risk Assessment kockázati pontok szerkesztése",
     icon: Shield,
-    color: "#DC2626",
-    bg: "#FEF2F2",
+    color: C.danger,
+    bg: C.dangerLight,
   },
   {
     id: "mentes",
     label: "Biztonsági mentések",
     desc: "Adatok mentése, visszaállítás, export JSON",
     icon: Shield,
-    color: "#475569",
-    bg: "#F8FAFC",
+    color: C.textSub,
+    bg: C.bg,
   },
   {
     id: "drive_status",
@@ -115,8 +115,8 @@ const MENU_ITEMS = [
     label: "VBF Sablon (.pdf)",
     desc: "VBF PDF sablon feltöltése – adatlap az eredeti nyomtatványra",
     icon: Upload,
-    color: "#DC2626",
-    bg: "#FEF2F2",
+    color: C.danger,
+    bg: C.dangerLight,
   },
   {
     id: "kezikonyvek",
@@ -131,8 +131,8 @@ const MENU_ITEMS = [
     label: "Adattérkép / Debug",
     desc: "localStorage kulcsok, rekordszámok, Drive sync és backup állapot, kapcsolati vizsgálat – csak olvasás",
     icon: Settings,
-    color: "#7C3AED",
-    bg: "#F5F3FF",
+    color: C.accent,
+    bg: C.accentLight,
     adminOnly: true,
   },
 ];
@@ -272,10 +272,10 @@ export default function BeallitasokPage({ currentUser }) {
 
   return (
     <div style={{ padding: "24px 28px", fontFamily: FONT, maxWidth: 800 }}>
-      <h1 style={{ fontFamily: FONT_HEADING, fontSize: 22, fontWeight: 800, color: "#0F172A", margin: "0 0 6px" }}>
+      <h1 style={{ fontFamily: FONT_HEADING, fontSize: 22, fontWeight: 800, color: C.text, margin: "0 0 6px" }}>
         ⚙️ Beállítások
       </h1>
-      <p style={{ fontSize: 13, color: "#64748B", marginBottom: 24 }}>
+      <p style={{ fontSize: 13, color: C.muted, marginBottom: 24 }}>
         Rendszer konfigurációja, felhasználók, elszámolási szabályok
       </p>
 
@@ -310,14 +310,14 @@ export default function BeallitasokPage({ currentUser }) {
                 <Icon size={22} color={item.color} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontWeight: 700, fontSize: 14, color: "#0F172A", margin: "0 0 3px", lineHeight: 1.3 }}>
+                <p style={{ fontWeight: 700, fontSize: 14, color: C.text, margin: "0 0 3px", lineHeight: 1.3 }}>
                   {item.label}
                 </p>
-                <p style={{ fontSize: 12, color: "#64748B", margin: 0, lineHeight: 1.4 }}>
+                <p style={{ fontSize: 12, color: C.muted, margin: 0, lineHeight: 1.4 }}>
                   {item.desc}
                 </p>
               </div>
-              <ChevronRight size={16} color="#CBD5E1" style={{ flexShrink: 0 }} />
+              <ChevronRight size={16} color={C.border} style={{ flexShrink: 0 }} />
             </button>
           );
         })}
@@ -342,30 +342,30 @@ function KezikonyvekPanel() {
       <p style={{ fontSize: 13, color: C.muted, marginBottom: 24 }}>
         Megnyitás → böngészőben olvasható · Letöltés PDF-ként → a megnyíló lapon kattints a <strong>„PDF mentés"</strong> gombra.
       </p>
-      <div style={{ background: "#fff", border: "2px solid #BFDBFE", borderRadius: 14, padding: "22px 24px", marginBottom: 16 }}>
+      <div style={{ background: "#fff", border: `2px solid ${C.accentLight}`, borderRadius: 14, padding: "22px 24px", marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 12, background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 22 }}>📖</div>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: C.accentLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 22 }}>📖</div>
           <div>
             <p style={{ fontWeight: 800, fontSize: 15, color: C.text, margin: "0 0 4px" }}>Teljes rendszer-kézikönyv</p>
             <p style={{ fontSize: 12.5, color: C.muted, margin: 0, lineHeight: 1.5 }}>Összes funkció Admin / PM / Iroda felhasználóknak. Telepítős fejezet is benne van.</p>
           </div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={() => openManual(false)} style={{ flex: 1, padding: "10px 0", background: "#EFF6FF", color: "#1D4ED8", border: "1.5px solid #BFDBFE", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>🌐 Megnyitás böngészőben</button>
-          <button onClick={() => openManual(true)} style={{ flex: 1, padding: "10px 0", background: "#2563EB", color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>📥 Letöltés PDF-ként</button>
+          <button onClick={() => openManual(false)} style={{ flex: 1, padding: "10px 0", background: C.accentLight, color: C.accent, border: `1.5px solid ${C.accentLight}`, borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>🌐 Megnyitás böngészőben</button>
+          <button onClick={() => openManual(true)} style={{ flex: 1, padding: "10px 0", background: C.accent, color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>📥 Letöltés PDF-ként</button>
         </div>
       </div>
-      <div style={{ background: "#fff", border: "2px solid #86EFAC", borderRadius: 14, padding: "22px 24px" }}>
+      <div style={{ background: "#fff", border: `2px solid ${C.success}`, borderRadius: 14, padding: "22px 24px" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 12, background: "#F0FDF4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 22 }}>📱</div>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: C.successLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 22 }}>📱</div>
           <div>
             <p style={{ fontWeight: 800, fontSize: 15, color: C.text, margin: "0 0 4px" }}>Telepítői kézikönyv</p>
             <p style={{ fontSize: 12.5, color: C.muted, margin: 0, lineHeight: 1.5 }}>Felmérés (7 fotókat.) + Kivitelezés (LMRA, VBF, 29 fotókat.) lépésről lépésre. Nyomtatva add az új telepítőknek.</p>
           </div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={() => openInstaller(false)} style={{ flex: 1, padding: "10px 0", background: "#F0FDF4", color: "#15803D", border: "1.5px solid #86EFAC", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>🌐 Megnyitás böngészőben</button>
-          <button onClick={() => openInstaller(true)} style={{ flex: 1, padding: "10px 0", background: "#059669", color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>📥 Letöltés PDF-ként</button>
+          <button onClick={() => openInstaller(false)} style={{ flex: 1, padding: "10px 0", background: C.successLight, color: C.success, border: `1.5px solid ${C.success}`, borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>🌐 Megnyitás böngészőben</button>
+          <button onClick={() => openInstaller(true)} style={{ flex: 1, padding: "10px 0", background: C.success, color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>📥 Letöltés PDF-ként</button>
         </div>
       </div>
     </div>
@@ -398,21 +398,21 @@ function AdatTorlesPanel() {
   }
 
   return (
-    <div style={{ marginTop: 32, padding: "20px 24px", border: "2px solid #FECACA", borderRadius: 14, background: "#FFF5F5" }}>
+    <div style={{ marginTop: 32, padding: "20px 24px", border: `2px solid ${C.dangerLight}`, borderRadius: 14, background: "#FFF5F5" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-        <Trash2 size={20} color="#DC2626" />
-        <span style={{ fontWeight: 800, fontSize: 15, color: "#DC2626" }}>Operatív adatok törlése</span>
+        <Trash2 size={20} color={C.danger} />
+        <span style={{ fontWeight: 800, fontSize: 15, color: C.danger }}>Operatív adatok törlése</span>
       </div>
       <p style={{ fontSize: 13, color: "#7F1D1D", marginBottom: 12, lineHeight: 1.6 }}>
         Ez a funkció törli az összes ügyfelet, munkalapot, projektet, ajánlatot, kivitelezési csomagot, számlát és kártérítést a böngészőből.
         A beállítások, felhasználók, fővállalkozók és munkatípusok <strong>megmaradnak</strong>.<br />
         A Drive-on tárolt adatokat ez nem törli — belépéskor visszatöltődnek. Teljes törléshez használd a "Teljes tesztadat törlés" funkciót.
       </p>
-      <p style={{ fontSize: 12, color: "#64748B", marginBottom: 8 }}>
+      <p style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>
         Törlendő: {TORLENDO.map(t => t.label).join(", ")}
       </p>
       {done ? (
-        <div style={{ background: "#ECFDF5", border: "1px solid #6EE7B7", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#065F46", fontWeight: 700 }}>
+        <div style={{ background: C.successLight, border: "1px solid #6EE7B7", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#065F46", fontWeight: 700 }}>
           ✅ Adatok törölve. Frissítsd az oldalt (F5) a teljes hatáshoz.
         </div>
       ) : (
@@ -421,13 +421,13 @@ function AdatTorlesPanel() {
             value={confirm}
             onChange={e => setConfirm(e.target.value)}
             placeholder='Írd be: TÖRLÉS'
-            style={{ padding: "8px 12px", border: "1.5px solid #FECACA", borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", width: 200 }}
+            style={{ padding: "8px 12px", border: `1.5px solid ${C.dangerLight}`, borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", width: 200 }}
           />
           <button
             type="button"
             onClick={handleTorles}
             disabled={confirm !== "TÖRLÉS"}
-            style={{ padding: "8px 18px", background: confirm === "TÖRLÉS" ? "#DC2626" : "#FCA5A5", color: "#fff", border: "none", borderRadius: 8, cursor: confirm === "TÖRLÉS" ? "pointer" : "default", fontWeight: 700, fontSize: 13 }}
+            style={{ padding: "8px 18px", background: confirm === "TÖRLÉS" ? C.danger : "#FCA5A5", color: "#fff", border: "none", borderRadius: 8, cursor: confirm === "TÖRLÉS" ? "pointer" : "default", fontWeight: 700, fontSize: 13 }}
           >
             Törlés
           </button>
@@ -503,14 +503,14 @@ function TeljesTorlesPanel() {
   const btnStyle = (aktiv) => ({
     padding: "9px 20px", border: "none", borderRadius: 8, cursor: aktiv ? "pointer" : "default",
     fontWeight: 700, fontSize: 13, fontFamily: FONT,
-    background: aktiv ? "#7C3AED" : "#C4B5FD", color: "#fff",
+    background: aktiv ? C.accent : C.accentLight, color: "#fff",
   });
 
   return (
-    <div style={{ marginTop: 20, padding: "20px 24px", border: "2px solid #7C3AED", borderRadius: 14, background: "#FAF5FF" }}>
+    <div style={{ marginTop: 20, padding: "20px 24px", border: `2px solid ${C.accent}`, borderRadius: 14, background: "#FAF5FF" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-        <Trash2 size={20} color="#7C3AED" />
-        <span style={{ fontWeight: 800, fontSize: 15, color: "#7C3AED" }}>Teljes tesztadat törlés</span>
+        <Trash2 size={20} color={C.accent} />
+        <span style={{ fontWeight: 800, fontSize: 15, color: C.accent }}>Teljes tesztadat törlés</span>
         <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: "#EDE9FE", color: "#5B21B6" }}>Admin</span>
       </div>
       <p style={{ fontSize: 13, color: "#4C1D95", marginBottom: 8, lineHeight: 1.6 }}>
@@ -529,13 +529,13 @@ function TeljesTorlesPanel() {
       )}
 
       {lepes === "confirm1" && (
-        <div style={{ background: "#FEF3C7", border: "1px solid #FCD34D", borderRadius: 10, padding: "14px 18px" }}>
+        <div style={{ background: C.warningLight, border: `1px solid ${C.warningLight}`, borderRadius: 10, padding: "14px 18px" }}>
           <p style={{ fontWeight: 700, fontSize: 13, color: "#78350F", margin: "0 0 12px" }}>
             ⚠️ Ez a művelet VISSZAFORDÍTHATATLAN. Minden üzleti adat elvész — Drive-ról sem töltődik vissza!
           </p>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={resetAll} style={{ ...btnStyle(true), background: "#6B7280" }}>Mégsem</button>
-            <button onClick={() => setLepes("confirm2")} style={{ ...btnStyle(true), background: "#DC2626" }}>
+            <button onClick={() => setLepes("confirm2")} style={{ ...btnStyle(true), background: C.danger }}>
               Igen, törlöm
             </button>
           </div>
@@ -543,9 +543,9 @@ function TeljesTorlesPanel() {
       )}
 
       {lepes === "confirm2" && (
-        <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: "14px 18px" }}>
+        <div style={{ background: C.dangerLight, border: `1px solid ${C.dangerLight}`, borderRadius: 10, padding: "14px 18px" }}>
           <p style={{ fontWeight: 700, fontSize: 13, color: "#7F1D1D", margin: "0 0 10px" }}>
-            Második megerősítés: írd be pontosan: <code style={{ background: "#FEE2E2", padding: "1px 6px", borderRadius: 4 }}>{TELJES_JELSZO}</code>
+            Második megerősítés: írd be pontosan: <code style={{ background: C.dangerLight, padding: "1px 6px", borderRadius: 4 }}>{TELJES_JELSZO}</code>
           </p>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <input
@@ -553,7 +553,7 @@ function TeljesTorlesPanel() {
               onChange={e => setJelszo(e.target.value)}
               placeholder={TELJES_JELSZO}
               autoFocus
-              style={{ padding: "8px 12px", border: "1.5px solid #FECACA", borderRadius: 8, fontSize: 13, fontFamily: FONT, outline: "none", width: 220 }}
+              style={{ padding: "8px 12px", border: `1.5px solid ${C.dangerLight}`, borderRadius: 8, fontSize: 13, fontFamily: FONT, outline: "none", width: 220 }}
             />
             <button onClick={handleTorles} disabled={jelszo !== TELJES_JELSZO} style={btnStyle(jelszo === TELJES_JELSZO)}>
               Teljes törlés
@@ -570,13 +570,13 @@ function TeljesTorlesPanel() {
       )}
 
       {lepes === "done" && eredmeny && (
-        <div style={{ background: "#ECFDF5", border: "1px solid #6EE7B7", borderRadius: 10, padding: "14px 18px" }}>
+        <div style={{ background: C.successLight, border: "1px solid #6EE7B7", borderRadius: 10, padding: "14px 18px" }}>
           <p style={{ fontWeight: 700, fontSize: 13, color: "#065F46", margin: "0 0 8px" }}>Törlés kész</p>
           <ul style={{ fontSize: 12, color: "#047857", margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
             <li>Fő kulcsok ürítve (localStorage): {eredmeny.foDb} db</li>
             <li>Drive szinkron sikeres: {eredmeny.foDriveOk} / {eredmeny.foDb} kulcs</li>
             {eredmeny.foDriveHiba > 0 && (
-              <li style={{ color: "#DC2626" }}>
+              <li style={{ color: C.danger }}>
                 Drive hiba: {eredmeny.foDriveHiba} kulcs — {eredmeny.driveHibak.join("; ")}
               </li>
             )}
@@ -585,7 +585,7 @@ function TeljesTorlesPanel() {
           <p style={{ fontSize: 11, color: "#065F46", margin: "10px 0 0" }}>
             Frissítsd az oldalt (F5) a teljes hatáshoz. Belépés után az adatok már nem töltődnek vissza.
           </p>
-          <button onClick={resetAll} style={{ marginTop: 10, ...btnStyle(true), background: "#059669" }}>OK</button>
+          <button onClick={resetAll} style={{ marginTop: 10, ...btnStyle(true), background: C.success }}>OK</button>
         </div>
       )}
     </div>
@@ -610,7 +610,7 @@ function FelhasznalokCsapatokTab({ currentUser }) {
   return (
     <div>
       {/* Tab fejléc */}
-      <div style={{ borderBottom: `1px solid ${C.border}`, display: "flex", gap: 2, background: "#F8FAFC" }}>
+      <div style={{ borderBottom: `1px solid ${C.border}`, display: "flex", gap: 2, background: C.bg }}>
         <button style={tabStyle("felhasznalok")} onClick={() => setTab("felhasznalok")}>
           👤 CRM Felhasználók (login)
         </button>
@@ -680,27 +680,27 @@ function VbfSablonBeallitas() {
 
       {/* Állapot kártya */}
       <div style={{
-        background: van ? "#F0FDF4" : "#FFFBEB",
-        border: `1.5px solid ${van ? "#86EFAC" : "#FCD34D"}`,
+        background: van ? C.successLight : C.warningLight,
+        border: `1.5px solid ${van ? C.success : C.warningLight}`,
         borderRadius: 12, padding: "16px 20px", marginBottom: 24,
         display: "flex", alignItems: "center", gap: 14,
       }}>
         {van
-          ? <CheckCircle2 size={22} color="#059669"/>
-          : <Upload size={22} color="#D97706"/>
+          ? <CheckCircle2 size={22} color={C.success}/>
+          : <Upload size={22} color={C.warning}/>
         }
         <div style={{ flex: 1 }}>
-          <p style={{ fontWeight: 700, fontSize: 14, color: van ? "#166534" : "#92400E", margin: 0 }}>
+          <p style={{ fontWeight: 700, fontSize: 14, color: van ? C.success : C.warning, margin: 0 }}>
             {van ? `✓ VBF sablon feltöltve (${meta?.kb ?? "?"} KB)` : "Nincs sablon feltöltve"}
           </p>
-          <p style={{ fontSize: 12, color: van ? "#15803D" : "#D97706", margin: "3px 0 0" }}>
+          <p style={{ fontSize: 12, color: van ? C.success : C.warning, margin: "3px 0 0" }}>
             {van
               ? "A PM felületen megjelenik a 'VBF letöltés (.docx)' gomb minden kitöltött munkalapnál."
               : "Töltsd fel a Word (.docx) sablont az alábbi gombbal."}
           </p>
         </div>
         {van && (
-          <button onClick={handleTorles} style={{ padding: "6px 14px", background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
+          <button onClick={handleTorles} style={{ padding: "6px 14px", background: C.dangerLight, color: C.danger, border: `1px solid ${C.dangerLight}`, borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
             Törlés
           </button>
         )}
@@ -714,7 +714,7 @@ function VbfSablonBeallitas() {
         style={{
           display: "flex", alignItems: "center", gap: 8,
           padding: "11px 22px",
-          background: uploading ? "#E2E8F0" : "#7C3AED",
+          background: uploading ? C.border : C.accent,
           color: "#fff", border: "none", borderRadius: 10,
           cursor: uploading ? "default" : "pointer",
           fontWeight: 700, fontSize: 14, fontFamily: FONT,
@@ -729,7 +729,7 @@ function VbfSablonBeallitas() {
       <div style={{ background: "#fff", border: `1.5px solid ${C.border}`, borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
         <button
           onClick={() => setShowDocs(s => !s)}
-          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", background: "#F8FAFC", border: "none", cursor: "pointer", fontFamily: FONT }}
+          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", background: C.bg, border: "none", cursor: "pointer", fontFamily: FONT }}
         >
           <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>
             📋 Útmutató: hogyan kell a Word sablont előkészíteni?
@@ -739,11 +739,11 @@ function VbfSablonBeallitas() {
 
         {showDocs && (
           <div style={{ padding: "18px 20px" }}>
-            <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "12px 16px", marginBottom: 16 }}>
-              <p style={{ fontWeight: 700, fontSize: 13, color: "#1D4ED8", margin: "0 0 6px" }}>Lépések:</p>
-              <ol style={{ fontSize: 13, color: "#1E40AF", margin: 0, paddingLeft: 20, lineHeight: 1.8 }}>
+            <div style={{ background: C.accentLight, border: `1px solid ${C.accentLight}`, borderRadius: 10, padding: "12px 16px", marginBottom: 16 }}>
+              <p style={{ fontWeight: 700, fontSize: 13, color: C.accent, margin: "0 0 6px" }}>Lépések:</p>
+              <ol style={{ fontSize: 13, color: C.accentHover, margin: 0, paddingLeft: 20, lineHeight: 1.8 }}>
                 <li>Nyisd meg a Word sablont</li>
-                <li>Ahol az adatnak kell megjelennie, <strong>írd be a placeholdereket</strong> az alábbi listából: pl. <code style={{ background:"#DBEAFE", padding:"1px 5px", borderRadius:4 }}>{"{ugyfel_nev}"}</code></li>
+                <li>Ahol az adatnak kell megjelennie, <strong>írd be a placeholdereket</strong> az alábbi listából: pl. <code style={{ background:C.accentLight, padding:"1px 5px", borderRadius:4 }}>{"{ugyfel_nev}"}</code></li>
                 <li>A kapcsos zárójeleket <strong>pontosan így írd</strong> – egy nyitó <code>{"{"}</code> és egy záró <code>{"}"}</code></li>
                 <li>Mentsd el a fájlt <strong>.docx formátumban</strong></li>
                 <li>Töltsd fel ide a fenti gombbal</li>
@@ -757,7 +757,7 @@ function VbfSablonBeallitas() {
                   <tbody>
                     {mezok.map(([placeholder, leiras]) => (
                       <tr key={placeholder} style={{ borderBottom: `1px solid ${C.border}` }}>
-                        <td style={{ padding: "7px 12px", fontFamily: "monospace", color: "#7C3AED", fontWeight: 700, whiteSpace: "nowrap", background: "#F5F3FF" }}>
+                        <td style={{ padding: "7px 12px", fontFamily: "monospace", color: C.accent, fontWeight: 700, whiteSpace: "nowrap", background: C.accentLight }}>
                           {placeholder}
                         </td>
                         <td style={{ padding: "7px 12px", color: C.textSub, fontSize: 12 }}>
@@ -770,8 +770,8 @@ function VbfSablonBeallitas() {
               </div>
             ))}
 
-            <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 10, padding: "10px 14px", marginTop: 8 }}>
-              <p style={{ fontSize: 12, color: "#92400E", margin: 0, fontWeight: 600 }}>
+            <div style={{ background: C.warningLight, border: `1px solid ${C.warningLight}`, borderRadius: 10, padding: "10px 14px", marginTop: 8 }}>
+              <p style={{ fontSize: 12, color: C.warning, margin: 0, fontWeight: 600 }}>
                 ⚠️ Fontos: Ha a Word fájlban van olyan <code>{"{placeholder}"}</code> ami nem szerepel a fenti listában, hibát kapsz generáláskor.
                 Ellenőrizd, hogy minden kapcsos zárójeles kifejezés szerepel a listában!
               </p>
@@ -810,14 +810,14 @@ function OktatoAnyagokBeallitas() {
         </p>
       </div>
 
-      <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.7 }}>
+      <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.7 }}>
         Google Drive mappa URL
       </label>
       <input
         value={url}
         onChange={e => setUrl(e.target.value)}
         placeholder="https://drive.google.com/drive/folders/..."
-        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none", background: "#FAFAFA", marginBottom: 12 }}
+        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: `1.5px solid ${C.border}`, borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none", background: "#FAFAFA", marginBottom: 12 }}
       />
 
       {url && (
@@ -833,13 +833,13 @@ function OktatoAnyagokBeallitas() {
 
       <button
         onClick={handleMent}
-        style={{ padding: "10px 24px", background: mentve ? "#059669" : "#0891B2", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}
+        style={{ padding: "10px 24px", background: mentve ? C.success : "#0891B2", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}
       >
         {mentve ? "✓ Mentve!" : "Mentés"}
       </button>
 
       {beall.oktatoAnyagokUrl && (
-        <div style={{ marginTop: 20, padding: "10px 14px", background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 9, fontSize: 12, color: "#166534" }}>
+        <div style={{ marginTop: 20, padding: "10px 14px", background: C.successLight, border: `1px solid ${C.success}`, borderRadius: 9, fontSize: 12, color: C.success }}>
           ✓ Jelenleg beállított URL: <span style={{ fontFamily: "monospace", wordBreak: "break-all" }}>{beall.oktatoAnyagokUrl}</span>
         </div>
       )}
@@ -857,12 +857,12 @@ function BackBtn({ onClick, label }) {
       <button onClick={onClick} style={{
         display: "flex", alignItems: "center", gap: 6,
         border: "none", background: "none", cursor: "pointer",
-        fontSize: 13, color: "#64748B", fontFamily: FONT, fontWeight: 600, padding: 0,
+        fontSize: 13, color: C.muted, fontFamily: FONT, fontWeight: 600, padding: 0,
       }}>
         ← Beállítások
       </button>
-      <span style={{ color: "#CBD5E1" }}>›</span>
-      <span style={{ fontSize: 13, fontWeight: 700, color: "#0F172A" }}>{label}</span>
+      <span style={{ color: C.border }}>›</span>
+      <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{label}</span>
     </div>
   );
 }
@@ -900,11 +900,11 @@ function LmraBeallitasok() {
   return (
     <div style={{ padding: "20px 24px", fontFamily: FONT, maxWidth: 640 }}>
       {/* Info */}
-      <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", gap: 10 }}>
-        <Shield size={18} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
+      <div style={{ background: C.dangerLight, border: `1.5px solid ${C.dangerLight}`, borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", gap: 10 }}>
+        <Shield size={18} color={C.danger} style={{ flexShrink: 0, marginTop: 1 }} />
         <div>
-          <p style={{ fontWeight: 700, fontSize: 13, color: "#991B1B", margin: 0 }}>LMRA – Munkavégzést megelőző kockázatértékelés</p>
-          <p style={{ fontSize: 12, color: "#991B1B", margin: "3px 0 0" }}>
+          <p style={{ fontWeight: 700, fontSize: 13, color: C.dangerDark, margin: 0 }}>LMRA – Munkavégzést megelőző kockázatértékelés</p>
+          <p style={{ fontSize: 12, color: C.dangerDark, margin: "3px 0 0" }}>
             Töltsd fel az eredeti, rögzített LMRA nyomtatványt PDF formátumban.
             Helyszínen a telepítők megtekinthetik és mellette kitöltik a digitális verziót, majd aláírnak.
           </p>
@@ -912,18 +912,18 @@ function LmraBeallitasok() {
       </div>
 
       {/* Sablon állapot */}
-      <div style={{ background: van ? "#F0FDF4" : "#FFFBEB", border: `1.5px solid ${van ? "#86EFAC" : "#FCD34D"}`, borderRadius: 12, padding: "14px 18px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
-        {van ? <CheckCircle2 size={22} color="#059669" /> : <Upload size={22} color="#D97706" />}
+      <div style={{ background: van ? C.successLight : C.warningLight, border: `1.5px solid ${van ? C.success : C.warningLight}`, borderRadius: 12, padding: "14px 18px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+        {van ? <CheckCircle2 size={22} color={C.success} /> : <Upload size={22} color={C.warning} />}
         <div style={{ flex: 1 }}>
-          <p style={{ fontWeight: 700, fontSize: 14, color: van ? "#166534" : "#92400E", margin: 0 }}>
+          <p style={{ fontWeight: 700, fontSize: 14, color: van ? C.success : C.warning, margin: 0 }}>
             {van ? `✓ LMRA nyomtatvány feltöltve (${meta?.kb ?? "?"} KB)` : "Nincs sablon feltöltve"}
           </p>
-          <p style={{ fontSize: 12, color: van ? "#15803D" : "#D97706", margin: "2px 0 0" }}>
+          <p style={{ fontSize: 12, color: van ? C.success : C.warning, margin: "2px 0 0" }}>
             {van ? "Helyszínen a 'Nyomtatvány' gombra kattintva megtekinthető referenciának." : "Feltöltés nélkül is működik a digitális LMRA flow."}
           </p>
         </div>
         {van && (
-          <button onClick={handleTorles} style={{ padding: "6px 14px", background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
+          <button onClick={handleTorles} style={{ padding: "6px 14px", background: C.dangerLight, color: C.danger, border: `1px solid ${C.dangerLight}`, borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
             Törlés
           </button>
         )}
@@ -932,22 +932,22 @@ function LmraBeallitasok() {
       {/* Feltöltés gomb */}
       <input ref={fileRef} type="file" accept=".pdf,.docx" style={{ display: "none" }} onChange={handleFeltoltes} />
       <button onClick={() => fileRef.current?.click()} disabled={loading}
-        style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 22px", background: loading ? "#E2E8F0" : "#DC2626", color: "#fff", border: "none", borderRadius: 10, cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, marginBottom: 28 }}>
+        style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 22px", background: loading ? C.border : C.danger, color: "#fff", border: "none", borderRadius: 10, cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, marginBottom: 28 }}>
         <Upload size={16} />
         {loading ? "Feltöltés..." : van ? "Nyomtatvány cseréje (.pdf / .docx)" : "LMRA nyomtatvány feltöltése (.pdf / .docx)"}
       </button>
 
       {/* Kockázat lista tájékoztató */}
-      <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 12, padding: "14px 16px" }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: .7, margin: "0 0 10px" }}>
+      <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px" }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .7, margin: "0 0 10px" }}>
           Digitális kockázati pontok ({LMRA_KOCKAZATOK.length} db) – rögzített lista
         </p>
-        <p style={{ fontSize: 12, color: "#64748B", margin: "0 0 10px" }}>
+        <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px" }}>
           Ezek a pontok az eredeti nyomtatványból kerültek be. Igen/Nem értékelést adnak róluk helyszínen.
         </p>
         {LMRA_KOCKAZATOK.map((k, i) => (
-          <div key={k.id} style={{ fontSize: 12, color: "#374151", padding: "4px 0", borderBottom: "1px solid #F1F5F9", display: "flex", gap: 8 }}>
-            <span style={{ color: "#94A3B8", fontWeight: 700, minWidth: 20 }}>{i + 1}.</span>
+          <div key={k.id} style={{ fontSize: 12, color: "#374151", padding: "4px 0", borderBottom: `1px solid ${C.bg}`, display: "flex", gap: 8 }}>
+            <span style={{ color: C.muted, fontWeight: 700, minWidth: 20 }}>{i + 1}.</span>
             {k.szoveg}
           </div>
         ))}
@@ -993,28 +993,28 @@ function VbfPdfSablonBeallitas() {
 
   return (
     <div style={{ padding: "16px 0" }}>
-      <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", gap: 10, alignItems: "flex-start" }}>
-        <Upload size={18} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
+      <div style={{ background: C.dangerLight, border: `1.5px solid ${C.dangerLight}`, borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", gap: 10, alignItems: "flex-start" }}>
+        <Upload size={18} color={C.danger} style={{ flexShrink: 0, marginTop: 1 }} />
         <div>
-          <p style={{ fontWeight: 700, fontSize: 13, color: "#991B1B", margin: 0 }}>VBF – Villamos Biztonsági Felülvizsgálati Jegyzőkönyv (PDF sablon)</p>
-          <p style={{ fontSize: 12, color: "#991B1B", margin: "3px 0 0" }}>
+          <p style={{ fontWeight: 700, fontSize: 13, color: C.dangerDark, margin: 0 }}>VBF – Villamos Biztonsági Felülvizsgálati Jegyzőkönyv (PDF sablon)</p>
+          <p style={{ fontSize: 12, color: C.dangerDark, margin: "3px 0 0" }}>
             Töltsd fel az eredeti VBF nyomtatványt PDF formátumban. A letöltött dokumentum az eredeti sablont
             tartalmazza + az utolsó oldalon a kitöltött mérési adatokat.
           </p>
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, padding: "12px 16px", background: van ? "#F0FDF4" : "#FFFBEB", border: `1px solid ${van ? "#86EFAC" : "#FCD34D"}`, borderRadius: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, padding: "12px 16px", background: van ? C.successLight : C.warningLight, border: `1px solid ${van ? C.success : C.warningLight}`, borderRadius: 10 }}>
         <div style={{ flex: 1 }}>
-          <p style={{ fontWeight: 700, fontSize: 14, color: van ? "#166534" : "#92400E", margin: 0 }}>
+          <p style={{ fontWeight: 700, fontSize: 14, color: van ? C.success : C.warning, margin: 0 }}>
             {van ? `✓ VBF PDF sablon feltöltve (${meta?.kb ?? "?"} KB)` : "Nincs PDF sablon feltöltve"}
           </p>
-          <p style={{ fontSize: 12, color: van ? "#15803D" : "#D97706", margin: "3px 0 0" }}>
+          <p style={{ fontSize: 12, color: van ? C.success : C.warning, margin: "3px 0 0" }}>
             {van ? "Munkalap nézetben megjelenik a 'VBF .pdf' letöltés gomb." : "Feltöltés nélkül a VBF adatlap csak adatoldalt tartalmaz sablon nélkül."}
           </p>
         </div>
         {van && (
-          <button onClick={handleTorles} style={{ padding: "7px 14px", background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
+          <button onClick={handleTorles} style={{ padding: "7px 14px", background: C.dangerLight, color: C.danger, border: `1px solid ${C.dangerLight}`, borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
             Törlés
           </button>
         )}
@@ -1024,13 +1024,13 @@ function VbfPdfSablonBeallitas() {
       <button
         onClick={() => fileRef.current?.click()}
         disabled={loading}
-        style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 22px", background: loading ? "#E2E8F0" : "#DC2626", color: "#fff", border: "none", borderRadius: 10, cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, marginBottom: 16 }}
+        style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 22px", background: loading ? C.border : C.danger, color: "#fff", border: "none", borderRadius: 10, cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT, marginBottom: 16 }}
       >
         <Upload size={16} />
         {loading ? "Feltöltés..." : van ? "PDF sablon cseréje" : "VBF PDF sablon feltöltése (.pdf)"}
       </button>
 
-      <div style={{ background: "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px" }}>
+      <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px" }}>
         <p style={{ fontSize: 12, color: "#374151", margin: 0, lineHeight: 1.7 }}>
           <strong>Hogyan működik:</strong><br />
           1. Töltsd fel az eredeti VBF nyomtatvány PDF-jét itt.<br />

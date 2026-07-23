@@ -78,7 +78,7 @@ function UserRow({ user, onSave, onDelete }) {
               <Pencil size={14} /> Szerkesztés
             </button>
             {onDelete && (
-              <button onClick={() => onDelete(user)} title="Felhasználó törlése" style={{ padding: "7px 10px", borderRadius: 8, border: "none", background: "#FEF2F2", color: "#DC2626", cursor: "pointer", display:"flex", alignItems:"center" }}>
+              <button onClick={() => onDelete(user)} title="Felhasználó törlése" style={{ padding: "7px 10px", borderRadius: 8, border: "none", background: C.dangerLight, color: C.danger, cursor: "pointer", display:"flex", alignItems:"center" }}>
                 <Trash2 size={14}/>
               </button>
             )}
@@ -122,10 +122,10 @@ function UserRow({ user, onSave, onDelete }) {
           {/* Teljes Név – ez jelenik meg a login képernyőn és a rendszerben */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .8, display: "block", marginBottom: 6 }}>
-              Teljes neve <span style={{ color: "#EF4444", fontWeight: 700 }}>*</span>
+              Teljes neve <span style={{ color: C.danger, fontWeight: 700 }}>*</span>
               <span style={{ color: C.muted, fontWeight: 400, textTransform: "none", marginLeft: 8 }}>– ez jelenik meg a login képernyőn és a munkalapokban</span>
             </label>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: `2px solid ${C.accent}`, borderRadius: 10, padding: "0 12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, background: C.bg, border: `2px solid ${C.accent}`, borderRadius: 10, padding: "0 12px" }}>
               <User size={14} color={C.accent} />
               <input value={name} onChange={e => setName(e.target.value)} placeholder="pl. Nagy Péter"
                 style={{ flex: 1, border: "none", outline: "none", fontSize: 14, padding: "10px 0", fontFamily: FONT, background: "transparent", color: C.text, fontWeight: 600 }} />
@@ -135,7 +135,7 @@ function UserRow({ user, onSave, onDelete }) {
           {/* Felhasználónév */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .8, display: "block", marginBottom: 6 }}>Bejelentkezési név</label>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: `1.5px solid ${C.border}`, borderRadius: 10, padding: "0 12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, background: C.bg, border: `1.5px solid ${C.border}`, borderRadius: 10, padding: "0 12px" }}>
               <User size={14} color={C.muted} />
               <input value={username} onChange={e => setUsername(e.target.value)} style={{ flex: 1, border: "none", outline: "none", fontSize: 14, padding: "10px 0", fontFamily: FONT, background: "transparent", color: C.text }} />
             </div>
@@ -147,7 +147,7 @@ function UserRow({ user, onSave, onDelete }) {
               Új jelszó <span style={{ color: C.muted, fontWeight: 400, textTransform: "none" }}>(hagyd üresen ha nem változtatod)</span>
             </label>
             <div style={{ display: "flex", gap: 8 }}>
-              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: `1.5px solid ${C.border}`, borderRadius: 10, padding: "0 12px" }}>
+              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, background: C.bg, border: `1.5px solid ${C.border}`, borderRadius: 10, padding: "0 12px" }}>
                 <Lock size={14} color={C.muted} />
                 <input
                   type={showPw ? "text" : "password"}
@@ -179,13 +179,13 @@ function UserRow({ user, onSave, onDelete }) {
 // FŐ ADMIN PANEL
 // ════════════════════════════════════════════════════════
 const SZEREPKOROK = ["Telepítő","Projektmenedzser","Admin","Iroda/Könyvelés"];
-const SZINEK = ["#059669","#2563EB","#9333EA","#D97706","#0891B2","#DC2626","#EA580C","#0EA5E9"];
+const SZINEK = [C.success,C.accent,C.accent,C.warning,"#0891B2",C.danger,"#EA580C","#0EA5E9"];
 
 export default function AdminPanel({ currentUser }) {
   const [users,   setUsers]   = useState(getUsers());
   const [toast,   setToast]   = useState("");
   const [ujModal, setUjModal] = useState(false);
-  const [ujForm,  setUjForm]  = useState({ name:"", username:"", role:"Telepítő", password:"", szin:"#059669" });
+  const [ujForm,  setUjForm]  = useState({ name:"", username:"", role:"Telepítő", password:"", szin:C.success });
   const [ujHiba,  setUjHiba]  = useState("");
   const [torles,  setTorles]  = useState(null); // user obj
 
@@ -239,7 +239,7 @@ export default function AdminPanel({ currentUser }) {
     setUsers(updated);
     saveUsersLocal(updated);
     setUjModal(false);
-    setUjForm({ name:"", username:"", role:"Telepítő", password:"", szin:"#059669" });
+    setUjForm({ name:"", username:"", role:"Telepítő", password:"", szin:C.success });
     setToast("Új felhasználó sikeresen hozzáadva!");
     setTimeout(() => setToast(""), 3000);
   }
@@ -338,7 +338,7 @@ export default function AdminPanel({ currentUser }) {
             </div>
 
             {ujHiba && (
-              <div style={{ background:"#FEF2F2", border:"1.5px solid #FECACA", borderRadius:9, padding:"9px 12px", marginBottom:14, fontSize:13, color:"#DC2626", fontWeight:600, display:"flex", gap:8 }}>
+              <div style={{ background:C.dangerLight, border:`1.5px solid ${C.dangerLight}`, borderRadius:9, padding:"9px 12px", marginBottom:14, fontSize:13, color:C.danger, fontWeight:600, display:"flex", gap:8 }}>
                 <AlertTriangle size={16} style={{flexShrink:0}}/> {ujHiba}
               </div>
             )}
@@ -347,7 +347,7 @@ export default function AdminPanel({ currentUser }) {
               {/* Teljes neve */}
               <div>
                 <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, display:"block", marginBottom:6 }}>
-                  Teljes neve <span style={{ color:"#EF4444" }}>*</span>
+                  Teljes neve <span style={{ color:C.danger }}>*</span>
                   <span style={{ color:C.muted, fontWeight:400, textTransform:"none", marginLeft:6 }}>– ez jelenik meg mindenhol</span>
                 </label>
                 <input value={ujForm.name} onChange={e=>setUjForm(p=>({...p, name:e.target.value}))}
@@ -357,7 +357,7 @@ export default function AdminPanel({ currentUser }) {
 
               {/* Bejelentkezési név */}
               <div>
-                <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, display:"block", marginBottom:6 }}>Bejelentkezési név <span style={{ color:"#EF4444" }}>*</span></label>
+                <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, display:"block", marginBottom:6 }}>Bejelentkezési név <span style={{ color:C.danger }}>*</span></label>
                 <input value={ujForm.username} onChange={e=>setUjForm(p=>({...p, username:e.target.value.toLowerCase()}))}
                   placeholder="pl. kovacspeter"
                   style={{ width:"100%", boxSizing:"border-box", padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:10, fontSize:14, fontFamily:FONT, outline:"none" }}/>
@@ -367,14 +367,14 @@ export default function AdminPanel({ currentUser }) {
               <div>
                 <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, display:"block", marginBottom:6 }}>Szerepkör</label>
                 <select value={ujForm.role} onChange={e=>setUjForm(p=>({...p, role:e.target.value}))}
-                  style={{ width:"100%", padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:10, fontSize:14, fontFamily:FONT, outline:"none", background:"#F8FAFC" }}>
+                  style={{ width:"100%", padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:10, fontSize:14, fontFamily:FONT, outline:"none", background:C.bg }}>
                   {SZEREPKOROK.map(r=><option key={r}>{r}</option>)}
                 </select>
               </div>
 
               {/* Jelszó */}
               <div>
-                <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, display:"block", marginBottom:6 }}>Jelszó <span style={{ color:"#EF4444" }}>*</span></label>
+                <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, display:"block", marginBottom:6 }}>Jelszó <span style={{ color:C.danger }}>*</span></label>
                 <div style={{ display:"flex", gap:8 }}>
                   <input value={ujForm.password} onChange={e=>setUjForm(p=>({...p, password:e.target.value}))}
                     placeholder="Min. 4 karakter"
@@ -393,14 +393,14 @@ export default function AdminPanel({ currentUser }) {
                 <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                   {SZINEK.map(szin=>(
                     <button key={szin} onClick={()=>setUjForm(p=>({...p, szin}))}
-                      style={{ width:32, height:32, borderRadius:"50%", background:szin, border:`3px solid ${ujForm.szin===szin?"#0F172A":"transparent"}`, cursor:"pointer" }}/>
+                      style={{ width:32, height:32, borderRadius:"50%", background:szin, border:`3px solid ${ujForm.szin===szin?C.text:"transparent"}`, cursor:"pointer" }}/>
                   ))}
                 </div>
               </div>
 
               {/* Előnézet */}
               {ujForm.name && (
-                <div style={{ background:"#F8FAFC", borderRadius:10, padding:"10px 14px", display:"flex", alignItems:"center", gap:12 }}>
+                <div style={{ background:C.bg, borderRadius:10, padding:"10px 14px", display:"flex", alignItems:"center", gap:12 }}>
                   <div style={{ width:38, height:38, borderRadius:"50%", background:ujForm.szin, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:14, flexShrink:0 }}>
                     {ujForm.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}
                   </div>
@@ -426,19 +426,19 @@ export default function AdminPanel({ currentUser }) {
       {torles && (
         <div style={{ position:"fixed", inset:0, zIndex:2000, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
           <div style={{ background:"#fff", borderRadius:16, width:"100%", maxWidth:380, padding:"28px 24px", fontFamily:FONT, textAlign:"center" }}>
-            <div style={{ width:56, height:56, borderRadius:"50%", background:"#FEF2F2", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px" }}>
-              <Trash2 size={26} color="#DC2626"/>
+            <div style={{ width:56, height:56, borderRadius:"50%", background:C.dangerLight, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px" }}>
+              <Trash2 size={26} color={C.danger}/>
             </div>
             <h3 style={{ fontSize:18, fontWeight:800, color:C.text, marginBottom:8 }}>Felhasználó törlése</h3>
             <p style={{ fontSize:13, color:C.textSub, marginBottom:6 }}>
               Biztosan törlöd <strong>{torles.name}</strong> felhasználót?
             </p>
-            <p style={{ fontSize:12, color:"#DC2626", fontWeight:600, marginBottom:20 }}>
+            <p style={{ fontSize:12, color:C.danger, fontWeight:600, marginBottom:20 }}>
               ⚠️ Ez nem visszavonható! A hozzárendelt munkalapok megmaradnak, csak a belépési jog szűnik meg.
             </p>
             <div style={{ display:"flex", gap:10 }}>
               <button onClick={()=>setTorles(null)} style={{ flex:1, padding:"11px", borderRadius:9, border:`1.5px solid ${C.border}`, background:"#fff", fontWeight:600, cursor:"pointer", fontFamily:FONT }}>Mégse</button>
-              <button onClick={confirmTorles} style={{ flex:1, padding:"11px", borderRadius:9, border:"none", background:"#DC2626", color:"#fff", fontWeight:700, cursor:"pointer", fontFamily:FONT }}>Törlöm</button>
+              <button onClick={confirmTorles} style={{ flex:1, padding:"11px", borderRadius:9, border:"none", background:C.danger, color:"#fff", fontWeight:700, cursor:"pointer", fontFamily:FONT }}>Törlöm</button>
             </div>
           </div>
         </div>

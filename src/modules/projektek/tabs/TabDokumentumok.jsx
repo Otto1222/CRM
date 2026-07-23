@@ -25,7 +25,7 @@ import { loadVbf } from "../../../lib/munkalapDb.js";
 import { hasSablon, generateVbfDocx } from "../../../lib/vbfDocxService.js";
 import { hasLmra, loadLmra } from "../../../lib/lmraService.js";
 
-function SorGomb({ icon: Icon, label, onClick, href, color = "#2563EB", disabled }) {
+function SorGomb({ icon: Icon, label, onClick, href, color = C.accent, disabled }) {
   const style = {
     display: "flex", alignItems: "center", gap: 10,
     padding: "12px 16px", borderRadius: 10,
@@ -97,7 +97,7 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
     <div style={{ paddingTop: 16, fontFamily: FONT, display: "flex", flexDirection: "column", gap: 8 }}>
 
       {/* ── Drive projekt mappa ── */}
-      <div style={{ background: "#fff", border: `1.5px solid ${projekt.driveProjektMappa ? "#86EFAC" : C.border}`,
+      <div style={{ background: "#fff", border: `1.5px solid ${projekt.driveProjektMappa ? C.success : C.border}`,
         borderRadius: 12, padding: "14px 16px", marginBottom: 4 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <div>
@@ -106,7 +106,7 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
             </p>
             <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>
               {projekt.projektkod}{projekt.clientNev ? ` – ${projekt.clientNev}` : ""}
-              {projekt.driveProjektMappa && <span style={{ color: "#059669", marginLeft: 8, fontWeight: 700 }}>✓ Létrehozva</span>}
+              {projekt.driveProjektMappa && <span style={{ color: C.success, marginLeft: 8, fontWeight: 700 }}>✓ Létrehozva</span>}
             </p>
           </div>
         </div>
@@ -115,7 +115,7 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
           {/* Megnyitás gomb */}
           <a href={driveUrl} target="_blank" rel="noreferrer"
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 9,
-              background: "#2563EB", color: "#fff", textDecoration: "none",
+              background: C.accent, color: "#fff", textDecoration: "none",
               fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
             <ExternalLink size={14} /> Megnyitás Drive-ban
           </a>
@@ -124,7 +124,7 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
           {driveOk && (
             <button onClick={handleMappaLetrehoz} disabled={loading}
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 9,
-                background: "#F8FAFC", border: `1.5px solid ${C.border}`, color: C.textSub,
+                background: C.bg, border: `1.5px solid ${C.border}`, color: C.textSub,
                 cursor: loading ? "wait" : "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
               {loading ? <RefreshCw size={13} style={{ animation: "spin 1s linear infinite" }} /> : <FolderPlus size={13} />}
               {projekt.driveProjektMappa ? "Újralétrehozás" : "Mappa létrehozása"}
@@ -132,8 +132,8 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
           )}
         </div>
 
-        {msg === "ok"   && <p style={{ fontSize: 12, color: "#16A34A", fontWeight: 700, marginTop: 8 }}>✅ Mappa létrehozva!</p>}
-        {msg === "hiba" && <p style={{ fontSize: 12, color: "#DC2626", fontWeight: 700, marginTop: 8 }}>⚠️ Drive hiba – ellenőrizd a kapcsolatot.</p>}
+        {msg === "ok"   && <p style={{ fontSize: 12, color: C.success, fontWeight: 700, marginTop: 8 }}>✅ Mappa létrehozva!</p>}
+        {msg === "hiba" && <p style={{ fontSize: 12, color: C.danger, fontWeight: 700, marginTop: 8 }}>⚠️ Drive hiba – ellenőrizd a kapcsolatot.</p>}
         {!driveOk       && <p style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>Drive szinkron nincs konfigurálva.</p>}
       </div>
 
@@ -145,7 +145,7 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
           </p>
           {vbfMunkalapok.map(m => (
             <SorGomb key={m.id} icon={FileText} label={`VBF – ${m.munkalapSzam || m.id}`}
-              color="#7C3AED"
+              color={C.accent}
               onClick={() => {
                 if (!hasSablon()) { alert("Nincs VBF sablon feltöltve. Beállítások → VBF Sablon."); return; }
                 if (m.date && m.createdAt && m.date < m.createdAt.slice(0, 10)) {
@@ -156,7 +156,7 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
           ))}
         </div>
       ) : (
-        <div style={{ background: "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px",
+        <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px",
           display: "flex", alignItems: "center", gap: 10, color: C.muted, fontSize: 13 }}>
           <FileText size={16} color={C.muted} />
           <span>Még nincs VBF – a munkalap lezárásakor keletkezik</span>
@@ -172,21 +172,21 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
           {lmraMunkalapok.map(m => {
             const lmra = loadLmra(m.id);
             return (
-              <div key={m.id} style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "11px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-                <Shield size={16} color="#059669" style={{ flexShrink: 0 }} />
+              <div key={m.id} style={{ background: C.successLight, border: `1px solid ${C.success}`, borderRadius: 10, padding: "11px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+                <Shield size={16} color={C.success} style={{ flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "#166534", margin: 0 }}>{m.munkalapSzam || m.id}</p>
-                  <p style={{ fontSize: 11, color: "#16A34A", margin: "2px 0 0" }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: C.success, margin: 0 }}>{m.munkalapSzam || m.id}</p>
+                  <p style={{ fontSize: 11, color: C.success, margin: "2px 0 0" }}>
                     {lmra?.datum ? new Date(lmra.datum).toLocaleString("hu-HU") : ""} · {lmra?.tagok?.join(", ")}
                   </p>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, background: "#ECFDF5", color: "#059669", padding: "2px 8px", borderRadius: 20 }}>✓ Aláírva</span>
+                <span style={{ fontSize: 11, fontWeight: 700, background: C.successLight, color: C.success, padding: "2px 8px", borderRadius: 20 }}>✓ Aláírva</span>
               </div>
             );
           })}
         </div>
       ) : (
-        <div style={{ background: "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px",
+        <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px",
           display: "flex", alignItems: "center", gap: 10, color: C.muted, fontSize: 13 }}>
           <Shield size={16} color={C.muted} />
           <span>Még nincs LMRA – a munka megkezdésekor töltik ki</span>
@@ -194,16 +194,16 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
       )}
 
       {/* ── Fotók összesítő ── */}
-      <div style={{ background: fotoSzam > 0 ? "#EFF6FF" : "#F8FAFC",
-        border: `1px solid ${fotoSzam > 0 ? "#BFDBFE" : C.border}`,
+      <div style={{ background: fotoSzam > 0 ? C.accentLight : C.bg,
+        border: `1px solid ${fotoSzam > 0 ? C.accentLight : C.border}`,
         borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-        <Camera size={16} color={fotoSzam > 0 ? "#2563EB" : C.muted} style={{ flexShrink: 0 }} />
+        <Camera size={16} color={fotoSzam > 0 ? C.accent : C.muted} style={{ flexShrink: 0 }} />
         <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: fotoSzam > 0 ? "#1D4ED8" : C.muted, margin: 0 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: fotoSzam > 0 ? C.accent : C.muted, margin: 0 }}>
             {fotoSzam > 0 ? `${fotoSzam} fotó rögzítve` : "Még nincs fotó"}
           </p>
           {fotoSzam > 0 && (
-            <p style={{ fontSize: 11, color: "#3B82F6", margin: "2px 0 0" }}>
+            <p style={{ fontSize: 11, color: C.accent, margin: "2px 0 0" }}>
               {projektMunkalapok.filter(m => {
                 const f = loadLocal(`fotok_${m.id}`);
                 return f && Object.values(f).some(a => Array.isArray(a) && a.length > 0);
@@ -213,14 +213,14 @@ export default function TabDokumentumok({ projekt, munkalapok = [] }) {
         </div>
         {fotoSzam > 0 && projekt.driveProjektMappa && (
           <a href={driveUrl} target="_blank" rel="noreferrer"
-            style={{ fontSize: 12, fontWeight: 600, color: "#2563EB", textDecoration: "none" }}>
+            style={{ fontSize: 12, fontWeight: 600, color: C.accent, textDecoration: "none" }}>
             Drive →
           </a>
         )}
       </div>
 
       {/* ── Számlák helye ── */}
-      <div style={{ background: "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px",
+      <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px",
         display: "flex", alignItems: "center", gap: 10 }}>
         <Receipt size={16} color={C.muted} style={{ flexShrink: 0 }} />
         <span style={{ fontSize: 13, color: C.muted, flex: 1 }}>Számlák → Számlázás tab</span>

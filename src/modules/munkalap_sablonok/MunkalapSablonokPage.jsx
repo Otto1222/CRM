@@ -18,7 +18,7 @@ const IKON_LISTA = ["📋","📐","☀️","⚡","🔧","🛡️","🏢","📄",
 function MezoTipusLabel({ tipus }) {
   const t = MEZO_TIPUSOK.find(x => x.id === tipus);
   return (
-    <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"2px 9px", background:"#EFF6FF", borderRadius:6, fontSize:12, fontWeight:600, color:"#2563EB", fontFamily:FONT }}>
+    <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"2px 9px", background:C.accentLight, borderRadius:6, fontSize:12, fontWeight:600, color:C.accent, fontFamily:FONT }}>
       {t?.ikon} {t?.label || tipus}
     </span>
   );
@@ -53,7 +53,7 @@ function BeallitasToggle({ defObj, value, onChange }) {
 function MezoKonfigPanel({ mezo, onChange }) {
   if (mezo.tipus === "szam" || mezo.tipus === "meresiAdat") {
     return (
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginTop:8, padding:"10px", background:"#F8FAFC", borderRadius:8 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginTop:8, padding:"10px", background:C.bg, borderRadius:8 }}>
         <div>
           <label style={{ fontSize:11, color:C.muted, fontWeight:600, display:"block", marginBottom:3 }}>Mértékegység</label>
           <input value={mezo.mertekegyseg || ""} onChange={e => onChange({ ...mezo, mertekegyseg: e.target.value })}
@@ -79,7 +79,7 @@ function MezoKonfigPanel({ mezo, onChange }) {
   if (mezo.tipus === "legordulo") {
     const opciok = mezo.legordulo_opciok || [];
     return (
-      <div style={{ marginTop:8, padding:"10px", background:"#F8FAFC", borderRadius:8 }}>
+      <div style={{ marginTop:8, padding:"10px", background:C.bg, borderRadius:8 }}>
         <label style={{ fontSize:11, color:C.muted, fontWeight:600, display:"block", marginBottom:6 }}>Opciók (soronként 1)</label>
         <textarea rows={Math.max(3, opciok.length + 1)} value={opciok.join("\n")}
           onChange={e => onChange({ ...mezo, legordulo_opciok: e.target.value.split("\n").filter(Boolean) })}
@@ -92,7 +92,7 @@ function MezoKonfigPanel({ mezo, onChange }) {
 
   if (mezo.tipus === "fotoKategoria") {
     return (
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:8, padding:"10px", background:"#F8FAFC", borderRadius:8 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:8, padding:"10px", background:C.bg, borderRadius:8 }}>
         <div>
           <label style={{ fontSize:11, color:C.muted, fontWeight:600, display:"block", marginBottom:3 }}>Minimum fotó</label>
           <input type="number" min={0} max={20} value={mezo.foto_minDb ?? 1} onChange={e => onChange({ ...mezo, foto_minDb: Number(e.target.value) })}
@@ -128,7 +128,7 @@ function MezoSor({ mezo, idx, total, onUp, onDown, onChange, onDelete }) {
           style={{ flex:1, padding:"6px 10px", border:`1px solid ${C.border}`, borderRadius:7, fontSize:13, fontFamily:FONT, outline:"none", color:C.text }}/>
         {/* Kötelező */}
         <button onClick={() => onChange({ ...mezo, kotelezo: !mezo.kotelezo })} title="Kötelező"
-          style={{ padding:"5px 10px", border:`1.5px solid ${mezo.kotelezo ? "#DC2626" : C.border}`, borderRadius:7, background: mezo.kotelezo ? "#FEF2F2" : "#fff", color: mezo.kotelezo ? "#DC2626" : C.muted, fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:FONT, flexShrink:0 }}>
+          style={{ padding:"5px 10px", border:`1.5px solid ${mezo.kotelezo ? C.danger : C.border}`, borderRadius:7, background: mezo.kotelezo ? C.dangerLight : "#fff", color: mezo.kotelezo ? C.danger : C.muted, fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:FONT, flexShrink:0 }}>
           {mezo.kotelezo ? "✱ köt." : "opcionális"}
         </button>
         {/* Típus váltó */}
@@ -144,7 +144,7 @@ function MezoSor({ mezo, idx, total, onUp, onDown, onChange, onDelete }) {
           </button>
         )}
         {/* Törlés */}
-        <button onClick={onDelete} style={{ border:"none", background:"none", cursor:"pointer", color:"#DC2626", padding:"4px", flexShrink:0 }}>
+        <button onClick={onDelete} style={{ border:"none", background:"none", cursor:"pointer", color:C.danger, padding:"4px", flexShrink:0 }}>
           <Trash2 size={15}/>
         </button>
       </div>
@@ -176,10 +176,10 @@ function FotoKatSor({ fk, idx, total, onUp, onDown, onChange, onDelete }) {
           style={{ width:44, padding:"5px 6px", border:`1px solid ${C.border}`, borderRadius:6, fontSize:12, fontFamily:FONT, outline:"none", textAlign:"center" }}/>
       </label>
       <button onClick={() => onChange({ ...fk, kotelezo: !fk.kotelezo })}
-        style={{ padding:"4px 9px", border:`1.5px solid ${fk.kotelezo ? "#DC2626" : C.border}`, borderRadius:6, background: fk.kotelezo ? "#FEF2F2" : "#fff", color: fk.kotelezo ? "#DC2626" : C.muted, fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>
+        style={{ padding:"4px 9px", border:`1.5px solid ${fk.kotelezo ? C.danger : C.border}`, borderRadius:6, background: fk.kotelezo ? C.dangerLight : "#fff", color: fk.kotelezo ? C.danger : C.muted, fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>
         {fk.kotelezo ? "✱ köt." : "opt."}
       </button>
-      <button onClick={onDelete} style={{ border:"none", background:"none", cursor:"pointer", color:"#DC2626", padding:"4px", flexShrink:0 }}>
+      <button onClick={onDelete} style={{ border:"none", background:"none", cursor:"pointer", color:C.danger, padding:"4px", flexShrink:0 }}>
         <Trash2 size={14}/>
       </button>
     </div>
@@ -265,14 +265,14 @@ function SablonEditor({ sablon, userRole, onSave, onCancel }) {
             Mégse
           </button>
           <button onClick={handleSave} disabled={!nev.trim()}
-            style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 18px", background: nev.trim() ? C.accent : "#CBD5E1", color:"#fff", border:"none", borderRadius:9, cursor: nev.trim() ? "pointer" : "not-allowed", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+            style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 18px", background: nev.trim() ? C.accent : C.border, color:"#fff", border:"none", borderRadius:9, cursor: nev.trim() ? "pointer" : "not-allowed", fontWeight:700, fontSize:13, fontFamily:FONT }}>
             <Save size={14}/> Mentés
           </button>
         </div>
       </div>
 
       {/* Tabok */}
-      <div style={{ display:"flex", borderBottom:`1px solid ${C.border}`, background:"#F8FAFC", overflowX:"auto" }}>
+      <div style={{ display:"flex", borderBottom:`1px solid ${C.border}`, background:C.bg, overflowX:"auto" }}>
         {[
           ["alapadatok", <FileText size={14}/>, "Alapadatok"],
           ["mezok",      <List size={14}/>,     `Mezők (${mezok.length})`],
@@ -348,9 +348,9 @@ function SablonEditor({ sablon, userRole, onSave, onCancel }) {
               A bekapcsolt elemek lezáráskor kötelezők – a telepítő nem tudja lezárni a munkalapot, amíg nem teljesíti.
             </p>
             <BeallitasToggle value={beall} onChange={setBeall} />
-            <div style={{ marginTop:20, padding:"14px 16px", background:"#FFFBEB", border:`1px solid #FDE68A`, borderRadius:10 }}>
-              <p style={{ fontSize:12, color:"#92400E", fontWeight:700, margin:"0 0 4px" }}>⚠️ Részben kész és Sikertelen státusznál</p>
-              <p style={{ fontSize:12, color:"#92400E", margin:0 }}>Minden esetben kötelező az indoklás megadása – ez nem kapcsolható ki.</p>
+            <div style={{ marginTop:20, padding:"14px 16px", background:C.warningLight, border:`1px solid ${C.warningLight}`, borderRadius:10 }}>
+              <p style={{ fontSize:12, color:C.warning, fontWeight:700, margin:"0 0 4px" }}>⚠️ Részben kész és Sikertelen státusznál</p>
+              <p style={{ fontSize:12, color:C.warning, margin:0 }}>Minden esetben kötelező az indoklás megadása – ez nem kapcsolható ki.</p>
             </div>
           </div>
         )}
@@ -404,8 +404,8 @@ function SablonKartya({ sablon, userRole, onEdit, onMasol, onInaktival, onAktiva
 
   return (
     <div style={{
-      background: aktiv ? "#fff" : "#F8FAFC",
-      borderRadius:14, border:`1.5px solid ${aktiv ? C.border : "#E2E8F0"}`,
+      background: aktiv ? "#fff" : C.bg,
+      borderRadius:14, border:`1.5px solid ${aktiv ? C.border : C.border}`,
       padding:"18px 20px", display:"flex", alignItems:"flex-start", gap:14,
       opacity: aktiv ? 1 : 0.7,
     }}>
@@ -416,20 +416,20 @@ function SablonKartya({ sablon, userRole, onEdit, onMasol, onInaktival, onAktiva
             {sablon.nev}
           </h3>
           {sablon.gyari && (
-            <span style={{ fontSize:10, fontWeight:700, padding:"2px 6px", background:"#FEF9C3", color:"#92400E", borderRadius:5 }}>🏭 Gyári</span>
+            <span style={{ fontSize:10, fontWeight:700, padding:"2px 6px", background:"#FEF9C3", color:C.warning, borderRadius:5 }}>🏭 Gyári</span>
           )}
           {!aktiv && (
-            <span style={{ fontSize:10, fontWeight:700, padding:"2px 6px", background:"#F1F5F9", color:"#64748B", borderRadius:5 }}>⏸ Inaktív</span>
+            <span style={{ fontSize:10, fontWeight:700, padding:"2px 6px", background:C.bg, color:C.muted, borderRadius:5 }}>⏸ Inaktív</span>
           )}
         </div>
         {sablon.leiras && (
           <p style={{ fontSize:12, color:C.muted, margin:"0 0 8px" }}>{sablon.leiras}</p>
         )}
         <div style={{ display:"flex", flexWrap:"wrap", gap:6, alignItems:"center" }}>
-          <span style={{ fontSize:12, color:C.muted, background:"#F8FAFC", padding:"2px 8px", borderRadius:5, border:`1px solid ${C.border}` }}>
+          <span style={{ fontSize:12, color:C.muted, background:C.bg, padding:"2px 8px", borderRadius:5, border:`1px solid ${C.border}` }}>
             📝 {mezokDb} mező
           </span>
-          <span style={{ fontSize:12, color:C.muted, background:"#F8FAFC", padding:"2px 8px", borderRadius:5, border:`1px solid ${C.border}` }}>
+          <span style={{ fontSize:12, color:C.muted, background:C.bg, padding:"2px 8px", borderRadius:5, border:`1px solid ${C.border}` }}>
             📷 {fotokDb} fotókat.
           </span>
           {beallLabels.map(l => (
@@ -441,27 +441,27 @@ function SablonKartya({ sablon, userRole, onEdit, onMasol, onInaktival, onAktiva
       {isAdmin && (
         <div style={{ display:"flex", gap:6, flexShrink:0, flexWrap:"wrap", justifyContent:"flex-end" }}>
           <button onClick={() => onEdit(sablon)}
-            style={{ padding:"7px 12px", background:"#EFF6FF", color:"#2563EB", border:"none", borderRadius:8, cursor:"pointer", fontFamily:FONT, fontSize:12, display:"flex", alignItems:"center", gap:4 }}>
+            style={{ padding:"7px 12px", background:C.accentLight, color:C.accent, border:"none", borderRadius:8, cursor:"pointer", fontFamily:FONT, fontSize:12, display:"flex", alignItems:"center", gap:4 }}>
             <Edit3 size={12}/> Szerk.
           </button>
           <button onClick={() => onMasol(sablon.id)}
-            style={{ padding:"7px 12px", background:"#F5F3FF", color:"#7C3AED", border:"none", borderRadius:8, cursor:"pointer", fontFamily:FONT, fontSize:12, display:"flex", alignItems:"center", gap:4 }}>
+            style={{ padding:"7px 12px", background:C.accentLight, color:C.accent, border:"none", borderRadius:8, cursor:"pointer", fontFamily:FONT, fontSize:12, display:"flex", alignItems:"center", gap:4 }}>
             <Copy size={12}/> Másolás
           </button>
           {aktiv ? (
             <button onClick={() => onInaktival(sablon.id)}
-              style={{ padding:"7px 12px", background:"#FFFBEB", color:"#D97706", border:"none", borderRadius:8, cursor:"pointer", fontFamily:FONT, fontSize:12, display:"flex", alignItems:"center", gap:4 }}>
+              style={{ padding:"7px 12px", background:C.warningLight, color:C.warning, border:"none", borderRadius:8, cursor:"pointer", fontFamily:FONT, fontSize:12, display:"flex", alignItems:"center", gap:4 }}>
               <Archive size={12}/> Inaktivál
             </button>
           ) : (
             <button onClick={() => onAktival(sablon.id)}
-              style={{ padding:"7px 12px", background:"#ECFDF5", color:"#059669", border:"none", borderRadius:8, cursor:"pointer", fontFamily:FONT, fontSize:12, display:"flex", alignItems:"center", gap:4 }}>
+              style={{ padding:"7px 12px", background:C.successLight, color:C.success, border:"none", borderRadius:8, cursor:"pointer", fontFamily:FONT, fontSize:12, display:"flex", alignItems:"center", gap:4 }}>
               <ArchiveRestore size={12}/> Aktivál
             </button>
           )}
           {!sablon.gyari && !aktiv && (
             <button onClick={() => onDelete(sablon.id)}
-              style={{ padding:"7px 12px", background:"#FEF2F2", color:"#DC2626", border:"none", borderRadius:8, cursor:"pointer", fontFamily:FONT, fontSize:12, display:"flex", alignItems:"center", gap:4 }}>
+              style={{ padding:"7px 12px", background:C.dangerLight, color:C.danger, border:"none", borderRadius:8, cursor:"pointer", fontFamily:FONT, fontSize:12, display:"flex", alignItems:"center", gap:4 }}>
               <Trash2 size={12}/> Törlés
             </button>
           )}
@@ -592,9 +592,9 @@ export default function MunkalapSablonokPage({ userRole }) {
       )}
 
       {/* Tájékoztató */}
-      <div style={{ marginTop:28, padding:"14px 18px", background:"#EFF6FF", borderRadius:12, border:`1px solid #BFDBFE` }}>
-        <p style={{ fontSize:12, color:"#1D4ED8", fontWeight:700, margin:"0 0 6px" }}>💡 Sablon-rendszer – hogyan működik</p>
-        <ul style={{ fontSize:12, color:"#3B82F6", margin:0, paddingLeft:18, lineHeight:2 }}>
+      <div style={{ marginTop:28, padding:"14px 18px", background:C.accentLight, borderRadius:12, border:`1px solid ${C.accentLight}` }}>
+        <p style={{ fontSize:12, color:C.accent, fontWeight:700, margin:"0 0 6px" }}>💡 Sablon-rendszer – hogyan működik</p>
+        <ul style={{ fontSize:12, color:C.accent, margin:0, paddingLeft:18, lineHeight:2 }}>
           <li>Új munkalap létrehozásakor kötelező sablont választani</li>
           <li>A sablon mezői megjelennek a munkalapban – a telepítő tölti ki</li>
           <li>Gyári sablonok nem törölhetők, de másolhatók és módosíthatók</li>

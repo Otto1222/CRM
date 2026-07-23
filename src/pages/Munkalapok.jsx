@@ -100,17 +100,17 @@ function MunkaIdoBontasCard({ m }) {
   if (!m.megkezdesIdopont && !m.befejezesIdopont) return null;
   const elapsed = formatElapsedTime(m.megkezdesIdopont, m.befejezesIdopont);
   return (
-    <div style={{ marginTop:16, background:"#F0F9FF", border:"1px solid #BAE6FD", borderRadius:12, padding:"14px 16px" }}>
+    <div style={{ marginTop:16, background:C.accentLight, border:"1px solid #BAE6FD", borderRadius:12, padding:"14px 16px" }}>
       <p style={{ fontSize:11, fontWeight:700, color:"#0369A1", textTransform:"uppercase", letterSpacing:.8, marginBottom:12 }}>
         ⏱ Munkaidő összesítés
       </p>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
         <div>
-          <p style={{ fontSize:11, color:"#64748B", fontWeight:600, marginBottom:4 }}>Megkezdés időpontja</p>
+          <p style={{ fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>Megkezdés időpontja</p>
           <p style={{ fontSize:13, fontWeight:700, color:"#0369A1" }}>{formatDateTime(m.megkezdesIdopont)}</p>
         </div>
         <div>
-          <p style={{ fontSize:11, color:"#64748B", fontWeight:600, marginBottom:4 }}>
+          <p style={{ fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>
             {m.befejezesIdopont ? "Lezárás időpontja" : "Folyamatban (aktuális)"}
           </p>
           <p style={{ fontSize:13, fontWeight:700, color: m.befejezesIdopont ? C.success : C.warning }}>
@@ -120,7 +120,7 @@ function MunkaIdoBontasCard({ m }) {
       </div>
       {elapsed && (
         <div style={{ marginTop:12, padding:"10px 14px", background:"#fff", borderRadius:10, border:"1px solid #BAE6FD" }}>
-          <p style={{ fontSize:11, color:"#64748B", fontWeight:600, marginBottom:4 }}>Eltelt munkaidő</p>
+          <p style={{ fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>Eltelt munkaidő</p>
           <p style={{ fontSize:16, fontWeight:800, color:"#0369A1", fontFamily:"monospace" }}>{elapsed}</p>
         </div>
       )}
@@ -223,15 +223,15 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
         {canSeePrice(userRole) && !isMobile && (
           <>
             <button onClick={() => exportExcel(filtered, "munkalapok")} title="Excel export"
-              style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 14px", background:"#16A34A", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+              style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 14px", background:C.success, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
               <Download size={14}/> XLS
             </button>
             <button onClick={() => exportPDF(filtered, "Munkalapok összesítő")} title="PDF export"
-              style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 14px", background:"#DC2626", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+              style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 14px", background:C.danger, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
               <Download size={14}/> PDF
             </button>
             <button onClick={() => exportToCSV(filtered, [], { fajlnev:"munkalapok" })} title="CSV export"
-              style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 14px", background:"#7C3AED", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+              style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 14px", background:C.accent, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
               <Download size={14}/> CSV
             </button>
           </>
@@ -274,7 +274,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
                           {m.dokumentumszam && m.ediSorszam && <span style={{ fontSize:10, color:C.muted, display:"block" }}>{m.ediSorszam}</span>}
                         </div>
                         {m.cimke && <CimkeBadge label={m.cimke} color={m.cimkeSzin||C.accent} />}
-                        {m.munkalapTipus && <span style={{ fontSize:10, background:"#F1F5F9", color:C.muted, padding:"2px 7px", borderRadius:6, fontWeight:600 }}>{m.munkalapTipus}</span>}
+                        {m.munkalapTipus && <span style={{ fontSize:10, background:C.bg, color:C.muted, padding:"2px 7px", borderRadius:6, fontWeight:600 }}>{m.munkalapTipus}</span>}
                       </div>
                     </td>
                     <td style={{ padding:"14px 16px", color:C.textSub }}>{cl?.name||"—"}</td>
@@ -341,7 +341,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
                   <div>
                     <span style={{ fontWeight:800, fontSize:15, color:C.text }}>{munkaszam}</span>
-                    {m.munkalapTipus && <span style={{ fontSize:10, background:"#F1F5F9", color:C.muted, padding:"1px 6px", borderRadius:5, fontWeight:600, marginLeft:6 }}>{m.munkalapTipus}</span>}
+                    {m.munkalapTipus && <span style={{ fontSize:10, background:C.bg, color:C.muted, padding:"1px 6px", borderRadius:5, fontWeight:600, marginLeft:6 }}>{m.munkalapTipus}</span>}
                   </div>
                   {m.cimke&&<CimkeBadge label={m.cimke} color={m.cimkeSzin||C.accent}/>}
                   <span style={{ marginLeft:"auto", fontSize:12, color:C.muted }}>{m.date}</span>
@@ -365,7 +365,7 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
 export function UjMunkalapModal({ data, onClose, onSave }) {
   const isMobile = useIsMobile();
   const [form, setForm] = useState({
-    ugyszam: "", cimke: "Junior Vital", cimkeSzin: "#2563EB",
+    ugyszam: "", cimke: "Junior Vital", cimkeSzin: C.accent,
     projektMegnevezes: "", feladat: "", status: "Megkezdésre Vár",
     statusSzin: "#38BDF8", clientId: "", date: "", assigneeId: "",
     ertekesito: "",
@@ -408,9 +408,9 @@ export function UjMunkalapModal({ data, onClose, onSave }) {
       <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>{label}</label>
       {area
         ? <textarea value={form[k]||""} onChange={e=>upd(k,e.target.value)} placeholder={placeholder} rows={3}
-            style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical", background:"#F8FAFC" }} />
+            style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical", background:C.bg }} />
         : <input type={type} value={form[k]||""} onChange={e=>upd(k,e.target.value)} placeholder={placeholder}
-            style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }} />
+            style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }} />
       }
     </div>
   );
@@ -419,7 +419,7 @@ export function UjMunkalapModal({ data, onClose, onSave }) {
     <div style={{ marginBottom:12 }}>
       <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>{label}</label>
       <input type={type} value={form.felmeres[k]||""} onChange={e=>updF(k,e.target.value)} placeholder={placeholder}
-        style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }} />
+        style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }} />
     </div>
   );
 
@@ -460,14 +460,14 @@ export function UjMunkalapModal({ data, onClose, onSave }) {
               <div style={{ display:"grid", gridTemplateColumns: isMobile?"1fr":"1fr 1fr", gap:12 }}>
                 <div style={{ marginBottom:14 }}>
                   <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Ügyfél</label>
-                  <select value={form.clientId} onChange={e=>upd("clientId",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
+                  <select value={form.clientId} onChange={e=>upd("clientId",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }}>
                     <option value="">— Válassz ügyfelet —</option>
                     {data.ugyfelek.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
                 </div>
                 <div style={{ marginBottom:14 }}>
                   <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Szerelő / Csapat</label>
-                  <select value={form.assigneeId} onChange={e=>upd("assigneeId",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
+                  <select value={form.assigneeId} onChange={e=>upd("assigneeId",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }}>
                     <option value="">— Válassz szerelőt —</option>
                     {USERS.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
@@ -476,11 +476,11 @@ export function UjMunkalapModal({ data, onClose, onSave }) {
               <div style={{ display:"grid", gridTemplateColumns: isMobile?"1fr":"1fr 1fr", gap:12 }}>
                 <div style={{ marginBottom:14 }}>
                   <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Cimke</label>
-                  <input value={form.cimke} onChange={e=>upd("cimke",e.target.value)} placeholder="Junior Vital, Saját Önerős…" style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }} />
+                  <input value={form.cimke} onChange={e=>upd("cimke",e.target.value)} placeholder="Junior Vital, Saját Önerős…" style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }} />
                 </div>
                 <div style={{ marginBottom:14 }}>
                   <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Státusz</label>
-                  <select value={form.status} onChange={e=>upd("status",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
+                  <select value={form.status} onChange={e=>upd("status",e.target.value)} style={{ width:"100%", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }}>
                     {["Megkezdésre Vár","Felmérés","Kivitelezés","Folyamatban","Ütemezett","Kész","Meghiúsult"].map(s=><option key={s}>{s}</option>)}
                   </select>
                 </div>
@@ -610,7 +610,7 @@ function DetailHeader({ m, client, isMobile }) {
       {client&&(
         <div style={{ padding: isMobile?"0 16px 14px":"0 24px 16px" }}>
           <p style={{ fontWeight:700, fontSize:isMobile?16:18, color:"#fff" }}>{client.name}</p>
-          <p style={{ fontSize:13, color:"#94A3B8" }}>{client.address}</p>
+          <p style={{ fontSize:13, color:C.muted }}>{client.address}</p>
         </div>
       )}
     </div>
@@ -643,17 +643,17 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
 
   const FieldRow = ({label, value}) => value ? (
     <div style={{ padding:"0 16px" }}>
-      <p style={{ fontSize:12, color:"#64748B", paddingTop:10, marginBottom:4 }}>{label}</p>
+      <p style={{ fontSize:12, color:C.muted, paddingTop:10, marginBottom:4 }}>{label}</p>
       <div style={{ background:"#E8EDF5", borderRadius:6, padding:"10px 12px", marginBottom:2, fontSize:14, color:C.text, borderBottom:"1px solid #D1D9E6" }}>{value}</div>
     </div>
   ) : null;
 
   return (
-    <div style={{ fontFamily:FONT, background:"#F1F5F9", minHeight:"100vh" }}>
+    <div style={{ fontFamily:FONT, background:C.bg, minHeight:"100vh" }}>
       <DetailHeader m={m} client={client} isMobile />
       <div style={{ display:"flex", background:"#2C4A6E" }}>
         {tabs.map((t,i)=>(
-          <button key={i} onClick={()=>setTab(i)} style={{ flex:1, padding:"12px 0", border:"none", background:"transparent", color:tab===i?"#fff":"#94A3B8", cursor:"pointer", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", borderBottom:tab===i?"3px solid #fff":"3px solid transparent", fontFamily:FONT }}>
+          <button key={i} onClick={()=>setTab(i)} style={{ flex:1, padding:"12px 0", border:"none", background:"transparent", color:tab===i?"#fff":C.muted, cursor:"pointer", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", borderBottom:tab===i?"3px solid #fff":"3px solid transparent", fontFamily:FONT }}>
             {t.icon}
           </button>
         ))}
@@ -661,7 +661,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
 
       {/* Tab 0 – Infók */}
       {tab===0&&(
-        <div style={{ background:"#F1F5F9" }}>
+        <div style={{ background:C.bg }}>
           <FieldRow label="Projekt megnevezés" value={m.projektMegnevezes}/>
           <FieldRow label="Feladat" value={m.feladat}/>
           <FieldRow label="Ügyszám" value={m.ugyszam}/>
@@ -674,10 +674,10 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
           <MunkaIdoBontasCard m={m} />
           {/* Megjegyzések */}
           {m.alairas && (
-            <div style={{ marginTop:16, background:"#ECFDF5", border:"1px solid #A7F3D0", borderRadius:12, padding:"14px 16px" }}>
+            <div style={{ marginTop:16, background:C.successLight, border:`1px solid ${C.success}`, borderRadius:12, padding:"14px 16px" }}>
               <p style={{ fontSize:12, fontWeight:700, color:C.success, marginBottom:8, textTransform:"uppercase", letterSpacing:.7 }}>✍️ Ügyfél aláírás</p>
               <p style={{ fontSize:12, color:C.textSub }}>Aláírva: {m.alairas.datum ? new Date(m.alairas.datum).toLocaleString("hu-HU") : "—"}</p>
-              {m.alairas.dataUrl && <img src={m.alairas.dataUrl} alt="Aláírás" style={{ marginTop:8, maxWidth:"100%", maxHeight:100, background:"#fff", borderRadius:8, border:"1px solid #D1FAE5" }}/>}
+              {m.alairas.dataUrl && <img src={m.alairas.dataUrl} alt="Aláírás" style={{ marginTop:8, maxWidth:"100%", maxHeight:100, background:"#fff", borderRadius:8, border:`1px solid ${C.successLight}` }}/>}
             </div>
           )}
           <VbfAdminCard munkalapId={m.id} munkalap={m} />
@@ -697,12 +697,12 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
         {showFelmeresJkv && <FelmeresJegyzokonyv m={m} onClose={() => setShowFelmeresJkv(false)} />}
         {/* PM workflow gombok */}
         {m.status === "Ellenőrzés alatt" && ["Projektmenedzser","Admin"].includes(userRole) && (
-          <div style={{ background:"#FFFBEB", border:"1.5px solid #FCD34D", borderRadius:12, padding:"14px 16px", marginBottom:12 }}>
-            <p style={{ fontSize:13, fontWeight:700, color:"#92400E", margin:"0 0 10px" }}>⚠️ Ellenőrzésre vár – PM átvétel szükséges</p>
+          <div style={{ background:C.warningLight, border:`1.5px solid ${C.warningLight}`, borderRadius:12, padding:"14px 16px", marginBottom:12 }}>
+            <p style={{ fontSize:13, fontWeight:700, color:C.warning, margin:"0 0 10px" }}>⚠️ Ellenőrzésre vár – PM átvétel szükséges</p>
             <div style={{ display:"flex", gap:8 }}>
               <button onClick={() => {
                 import("../services/workorder.service.js").then(({ updateWorkorder }) => {
-                  updateWorkorder(m.id, { status:"Lezárva", statusSzin:"#059669" }, userRole);
+                  updateWorkorder(m.id, { status:"Lezárva", statusSzin:C.success }, userRole);
                   window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
                   if (m.projektId) {
                     import("../modules/projektek/projektWorkflow.js").then(({ syncProjektFromWorkorders }) => {
@@ -712,18 +712,18 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
                   }
                   if(onRefresh) onRefresh();
                 });
-              }} style={{ flex:1, padding:"10px", background:"#059669", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
+              }} style={{ flex:1, padding:"10px", background:C.success, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 ✅ Lezárva (munkát átvettem)
               </button>
             </div>
           </div>
         )}
         {m.status === "Lezárva" && ["Iroda/Könyvelés","Projektmenedzser","Admin"].includes(userRole) && (
-          <div style={{ background:"#F0FDF4", border:"1.5px solid #86EFAC", borderRadius:12, padding:"14px 16px", marginBottom:12 }}>
-            <p style={{ fontSize:13, fontWeight:700, color:"#166534", margin:"0 0 10px" }}>✅ Lezárva – számlázásra kész</p>
+          <div style={{ background:C.successLight, border:`1.5px solid ${C.success}`, borderRadius:12, padding:"14px 16px", marginBottom:12 }}>
+            <p style={{ fontSize:13, fontWeight:700, color:C.success, margin:"0 0 10px" }}>✅ Lezárva – számlázásra kész</p>
             <button onClick={() => {
               import("../services/workorder.service.js").then(({ updateWorkorder }) => {
-                updateWorkorder(m.id, { status:"Számlázva", statusSzin:"#15803D" }, userRole);
+                updateWorkorder(m.id, { status:"Számlázva", statusSzin:C.success }, userRole);
                 window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
                 if (m.projektId) {
                   import("../modules/projektek/projektWorkflow.js").then(({ syncProjektFromWorkorders }) => {
@@ -733,7 +733,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
                 }
                 if(onRefresh) onRefresh();
               });
-            }} style={{ width:"100%", padding:"10px", background:"#15803D", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
+            }} style={{ width:"100%", padding:"10px", background:C.success, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
               💰 Számlázva
             </button>
           </div>
@@ -759,18 +759,18 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
                       <label style={{fontSize:10,fontWeight:700,color:C.muted,display:"block",marginBottom:3}}>{f.l}</label>
                       <input type="number" defaultValue={m[f.k]||0}
                         onBlur={e=>{updateItem("munkalapok",m.id,{[f.k]:Number(e.target.value)||0});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}}
-                        style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",border:"1.5px solid #E2E8F0",borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none"}}/>
+                        style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",border:`1.5px solid ${C.border}`,borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none"}}/>
                     </div>
                   ))}
                 </div>
-                {m.ar>0&&(()=>{const k=(m.munkaeroDij||0)+(m.kiszallasiDij||0)+(m.egyebKolts||0)+(m.items||[]).reduce((s,i)=>s+(i.net||0)*(i.qty||1),0);const er=(m.ar||0)-k;return(<div style={{padding:"8px 10px",background:er>=0?"#ECFDF5":"#FEF2F2",borderRadius:8}}><p style={{fontSize:12,fontWeight:700,color:er>=0?"#059669":"#DC2626",margin:0}}>Eredmény: {er.toLocaleString("hu-HU")} Ft{m.ar>0&&` (${Math.round((er/m.ar)*100)}%)`}</p></div>);})()}
+                {m.ar>0&&(()=>{const k=(m.munkaeroDij||0)+(m.kiszallasiDij||0)+(m.egyebKolts||0)+(m.items||[]).reduce((s,i)=>s+(i.net||0)*(i.qty||1),0);const er=(m.ar||0)-k;return(<div style={{padding:"8px 10px",background:er>=0?C.successLight:C.dangerLight,borderRadius:8}}><p style={{fontSize:12,fontWeight:700,color:er>=0?C.success:C.danger,margin:0}}>Eredmény: {er.toLocaleString("hu-HU")} Ft{m.ar>0&&` (${Math.round((er/m.ar)*100)}%)`}</p></div>);})()}
               </div>
             )}
             <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, marginBottom:10 }}>Státusz módosítása</p>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
               {/* Spec 5. pont teljes státusz lista */}
               {["Létrehozva","Kiosztva csapatnak","Folyamatban","Helyszínen lezárva","Ellenőrzés alatt","Jóváhagyva","Számlázásra kész","Lezárva","Felmérés","Befejezett Felmérés","Meghiúsult"].map(s=>{
-                const cfg=STATUS_CFG[s]||{bg:"#F1F5F9",text:C.muted,dot:C.muted};
+                const cfg=STATUS_CFG[s]||{bg:C.bg,text:C.muted,dot:C.muted};
                 // Admin-only státuszok: Jóváhagyva, Számlázásra kész, Lezárva
                 const adminOnly = ["Jóváhagyva","Számlázásra kész","Lezárva"].includes(s);
                 const isAdmin = ["Admin","Projektmenedzser","Iroda/Könyvelés"].includes(userRole);
@@ -795,7 +795,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
           {/* Műveletek */}
           <div style={{ padding:"0 16px 16px" }}>
             <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, marginBottom:10 }}>Műveletek</p>
-            <button onClick={()=>setShowUjrakiosztas(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#EFF6FF", color:C.accent, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
+            <button onClick={()=>setShowUjrakiosztas(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:C.accentLight, color:C.accent, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
               ✏️ Szerkesztés / Újrakiosztás
             </button>
             <button onClick={()=>printMunkalap(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#fff", color:C.text, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT }}>
@@ -804,10 +804,10 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
             <button onClick={()=>printMunkalap(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#fff", color:C.text, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT }}>
               👁 Előnézet
             </button>
-            <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#FEF2F2", color:C.danger, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
+            <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:C.dangerLight, color:C.danger, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
               🗑️ Munkalap törlése
             </button>
-            <button onClick={()=>setShowUjrakiosztas(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:"#EFF6FF", color:C.accent, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
+            <button onClick={()=>setShowUjrakiosztas(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:10, border:"none", background:C.accentLight, color:C.accent, cursor:"pointer", fontSize:14, marginBottom:8, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
               ✏️ Újrakiosztás / Szerkesztés
             </button>
           </div>
@@ -819,9 +819,9 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
 
       {/* Tab 1 – Anyagok + Számlázás */}
       {tab===1&&(
-        <div style={{ background:"#F1F5F9" }}>
+        <div style={{ background:C.bg }}>
           {(m.anyagok||[]).map((a,i)=>(
-            <div key={i} style={{ padding:"14px 16px", borderBottom:"1px solid #D1D9E6", display:"flex", justifyContent:"space-between", background:"#F1F5F9" }}>
+            <div key={i} style={{ padding:"14px 16px", borderBottom:"1px solid #D1D9E6", display:"flex", justifyContent:"space-between", background:C.bg }}>
               <p style={{ fontWeight:600, fontSize:14, color:C.text, flex:1, paddingRight:16 }}>{a.nev}</p>
               <p style={{ fontWeight:700, fontSize:14, color:C.text, whiteSpace:"nowrap" }}>{a.menny} {a.egyseg}</p>
             </div>
@@ -869,7 +869,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
 
       {/* Tab 2 – Felmérés */}
       {tab===2&&(
-        <div style={{ background:"#F1F5F9" }}>
+        <div style={{ background:C.bg }}>
           {(() => {
             const f = m.felmeres||{};
             const mezok = [
@@ -889,7 +889,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
             if(!mezok.length) return <div style={{ padding:"32px 16px", textAlign:"center", color:C.muted }}><Ruler size={32} style={{ opacity:.2, display:"block", margin:"0 auto 8px" }}/><p>Felmérés még nem történt</p></div>;
             return mezok.map(([label,value])=>(
               <div key={label} style={{ padding:"0 16px" }}>
-                <p style={{ fontSize:12, color:"#64748B", paddingTop:10, marginBottom:4 }}>{label}</p>
+                <p style={{ fontSize:12, color:C.muted, paddingTop:10, marginBottom:4 }}>{label}</p>
                 <div style={{ background:"#E8EDF5", borderRadius:6, padding:"10px 12px", marginBottom:2, fontSize:14, color:C.text, borderBottom:"1px solid #D1D9E6" }}>{String(value)}</div>
               </div>
             ));
@@ -939,25 +939,25 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           {/* Helyszín sorszám + EDI */}
           {m.dokumentumszam && (
             <div style={{ display:"flex", gap:10, marginTop:8, flexWrap:"wrap" }}>
-              <span style={{ fontSize:12, background:"#F1F5F9", color:"#64748B", padding:"3px 10px", borderRadius:6, fontWeight:600 }}>
+              <span style={{ fontSize:12, background:C.bg, color:C.muted, padding:"3px 10px", borderRadius:6, fontWeight:600 }}>
                 📄 {m.dokumentumszam}
               </span>
-              {m.munkalapTipus && <span style={{ fontSize:12, background:"#EFF6FF", color:"#2563EB", padding:"3px 10px", borderRadius:6, fontWeight:600 }}>{m.munkalapTipus}</span>}
+              {m.munkalapTipus && <span style={{ fontSize:12, background:C.accentLight, color:C.accent, padding:"3px 10px", borderRadius:6, fontWeight:600 }}>{m.munkalapTipus}</span>}
             </div>
           )}
           {/* Befejezett Felmérés panel */}
           {isBefejezettFelmeres && (
-            <div style={{ marginTop:16, padding:"12px 14px", background:"#F0FDF4", borderRadius:10, border:"1.5px solid #86EFAC", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <div style={{ marginTop:16, padding:"12px 14px", background:C.successLight, borderRadius:10, border:`1.5px solid ${C.success}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                 <span style={{ fontSize:20 }}>✅</span>
                 <div>
-                  <p style={{ fontWeight:700, fontSize:13, color:"#166534", margin:0 }}>Felmérés lezárva</p>
-                  <p style={{ fontSize:11, color:"#15803D", margin:"2px 0 0" }}>
+                  <p style={{ fontWeight:700, fontSize:13, color:C.success, margin:0 }}>Felmérés lezárva</p>
+                  <p style={{ fontSize:11, color:C.success, margin:"2px 0 0" }}>
                     {m.felmeres?.felmeresIdopont || m.lezarvaDate || "—"} · {m.assigneeNev || "—"}
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowFelmeresJkvD(true)} style={{ display:"flex", alignItems:"center", gap:7, padding:"8px 16px", background:"#16A34A", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
+              <button onClick={() => setShowFelmeresJkvD(true)} style={{ display:"flex", alignItems:"center", gap:7, padding:"8px 16px", background:C.success, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 📋 Nyilatkozat PDF
               </button>
             </div>
@@ -1002,7 +1002,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
             )}
             <div style={{ display:"flex", gap:12, marginTop:20 }}>
               <button style={{ flex:1, padding:"12px 0", borderRadius:11, border:`2px solid ${C.border}`, background:"#fff", color:C.text, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:FONT }}><Printer size={16}/>Díjbekérő</button>
-              <button onClick={issueInvoice} disabled={saving||(m.items||[]).length===0} style={{ flex:1, padding:"12px 0", borderRadius:11, border:"none", background:(m.items||[]).length?C.success:"#E2E8F0", color:"#fff", fontWeight:700, cursor:(m.items||[]).length?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:FONT }}>
+              <button onClick={issueInvoice} disabled={saving||(m.items||[]).length===0} style={{ flex:1, padding:"12px 0", borderRadius:11, border:"none", background:(m.items||[]).length?C.success:C.border, color:"#fff", fontWeight:700, cursor:(m.items||[]).length?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:FONT }}>
                 {saving?<Loader2 size={16} style={{ animation:"spin 1s linear infinite" }}/>:<><Send size={16}/>Számla kiállítása</>}
               </button>
             </div>
@@ -1027,23 +1027,23 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Státusz módosítása</h4>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
             {["Felmérés","Befejezett Felmérés","Kiosztásra vár","Kivitelezésre vár","Megkezdésre Vár","Folyamatban","Kivitelezés","Ellenőrzés alatt","Lezárva","Számlázva","Kész","Meghiúsult"].map(s=>{
-              const cfg=STATUS_CFG[s]||{bg:"#F1F5F9",text:C.muted,dot:C.muted};
+              const cfg=STATUS_CFG[s]||{bg:C.bg,text:C.muted,dot:C.muted};
               return <button key={s} onClick={()=>{updateItem("munkalapok",m.id,{status:s});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
             })}
           </div>
           {/* PM Workflow gyorsgombok */}
           {m.status === "Ellenőrzés alatt" && ["Projektmenedzser","Admin"].includes(userRole) && (
-            <div style={{ marginTop:12, padding:"12px 14px", background:"#FFFBEB", border:"1.5px solid #FCD34D", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <p style={{ fontSize:13, fontWeight:700, color:"#92400E", margin:0 }}>⚠️ Ellenőrzésre vár – PM átvétel szükséges</p>
-              <button onClick={()=>{import("../services/workorder.service.js").then(({updateWorkorder})=>{updateWorkorder(m.id,{status:"Lezárva",statusSzin:"#059669"},userRole);window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(m.projektId){import("../modules/projektek/projektWorkflow.js").then(({syncProjektFromWorkorders})=>{syncProjektFromWorkorders(m.projektId);window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));});}if(onRefresh)onRefresh();});}} style={{ padding:"9px 18px", background:"#059669", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
+            <div style={{ marginTop:12, padding:"12px 14px", background:C.warningLight, border:`1.5px solid ${C.warningLight}`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <p style={{ fontSize:13, fontWeight:700, color:C.warning, margin:0 }}>⚠️ Ellenőrzésre vár – PM átvétel szükséges</p>
+              <button onClick={()=>{import("../services/workorder.service.js").then(({updateWorkorder})=>{updateWorkorder(m.id,{status:"Lezárva",statusSzin:C.success},userRole);window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(m.projektId){import("../modules/projektek/projektWorkflow.js").then(({syncProjektFromWorkorders})=>{syncProjektFromWorkorders(m.projektId);window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));});}if(onRefresh)onRefresh();});}} style={{ padding:"9px 18px", background:C.success, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 ✅ Lezárva (munkát átvettem)
               </button>
             </div>
           )}
           {m.status === "Lezárva" && ["Iroda/Könyvelés","Projektmenedzser","Admin"].includes(userRole) && (
-            <div style={{ marginTop:12, padding:"12px 14px", background:"#F0FDF4", border:"1.5px solid #86EFAC", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <p style={{ fontSize:13, fontWeight:700, color:"#166534", margin:0 }}>✅ Lezárva – TIG kiállítható, számlázásra kész</p>
-              <button onClick={()=>{import("../services/workorder.service.js").then(({updateWorkorder})=>{updateWorkorder(m.id,{status:"Számlázva",statusSzin:"#15803D"},userRole);window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(m.projektId){import("../modules/projektek/projektWorkflow.js").then(({syncProjektFromWorkorders})=>{syncProjektFromWorkorders(m.projektId);window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));});}if(onRefresh)onRefresh();});}} style={{ padding:"9px 18px", background:"#15803D", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
+            <div style={{ marginTop:12, padding:"12px 14px", background:C.successLight, border:`1.5px solid ${C.success}`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <p style={{ fontSize:13, fontWeight:700, color:C.success, margin:0 }}>✅ Lezárva – TIG kiállítható, számlázásra kész</p>
+              <button onClick={()=>{import("../services/workorder.service.js").then(({updateWorkorder})=>{updateWorkorder(m.id,{status:"Számlázva",statusSzin:C.success},userRole);window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(m.projektId){import("../modules/projektek/projektWorkflow.js").then(({syncProjektFromWorkorders})=>{syncProjektFromWorkorders(m.projektId);window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));});}if(onRefresh)onRefresh();});}} style={{ padding:"9px 18px", background:C.success, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
                 💰 Számlázva
               </button>
             </div>
@@ -1054,7 +1054,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
         <VbfAdminCard munkalapId={m.id} munkalap={m} />
         <Card style={{ padding:"20px 22px", marginTop:16 }}>
           <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Műveletek</h4>
-          <button onClick={() => setShowUjrakiosztas(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"#EFF6FF", color:C.accent, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
+          <button onClick={() => setShowUjrakiosztas(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:C.accentLight, color:C.accent, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
             <Pencil size={15}/>Újrakiosztás / Szerkesztés
           </button>
           <button onClick={() => printMunkalap(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"transparent", color:C.textSub, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT }}>
@@ -1063,7 +1063,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           <button onClick={() => printMunkalap(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"transparent", color:C.textSub, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT }}>
             <Eye size={15}/>Előnézet
           </button>
-          <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:"#FEF2F2", color:C.danger, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
+          <button onClick={()=>onDelete&&onDelete(m)} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:9, border:"none", background:C.dangerLight, color:C.danger, cursor:"pointer", fontSize:13, marginBottom:4, textAlign:"left", fontFamily:FONT, fontWeight:600 }}>
             <Trash2 size={15}/>Munkalap törlése
           </button>
         </Card>
@@ -1087,23 +1087,23 @@ function TelepItoDetail({ m, data }) {
   const client = data.ugyfelek.find(u=>u.id===m.clientId);
   const FieldRow = ({label,value}) => value ? (
     <div style={{ padding:"0 16px" }}>
-      <p style={{ fontSize:12, color:"#64748B", paddingTop:10, marginBottom:4 }}>{label}</p>
+      <p style={{ fontSize:12, color:C.muted, paddingTop:10, marginBottom:4 }}>{label}</p>
       <div style={{ background:"#E8EDF5", borderRadius:6, padding:"10px 12px", marginBottom:2, fontSize:14, color:C.text, borderBottom:"1px solid #D1D9E6" }}>{value}</div>
     </div>
   ) : null;
 
   return (
-    <div style={{ fontFamily:FONT, background:"#F1F5F9", minHeight:"100vh" }}>
+    <div style={{ fontFamily:FONT, background:C.bg, minHeight:"100vh" }}>
       <DetailHeader m={m} client={client} isMobile />
       <div style={{ display:"flex", background:"#2C4A6E" }}>
         {["📄","📦","📋"].map((ic,i)=>(
-          <button key={i} onClick={()=>setTab(i)} style={{ flex:1, padding:"12px 0", border:"none", background:"transparent", color:tab===i?"#fff":"#94A3B8", cursor:"pointer", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", borderBottom:tab===i?"3px solid #fff":"3px solid transparent" }}>
+          <button key={i} onClick={()=>setTab(i)} style={{ flex:1, padding:"12px 0", border:"none", background:"transparent", color:tab===i?"#fff":C.muted, cursor:"pointer", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", borderBottom:tab===i?"3px solid #fff":"3px solid transparent" }}>
             {ic}
           </button>
         ))}
       </div>
       {tab===0&&(
-        <div style={{ background:"#F1F5F9" }}>
+        <div style={{ background:C.bg }}>
           <FieldRow label="Projekt megnevezés" value={m.projektMegnevezes}/>
           <FieldRow label="Feladat" value={m.feladat}/>
           <FieldRow label="Ügyszám" value={m.ugyszam}/>
@@ -1112,16 +1112,16 @@ function TelepItoDetail({ m, data }) {
           <FieldRow label="E-mail cím" value={client?.email}/>
           <FieldRow label="Értékesítő" value={m.ertekesito}/>
           <div style={{ padding:"16px" }}>
-            <button style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 18px", background:"#fff", border:"2px solid #E2E8F0", borderRadius:10, cursor:"pointer", fontSize:14, fontFamily:FONT, marginBottom:10, color:C.text }}>💬 Információk</button>
-            <button style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 18px", background:"#fff", border:"2px solid #E2E8F0", borderRadius:10, cursor:"pointer", fontSize:14, fontFamily:FONT, marginBottom:10, color:C.text }}>📏 Felmérés</button>
+            <button style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 18px", background:"#fff", border:`2px solid ${C.border}`, borderRadius:10, cursor:"pointer", fontSize:14, fontFamily:FONT, marginBottom:10, color:C.text }}>💬 Információk</button>
+            <button style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 18px", background:"#fff", border:`2px solid ${C.border}`, borderRadius:10, cursor:"pointer", fontSize:14, fontFamily:FONT, marginBottom:10, color:C.text }}>📏 Felmérés</button>
             <button style={{ width:"100%", padding:"13px", borderRadius:10, border:"none", background:C.accent, color:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:FONT, marginBottom:10 }}>Munkalap átvétel</button>
             <button style={{ width:"100%", padding:"13px", borderRadius:10, border:"none", background:"#93C5FD", color:"#1e3a5f", fontWeight:600, fontSize:15, cursor:"pointer", fontFamily:FONT, marginBottom:10 }}>Kiírt anyag megrendelése</button>
-            <button style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", background:"#22C55E", color:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:FONT }}>Megkezdés →</button>
+            <button style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", background:C.success, color:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:FONT }}>Megkezdés →</button>
           </div>
         </div>
       )}
       {tab===1&&(
-        <div style={{ background:"#F1F5F9" }}>
+        <div style={{ background:C.bg }}>
           {(m.anyagok||[]).map((a,i)=>(
             <div key={i} style={{ padding:"14px 16px", borderBottom:"1px solid #D1D9E6", display:"flex", justifyContent:"space-between" }}>
               <p style={{ fontWeight:600, fontSize:14, color:C.text, flex:1, paddingRight:16 }}>{a.nev}</p>
@@ -1132,7 +1132,7 @@ function TelepItoDetail({ m, data }) {
         </div>
       )}
       {tab===2&&(
-        <div style={{ background:"#F1F5F9" }}>
+        <div style={{ background:C.bg }}>
           {(() => {
             const f=m.felmeres||{};
             const mezok=[["Csatlakozási pont",f.csatlakozasiPont],["Csatl. pont állapota",f.csatlPontAllapota],["AC kábel hossz (m)",f.acKabelHossz],["AC védelem típus",f.acVedelem],["Komm. kábel hossza (m)",f.kommKabelHossz],["Inverter fal",f.inverterFal],["Akkumulátor fal",f.akkuFal],["Akku kábel hossz (m)",f.akkuKabelHossz],["Tető típus",f.tetoTipus],["Tetőszerkezet típus",f.tetoszerkezetTipus],["Padlás",f.padlas],["Villámhárító",f.villamharitor],["Tartószerkezet típus",f.tartoszerkezetTipus],["Pótcserép",f.potcserep],["DC kábel hossz (m)",f.dcKabelHossz],["DC kábel nyomvonal",f.dcKabelNyomvonal],["DC védelem típus",f.dcVedelem],["Tűzeseti kapcsoló",f.tuzKapcsolo],["Panel elrendezés",f.panelElrendezes],["Felhordó eszköz",f.felhordoEszkoz],["Engedélyeztetés",f.engedelyeztetes],["Visszwatt védelem",f.visszwatt],["Megközelíthetőség",f.megkozelithetoseg],["Felmérés időpontja",f.felmeresIdopont]].filter(([,v])=>v!==undefined&&v!=="");
@@ -1166,7 +1166,7 @@ function LmraAdminCard({ munkalap, userRole }) {
 
   const status = rec?.status || "nincs";
   const label  = LMRA_STATUS_LABELS[status] || status;
-  const color  = LMRA_STATUS_COLORS[status] || "#94A3B8";
+  const color  = LMRA_STATUS_COLORS[status] || C.muted;
 
   return (
     <Card style={{ padding:"16px 18px", marginTop:12 }}>
@@ -1186,7 +1186,7 @@ function LmraAdminCard({ munkalap, userRole }) {
           {canExport && rec && ["alairva","exportalva"].includes(status) && (
             <button
               onClick={() => { exportLmraPdfWindow(rec, munkalap, null, currentUser?.name); setRec(loadLmraRec(munkalapId)); }}
-              style={{ padding:"5px 12px", background:"#7C3AED", color:"#fff", border:"none", borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
+              style={{ padding:"5px 12px", background:C.accent, color:"#fff", border:"none", borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
             >
               PDF
             </button>
@@ -1194,7 +1194,7 @@ function LmraAdminCard({ munkalap, userRole }) {
           {canEdit && (
             <button
               onClick={() => setOpen(p => !p)}
-              style={{ padding:"5px 12px", background:open?C.accent:"#F8FAFC", color:open?"#fff":C.textSub, border:`1px solid ${open?C.accent:C.border}`, borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
+              style={{ padding:"5px 12px", background:open?C.accent:C.bg, color:open?"#fff":C.textSub, border:`1px solid ${open?C.accent:C.border}`, borderRadius:7, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
             >
               {open ? "Bezárás" : "LMRA szerkesztése"}
             </button>

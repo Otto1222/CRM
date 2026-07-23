@@ -10,11 +10,11 @@ import ProjektDetail from "./ProjektDetail.jsx";
 import ProjektForm from "./ProjektForm.jsx";
 
 const FORRAS_FILTER = [
-  { id: "Összes",                       label: "Összes",              color: "#64748B" },
-  { id: "sajat_ajanlat",                label: "Saját ajánlat",       color: "#2563EB" },
-  { id: "fovallalkozoi_munka",          label: "Fővállalkozói",       color: "#7C3AED" },
-  { id: "belso_munka",                  label: "Belső munka",         color: "#059669" },
-  { id: FORRAS_ELLENORZES_SZUKSEGES,   label: "⚠ Ellenőrzendő",     color: "#DC2626" },
+  { id: "Összes",                       label: "Összes",              color: C.muted },
+  { id: "sajat_ajanlat",                label: "Saját ajánlat",       color: C.accent },
+  { id: "fovallalkozoi_munka",          label: "Fővállalkozói",       color: C.accent },
+  { id: "belso_munka",                  label: "Belső munka",         color: C.success },
+  { id: FORRAS_ELLENORZES_SZUKSEGES,   label: "⚠ Ellenőrzendő",     color: C.danger },
 ];
 
 export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, onNewMunkalapForProjekt, onNav }) {
@@ -93,20 +93,20 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
 
       {/* Admin figyelmeztetés: bizonytalan projekt forrás (migráció) */}
       {["Admin", "Projektmenedzser"].includes(userRole) && ellenorzendok.length > 0 && (
-        <div style={{ display:"flex", alignItems:"flex-start", gap:10, background:"#FEF2F2", border:"1.5px solid #FECACA", borderRadius:10, padding:"12px 16px", marginBottom:14, fontSize:13, color:"#991B1B" }}>
+        <div style={{ display:"flex", alignItems:"flex-start", gap:10, background:C.dangerLight, border:`1.5px solid ${C.dangerLight}`, borderRadius:10, padding:"12px 16px", marginBottom:14, fontSize:13, color:C.dangerDark }}>
           <AlertTriangle size={17} style={{ flexShrink:0, marginTop:1 }} />
           <div>
             <div style={{ fontWeight:700, marginBottom:4 }}>
               {ellenorzendok.length} projekt forrása nem határozható meg automatikusan – kézi ellenőrzés szükséges!
             </div>
-            <div style={{ fontSize:12, color:"#B91C1C", lineHeight:1.6 }}>
+            <div style={{ fontSize:12, color:C.dangerHover, lineHeight:1.6 }}>
               Ezek régi <em>garanciális</em> vagy <em>javítási</em> projektek, ahol az adatokból nem derül ki egyértelműen a forrás.
               Nyisd meg az érintett projektet, és kézzel állítsd be a forrást (Saját ajánlat / Fővállalkozói / Belső munka).<br/>
               Érintett projektek: {ellenorzendok.map(p => <span key={p.id} style={{ fontWeight:700, cursor:"pointer", textDecoration:"underline", marginRight:8 }} onClick={() => setSel(p)}>{p.projektkod || p.nev || p.id}</span>)}
             </div>
           </div>
           <button onClick={() => setForrasFilter(FORRAS_ELLENORZES_SZUKSEGES)}
-            style={{ marginLeft:"auto", flexShrink:0, padding:"5px 12px", background:"#DC2626", color:"#fff", border:"none", borderRadius:7, fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:FONT }}>
+            style={{ marginLeft:"auto", flexShrink:0, padding:"5px 12px", background:C.danger, color:"#fff", border:"none", borderRadius:7, fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:FONT }}>
             Mutasd
           </button>
         </div>
@@ -114,19 +114,19 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
 
       {/* Szinkron figyelmeztetés */}
       {syncWarning && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#92400E", fontWeight: 600 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, background: C.warningLight, border: `1.5px solid ${C.warningLight}`, borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: C.warning, fontWeight: 600 }}>
           <WifiOff size={15} />
           {syncWarning}
-          <button onClick={() => setSyncWarning("")} style={{ marginLeft: "auto", border: "none", background: "transparent", cursor: "pointer", color: "#92400E", fontWeight: 700, fontSize: 14 }}>×</button>
+          <button onClick={() => setSyncWarning("")} style={{ marginLeft: "auto", border: "none", background: "transparent", cursor: "pointer", color: C.warning, fontWeight: 700, fontSize: 14 }}>×</button>
         </div>
       )}
 
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
         <div>
-          <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: "#0F172A", margin: "0 0 4px" }}>
+          <h1 style={{ fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>
             Projektek
           </h1>
-          <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
+          <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
             {projektek.length} projekt · {aktiv} aktív · {kivFolyamat} kivitelezés alatt
           </p>
         </div>
@@ -135,11 +135,11 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
           {["Admin", "Projektmenedzser"].includes(userRole) && (
             <>
               <button onClick={() => exportToExcel(filtered, [], { fajlnev: "projektek" })}
-                style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px", background:"#F1F5F9", color:"#475569", border:"none", borderRadius:8, cursor:"pointer", fontWeight:600, fontSize:12, fontFamily:FONT }}>
+                style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px", background:C.bg, color:C.textSub, border:"none", borderRadius:8, cursor:"pointer", fontWeight:600, fontSize:12, fontFamily:FONT }}>
                 <Download size={13} /> XLS
               </button>
               <button onClick={() => exportToPDF(filtered, [], "Projektek összesítő")}
-                style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px", background:"#F1F5F9", color:"#475569", border:"none", borderRadius:8, cursor:"pointer", fontWeight:600, fontSize:12, fontFamily:FONT }}>
+                style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px", background:C.bg, color:C.textSub, border:"none", borderRadius:8, cursor:"pointer", fontWeight:600, fontSize:12, fontFamily:FONT }}>
                 <Download size={13} /> PDF
               </button>
             </>
@@ -147,7 +147,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
           {/* Saját ajánlat: átnavigál az Ajánlatok oldalra */}
           {["Admin", "Projektmenedzser"].includes(userRole) && onNav && (
             <button onClick={() => onNav("arajanlatok")}
-              style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 14px", background:"#EFF6FF", color:"#2563EB", border:"1.5px solid #BFDBFE", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+              style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 14px", background:C.accentLight, color:C.accent, border:`1.5px solid ${C.accentLight}`, borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
               <Users size={14} /> Saját ajánlat projekt
             </button>
           )}
@@ -155,11 +155,11 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
           {["Admin", "Projektmenedzser"].includes(userRole) && (
             <>
               <button onClick={() => { setUjForrasInit("fovallalkozoi_munka"); setUjOpen(true); }}
-                style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 14px", background:"#F5F3FF", color:"#7C3AED", border:"1.5px solid #DDD6FE", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+                style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 14px", background:C.accentLight, color:C.accent, border:`1.5px solid ${C.accentLight}`, borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
                 <Handshake size={14} /> Fővállalkozói
               </button>
               <button onClick={() => { setUjForrasInit("belso_munka"); setUjOpen(true); }}
-                style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 18px", background:"#059669", color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:14, fontFamily:FONT }}>
+                style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 18px", background:C.success, color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:14, fontFamily:FONT }}>
                 <Plus size={15} /> Belső munka
               </button>
             </>
@@ -174,7 +174,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
           const active = forrasFilter === f.id;
           return (
             <button key={f.id} onClick={() => setForrasFilter(f.id)}
-              style={{ padding:"6px 14px", borderRadius:20, border:`2px solid ${active ? f.color : "transparent"}`, background: active ? f.color + "18" : "#F1F5F9", color: active ? f.color : "#64748B", fontWeight:600, fontSize:12, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap", transition:"all .15s" }}>
+              style={{ padding:"6px 14px", borderRadius:20, border:`2px solid ${active ? f.color : "transparent"}`, background: active ? f.color + "18" : C.bg, color: active ? f.color : C.muted, fontWeight:600, fontSize:12, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap", transition:"all .15s" }}>
               {f.label} ({count})
             </button>
           );
@@ -183,10 +183,10 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
 
       {/* Keresés */}
       <div style={{ position:"relative", marginBottom:10 }}>
-        <Search size={15} color="#94A3B8" style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)" }} />
+        <Search size={15} color={C.muted} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)" }} />
         <input value={q} onChange={e => setQ(e.target.value)}
           placeholder="Keresés név, kód, ügyfél, azonosító szerint…"
-          style={{ width:"100%", boxSizing:"border-box", padding:"9px 12px 9px 34px", border:"1.5px solid #E2E8F0", borderRadius:10, fontSize:13, fontFamily:FONT, outline:"none", background:"#fff" }} />
+          style={{ width:"100%", boxSizing:"border-box", padding:"9px 12px 9px 34px", border:`1.5px solid ${C.border}`, borderRadius:10, fontSize:13, fontFamily:FONT, outline:"none", background:"#fff" }} />
       </div>
 
       {/* Státusz szűrő */}
@@ -197,7 +197,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
             : projektek.filter(p => p.status === s && (forrasFilter === "Összes" || p.forrás === forrasFilter)).length;
           return (
             <button key={s} onClick={() => setTabFilter(s)}
-              style={{ padding:"5px 12px", borderRadius:20, border:"none", cursor:"pointer", fontFamily:FONT, fontWeight:600, fontSize:12, whiteSpace:"nowrap", background: tabFilter === s ? C.accent : "#F1F5F9", color: tabFilter === s ? "#fff" : "#64748B" }}>
+              style={{ padding:"5px 12px", borderRadius:20, border:"none", cursor:"pointer", fontFamily:FONT, fontWeight:600, fontSize:12, whiteSpace:"nowrap", background: tabFilter === s ? C.accent : C.bg, color: tabFilter === s ? "#fff" : C.muted }}>
               {s} ({cnt})
             </button>
           );

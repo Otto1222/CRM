@@ -26,7 +26,7 @@ function AlairasMezo({ nev, onSave }) {
     c.height = c.offsetHeight * r;
     const ctx = c.getContext("2d");
     ctx.scale(r, r);
-    ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 2.5;
+    ctx.strokeStyle = C.text; ctx.lineWidth = 2.5;
     ctx.lineCap = "round"; ctx.lineJoin = "round";
   }, []);
 
@@ -42,7 +42,7 @@ function AlairasMezo({ nev, onSave }) {
 
   return (
     <div>
-      <p style={{ fontSize: 15, fontWeight: 700, color: "#1D4ED8", marginBottom: 10, textAlign: "center" }}>
+      <p style={{ fontSize: 15, fontWeight: 700, color: C.accent, marginBottom: 10, textAlign: "center" }}>
         ✍️ {nev}
       </p>
       <div style={{ border: "2px solid #1e3a5c", borderRadius: 10, overflow: "hidden", background: "#fff", position: "relative", height: 160 }}>
@@ -53,18 +53,18 @@ function AlairasMezo({ nev, onSave }) {
         />
         {!has && (
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-            <p style={{ fontSize: 13, color: "#CBD5E1", fontStyle: "italic" }}>Aláírás helye</p>
+            <p style={{ fontSize: 13, color: C.border, fontStyle: "italic" }}>Aláírás helye</p>
           </div>
         )}
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <button onClick={clear}
-          style={{ flex: 1, padding: "11px", border: "1.5px solid #E2E8F0", borderRadius: 9, background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: FONT, fontSize: 13 }}>
+          style={{ flex: 1, padding: "11px", border: `1.5px solid ${C.border}`, borderRadius: 9, background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: FONT, fontSize: 13 }}>
           <RotateCcw size={13} /> Törlés
         </button>
         <button onClick={() => onSave({ nev, dataUrl: ref.current.toDataURL("image/png"), datum: new Date().toISOString() })}
           disabled={!has}
-          style={{ flex: 2, padding: "11px", border: "none", borderRadius: 9, background: has ? "#059669" : "#E2E8F0", color: "#fff", cursor: has ? "pointer" : "default", fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: FONT }}>
+          style={{ flex: 2, padding: "11px", border: "none", borderRadius: 9, background: has ? C.success : C.border, color: "#fff", cursor: has ? "pointer" : "default", fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: FONT }}>
           <Check size={15} /> Aláírva →
         </button>
       </div>
@@ -151,11 +151,11 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
         {/* ── Header ── */}
         <div style={{ background: "#1e3a5c", padding: "13px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Shield size={19} color="#FCD34D" />
+            <Shield size={19} color={C.warningLight} />
             <div>
               <p style={{ color: "#fff", fontWeight: 800, fontSize: 14, fontFamily: FONT_HEADING, margin: 0 }}>LMRA – Munkavégzést megelőző kockázatértékelés</p>
               {/* Auto munka név a fejlécben */}
-              <p style={{ color: "#FCD34D", fontSize: 12, margin: 0, fontWeight: 600 }}>{autoMunkaNev}</p>
+              <p style={{ color: C.warningLight, fontSize: 12, margin: 0, fontWeight: 600 }}>{autoMunkaNev}</p>
             </div>
           </div>
           <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
@@ -174,22 +174,22 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
 
         {/* ── PDF nézet ── */}
         {showPdf && pdfSrc && (
-          <div style={{ height: 260, flexShrink: 0, borderBottom: "2px solid #E2E8F0" }}>
+          <div style={{ height: 260, flexShrink: 0, borderBottom: `2px solid ${C.border}` }}>
             <iframe src={pdfSrc} style={{ width: "100%", height: "100%", border: "none" }} title="LMRA nyomtatvány" />
           </div>
         )}
 
         {/* ── Lépés jelző ── */}
         {step !== "kesz" && (
-          <div style={{ display: "flex", background: "#F8FAFC", borderBottom: "1px solid #E2E8F0", flexShrink: 0 }}>
+          <div style={{ display: "flex", background: C.bg, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
             {lepesek.map((id, i) => {
               const aktIdx = lepesek.indexOf(step);
               const done   = aktIdx > i;
               const active = step === id;
               return (
                 <div key={id} style={{ flex: 1, padding: "9px 4px", display: "flex", alignItems: "center", justifyContent: "center",
-                  borderBottom: active ? "3px solid #2563EB" : "3px solid transparent", opacity: done || active ? 1 : 0.4 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: active ? "#2563EB" : done ? "#059669" : "#94A3B8" }}>
+                  borderBottom: active ? `3px solid ${C.accent}` : "3px solid transparent", opacity: done || active ? 1 : 0.4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: active ? C.accent : done ? C.success : C.muted }}>
                     {done ? "✓ " : ""}{lepesLabel[i]}
                   </span>
                 </div>
@@ -205,7 +205,7 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
           {step === "kockazat" && (
             <div>
               {/* Fejléc összefoglaló – olvasható, nem szerkeszthető */}
-              <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12 }}>
+              <div style={{ background: C.accentLight, border: `1px solid ${C.accentLight}`, borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px" }}>
                   <div><span style={{ color: C.muted }}>Időpont: </span><strong>{fejlec.idopont}</strong></div>
                   <div><span style={{ color: C.muted }}>Helyszín: </span><strong>{fejlec.helyszin || "—"}</strong></div>
@@ -214,7 +214,7 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
                 </div>
               </div>
 
-              <p style={{ fontSize: 12, fontWeight: 700, color: "#DC2626", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: C.danger, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
                 <Shield size={13} /> MUNKAVEZETŐ tölti ki — fennáll-e az adott kockázat?
               </p>
 
@@ -223,23 +223,23 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
                   const val = kock[k.id];
                   return (
                     <div key={k.id} style={{
-                      background: val === true ? "#FEF2F2" : val === false ? "#F0FDF4" : "#F8FAFC",
-                      border: `1.5px solid ${val === true ? "#FCA5A5" : val === false ? "#86EFAC" : "#E2E8F0"}`,
+                      background: val === true ? C.dangerLight : val === false ? C.successLight : C.bg,
+                      border: `1.5px solid ${val === true ? "#FCA5A5" : val === false ? C.success : C.border}`,
                       borderRadius: 10, padding: "10px 12px",
                     }}>
                       <p style={{ fontSize: 13, color: C.text, margin: "0 0 8px", lineHeight: 1.4 }}>{k.szoveg}</p>
                       <div style={{ display: "flex", gap: 7 }}>
                         <button onClick={() => setKock(p => ({ ...p, [k.id]: true }))}
-                          style={{ flex: 1, padding: "8px 4px", border: `2px solid ${val === true ? "#DC2626" : "#E2E8F0"}`, borderRadius: 8, background: val === true ? "#DC2626" : "#fff", color: val === true ? "#fff" : C.textSub, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: FONT }}>
+                          style={{ flex: 1, padding: "8px 4px", border: `2px solid ${val === true ? C.danger : C.border}`, borderRadius: 8, background: val === true ? C.danger : "#fff", color: val === true ? "#fff" : C.textSub, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: FONT }}>
                           ⚠️ Igen
                         </button>
                         <button onClick={() => setKock(p => ({ ...p, [k.id]: false }))}
-                          style={{ flex: 1, padding: "8px 4px", border: `2px solid ${val === false ? "#059669" : "#E2E8F0"}`, borderRadius: 8, background: val === false ? "#059669" : "#fff", color: val === false ? "#fff" : C.textSub, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: FONT }}>
+                          style={{ flex: 1, padding: "8px 4px", border: `2px solid ${val === false ? C.success : C.border}`, borderRadius: 8, background: val === false ? C.success : "#fff", color: val === false ? "#fff" : C.textSub, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: FONT }}>
                           ✓ Nem
                         </button>
                       </div>
                       {val === true && (
-                        <p style={{ margin: "7px 0 0", fontSize: 11, color: "#991B1B", background: "#FFF1F2", padding: "5px 8px", borderRadius: 6 }}>
+                        <p style={{ margin: "7px 0 0", fontSize: 11, color: C.dangerDark, background: "#FFF1F2", padding: "5px 8px", borderRadius: 6 }}>
                           ⚠️ Szükséges intézkedés — jelöld a nyomtatványon!
                         </p>
                       )}
@@ -249,7 +249,7 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
               </div>
 
               {!mindenKitoltve && (
-                <p style={{ fontSize: 12, color: "#92400E", background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 8, padding: "8px 12px", marginTop: 10 }}>
+                <p style={{ fontSize: 12, color: C.warning, background: C.warningLight, border: `1px solid ${C.warningLight}`, borderRadius: 8, padding: "8px 12px", marginTop: 10 }}>
                   ⚠️ Minden kockázatot értékelj ({LMRA_KOCKAZATOK.filter(k => kock[k.id] !== null).length}/{LMRA_KOCKAZATOK.length} kész)
                 </p>
               )}
@@ -261,10 +261,10 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
             <div>
               {/* Fennálló kockázatok összefoglalója */}
               {fennallo.length > 0 && (
-                <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10, padding: "10px 14px", marginBottom: 14 }}>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: "#991B1B", margin: "0 0 5px" }}>⚠️ Fennálló kockázatok – intézkedés szükséges:</p>
+                <div style={{ background: C.dangerLight, border: `1.5px solid ${C.dangerLight}`, borderRadius: 10, padding: "10px 14px", marginBottom: 14 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: C.dangerDark, margin: "0 0 5px" }}>⚠️ Fennálló kockázatok – intézkedés szükséges:</p>
                   {fennallo.map(k => (
-                    <p key={k.id} style={{ fontSize: 12, color: "#DC2626", margin: "2px 0" }}>• {k.szoveg}</p>
+                    <p key={k.id} style={{ fontSize: 12, color: C.danger, margin: "2px 0" }}>• {k.szoveg}</p>
                   ))}
                 </div>
               )}
@@ -277,10 +277,10 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
                   <div key={i} style={{ display: "flex", gap: 7, alignItems: "center" }}>
                     <input value={t} onChange={e => setTagok(p => p.map((x, j) => j === i ? e.target.value : x))}
                       placeholder={`${i + 1}. tag neve`}
-                      style={{ flex: 1, padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none" }} />
+                      style={{ flex: 1, padding: "10px 12px", border: `1.5px solid ${C.border}`, borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none" }} />
                     {tagok.length > 1 && (
                       <button onClick={() => setTagok(p => p.filter((_, j) => j !== i))}
-                        style={{ padding: "8px 9px", border: "none", background: "#FEF2F2", borderRadius: 7, cursor: "pointer", color: "#DC2626" }}>
+                        style={{ padding: "8px 9px", border: "none", background: C.dangerLight, borderRadius: 7, cursor: "pointer", color: C.danger }}>
                         <X size={13} />
                       </button>
                     )}
@@ -290,9 +290,9 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
               <div style={{ display: "flex", gap: 7 }}>
                 <input value={ujTag} onChange={e => setUjTag(e.target.value)} onKeyDown={e => e.key === "Enter" && addTag()}
                   placeholder="+ Új tag neve…"
-                  style={{ flex: 1, padding: "9px 11px", border: "1.5px dashed #CBD5E1", borderRadius: 9, fontSize: 13, fontFamily: FONT, outline: "none", background: "#F8FAFC" }} />
+                  style={{ flex: 1, padding: "9px 11px", border: `1.5px dashed ${C.border}`, borderRadius: 9, fontSize: 13, fontFamily: FONT, outline: "none", background: C.bg }} />
                 <button onClick={addTag} disabled={!ujTag.trim()}
-                  style={{ padding: "9px 14px", border: "none", background: ujTag.trim() ? "#2563EB" : "#E2E8F0", color: "#fff", borderRadius: 9, cursor: ujTag.trim() ? "pointer" : "default", fontWeight: 700 }}>
+                  style={{ padding: "9px 14px", border: "none", background: ujTag.trim() ? C.accent : C.border, color: "#fff", borderRadius: 9, cursor: ujTag.trim() ? "pointer" : "default", fontWeight: 700 }}>
                   +
                 </button>
               </div>
@@ -303,9 +303,9 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
           {step === "alairas" && (
             <div>
               {/* Összefoglaló – mire írnak alá */}
-              <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12 }}>
-                <p style={{ fontWeight: 700, color: "#166534", margin: "0 0 4px" }}>✅ Kockázatok értékelve ({fennallo.length} fennálló)</p>
-                <p style={{ color: "#166534", margin: 0 }}>
+              <div style={{ background: C.successLight, border: `1px solid ${C.success}`, borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12 }}>
+                <p style={{ fontWeight: 700, color: C.success, margin: "0 0 4px" }}>✅ Kockázatok értékelve ({fennallo.length} fennálló)</p>
+                <p style={{ color: C.success, margin: 0 }}>
                   Aláírásommal igazolom, hogy a kockázatokat és a munkavégzés veszélyeit megismertem,
                   a munkát a munkabiztonsági szabályok betartásával végzem.
                 </p>
@@ -315,9 +315,9 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
                 {aktivTagok.map((t, i) => (
                   <span key={i} style={{ fontSize: 12, fontWeight: 700, padding: "4px 11px", borderRadius: 20,
-                    background: i < alairiasok.length ? "#ECFDF5" : i === alairasSor ? "#EFF6FF" : "#F8FAFC",
-                    color:      i < alairiasok.length ? "#059669"  : i === alairasSor ? "#2563EB"  : "#94A3B8",
-                    border: `1px solid ${i < alairiasok.length ? "#86EFAC" : i === alairasSor ? "#BFDBFE" : "#E2E8F0"}` }}>
+                    background: i < alairiasok.length ? C.successLight : i === alairasSor ? C.accentLight : C.bg,
+                    color:      i < alairiasok.length ? C.success  : i === alairasSor ? C.accent  : C.muted,
+                    border: `1px solid ${i < alairiasok.length ? C.success : i === alairasSor ? C.accentLight : C.border}` }}>
                     {i < alairiasok.length ? "✓ " : i === alairasSor ? "→ " : ""}{t}
                   </span>
                 ))}
@@ -337,19 +337,19 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
           {/* ── KÉSZ ── */}
           {step === "kesz" && (
             <div style={{ textAlign: "center", padding: "24px 0" }}>
-              <div style={{ width: 70, height: 70, borderRadius: "50%", background: "#ECFDF5", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-                <Shield size={34} color="#059669" />
+              <div style={{ width: 70, height: 70, borderRadius: "50%", background: C.successLight, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                <Shield size={34} color={C.success} />
               </div>
               <p style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: "0 0 6px" }}>LMRA kész!</p>
               <p style={{ fontSize: 13, color: C.muted, margin: "0 0 4px" }}>{fejlec.idopont}</p>
               <p style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: "0 0 14px" }}>{fejlec.munka}</p>
               <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginBottom: 14 }}>
                 {alairiasok.map((a, i) => (
-                  <span key={i} style={{ fontSize: 12, background: "#ECFDF5", color: "#059669", padding: "3px 12px", borderRadius: 20, fontWeight: 700 }}>✓ {a.nev}</span>
+                  <span key={i} style={{ fontSize: 12, background: C.successLight, color: C.success, padding: "3px 12px", borderRadius: 20, fontWeight: 700 }}>✓ {a.nev}</span>
                 ))}
               </div>
               {fennallo.length > 0 && (
-                <p style={{ fontSize: 12, background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 8, padding: "8px 14px", color: "#92400E", display: "inline-block" }}>
+                <p style={{ fontSize: 12, background: C.warningLight, border: `1px solid ${C.warningLight}`, borderRadius: 8, padding: "8px 14px", color: C.warning, display: "inline-block" }}>
                   ⚠️ Fennálló kockázat: {fennallo.length} db — intézkedés szükséges
                 </p>
               )}
@@ -358,28 +358,28 @@ export default function LmraModal({ munkalap, onClose, onComplete }) {
         </div>
 
         {/* ── Footer gombok ── */}
-        <div style={{ padding: "12px 16px", borderTop: "1px solid #E2E8F0", flexShrink: 0 }}>
+        <div style={{ padding: "12px 16px", borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
           {step === "kockazat" && (
             <button onClick={() => setStep("tagok")} disabled={!mindenKitoltve}
-              style={{ width: "100%", padding: "14px", border: "none", borderRadius: 11, background: mindenKitoltve ? "#2563EB" : "#E2E8F0", color: "#fff", fontWeight: 700, fontSize: 15, cursor: mindenKitoltve ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
+              style={{ width: "100%", padding: "14px", border: "none", borderRadius: 11, background: mindenKitoltve ? C.accent : C.border, color: "#fff", fontWeight: 700, fontSize: 15, cursor: mindenKitoltve ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
               Tovább: Csapattagok <ChevronRight size={17} />
             </button>
           )}
           {step === "tagok" && (
             <div style={{ display: "flex", gap: 9 }}>
               <button onClick={() => setStep("kockazat")}
-                style={{ flex: 1, padding: "13px", border: "1.5px solid #E2E8F0", borderRadius: 10, background: "#fff", cursor: "pointer", fontWeight: 600, fontFamily: FONT }}>
+                style={{ flex: 1, padding: "13px", border: `1.5px solid ${C.border}`, borderRadius: 10, background: "#fff", cursor: "pointer", fontWeight: 600, fontFamily: FONT }}>
                 ← Vissza
               </button>
               <button onClick={() => setStep("alairas")} disabled={!aktivTagok.length}
-                style={{ flex: 2, padding: "13px", border: "none", borderRadius: 10, background: aktivTagok.length ? "#2563EB" : "#E2E8F0", color: "#fff", fontWeight: 700, fontSize: 14, cursor: aktivTagok.length ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
+                style={{ flex: 2, padding: "13px", border: "none", borderRadius: 10, background: aktivTagok.length ? C.accent : C.border, color: "#fff", fontWeight: 700, fontSize: 14, cursor: aktivTagok.length ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
                 Tovább: Aláírások <ChevronRight size={16} />
               </button>
             </div>
           )}
           {step === "kesz" && (
             <button onClick={onClose}
-              style={{ width: "100%", padding: "14px", border: "none", borderRadius: 11, background: "#059669", color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
+              style={{ width: "100%", padding: "14px", border: "none", borderRadius: 11, background: C.success, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
               <Check size={17} /> Munka megkezdése →
             </button>
           )}

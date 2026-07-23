@@ -39,7 +39,7 @@ function AlairasMezo({ nev, onSave }) {
     c.height = c.offsetHeight * r;
     const ctx = c.getContext("2d");
     ctx.scale(r, r);
-    ctx.strokeStyle = "#1e293b";
+    ctx.strokeStyle = C.text;
     ctx.lineWidth   = 2.5;
     ctx.lineCap     = "round";
     ctx.lineJoin    = "round";
@@ -68,7 +68,7 @@ function AlairasMezo({ nev, onSave }) {
 
   return (
     <div style={{ background: "#fff", borderRadius: 12, padding: "16px", border: `1.5px solid ${C.border}` }}>
-      <p style={{ textAlign: "center", fontWeight: 800, fontSize: 16, color: "#1D4ED8", margin: "0 0 12px" }}>
+      <p style={{ textAlign: "center", fontWeight: 800, fontSize: 16, color: C.accent, margin: "0 0 12px" }}>
         ✍️ {nev}
       </p>
       <div style={{ border: "2px solid #1e3a5c", borderRadius: 10, overflow: "hidden", position: "relative", height: 170 }}>
@@ -80,16 +80,16 @@ function AlairasMezo({ nev, onSave }) {
         />
         {!has && (
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-            <p style={{ fontSize: 14, color: "#CBD5E1", fontStyle: "italic" }}>Ide rajzolja az aláírást</p>
+            <p style={{ fontSize: 14, color: C.border, fontStyle: "italic" }}>Ide rajzolja az aláírást</p>
           </div>
         )}
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <button onClick={clear} style={{ flex: 1, padding: "11px", border: "1.5px solid #E2E8F0", borderRadius: 9, background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: FONT, fontSize: 13 }}>
+        <button onClick={clear} style={{ flex: 1, padding: "11px", border: `1.5px solid ${C.border}`, borderRadius: 9, background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: FONT, fontSize: 13 }}>
           <RotateCcw size={13} /> Törlés
         </button>
         <button onClick={() => onSave(ref.current.toDataURL("image/png"))} disabled={!has}
-          style={{ flex: 2, padding: "11px", border: "none", borderRadius: 9, background: has ? "#059669" : "#E2E8F0", color: "#fff", cursor: has ? "pointer" : "default", fontWeight: 800, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
+          style={{ flex: 2, padding: "11px", border: "none", borderRadius: 9, background: has ? C.success : C.border, color: "#fff", cursor: has ? "pointer" : "default", fontWeight: 800, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
           <Check size={16} /> Aláírva →
         </button>
       </div>
@@ -121,10 +121,10 @@ function IdeiglenesForm({ kiosztasok, onAdd, onClose }) {
 
   return (
     <div style={{ background: "#FFF7ED", border: "1.5px solid #FED7AA", borderRadius: 12, padding: "14px 16px", marginTop: 12 }}>
-      <p style={{ fontSize: 12, fontWeight: 700, color: "#92400E", margin: "0 0 10px", display: "flex", alignItems: "center", gap: 5 }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: C.warning, margin: "0 0 10px", display: "flex", alignItems: "center", gap: 5 }}>
         <UserPlus size={13} /> Ideiglenes dolgozó hozzáadása
       </p>
-      {hiba && <p style={{ fontSize: 12, color: "#DC2626", margin: "0 0 8px", fontWeight: 600 }}>{hiba}</p>}
+      {hiba && <p style={{ fontSize: 12, color: C.danger, margin: "0 0 8px", fontWeight: 600 }}>{hiba}</p>}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <input
@@ -152,7 +152,7 @@ function IdeiglenesForm({ kiosztasok, onAdd, onClose }) {
         </div>
 
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "9px", border: "1.5px solid #E2E8F0", borderRadius: 8, background: "#fff", cursor: "pointer", fontFamily: FONT, fontSize: 13 }}>Mégse</button>
+          <button onClick={onClose} style={{ flex: 1, padding: "9px", border: `1.5px solid ${C.border}`, borderRadius: 8, background: "#fff", cursor: "pointer", fontFamily: FONT, fontSize: 13 }}>Mégse</button>
           <button onClick={handleAdd} style={{ flex: 2, padding: "9px", border: "none", borderRadius: 8, background: "#EA580C", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
             + Hozzáadás
           </button>
@@ -185,8 +185,8 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
     return (
       <div style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,0.82)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20 }}>
         <div style={{ background: "#fff", borderRadius: 16, padding: "32px 28px", maxWidth: 420, textAlign: "center" }}>
-          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#FFFBEB", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-            <AlertTriangle size={30} color="#D97706" />
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: C.warningLight, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+            <AlertTriangle size={30} color={C.warning} />
           </div>
           <p style={{ fontWeight: 800, fontSize: 17, color: C.text, margin: "0 0 8px" }}>LMRA nincs előkészítve</p>
           <p style={{ fontSize: 13, color: C.muted, margin: "0 0 20px", lineHeight: 1.6 }}>
@@ -284,8 +284,8 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
     return (
       <div style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,0.82)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20 }}>
         <div style={{ background: "#fff", borderRadius: 16, padding: "28px 24px", maxWidth: 440, width: "100%", textAlign: "center" }}>
-          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#ECFDF5", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-            <Shield size={30} color="#059669" />
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: C.successLight, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+            <Shield size={30} color={C.success} />
           </div>
           <p style={{ fontWeight: 800, fontSize: 18, color: C.text, margin: "0 0 6px" }}>LMRA lezárva</p>
           <p style={{ fontSize: 13, color: C.muted, margin: "0 0 16px" }}>
@@ -293,7 +293,7 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 7, justifyContent: "center", marginBottom: 20 }}>
             {resztvevok.map(r => (
-              <span key={r.id} style={{ fontSize: 13, background: r.signed ? "#ECFDF5" : "#F1F5F9", color: r.signed ? "#059669" : "#64748B", padding: "4px 13px", borderRadius: 20, fontWeight: 700 }}>
+              <span key={r.id} style={{ fontSize: 13, background: r.signed ? C.successLight : C.bg, color: r.signed ? C.success : C.muted, padding: "4px 13px", borderRadius: 20, fontWeight: 700 }}>
                 {r.signed ? "✓ " : "○ "}{r.nev}
               </span>
             ))}
@@ -302,7 +302,7 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
             <button onClick={() => downloadLmraPdf(rec, munkalap, currentUser?.name)} style={{ padding: "11px 24px", background: "#1e3a5c", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: FONT }}>
               📄 LMRA PDF letöltése
             </button>
-            <button onClick={onClose} style={{ padding: "12px 32px", background: "#059669", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 15, fontFamily: FONT }}>
+            <button onClick={onClose} style={{ padding: "12px 32px", background: C.success, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 15, fontFamily: FONT }}>
               <Check size={16} style={{ display: "inline", marginRight: 7, verticalAlign: "middle" }} />
               Munka megkezdése →
             </button>
@@ -319,12 +319,12 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
         {/* ── Header ── */}
         <div style={{ background: "#1e3a5c", padding: "13px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Shield size={19} color="#FCD34D" />
+            <Shield size={19} color={C.warningLight} />
             <div>
               <p style={{ color: "#fff", fontWeight: 800, fontSize: 14, margin: 0, fontFamily: FONT_HEADING }}>
                 LMRA – Munkavégzést megelőző kockázatértékelés
               </p>
-              <p style={{ color: "#FCD34D", fontSize: 12, margin: 0, fontWeight: 600 }}>
+              <p style={{ color: C.warningLight, fontSize: 12, margin: 0, fontWeight: 600 }}>
                 {munkalap.dokumentumszam || munkalap.munkalapSzam || munkalap.id}
                 {kiosztasok.length > 0 ? ` · ${kiosztasok.map(k => k.csapatNev || "").filter(Boolean).join(", ")}` : munkalap.csapatNev ? ` · ${munkalap.csapatNev}` : ""}
               </p>
@@ -337,7 +337,7 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
 
         {/* ── Lépés jelző ── */}
         {step !== "kesz" && (
-          <div style={{ display: "flex", background: "#F8FAFC", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+          <div style={{ display: "flex", background: C.bg, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
             {STEPS.map((id, i) => {
               const aktIdx = STEPS.indexOf(step);
               const done   = aktIdx > i;
@@ -345,9 +345,9 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
               return (
                 <div key={id} onClick={() => done && setStep(id)}
                   style={{ flex: 1, padding: "9px 4px", display: "flex", alignItems: "center", justifyContent: "center",
-                    borderBottom: active ? "3px solid #2563EB" : "3px solid transparent",
+                    borderBottom: active ? `3px solid ${C.accent}` : "3px solid transparent",
                     opacity: done || active ? 1 : 0.4, cursor: done ? "pointer" : "default" }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: active ? "#2563EB" : done ? "#059669" : "#94A3B8" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: active ? C.accent : done ? C.success : C.muted }}>
                     {done ? "✓ " : ""}{STEP_LABELS[i]}
                   </span>
                 </div>
@@ -362,9 +362,9 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
           {/* ── LÉPÉS 1: KOCKÁZATOK ── */}
           {step === "kockazatok" && (
             <div>
-              <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 14px", marginBottom: 14, display: "flex", gap: 8, alignItems: "center" }}>
-                <Lock size={14} color="#1D4ED8" style={{ flexShrink: 0 }} />
-                <p style={{ margin: 0, fontSize: 12, color: "#1D4ED8" }}>
+              <div style={{ background: C.accentLight, border: `1px solid ${C.accentLight}`, borderRadius: 10, padding: "10px 14px", marginBottom: 14, display: "flex", gap: 8, alignItems: "center" }}>
+                <Lock size={14} color={C.accent} style={{ flexShrink: 0 }} />
+                <p style={{ margin: 0, fontSize: 12, color: C.accent }}>
                   A kockázatokat az Admin / Projektmenedzser állította össze – te csak megtekintheted.
                   {rec.elokeszitette ? ` (Előkészítette: ${rec.elokeszitette})` : ""}
                 </p>
@@ -375,10 +375,10 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                   {kivalasztott.map(k => (
-                    <div key={k.id} style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10, padding: "10px 14px" }}>
-                      <p style={{ margin: 0, fontSize: 13, color: "#991B1B", fontWeight: 600, lineHeight: 1.4 }}>⚠️ {k.szoveg}</p>
+                    <div key={k.id} style={{ background: C.dangerLight, border: `1.5px solid ${C.dangerLight}`, borderRadius: 10, padding: "10px 14px" }}>
+                      <p style={{ margin: 0, fontSize: 13, color: C.dangerDark, fontWeight: 600, lineHeight: 1.4 }}>⚠️ {k.szoveg}</p>
                       {k.megelozoIntezkedes && (
-                        <p style={{ margin: "6px 0 0", fontSize: 12, color: "#DC2626", background: "#FFF1F2", padding: "5px 8px", borderRadius: 6 }}>
+                        <p style={{ margin: "6px 0 0", fontSize: 12, color: C.danger, background: "#FFF1F2", padding: "5px 8px", borderRadius: 6 }}>
                           <strong>Intézkedés:</strong> {k.megelozoIntezkedes}
                         </p>
                       )}
@@ -394,7 +394,7 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
                   </summary>
                   <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                     {(rec.kockazatok || []).filter(k => !k.kivalasztva).map(k => (
-                      <div key={k.id} style={{ fontSize: 12, color: C.muted, padding: "6px 10px", background: "#F8FAFC", borderRadius: 7, border: `1px solid ${C.border}` }}>
+                      <div key={k.id} style={{ fontSize: 12, color: C.muted, padding: "6px 10px", background: C.bg, borderRadius: 7, border: `1px solid ${C.border}` }}>
                         ✓ {k.szoveg}
                       </div>
                     ))}
@@ -426,22 +426,22 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
                   {resztvevok.map(r => (
                     <div key={r.id} style={{
                       display: "flex", alignItems: "center", gap: 8, padding: "10px 12px",
-                      background: r.signed ? "#ECFDF5" : r.jelenVan === false ? "#F8FAFC" : "#FAFAFA",
-                      border: `1px solid ${r.signed ? "#86EFAC" : C.border}`,
+                      background: r.signed ? C.successLight : r.jelenVan === false ? C.bg : "#FAFAFA",
+                      border: `1px solid ${r.signed ? C.success : C.border}`,
                       borderRadius: 9, marginBottom: 6, opacity: r.jelenVan === false ? .7 : 1,
                     }}>
                       {/* jelenVan toggle */}
                       <div
                         onClick={() => !r.signed && handleToggleJelenVan(r.id, r.jelenVan === false)}
                         style={{ width: 36, height: 20, borderRadius: 10, position: "relative", cursor: r.signed ? "default" : "pointer", flexShrink: 0,
-                          background: r.jelenVan !== false ? "#059669" : "#CBD5E1", transition: "background .2s" }}
+                          background: r.jelenVan !== false ? C.success : C.border, transition: "background .2s" }}
                       >
                         <div style={{ position: "absolute", top: 2, left: r.jelenVan !== false ? 18 : 2, width: 16, height: 16,
                           borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
                       </div>
 
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: r.signed ? "#059669" : r.jelenVan === false ? C.muted : C.text }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: r.signed ? C.success : r.jelenVan === false ? C.muted : C.text }}>
                           {r.signed ? "✓ " : r.jelenVan === false ? "— " : ""}{r.nev}
                           {r.signed && r.signedAt && (
                             <span style={{ fontWeight: 400, fontSize: 11, marginLeft: 6, color: C.muted }}>
@@ -450,7 +450,7 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
                           )}
                         </p>
                         <div style={{ display: "flex", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
-                          {r.csapatNev && <span style={{ fontSize: 10, background: "#EFF6FF", color: "#2563EB", padding: "1px 6px", borderRadius: 20, fontWeight: 600 }}>{r.csapatNev}</span>}
+                          {r.csapatNev && <span style={{ fontSize: 10, background: C.accentLight, color: C.accent, padding: "1px 6px", borderRadius: 20, fontWeight: 600 }}>{r.csapatNev}</span>}
                           {r.szerep    && <span style={{ fontSize: 10, color: C.muted }}>{r.szerep}</span>}
                           {r.ideiglenes && <span style={{ fontSize: 10, background: "#FFF7ED", color: "#C2410C", padding: "1px 6px", borderRadius: 20, fontWeight: 600 }}>Ideiglenes</span>}
                           {r.jelenVan === false && <span style={{ fontSize: 10, color: C.muted }}>Nem jelen</span>}
@@ -459,7 +459,7 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
 
                       {!r.signed && (
                         <button onClick={() => handleRemove(r.id)}
-                          style={{ padding: "4px 7px", background: "#FEF2F2", border: "none", borderRadius: 6, cursor: "pointer", color: "#DC2626", flexShrink: 0 }}>
+                          style={{ padding: "4px 7px", background: C.dangerLight, border: "none", borderRadius: 6, cursor: "pointer", color: C.danger, flexShrink: 0 }}>
                           <X size={13} />
                         </button>
                       )}
@@ -483,7 +483,7 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
                       </select>
                     </div>
                     <button onClick={handleAddFromList} disabled={!ujNevFromList}
-                      style={{ padding: "10px 18px", border: "none", background: ujNevFromList ? C.accent : "#E2E8F0", color: "#fff", borderRadius: 9, cursor: ujNevFromList ? "pointer" : "default", fontWeight: 700, fontSize: 15 }}>+</button>
+                      style={{ padding: "10px 18px", border: "none", background: ujNevFromList ? C.accent : C.border, color: "#fff", borderRadius: 9, cursor: ujNevFromList ? "pointer" : "default", fontWeight: 700, fontSize: 15 }}>+</button>
                   </div>
                 </div>
               )}
@@ -494,16 +494,16 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
                 <div style={{ display: "flex", gap: 7 }}>
                   <input value={ujNev} onChange={e => setUjNev(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAddManual()}
                     placeholder="Teljes név…"
-                    style={{ flex: 1, padding: "10px 12px", border: `1.5px dashed ${C.border}`, borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none", background: "#F8FAFC" }} />
+                    style={{ flex: 1, padding: "10px 12px", border: `1.5px dashed ${C.border}`, borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none", background: C.bg }} />
                   <button onClick={handleAddManual} disabled={!ujNev.trim()}
-                    style={{ padding: "10px 18px", border: "none", background: ujNev.trim() ? "#059669" : "#E2E8F0", color: "#fff", borderRadius: 9, cursor: ujNev.trim() ? "pointer" : "default", fontWeight: 700, fontSize: 15 }}>+</button>
+                    style={{ padding: "10px 18px", border: "none", background: ujNev.trim() ? C.success : C.border, color: "#fff", borderRadius: 9, cursor: ujNev.trim() ? "pointer" : "default", fontWeight: 700, fontSize: 15 }}>+</button>
                 </div>
               </div>
 
               {/* Ideiglenes dolgozó */}
               <button
                 onClick={() => setShowIdeiglenes(s => !s)}
-                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: showIdeiglenes ? "#FFF7ED" : "#F8FAFC", border: `1px dashed ${showIdeiglenes ? "#FED7AA" : "#E2E8F0"}`, borderRadius: 9, cursor: "pointer", fontFamily: FONT, fontSize: 12, fontWeight: 600, color: showIdeiglenes ? "#C2410C" : "#64748B" }}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: showIdeiglenes ? "#FFF7ED" : C.bg, border: `1px dashed ${showIdeiglenes ? "#FED7AA" : C.border}`, borderRadius: 9, cursor: "pointer", fontFamily: FONT, fontSize: 12, fontWeight: 600, color: showIdeiglenes ? "#C2410C" : C.muted }}
               >
                 <UserPlus size={13} /> + Ideiglenes dolgozó hozzáadása
               </button>
@@ -521,11 +521,11 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
           {/* ── LÉPÉS 3: ALÁÍRÁSOK ── */}
           {step === "alairas" && (
             <div>
-              <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12 }}>
-                <p style={{ fontWeight: 700, color: "#166534", margin: "0 0 4px" }}>
+              <div style={{ background: C.successLight, border: `1px solid ${C.success}`, borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12 }}>
+                <p style={{ fontWeight: 700, color: C.success, margin: "0 0 4px" }}>
                   ✅ {kivalasztott.length} kockázat ellenőrizve · {jelenLevok.length} jelen lévő aláír
                 </p>
-                <p style={{ color: "#166534", margin: 0 }}>
+                <p style={{ color: C.success, margin: 0 }}>
                   Aláírásommal igazolom, hogy a kockázatokat megismertem, a munkát a munkabiztonsági szabályok betartásával végzem.
                 </p>
               </div>
@@ -537,15 +537,15 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
                     style={{
                       fontSize: 12, fontWeight: 700, padding: "5px 13px", borderRadius: 20,
                       cursor: r.signed ? "default" : "pointer",
-                      background: r.signed ? "#ECFDF5" : i === kivalasztottIdx ? "#EFF6FF" : "#F8FAFC",
-                      color:      r.signed ? "#059669"  : i === kivalasztottIdx ? "#2563EB"  : "#94A3B8",
-                      border: `1px solid ${r.signed ? "#86EFAC" : i === kivalasztottIdx ? "#BFDBFE" : "#E2E8F0"}`,
+                      background: r.signed ? C.successLight : i === kivalasztottIdx ? C.accentLight : C.bg,
+                      color:      r.signed ? C.success  : i === kivalasztottIdx ? C.accent  : C.muted,
+                      border: `1px solid ${r.signed ? C.success : i === kivalasztottIdx ? C.accentLight : C.border}`,
                     }}>
                     {r.signed ? "✓ " : i === kivalasztottIdx ? "→ " : ""}{r.nev}
                   </span>
                 ))}
                 {resztvevok.filter(r => r.jelenVan === false).map(r => (
-                  <span key={r.id} style={{ fontSize: 12, padding: "5px 13px", borderRadius: 20, background: "#F8FAFC", color: "#CBD5E1", border: "1px solid #E2E8F0", textDecoration: "line-through" }}>
+                  <span key={r.id} style={{ fontSize: 12, padding: "5px 13px", borderRadius: 20, background: C.bg, color: C.border, border: `1px solid ${C.border}`, textDecoration: "line-through" }}>
                     {r.nev}
                   </span>
                 ))}
@@ -556,8 +556,8 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
               )}
 
               {mindenAlairt && (
-                <div style={{ background: "#ECFDF5", border: "1px solid #86EFAC", borderRadius: 10, padding: "12px 16px", marginTop: 14, textAlign: "center" }}>
-                  <p style={{ fontWeight: 800, fontSize: 15, color: "#059669", margin: 0 }}>✅ Mindenki aláírt! Az LMRA lezárható.</p>
+                <div style={{ background: C.successLight, border: `1px solid ${C.success}`, borderRadius: 10, padding: "12px 16px", marginTop: 14, textAlign: "center" }}>
+                  <p style={{ fontWeight: 800, fontSize: 15, color: C.success, margin: 0 }}>✅ Mindenki aláírt! Az LMRA lezárható.</p>
                 </div>
               )}
 
@@ -570,8 +570,8 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
           {/* ── KÉSZ ── */}
           {step === "kesz" && (
             <div style={{ textAlign: "center", padding: "28px 0" }}>
-              <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#ECFDF5", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                <Shield size={34} color="#059669" />
+              <div style={{ width: 72, height: 72, borderRadius: "50%", background: C.successLight, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <Shield size={34} color={C.success} />
               </div>
               <p style={{ fontSize: 19, fontWeight: 800, color: C.text, margin: "0 0 6px" }}>LMRA lezárva!</p>
               <p style={{ fontSize: 13, color: C.muted, margin: "0 0 16px" }}>
@@ -579,7 +579,7 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
               </p>
               <div style={{ display: "flex", gap: 7, justifyContent: "center", flexWrap: "wrap", marginBottom: 16 }}>
                 {resztvevok.filter(r => r.signed).map(r => (
-                  <span key={r.id} style={{ fontSize: 13, background: "#ECFDF5", color: "#059669", padding: "4px 14px", borderRadius: 20, fontWeight: 700 }}>✓ {r.nev}</span>
+                  <span key={r.id} style={{ fontSize: 13, background: C.successLight, color: C.success, padding: "4px 14px", borderRadius: 20, fontWeight: 700 }}>✓ {r.nev}</span>
                 ))}
               </div>
             </div>
@@ -601,7 +601,7 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
                 ← Vissza
               </button>
               <button onClick={() => setStep("alairas")} disabled={resztvevok.filter(r => r.jelenVan !== false).length === 0}
-                style={{ flex: 2, padding: "13px", border: "none", borderRadius: 10, background: resztvevok.filter(r => r.jelenVan !== false).length > 0 ? C.accent : "#E2E8F0", color: "#fff", fontWeight: 800, fontSize: 15, cursor: resztvevok.filter(r => r.jelenVan !== false).length > 0 ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
+                style={{ flex: 2, padding: "13px", border: "none", borderRadius: 10, background: resztvevok.filter(r => r.jelenVan !== false).length > 0 ? C.accent : C.border, color: "#fff", fontWeight: 800, fontSize: 15, cursor: resztvevok.filter(r => r.jelenVan !== false).length > 0 ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
                 Tovább: Aláírások <ChevronRight size={16} />
               </button>
             </div>
@@ -613,7 +613,7 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
                 ← Vissza
               </button>
               <button onClick={handleLezaras} disabled={!mindenAlairt}
-                style={{ flex: 2, padding: "13px", border: "none", borderRadius: 10, background: mindenAlairt ? "#059669" : "#E2E8F0", color: "#fff", fontWeight: 800, fontSize: 15, cursor: mindenAlairt ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
+                style={{ flex: 2, padding: "13px", border: "none", borderRadius: 10, background: mindenAlairt ? C.success : C.border, color: "#fff", fontWeight: 800, fontSize: 15, cursor: mindenAlairt ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
                 <Check size={16} /> LMRA Lezárása
               </button>
             </div>
@@ -625,7 +625,7 @@ export default function LmraTelepltoView({ munkalap, currentUser, onClose, onCom
                 📄 LMRA PDF letöltése
               </button>
               <button onClick={onClose}
-                style={{ width: "100%", padding: "14px", border: "none", borderRadius: 11, background: "#059669", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
+                style={{ width: "100%", padding: "14px", border: "none", borderRadius: 11, background: C.success, color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: FONT }}>
                 <Check size={17} /> Munka megkezdése →
               </button>
             </div>

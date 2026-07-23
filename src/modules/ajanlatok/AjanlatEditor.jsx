@@ -37,7 +37,7 @@ function TabBtn({ active, label, step, onClick }) {
       borderBottom: `2.5px solid ${active ? C.accent : "transparent"}`,
       transition: "all .15s",
     }}>
-      <span style={{ fontSize: 11, background: active ? C.accentLight : "#F1F5F9", color: active ? C.accent : C.muted, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, marginRight: 6, fontWeight: 800 }}>{step}</span>
+      <span style={{ fontSize: 11, background: active ? C.accentLight : C.bg, color: active ? C.accent : C.muted, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, marginRight: 6, fontWeight: 800 }}>{step}</span>
       {label}
     </button>
   );
@@ -458,7 +458,7 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
               </div>
             </div>
             {alacsonyAnyagHaszon(foTetel.haszonPct) && (
-              <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: "#B45309", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 7, padding: "7px 10px" }}>
+              <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: C.warning, background: C.warningLight, border: `1px solid ${C.warningLight}`, borderRadius: 7, padding: "7px 10px" }}>
                 ⚠ 30% alatti anyag haszon
               </div>
             )}
@@ -480,7 +480,7 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
           <textarea value={foTetel.belso_megjegyzes || ""} rows={2}
             onChange={e => updFo(def.id, "belso_megjegyzes", e.target.value)}
             placeholder="pl. szállítási idő, gyártói info, alternatívák..."
-            style={{ ...INP, resize: "vertical", background: "#FFFBEB", borderColor: "#FDE68A" }} />
+            style={{ ...INP, resize: "vertical", background: C.warningLight, borderColor: C.warningLight }} />
         </div>
       </div>
     );
@@ -545,9 +545,9 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
                   <td style={{ padding: "5px 8px", width: 130, textAlign: "right", whiteSpace: "nowrap" }}>
                     {vanKoltsegbazis ? (
                       <span>
-                        <span style={{ fontWeight: 700, color: alacsonyAnyagHaszon(haszonPct) ? "#B45309" : C.accentDark }}>{ft(haszonFt)}</span>
+                        <span style={{ fontWeight: 700, color: alacsonyAnyagHaszon(haszonPct) ? C.warning : C.accentDark }}>{ft(haszonFt)}</span>
                         <span style={{ fontSize: 10, color: C.muted }}> ({haszonPct != null ? haszonPct.toFixed(0) : "—"}%)</span>
-                        {alacsonyAnyagHaszon(haszonPct) && <div style={{ fontSize: 10, fontWeight: 700, color: "#B45309" }}>⚠ 30% alatti anyag haszon</div>}
+                        {alacsonyAnyagHaszon(haszonPct) && <div style={{ fontSize: 10, fontWeight: 700, color: C.warning }}>⚠ 30% alatti anyag haszon</div>}
                       </span>
                     ) : (
                       <span style={{ fontSize: 11, color: C.muted, fontStyle: "italic" }}>nincs költségbázis</span>
@@ -557,7 +557,7 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
                     {t.netto_osszeg > 0 ? ft(t.netto_osszeg) : "—"}
                   </td>
                   <td style={{ padding: "5px 8px", width: 32 }}>
-                    <button onClick={() => delReszlet(t.id)} style={{ border: "none", background: "#FEF2F2", borderRadius: 6, cursor: "pointer", padding: "4px 6px", color: C.danger }}>
+                    <button onClick={() => delReszlet(t.id)} style={{ border: "none", background: C.dangerLight, borderRadius: 6, cursor: "pointer", padding: "4px 6px", color: C.danger }}>
                       <Trash2 size={12} />
                     </button>
                   </td>
@@ -680,7 +680,7 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
           }
 
           const borderColor = foTetel.aktiv
-            ? (def.termek ? C.border : (def.osszetett ? "#C4B5FD" : C.border))
+            ? (def.termek ? C.border : (def.osszetett ? C.accentLight : C.border))
             : "#EEF0F3";
 
           return (
@@ -702,7 +702,7 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
                   <div style={{ fontWeight: 600, fontSize: 14, color: foTetel.aktiv ? C.text : C.muted }}>
                     {def.label}
                     {def.osszetett && (
-                      <span style={{ marginLeft: 8, fontSize: 10, background: "#EDE9FE", color: "#7C3AED", borderRadius: 4, padding: "1px 6px", fontWeight: 700 }}>
+                      <span style={{ marginLeft: 8, fontSize: 10, background: "#EDE9FE", color: C.accent, borderRadius: 4, padding: "1px 6px", fontWeight: 700 }}>
                         összetett
                       </span>
                     )}
@@ -928,7 +928,7 @@ export default function AjanlatEditor({ ajanlat, onBack, onSaved, currentUser })
       </div>
 
       {hiba && (
-        <div style={{ background: C.dangerLight, border: `1.5px solid #FECACA`, borderRadius: 10, padding: "10px 14px", fontSize: 13, color: C.danger, fontWeight: 600, marginBottom: 14 }}>
+        <div style={{ background: C.dangerLight, border: `1.5px solid ${C.dangerLight}`, borderRadius: 10, padding: "10px 14px", fontSize: 13, color: C.danger, fontWeight: 600, marginBottom: 14 }}>
           ⚠ {hiba}
         </div>
       )}

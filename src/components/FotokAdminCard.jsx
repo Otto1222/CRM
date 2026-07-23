@@ -46,7 +46,7 @@ export default function FotokAdminCard({ munkalapId }) {
   }, [munkalapId]);
 
   if (!fotok) return (
-    <div style={{ background:"#F8FAFC", border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", marginTop:16 }}>
+    <div style={{ background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", marginTop:16 }}>
       <p style={{ fontSize:13, fontWeight:700, color:C.muted }}>📷 Fotók — még nem töltöttek fel képeket</p>
     </div>
   );
@@ -71,7 +71,7 @@ export default function FotokAdminCard({ munkalapId }) {
         </div>
       </div>
 
-      <div style={{ background:"#F1F5F9", borderRadius:8, height:8, marginBottom:14, overflow:"hidden" }}>
+      <div style={{ background:C.bg, borderRadius:8, height:8, marginBottom:14, overflow:"hidden" }}>
         <div style={{ width:`${pct}%`, height:"100%", background: pct===100?C.success:C.accent, borderRadius:8, transition:"width .3s" }}/>
       </div>
 
@@ -80,7 +80,7 @@ export default function FotokAdminCard({ munkalapId }) {
           const db  = (fotok[kat.id]||[]).length;
           const van = db > 0;
           return (
-            <div key={kat.id} style={{ display:"flex", alignItems:"center", gap:5, background: van?"#F0FDF4":"#FEF2F2", borderRadius:8, padding:"5px 9px", border:`1px solid ${van?"#A7F3D0":"#FECACA"}` }}>
+            <div key={kat.id} style={{ display:"flex", alignItems:"center", gap:5, background: van?C.successLight:C.dangerLight, borderRadius:8, padding:"5px 9px", border:`1px solid ${van?C.success:C.dangerLight}` }}>
               {van ? <CheckCircle2 size={11} color={C.success} style={{ flexShrink:0 }}/> : <AlertTriangle size={11} color={C.danger} style={{ flexShrink:0 }}/>}
               <span style={{ fontSize:11, color:C.text, flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{kat.nev}</span>
               <span style={{ fontSize:12, fontWeight:700, color: van?C.success:C.danger, flexShrink:0 }}>{db}db</span>

@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { FONT } from "../lib/constants";
+import { C, FONT } from "../lib/constants";
 import { geocodeAddress } from "../lib/geoService";
 
 const INP_STYLE = {
   width: "100%",
   boxSizing: "border-box",
   padding: "9px 12px",
-  border: "1.5px solid #E2E8F0",
+  border: `1.5px solid ${C.border}`,
   borderRadius: 9,
   fontSize: 14,
   fontFamily: FONT,
@@ -74,7 +74,7 @@ export default function AddressSearch({ value, onChange, onSelect, placeholder, 
         {loading && (
           <span style={{
             position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-            fontSize: 11, color: "#94A3B8",
+            fontSize: 11, color: C.muted,
           }}>⏳</span>
         )}
       </div>
@@ -82,7 +82,7 @@ export default function AddressSearch({ value, onChange, onSelect, placeholder, 
       {open && results.length > 0 && (
         <div style={{
           position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
-          background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 9,
+          background: "#fff", border: `1.5px solid ${C.border}`, borderRadius: 9,
           boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 3000,
           maxHeight: 220, overflowY: "auto",
         }}>
@@ -95,25 +95,25 @@ export default function AddressSearch({ value, onChange, onSelect, placeholder, 
                 cursor: "pointer",
                 fontSize: 13,
                 fontFamily: FONT,
-                borderBottom: i < results.length - 1 ? "1px solid #F1F5F9" : "none",
+                borderBottom: i < results.length - 1 ? `1px solid ${C.bg}` : "none",
                 lineHeight: 1.4,
               }}
-              onMouseEnter={e => e.currentTarget.style.background = "#F0F9FF"}
+              onMouseEnter={e => e.currentTarget.style.background = C.accentLight}
               onMouseLeave={e => e.currentTarget.style.background = "transparent"}
             >
-              <span style={{ fontWeight: 600, color: "#0F172A" }}>
+              <span style={{ fontWeight: 600, color: C.text }}>
                 {r.address?.road
                   ? `${r.address.road}${r.address.house_number ? " " + r.address.house_number : ""}, ${r.address.city || r.address.town || r.address.village || ""}`
                   : r.display_name.split(",").slice(0, 3).join(",")}
               </span>
               <br />
-              <span style={{ fontSize: 11, color: "#94A3B8" }}>
+              <span style={{ fontSize: 11, color: C.muted }}>
                 {r.address?.postcode ? r.address.postcode + " " : ""}
                 {r.address?.county || ""}
               </span>
             </div>
           ))}
-          <div style={{ padding: "5px 12px 7px", fontSize: 10, color: "#CBD5E1", textAlign: "right" }}>
+          <div style={{ padding: "5px 12px 7px", fontSize: 10, color: C.border, textAlign: "right" }}>
             © OpenStreetMap
           </div>
         </div>

@@ -46,15 +46,15 @@ function calcBillingFromProject(projekt) {
 
 // ─── Eszköz kategóriák ────────────────────────────────────────
 const DEFAULT_ESZKOZ_KAT = [
-  { id:"inverter",  label:"Inverter",             icon:"⚡", szin:"#2563EB" },
-  { id:"akku",      label:"Akkumulátor",           icon:"🔋", szin:"#059669" },
-  { id:"akku_vez",  label:"Akkumulátor vezérlő",   icon:"🖥️", szin:"#9333EA" },
-  { id:"energia_m", label:"Energia mérő",          icon:"📊", szin:"#D97706" },
+  { id:"inverter",  label:"Inverter",             icon:"⚡", szin:C.accent },
+  { id:"akku",      label:"Akkumulátor",           icon:"🔋", szin:C.success },
+  { id:"akku_vez",  label:"Akkumulátor vezérlő",   icon:"🖥️", szin:C.accent },
+  { id:"energia_m", label:"Energia mérő",          icon:"📊", szin:C.warning },
   { id:"tarto",     label:"Tartószerkezet elemek", icon:"🏗️", szin:"#0891B2" },
-  { id:"ac_eszkoz", label:"AC eszközök",           icon:"🔌", szin:"#DC2626" },
-  { id:"dc_eszkoz", label:"DC eszközök",           icon:"⚡", szin:"#7C3AED" },
+  { id:"ac_eszkoz", label:"AC eszközök",           icon:"🔌", szin:C.danger },
+  { id:"dc_eszkoz", label:"DC eszközök",           icon:"⚡", szin:C.accent },
   { id:"panel",     label:"Napelem panel",         icon:"☀️", szin:"#CA8A04" },
-  { id:"egyeb",     label:"Egyéb anyagok",         icon:"📦", szin:"#64748B" },
+  { id:"egyeb",     label:"Egyéb anyagok",         icon:"📦", szin:C.muted },
 ];
 const LS_ESZKOZ = "crm_eszkoz_kategoriak";
 function getEszkozKat() {
@@ -88,9 +88,9 @@ function Field({ label, value, onChange, type="text", placeholder, area, require
       </label>
       {area
         ? <textarea value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={3}
-            style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical", background:"#F8FAFC" }}/>
+            style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical", background:C.bg }}/>
         : <input type={type} value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
-            style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}/>
+            style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }}/>
       }
     </div>
   );
@@ -115,7 +115,7 @@ function UgyfelField({ value, onChange, ugyfelek }) {
   return (
     <div style={{ marginBottom:14, position:"relative" }}>
       <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Ügyfél neve<span style={{ color:C.danger }}> *</span></label>
-      <div style={{ display:"flex", alignItems:"center", gap:8, background:"#F8FAFC", border:`1.5px solid ${C.border}`, borderRadius:9, padding:"0 12px" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, background:C.bg, border:`1.5px solid ${C.border}`, borderRadius:9, padding:"0 12px" }}>
         <Search size={15} color={C.muted} style={{ flexShrink:0 }}/>
         <input
           value={q}
@@ -167,7 +167,7 @@ function EszkozSection({ label, icon, szin, items, onChange }) {
         </div>
       ))}
       <div style={{ display:"flex", gap:8, marginTop:8 }}>
-        <input value={ujNev} onChange={e=>setUjNev(e.target.value)} onKeyDown={e=>e.key==="Enter"&&add()} placeholder="Eszköz neve…" style={{ flex:1, padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:13, fontFamily:FONT, outline:"none", background:"#F8FAFC" }}/>
+        <input value={ujNev} onChange={e=>setUjNev(e.target.value)} onKeyDown={e=>e.key==="Enter"&&add()} placeholder="Eszköz neve…" style={{ flex:1, padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:13, fontFamily:FONT, outline:"none", background:C.bg }}/>
         <input type="number" value={ujMenny} onChange={e=>setUjMenny(parseInt(e.target.value)||1)} style={{ width:56, padding:"9px 8px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:13, fontFamily:FONT, outline:"none", textAlign:"center" }}/>
         <input value={ujEgyseg} onChange={e=>setUjEgyseg(e.target.value)} style={{ width:48, padding:"9px 8px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:12, fontFamily:FONT, outline:"none" }} placeholder="db"/>
         <button onClick={add} style={{ padding:"9px 14px", background:szin||C.accent, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:18, fontFamily:FONT }}>+</button>
@@ -196,7 +196,7 @@ function FajlFeltoltes({ files, onChange }) {
         onDragOver={e=>{ e.preventDefault(); setDrag(true); }}
         onDragLeave={()=>setDrag(false)}
         onClick={()=>ref.current?.click()}
-        style={{ border:`2px dashed ${drag?C.accent:C.border}`, borderRadius:12, padding:"24px 16px", textAlign:"center", cursor:"pointer", background:drag?C.accentLight:"#F8FAFC", marginBottom:12 }}
+        style={{ border:`2px dashed ${drag?C.accent:C.border}`, borderRadius:12, padding:"24px 16px", textAlign:"center", cursor:"pointer", background:drag?C.accentLight:C.bg, marginBottom:12 }}
       >
         <Upload size={28} color={drag?C.accent:C.muted} style={{ display:"block", margin:"0 auto 8px" }}/>
         <p style={{ fontSize:14, fontWeight:600, color:drag?C.accent:C.text, marginBottom:4 }}>PDF, kép vagy dokumentum</p>
@@ -246,7 +246,7 @@ function SablonValaszto({ onSelect, onClose }) {
                   <p style={{ fontWeight:700, fontSize:14, color:C.text, margin:"0 0 3px" }}>{s.nev}</p>
                   {s.leiras && <p style={{ fontSize:11, color:C.muted, margin:"0 0 6px", lineHeight:1.4 }}>{s.leiras}</p>}
                   <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
-                    <span style={{ fontSize:11, color:C.muted, padding:"1px 6px", background:"#F8FAFC", borderRadius:4, border:`1px solid ${C.border}` }}>📝 {mezokDb} mező</span>
+                    <span style={{ fontSize:11, color:C.muted, padding:"1px 6px", background:C.bg, borderRadius:4, border:`1px solid ${C.border}` }}>📝 {mezokDb} mező</span>
                     {jelzok.map(j => <span key={j} style={{ fontSize:10, fontWeight:600, padding:"1px 5px", background:C.accentLight, color:C.accentDark, borderRadius:4 }}>{j}</span>)}
                   </div>
                 </div>
@@ -279,7 +279,7 @@ function SablonMezokSection({ sablon, mezokErtekek, onMezoChange }) {
       </div>
       {sablon.mezok.map(mezo => {
         const ertek = mezokErtekek[mezo.id] ?? "";
-        const inputStyle = { width:"100%", boxSizing:"border-box", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none", background:"#F8FAFC", color:C.text };
+        const inputStyle = { width:"100%", boxSizing:"border-box", padding:"9px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, outline:"none", background:C.bg, color:C.text };
         return (
           <div key={mezo.id} style={{ marginBottom:14 }}>
             <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>
@@ -314,7 +314,7 @@ function SablonMezokSection({ sablon, mezokErtekek, onMezoChange }) {
               <div style={{ display:"flex", gap:8 }}>
                 {["Igen","Nem"].map(v => (
                   <button key={v} onClick={() => onMezoChange(mezo.id, v)}
-                    style={{ flex:1, padding:"10px", border:`2px solid ${ertek===v ? (v==="Igen"?C.success:C.danger) : C.border}`, borderRadius:9, background: ertek===v ? (v==="Igen"?"#ECFDF5":"#FEF2F2") : "#fff", color: ertek===v ? (v==="Igen"?C.success:C.danger) : C.muted, fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:FONT }}>
+                    style={{ flex:1, padding:"10px", border:`2px solid ${ertek===v ? (v==="Igen"?C.success:C.danger) : C.border}`, borderRadius:9, background: ertek===v ? (v==="Igen"?C.successLight:C.dangerLight) : "#fff", color: ertek===v ? (v==="Igen"?C.success:C.danger) : C.muted, fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:FONT }}>
                     {v==="Igen"?"✅":"❌"} {v}
                   </button>
                 ))}
@@ -327,7 +327,7 @@ function SablonMezokSection({ sablon, mezokErtekek, onMezoChange }) {
               </select>
             )}
             {["alairas","jelenletiIv","fotoKategoria","anyagfelhasznalasok"].includes(mezo.tipus) && (
-              <div style={{ padding:"10px 14px", background:"#F8FAFC", borderRadius:9, border:`1px solid ${C.border}`, fontSize:12, color:C.muted }}>
+              <div style={{ padding:"10px 14px", background:C.bg, borderRadius:9, border:`1px solid ${C.border}`, fontSize:12, color:C.muted }}>
                 📱 {mezo.tipus === "alairas" ? "Aláírás a telepítői nézetben rögzíthető" :
                      mezo.tipus === "fotoKategoria" ? "Fotók a telepítői nézetben tölthetők fel" :
                      mezo.tipus === "jelenletiIv" ? "Jelenléti ív a telepítői nézetben tölthető ki" :
@@ -377,7 +377,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
       ugyszam:          autoUgyszam,
       telepitesTipusa:  "Napelem",
       cimke:            "Junior Vital",
-      cimkeSzin:        "#2563EB",
+      cimkeSzin:        C.accent,
       projektMegnevezes: initialData?.projektNev || initialData?.projektkod || "",
       projektId:         initialData?.projektId  || "",
       munkalapTipus:     initialData?.tipus || "Első kivitelezés",
@@ -453,10 +453,10 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
       statusSzin:        {
         "Felmérés":    "#0EA5E9",
         "Kivitelezés": "#EA580C",
-        "Folyamatban": "#2563EB",
-        "Ütemezett":   "#D97706",
-        "Kész":        "#059669",
-        "Meghiúsult":  "#DC2626",
+        "Folyamatban": C.accent,
+        "Ütemezett":   C.warning,
+        "Kész":        C.success,
+        "Meghiúsult":  C.danger,
       }[alap.status] || "#38BDF8",
       projektMegnevezes: alap.projektMegnevezes,
       feladat:           alap.feladat,
@@ -546,7 +546,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
 
       <div style={{ padding:"16px" }}>
         {Object.keys(errors).length>0&&(
-          <div style={{ background:"#FEF2F2", border:`1px solid #FECACA`, borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:13, color:C.danger }}>
+          <div style={{ background:C.dangerLight, border:`1px solid ${C.dangerLight}`, borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:13, color:C.danger }}>
             ⚠️ {Object.values(errors).join(" · ")}
           </div>
         )}
@@ -571,9 +571,9 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                 </button>
               </div>
             ) : (
-              <div style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", background:"#FFFBEB", border:`1.5px solid #FDE68A`, borderRadius:12 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", background:C.warningLight, border:`1.5px solid ${C.warningLight}`, borderRadius:12 }}>
                 <span style={{ fontSize:20 }}>⚠️</span>
-                <p style={{ fontSize:13, color:"#92400E", fontWeight:600, margin:0, flex:1 }}>
+                <p style={{ fontSize:13, color:C.warning, fontWeight:600, margin:0, flex:1 }}>
                   Nincs sablon kiválasztva
                 </p>
                 <button onClick={() => setSablonPickerNyitva(true)}
@@ -589,7 +589,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
         {activeSec==="sablon"&&(
           <div>
             {errors.sablon && (
-              <div style={{ background:"#FEF2F2", border:`1px solid #FECACA`, borderRadius:10, padding:"10px 14px", marginBottom:14, fontSize:13, color:C.danger }}>
+              <div style={{ background:C.dangerLight, border:`1px solid ${C.dangerLight}`, borderRadius:10, padding:"10px 14px", marginBottom:14, fontSize:13, color:C.danger }}>
                 ⚠️ {errors.sablon}
               </div>
             )}
@@ -617,7 +617,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                   style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${C.accent}`, borderRadius:9, fontSize:13, fontFamily:FONT, outline:"none", marginBottom:6 }}
                 />
                 {projektek.length === 0 ? (
-                  <p style={{ fontSize:12, color:C.warning, padding:"8px 12px", background:"#FFFBEB", borderRadius:8 }}>
+                  <p style={{ fontSize:12, color:C.warning, padding:"8px 12px", background:C.warningLight, borderRadius:8 }}>
                     ⚠️ Még nincs projekt. Hozz létre egy projektet először a <b>Projektek</b> menüben!
                   </p>
                 ) : (
@@ -644,7 +644,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                           if (billing) { updAlap("ar", billing.ar); setBillingInfo(billing.megjegyzes); }
                           else setBillingInfo(null);
                         }} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", cursor:"pointer", borderBottom:`1px solid ${C.border}`, fontSize:13 }}
-                          onMouseEnter={e => e.currentTarget.style.background="#F8FAFC"}
+                          onMouseEnter={e => e.currentTarget.style.background=C.bg}
                           onMouseLeave={e => e.currentTarget.style.background=""}
                         >
                           <div>
@@ -659,19 +659,19 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                 )}
               </div>
             ) : (
-              <div style={{ background:"#EFF6FF", border:"1.5px solid #BFDBFE", borderRadius:10, padding:"10px 14px", marginBottom:14, fontSize:13, color:"#1D4ED8", fontWeight:600, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
+              <div style={{ background:C.accentLight, border:`1.5px solid ${C.accentLight}`, borderRadius:10, padding:"10px 14px", marginBottom:14, fontSize:13, color:C.accent, fontWeight:600, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
                 <span>🏗️ Projekt: <strong>{alap.projektMegnevezes || alap.projektId}</strong>
-                  <span style={{ fontWeight:400, color:"#3B82F6", marginLeft:4 }}>– adatok előre kitöltve</span>
+                  <span style={{ fontWeight:400, color:C.accent, marginLeft:4 }}>– adatok előre kitöltve</span>
                 </span>
-                <button onClick={() => { updAlap("projektId",""); updAlap("projektMegnevezes",""); }} style={{ background:"none", border:"none", cursor:"pointer", color:"#94A3B8", fontSize:18, lineHeight:1 }}>×</button>
+                <button onClick={() => { updAlap("projektId",""); updAlap("projektMegnevezes",""); }} style={{ background:"none", border:"none", cursor:"pointer", color:C.muted, fontSize:18, lineHeight:1 }}>×</button>
               </div>
             )}
 
             {/* Munkaszám info chip – csak ha projekt ki van választva */}
             {alap.projektId && alap.ugyszam && (
-              <div style={{ background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:9, padding:"8px 14px", marginBottom:12, fontSize:13, color:"#166534", display:"flex", alignItems:"center", gap:8 }}>
+              <div style={{ background:C.successLight, border:`1px solid ${C.success}`, borderRadius:9, padding:"8px 14px", marginBottom:12, fontSize:13, color:C.success, display:"flex", alignItems:"center", gap:8 }}>
                 📋 Munkaszám: <strong style={{ marginLeft:4 }}>{alap.ugyszam}</strong>
-                <span style={{ fontWeight:400, color:"#22C55E", fontSize:12 }}>✓ auto-generált</span>
+                <span style={{ fontWeight:400, color:C.success, fontSize:12 }}>✓ auto-generált</span>
               </div>
             )}
 
@@ -685,7 +685,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                   value={alap.ugyszam||""}
                   onChange={e=>updAlap("ugyszam",e.target.value)}
                   placeholder="Válassz projektet fentebb"
-                  style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}
+                  style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }}
                 />
                 {errors.ugyszam&&<p style={{ color:C.danger,fontSize:11,marginTop:4 }}>{errors.ugyszam}</p>}
               </div>
@@ -693,7 +693,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
 
             {/* Fővállalkozói díj auto-számítás jelzés */}
             {billingInfo && (
-              <div style={{ background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:9, padding:"8px 14px", marginBottom:12, fontSize:13, color:"#166534", fontWeight:600 }}>
+              <div style={{ background:C.successLight, border:`1px solid ${C.success}`, borderRadius:9, padding:"8px 14px", marginBottom:12, fontSize:13, color:C.success, fontWeight:600 }}>
                 💡 Fővállalkozói díj auto-számítva: {billingInfo}
               </div>
             )}
@@ -705,7 +705,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
               <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>
                 Munkalap típusa <span style={{ color:C.danger }}>*</span>
               </label>
-              <select value={alap.munkalapTipus||"Kivitelezés"} onChange={e=>updAlap("munkalapTipus",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
+              <select value={alap.munkalapTipus||"Kivitelezés"} onChange={e=>updAlap("munkalapTipus",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }}>
                 {MUNKALAP_TIPUSOK.map(t=><option key={t}>{t}</option>)}
               </select>
             </div>
@@ -720,7 +720,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                 Szerelő / Csapat<span style={{ color:C.danger }}> *</span>
               </label>
               {csapatok.length === 0 ? (
-                <div style={{ padding:"12px 14px", background:"#FFFBEB", border:`1px solid #FDE68A`, borderRadius:9, fontSize:13, color:C.warning }}>
+                <div style={{ padding:"12px 14px", background:C.warningLight, border:`1px solid ${C.warningLight}`, borderRadius:9, fontSize:13, color:C.warning }}>
                   ⚠️ Nincsenek csapatok beállítva. Menj a <b>Beállítások → Munkakiosztás</b> menübe!
                 </div>
               ) : (
@@ -749,7 +749,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
 
             {/* Projekt esetén: ügyfél összefoglaló chip (nem mező, csak info) */}
             {alap.projektId && ugyfEl.nev && (
-              <div style={{ background:"#F8FAFC", border:`1px solid ${C.border}`, borderRadius:9, padding:"10px 14px", marginBottom:14 }}>
+              <div style={{ background:C.bg, border:`1px solid ${C.border}`, borderRadius:9, padding:"10px 14px", marginBottom:14 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
                   <span style={{ fontWeight:700, color:C.muted, fontSize:11, textTransform:"uppercase", letterSpacing:.5 }}>👤 Ügyfél (projektből)</span>
                   <button onClick={()=>setShowReszletek(p=>!p)} style={{ border:"none", background:"none", fontSize:12, color:C.accent, cursor:"pointer", fontFamily:FONT, fontWeight:600 }}>
@@ -777,7 +777,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
 
             {/* Részletek toggle – projekt esetén, ha ügyfél sincs */}
             {alap.projektId && !ugyfEl.nev && (
-              <button onClick={()=>setShowReszletek(p=>!p)} style={{ width:"100%", padding:"10px 14px", background:"#F8FAFC", border:`1.5px solid ${C.border}`, borderRadius:9, cursor:"pointer", fontSize:13, fontFamily:FONT, color:C.muted, fontWeight:600, textAlign:"center", marginBottom:14 }}>
+              <button onClick={()=>setShowReszletek(p=>!p)} style={{ width:"100%", padding:"10px 14px", background:C.bg, border:`1.5px solid ${C.border}`, borderRadius:9, cursor:"pointer", fontSize:13, fontFamily:FONT, color:C.muted, fontWeight:600, textAlign:"center", marginBottom:14 }}>
                 {showReszletek ? "▲ Részletek elrejtése" : "▼ Ügyfél, projekt megnevezés, státusz, értékesítő…"}
               </button>
             )}
@@ -799,10 +799,10 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                     {[
                       { id:"Napelem",          ikon:"☀️", szin:"#F97316" },
                       { id:"Elektromos töltő", ikon:"⚡", szin:"#EAB308" },
-                      { id:"Egyéb",            ikon:"🔧", szin:"#64748B" },
+                      { id:"Egyéb",            ikon:"🔧", szin:C.muted },
                     ].map(t=>(
                       <button key={t.id} type="button" onClick={()=>updAlap("telepitesTipusa",t.id)}
-                        style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"10px 8px", border:`2px solid ${alap.telepitesTipusa===t.id?t.szin:C.border}`, borderRadius:10, background:alap.telepitesTipusa===t.id?t.szin+"15":"#F8FAFC", cursor:"pointer", fontFamily:FONT, fontWeight:700, fontSize:13, color:alap.telepitesTipusa===t.id?t.szin:C.muted }}>
+                        style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"10px 8px", border:`2px solid ${alap.telepitesTipusa===t.id?t.szin:C.border}`, borderRadius:10, background:alap.telepitesTipusa===t.id?t.szin+"15":C.bg, cursor:"pointer", fontFamily:FONT, fontWeight:700, fontSize:13, color:alap.telepitesTipusa===t.id?t.szin:C.muted }}>
                         <span style={{ fontSize:18 }}>{t.ikon}</span> {t.id}
                       </button>
                     ))}
@@ -814,7 +814,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                   <Field label="Cimke (pl. Junior Vital)" value={alap.cimke} onChange={v=>updAlap("cimke",v)} placeholder="Junior Vital, Saját Önerős…"/>
                   <div style={{ marginBottom:14 }}>
                     <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Státusz</label>
-                    <select value={alap.status} onChange={e=>updAlap("status",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:"#F8FAFC" }}>
+                    <select value={alap.status} onChange={e=>updAlap("status",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }}>
                       {WORKFLOW_STATUSES.slice(0,8).map(s=><option key={s}>{s}</option>)}
                     </select>
                     {alap.status === "Felmérés" && (
@@ -834,9 +834,9 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
 
                 <Field label="Értékesítő neve" value={alap.ertekesito} onChange={v=>updAlap("ertekesito",v)} placeholder="Értékesítő neve"/>
                 <div style={{ marginBottom:14 }}>
-                  <label style={{ fontSize:12, fontWeight:700, color:"#64748B", display:"block", marginBottom:5 }}>Fővállalkozói azonosító</label>
-                  <input value={alap.fovallalkoiAzonosito||""} onChange={e=>updAlap("fovallalkoiAzonosito",e.target.value)} placeholder="pl. FŐV-2026-145" style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:"1.5px solid #E2E8F0", borderRadius:9, fontSize:14, fontFamily:"inherit", outline:"none" }} />
-                  <p style={{ fontSize:10, color:"#94A3B8", marginTop:3 }}>EDI sorszám (E.D.I. 001) mentéskor kap</p>
+                  <label style={{ fontSize:12, fontWeight:700, color:C.muted, display:"block", marginBottom:5 }}>Fővállalkozói azonosító</label>
+                  <input value={alap.fovallalkoiAzonosito||""} onChange={e=>updAlap("fovallalkoiAzonosito",e.target.value)} placeholder="pl. FŐV-2026-145" style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:"inherit", outline:"none" }} />
+                  <p style={{ fontSize:10, color:C.muted, marginTop:3 }}>EDI sorszám (E.D.I. 001) mentéskor kap</p>
                 </div>
               </div>
             )}
@@ -899,7 +899,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
         {activeSec==="felmeres"&&(
           <div>
             {/* Kapcsolt felmérés kiválasztása */}
-            <div style={{ background:"#EFF6FF", border:`1.5px solid #BFDBFE`, borderRadius:12, padding:"14px 16px", marginBottom:20 }}>
+            <div style={{ background:C.accentLight, border:`1.5px solid ${C.accentLight}`, borderRadius:12, padding:"14px 16px", marginBottom:20 }}>
               <p style={{ fontSize:13, fontWeight:700, color:C.accent, marginBottom:10 }}>📎 Kapcsolt felmérés visszacsatolása</p>
               <p style={{ fontSize:12, color:C.textSub, marginBottom:12 }}>Ha a csapat már elvégzett egy felmérést, azt itt tudod visszacsatolni – az adatai automatikusan betöltődnek.</p>
               <select value={felmeres.kapcsoltFelmeres||""} onChange={e=>{

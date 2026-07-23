@@ -21,26 +21,26 @@ function AnyagSor({ anyag, onEdit, onDelete, onToggle }) {
   const aKat = AJANLAT_KATEGORIAK.find(k => k.id === anyag.kategoria)?.label || anyag.kategoria || "—";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
-      background: anyag.aktiv ? "#fff" : "#F8FAFC", borderBottom: `1px solid ${C.border}`,
+      background: anyag.aktiv ? "#fff" : C.bg, borderBottom: `1px solid ${C.border}`,
       opacity: anyag.aktiv ? 1 : .5 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontWeight: 600, fontSize: 13, color: C.text, margin: 0 }}>{anyag.nev}</p>
         <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 0" }}>
           {tKat} · {anyag.egyseg}
-          {anyag.netto_egysegar > 0 && <span style={{ color: "#059669", marginLeft: 6, fontWeight: 600 }}>{ft(anyag.netto_egysegar)}/{anyag.egyseg}</span>}
-          <span style={{ color: "#94A3B8", marginLeft: 6 }}>· Ajánlat: {aKat}</span>
+          {anyag.netto_egysegar > 0 && <span style={{ color: C.success, marginLeft: 6, fontWeight: 600 }}>{ft(anyag.netto_egysegar)}/{anyag.egyseg}</span>}
+          <span style={{ color: C.muted, marginLeft: 6 }}>· Ajánlat: {aKat}</span>
         </p>
       </div>
       <button onClick={() => onToggle(anyag)}
         style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 20, border: "none",
-          background: anyag.aktiv ? "#ECFDF5" : "#F1F5F9", color: anyag.aktiv ? "#059669" : "#94A3B8", cursor: "pointer" }}>
+          background: anyag.aktiv ? C.successLight : C.bg, color: anyag.aktiv ? C.success : C.muted, cursor: "pointer" }}>
         {anyag.aktiv ? "Aktív" : "Inaktív"}
       </button>
-      <button onClick={() => onEdit(anyag)} style={{ padding: "5px 9px", background: "#EFF6FF", color: "#2563EB", border: "none", borderRadius: 7, cursor: "pointer" }}>
+      <button onClick={() => onEdit(anyag)} style={{ padding: "5px 9px", background: C.accentLight, color: C.accent, border: "none", borderRadius: 7, cursor: "pointer" }}>
         <Pencil size={13} />
       </button>
       <button onClick={() => { if (window.confirm(`Törlöd: ${anyag.nev}?`)) onDelete(anyag.id); }}
-        style={{ padding: "5px 9px", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 7, cursor: "pointer" }}>
+        style={{ padding: "5px 9px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 7, cursor: "pointer" }}>
         <Trash2 size={13} />
       </button>
     </div>
@@ -104,7 +104,7 @@ function AnyagForm({ anyag, onSave, onClose }) {
           {/* ── V2 mezők (Fázis 2A – Anyagtörzs V2 + árverziók) ── */}
           <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12, marginTop: 2 }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .5, margin: "0 0 10px" }}>Árazás (V2)</p>
-            <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#92400E", marginBottom: 12, lineHeight: 1.5 }}>
+            <div style={{ background: C.warningLight, border: `1px solid ${C.warningLight}`, borderRadius: 8, padding: "8px 12px", fontSize: 11, color: C.warning, marginBottom: 12, lineHeight: 1.5 }}>
               Ármódosítás esetén a régi ár árverzióként mentésre kerül. Régi projektek és elfogadott ajánlatok árai nem változnak.
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
@@ -177,7 +177,7 @@ export default function AnyagtorzsPage() {
   return (
     <div style={{ padding: "16px", fontFamily: FONT, maxWidth: 620 }}>
       {/* Info banner */}
-      <div style={{ background: "#F0F9FF", border: "1px solid #BAE6FD", borderRadius: 10, padding: "10px 14px", marginBottom: 16, display: "flex", gap: 8, fontSize: 12, color: "#0369A1" }}>
+      <div style={{ background: C.accentLight, border: "1px solid #BAE6FD", borderRadius: 10, padding: "10px 14px", marginBottom: 16, display: "flex", gap: 8, fontSize: 12, color: "#0369A1" }}>
         <Info size={15} style={{ flexShrink: 0, marginTop: 1 }} />
         <span>Ez az <b>egyetlen</b> anyagtörzs az egész rendszerben. Ugyanebből dolgozik az <b>Árajánlat készítő</b>, a <b>Telepítő felület</b> és a <b>Projekt pénzügy</b>.</span>
       </div>

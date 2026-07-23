@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FONT } from "../lib/constants";
+import { C, FONT } from "../lib/constants";
 import { subscribeJobs, dismissJob } from "../lib/jobProgress";
 
 // ─── Segédek ─────────────────────────────────────────────────────
@@ -52,9 +52,9 @@ function JobCard({ job }) {
   const pendingSteps = steps.filter(s => s.status === "pending").length;
 
   const SZIN = {
-    done:    { bg: "#F0FDF4", border: "#86EFAC", bar: "#22C55E", fejlec: "#166534" },
-    error:   { bg: "#FEF2F2", border: "#FECACA", bar: "#DC2626", fejlec: "#991B1B" },
-    running: { bg: "#EFF6FF", border: "#BFDBFE", bar: "#2563EB", fejlec: "#1E40AF" },
+    done:    { bg: C.successLight, border: C.success, bar: C.success, fejlec: C.success },
+    error:   { bg: C.dangerLight, border: C.dangerLight, bar: C.danger, fejlec: C.dangerDark },
+    running: { bg: C.accentLight, border: C.accentLight, bar: C.accent, fejlec: C.accentHover },
   };
   const sz   = SZIN[status] || SZIN.running;
   const ikon = isDone ? "✅" : isError ? "❌" : "⏳";
@@ -79,7 +79,7 @@ function JobCard({ job }) {
             onClick={() => dismissJob(id)}
             style={{
               border: "none", background: "transparent",
-              cursor: "pointer", fontSize: 15, color: "#94A3B8",
+              cursor: "pointer", fontSize: 15, color: C.muted,
               lineHeight: 1, padding: "0 2px", marginLeft: 8,
             }}
           >✕</button>
@@ -89,13 +89,13 @@ function JobCard({ job }) {
       {/* Progress bar */}
       {pct !== null && (
         <div style={{ marginBottom: 8 }}>
-          <div style={{ height: 6, background: "#E2E8F0", borderRadius: 3, overflow: "hidden", marginBottom: 4 }}>
+          <div style={{ height: 6, background: C.border, borderRadius: 3, overflow: "hidden", marginBottom: 4 }}>
             <div style={{
               width: `${pct}%`, height: "100%", background: sz.bar,
               borderRadius: 3, transition: "width 0.4s ease",
             }} />
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#64748B" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted }}>
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "75%" }}>
               {isRunning
                 ? (stepLabel || "Feldolgozás…")
@@ -107,15 +107,15 @@ function JobCard({ job }) {
       )}
 
       {/* Statisztika sor */}
-      <div style={{ display: "flex", gap: 12, fontSize: 11, color: "#64748B", flexWrap: "wrap", lineHeight: 1.6 }}>
+      <div style={{ display: "flex", gap: 12, fontSize: 11, color: C.muted, flexWrap: "wrap", lineHeight: 1.6 }}>
         {totalSteps !== null && (
           <span>{currentStep}/{totalSteps} lépés</span>
         )}
         {okSteps > 0 && (
-          <span style={{ color: "#166534" }}>✓ {okSteps} sikeres</span>
+          <span style={{ color: C.success }}>✓ {okSteps} sikeres</span>
         )}
         {errorSteps > 0 && (
-          <span style={{ color: "#DC2626" }}>✗ {errorSteps} hibás</span>
+          <span style={{ color: C.danger }}>✗ {errorSteps} hibás</span>
         )}
         {isRunning && pendingSteps > 0 && (
           <span>○ {pendingSteps} vár</span>
@@ -124,7 +124,7 @@ function JobCard({ job }) {
           <span>hátralévő: {etaText}</span>
         )}
         {endedAt && (
-          <span style={{ color: "#94A3B8" }}>{fmtElapsed(elapsed)}</span>
+          <span style={{ color: C.muted }}>{fmtElapsed(elapsed)}</span>
         )}
       </div>
 
@@ -132,10 +132,10 @@ function JobCard({ job }) {
       {steps.length > 0 && (
         <div style={{ marginTop: 8, maxHeight: 110, overflowY: "auto", fontSize: 11 }}>
           {steps.map((s, i) => {
-            const col = s.status === "ok"      ? "#166534"
-                      : s.status === "error"   ? "#DC2626"
-                      : s.status === "running" ? "#1D4ED8"
-                      : "#94A3B8";
+            const col = s.status === "ok"      ? C.success
+                      : s.status === "error"   ? C.danger
+                      : s.status === "running" ? C.accent
+                      : C.muted;
             const ic  = s.status === "ok"      ? "✓"
                       : s.status === "error"   ? "✗"
                       : s.status === "running" ? "↻"
@@ -145,7 +145,7 @@ function JobCard({ job }) {
                 <span style={{ flexShrink: 0, fontWeight: 700 }}>{ic}</span>
                 <span style={{ wordBreak: "break-word" }}>
                   {s.label}
-                  {s.error && <span style={{ color: "#DC2626" }}> ({s.error})</span>}
+                  {s.error && <span style={{ color: C.danger }}> ({s.error})</span>}
                 </span>
               </div>
             );
@@ -157,8 +157,8 @@ function JobCard({ job }) {
       {isError && errors.length > 0 && (
         <div style={{
           marginTop: 8, padding: "5px 8px",
-          background: "#FEE2E2", borderRadius: 6,
-          fontSize: 11, color: "#991B1B",
+          background: C.dangerLight, borderRadius: 6,
+          fontSize: 11, color: C.dangerDark,
         }}>
           {errors.slice(0, 3).join(" · ")}
           {errors.length > 3 && ` · …és ${errors.length - 3} további`}
