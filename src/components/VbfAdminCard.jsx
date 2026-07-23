@@ -95,7 +95,7 @@ export default function VbfAdminCard({ munkalapId, munkalap: munkalapProp, proje
   }
 
   if (!vbf || Object.keys(vbf).filter(k => k !== "_savedAt").length === 0) return (
-    <div style={{ background:"#F8FAFC", border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", marginTop:16 }}>
+    <div style={{ background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", marginTop:16 }}>
       <p style={{ fontSize:13, fontWeight:700, color:C.muted }}>📐 VBF Jegyzőkönyv — még nem töltötték ki</p>
     </div>
   );
@@ -128,7 +128,7 @@ export default function VbfAdminCard({ munkalapId, munkalap: munkalapProp, proje
                   await downloadVbfPdf(ml, pr, vbf);
                 }}
                 title="VBF letöltése PDF formátumban (sablon + adatok)"
-                style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background:"#DC2626", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
+                style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background:C.danger, color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
               >
                 <Download size={13}/> VBF .pdf
               </button>
@@ -138,7 +138,7 @@ export default function VbfAdminCard({ munkalapId, munkalap: munkalapProp, proje
                 onClick={handleLetoltes}
                 disabled={letoltes}
                 title="VBF Jegyzőkönyv letöltése Word (.docx) formátumban"
-                style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background: letoltes ? "#E2E8F0" : "#7C3AED", color:"#fff", border:"none", borderRadius:8, cursor: letoltes ? "default" : "pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
+                style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background: letoltes ? C.border : C.accent, color:"#fff", border:"none", borderRadius:8, cursor: letoltes ? "default" : "pointer", fontWeight:700, fontSize:12, fontFamily:FONT }}
               >
                 <Download size={13}/>{letoltes ? "…" : "VBF .docx"}
               </button>
@@ -162,7 +162,7 @@ export default function VbfAdminCard({ munkalapId, munkalap: munkalapProp, proje
               const val = vbf[item.key];
               const ok  = val !== "" && val !== null && val !== undefined;
               return (
-                <div key={item.key} style={{ display:"flex", alignItems:"center", gap:4, background: ok?"#F0FDF4":"#FEF2F2", borderRadius:8, padding:"4px 10px", border:`1px solid ${ok?"#A7F3D0":"#FECACA"}` }}>
+                <div key={item.key} style={{ display:"flex", alignItems:"center", gap:4, background: ok?C.successLight:C.dangerLight, borderRadius:8, padding:"4px 10px", border:`1px solid ${ok?C.success:C.dangerLight}` }}>
                   <span style={{ fontSize:12, color:C.muted }}>{item.label}:</span>
                   <span style={{ fontSize:13, fontWeight:700, color: ok?C.success:C.danger }}>
                     {ok ? `${val} ${group.unit}` : "—"}
@@ -180,7 +180,7 @@ export default function VbfAdminCard({ munkalapId, munkalap: munkalapProp, proje
           const val = vbf[key];
           const ok  = val !== "" && val !== null && val !== undefined;
           return (
-            <div key={key} style={{ background: ok?"#F0FDF4":"#FEF2F2", borderRadius:8, padding:"6px 10px", border:`1px solid ${ok?"#A7F3D0":"#FECACA"}` }}>
+            <div key={key} style={{ background: ok?C.successLight:C.dangerLight, borderRadius:8, padding:"6px 10px", border:`1px solid ${ok?C.success:C.dangerLight}` }}>
               <p style={{ fontSize:10, color:C.muted, marginBottom:2 }}>{label}</p>
               <p style={{ fontSize:13, fontWeight:700, color: ok?C.success:C.danger }}>
                 {ok ? `${val}${unit ? " "+unit : ""}` : "Hiányzik"}
@@ -191,7 +191,7 @@ export default function VbfAdminCard({ munkalapId, munkalap: munkalapProp, proje
       </div>
 
       {!hasSablon() && (
-        <div style={{ marginTop:12, padding:"8px 12px", background:"#F5F3FF", border:"1px solid #DDD6FE", borderRadius:8, fontSize:12, color:"#6D28D9" }}>
+        <div style={{ marginTop:12, padding:"8px 12px", background:C.accentLight, border:`1px solid ${C.accentLight}`, borderRadius:8, fontSize:12, color:"#6D28D9" }}>
           💡 VBF letöltéshez: Beállítások → VBF Sablon → Word fájl feltöltése
         </div>
       )}

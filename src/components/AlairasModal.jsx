@@ -53,7 +53,7 @@ export default function AlairasModal({ m, onClose, onSave, userRole }) {
       canvas.height = canvas.offsetHeight * ratio;
       const ctx = canvas.getContext("2d");
       ctx.scale(ratio, ratio);
-      ctx.strokeStyle = "#1e293b";
+      ctx.strokeStyle = C.text;
       ctx.lineWidth   = 2.5;
       ctx.lineCap     = "round";
       ctx.lineJoin    = "round";
@@ -128,7 +128,7 @@ export default function AlairasModal({ m, onClose, onSave, userRole }) {
             <p style={{ color:"#fff", fontWeight:800, fontSize:17, fontFamily:FONT_HEADING }}>
               {step==="preview" ? "Átadás-átvételi Jegyzőkönyv" : step==="sign" ? "Ügyfél aláírása" : "Aláírva ✓"}
             </p>
-            <p style={{ color:"#94A3B8", fontSize:12 }}>{m.id} · {m.clientNev || ""}</p>
+            <p style={{ color:C.muted, fontSize:12 }}>{m.id} · {m.clientNev || ""}</p>
           </div>
           <div style={{ display:"flex", gap:8 }}>
             {step==="preview" && canPrint && (
@@ -147,7 +147,7 @@ export default function AlairasModal({ m, onClose, onSave, userRole }) {
           <>
             <div ref={printRef} style={{ flex:1, overflowY:"auto", padding:"20px 24px" }}>
               {fejlecKep && <img src={fejlecKep} alt="Fejléc" style={{ maxHeight:100, maxWidth:"100%", display:"block", margin:"0 auto 16px" }}/>}
-              <div style={{ background:"#F8FAFC", borderRadius:12, padding:"20px 24px", border:`1px solid ${C.border}`, whiteSpace:"pre-wrap", fontSize:14, lineHeight:1.8, color:C.text, fontFamily:"monospace" }}>
+              <div style={{ background:C.bg, borderRadius:12, padding:"20px 24px", border:`1px solid ${C.border}`, whiteSpace:"pre-wrap", fontSize:14, lineHeight:1.8, color:C.text, fontFamily:"monospace" }}>
                 {szoveg}
               </div>
               {labKep && <img src={labKep} alt="Lábléc" style={{ maxHeight:80, maxWidth:"100%", display:"block", margin:"16px auto 0" }}/>}
@@ -180,7 +180,7 @@ export default function AlairasModal({ m, onClose, onSave, userRole }) {
                   onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={stopDraw}/>
                 {!hasSign && (
                   <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
-                    <p style={{ fontSize:14, color:"#CBD5E1", fontStyle:"italic" }}>✍️ Aláírás helye</p>
+                    <p style={{ fontSize:14, color:C.border, fontStyle:"italic" }}>✍️ Aláírás helye</p>
                   </div>
                 )}
               </div>
@@ -189,7 +189,7 @@ export default function AlairasModal({ m, onClose, onSave, userRole }) {
               <button onClick={clearSign} style={{ flex:1, padding:"12px", borderRadius:10, border:`1.5px solid ${C.border}`, background:"#fff", color:C.textSub, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, fontFamily:FONT }}>
                 <RotateCcw size={16}/>Törlés
               </button>
-              <button onClick={saveSign} disabled={!hasSign} style={{ flex:2, padding:"12px", borderRadius:10, border:"none", background:hasSign?"#22C55E":"#E2E8F0", color:"#fff", fontWeight:700, cursor:hasSign?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", gap:6, fontFamily:FONT, fontSize:15 }}>
+              <button onClick={saveSign} disabled={!hasSign} style={{ flex:2, padding:"12px", borderRadius:10, border:"none", background:hasSign?C.success:C.border, color:"#fff", fontWeight:700, cursor:hasSign?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", gap:6, fontFamily:FONT, fontSize:15 }}>
                 <Check size={18}/>Aláírás elfogadása
               </button>
             </div>
@@ -199,7 +199,7 @@ export default function AlairasModal({ m, onClose, onSave, userRole }) {
         {/* KÉSZ */}
         {step==="done" && (
           <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:32, textAlign:"center" }}>
-            <div style={{ width:72, height:72, borderRadius:"50%", background:"#ECFDF5", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:20 }}>
+            <div style={{ width:72, height:72, borderRadius:"50%", background:C.successLight, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:20 }}>
               <Check size={36} color={C.success}/>
             </div>
             <p style={{ fontSize:20, fontWeight:800, color:C.text, marginBottom:8 }}>Aláírva!</p>

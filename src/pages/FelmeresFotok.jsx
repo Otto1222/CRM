@@ -7,7 +7,7 @@ import { saveFelmeresFotok, loadFelmeresFotok } from "../lib/munkalapDb";
 const STATUS_FAZIS = {
   "Felmérés":    { szin: "#0EA5E9", bg: "#E0F2FE", icon: "📸", szoveg: "Felmérési fázis – fotók feltölthetők" },
   "Kivitelezés": { szin: "#EA580C", bg: "#FFF7ED", icon: "🔧", szoveg: "Kivitelezési fázis – korábbi fotók megtekinthetők, új képek feltölthetők" },
-  "Megkezdésre Vár": { szin: "#38BDF8", bg: "#F0F9FF", icon: "⏳", szoveg: "Megkezdésre vár – fotók megtekinthetők, új feltöltés lehetséges" },
+  "Megkezdésre Vár": { szin: "#38BDF8", bg: C.accentLight, icon: "⏳", szoveg: "Megkezdésre vár – fotók megtekinthetők, új feltöltés lehetséges" },
 };
 
 // ── Kép tömörítő (mobil fényképekhez) ────────────────────────
@@ -335,7 +335,7 @@ export default function FelmeresFotok({ munkalapId, status, userRole, onFotokCha
           style={{
             border: `2px dashed ${drag ? C.accent : C.border}`,
             borderRadius: 12, padding: "16px", textAlign: "center",
-            background: drag ? C.accentLight : "#F8FAFC", marginBottom: 20,
+            background: drag ? C.accentLight : C.bg, marginBottom: 20,
             transition: "all .15s", display: drag ? "block" : "none",
           }}
         >

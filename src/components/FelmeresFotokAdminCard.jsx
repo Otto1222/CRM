@@ -35,7 +35,7 @@ export default function FelmeresFotokAdminCard({ munkalapId, userRole }) {
   if (fotok.length === 0) {
     return (
       <div style={{
-        background: "#F8FAFC", border: `1px solid ${C.border}`,
+        background: C.bg, border: `1px solid ${C.border}`,
         borderRadius: 12, padding: "14px 16px", marginTop: 16,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -201,11 +201,11 @@ export default function FelmeresFotokAdminCard({ munkalapId, userRole }) {
             width: "100%", maxWidth: 360, fontFamily: FONT,
           }}>
             <div style={{
-              width: 52, height: 52, borderRadius: "50%", background: "#FEF2F2",
+              width: 52, height: 52, borderRadius: "50%", background: C.dangerLight,
               display: "flex", alignItems: "center", justifyContent: "center",
               margin: "0 auto 16px",
             }}>
-              <AlertTriangle size={26} color="#DC2626" />
+              <AlertTriangle size={26} color={C.danger} />
             </div>
             <h3 style={{ textAlign: "center", fontSize: 18, fontWeight: 800, color: C.text, marginBottom: 8 }}>
               Fotó törlése
@@ -213,7 +213,7 @@ export default function FelmeresFotokAdminCard({ munkalapId, userRole }) {
             <p style={{ textAlign: "center", fontSize: 13, color: C.textSub, marginBottom: 20 }}>
               Biztosan törlöd ezt a felmérési fotót?
               <br /><strong>{torlendo.nev}</strong>
-              <br /><span style={{ color: "#DC2626", fontWeight: 600 }}>Ez a művelet nem visszavonható!</span>
+              <br /><span style={{ color: C.danger, fontWeight: 600 }}>Ez a művelet nem visszavonható!</span>
             </p>
             <div style={{ display: "flex", gap: 10 }}>
               <button
@@ -230,7 +230,7 @@ export default function FelmeresFotokAdminCard({ munkalapId, userRole }) {
                 onClick={() => handleDelete(torlendo)}
                 style={{
                   flex: 1, padding: "12px", borderRadius: 10, border: "none",
-                  background: "#DC2626", color: "#fff", fontWeight: 700,
+                  background: C.danger, color: "#fff", fontWeight: 700,
                   fontSize: 14, cursor: "pointer", fontFamily: FONT,
                 }}
               >
