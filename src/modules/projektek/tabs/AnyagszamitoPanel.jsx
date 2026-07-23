@@ -12,7 +12,7 @@
  */
 import { useState } from "react";
 import { Calculator, Plus, Trash2 } from "lucide-react";
-import { FONT, FONT_HEADING } from "../../../lib/constants.js";
+import { C, FONT, FONT_HEADING } from "../../../lib/constants.js";
 import { addAnyagszamitoTetelekToKivitelezesiCsomag } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import { generateAnyagszamitas, makeUresAnyagszamitoBemenet } from "../../../services/anyagSzamito.service.js";
 import {
@@ -21,10 +21,10 @@ import {
   anyagHasznotKellSzamolniAModban,
 } from "../../../lib/workflowRules.js";
 
-const th = { textAlign: "left", padding: "8px 10px", fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1.5px solid #E2E8F0" };
-const td = { padding: "8px 10px", fontSize: 13, color: "#0F172A", borderBottom: "1px solid #F1F5F9" };
-const inp = { padding: "7px 10px", borderRadius: 7, border: "1.5px solid #E2E8F0", fontSize: 13, fontFamily: FONT, color: "#0F172A", width: "100%", boxSizing: "border-box" };
-const lbl = { display: "flex", flexDirection: "column", gap: 4, fontSize: 11, fontWeight: 700, color: "#64748B", fontFamily: FONT };
+const th = { textAlign: "left", padding: "8px 10px", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, borderBottom: `1.5px solid ${C.border}` };
+const td = { padding: "8px 10px", fontSize: 13, color: C.text, borderBottom: `1px solid ${C.bg}` };
+const inp = { padding: "7px 10px", borderRadius: 7, border: `1.5px solid ${C.border}`, fontSize: 13, fontFamily: FONT, color: C.text, width: "100%", boxSizing: "border-box" };
+const lbl = { display: "flex", flexDirection: "column", gap: 4, fontSize: 11, fontWeight: 700, color: C.muted, fontFamily: FONT };
 
 const TETOTIPUS_OPCIOK = [
   { value: "",                  label: "Régi egyszerű számítás / nincs megadva" },
@@ -139,20 +139,20 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
   const panelOsszeg  = bemenet.sorok.reduce((s, r) => s + (Number(r.panelDb) || 0), 0);
 
   return (
-    <div style={{ background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, padding: 16, marginBottom: 18 }}>
+    <div style={{ background: C.bg, border: `1.5px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 18 }}>
 
       {/* Fejléc */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", margin: "0 0 4px", fontFamily: FONT_HEADING }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: "0 0 4px", fontFamily: FONT_HEADING }}>
             Anyagszámítási Motor – anyaglista generálása
           </p>
-          <p style={{ fontSize: 12, color: "#94A3B8", margin: 0, fontFamily: FONT }}>
+          <p style={{ fontSize: 12, color: C.muted, margin: 0, fontFamily: FONT }}>
             A motor a megadott műszaki adatokból előzetes anyaglistát számol – a tételek csak jóváhagyás után kerülnek a csomagba.
           </p>
         </div>
         <button type="button" onClick={() => setNyitva(v => !v)}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 8, border: "1.5px solid #2563EB", background: nyitva ? "#2563EB" : "#fff", color: nyitva ? "#fff" : "#2563EB", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 8, border: `1.5px solid ${C.accent}`, background: nyitva ? C.accent : "#fff", color: nyitva ? "#fff" : C.accent, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
           <Calculator size={14} /> Anyaglista generálása
         </button>
       </div>
@@ -197,8 +197,8 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
 
             {/* ── 3. Cseréptető méretparaméterek ────────────────────────────── */}
             {isCserep && (
-              <div style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "#1D4ED8", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 10px" }}>
+              <div style={{ background: C.accentLight, border: `1.5px solid ${C.accentLight}`, borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 10px" }}>
                   Méretparaméterek (mm)
                 </p>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px 12px" }}>
@@ -216,24 +216,24 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
 
             {/* ── 4. Soronkénti kiosztás ────────────────────────────────────── */}
             {vanTetotipus && (
-              <div style={{ background: "#F0FDF4", border: "1.5px solid #BBF7D0", borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
+              <div style={{ background: C.successLight, border: "1.5px solid #BBF7D0", borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: "#15803D", textTransform: "uppercase", letterSpacing: 0.7, margin: 0 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: C.success, textTransform: "uppercase", letterSpacing: 0.7, margin: 0 }}>
                     Soronkénti kiosztás
                     {panelOsszeg > 0 && (
-                      <span style={{ fontWeight: 600, color: "#166534", marginLeft: 8, textTransform: "none", letterSpacing: 0 }}>
+                      <span style={{ fontWeight: 600, color: C.success, marginLeft: 8, textTransform: "none", letterSpacing: 0 }}>
                         – összesen {panelOsszeg} panel
                       </span>
                     )}
                   </p>
                   <button type="button" onClick={sorHozzaad}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 6, border: "1.5px solid #16A34A", background: "#fff", color: "#16A34A", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: FONT }}>
+                    style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 6, border: `1.5px solid ${C.success}`, background: "#fff", color: C.success, fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: FONT }}>
                     <Plus size={12} /> Sor
                   </button>
                 </div>
 
                 {bemenet.sorok.length === 0 ? (
-                  <p style={{ fontSize: 12, color: "#94A3B8", margin: 0, fontFamily: FONT }}>
+                  <p style={{ fontSize: 12, color: C.muted, margin: 0, fontFamily: FONT }}>
                     Kattints a „+ Sor" gombra az első sor hozzáadásához.
                   </p>
                 ) : (
@@ -248,7 +248,7 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
 
                     {bemenet.sorok.map((sor, idx) => (
                       <div key={idx} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", minWidth: 22, textAlign: "right" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: C.muted, minWidth: 22, textAlign: "right" }}>
                           {idx + 1}.
                         </span>
 
@@ -271,7 +271,7 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
                         <button type="button" onClick={() => sorTorol(idx)}
                           disabled={bemenet.sorok.length <= 1}
                           title="Sor törlése"
-                          style={{ padding: "7px 9px", borderRadius: 7, border: "1.5px solid #E2E8F0", background: "#fff", color: bemenet.sorok.length <= 1 ? "#CBD5E1" : "#DC2626", cursor: bemenet.sorok.length <= 1 ? "default" : "pointer", display: "inline-flex", alignItems: "center", flexShrink: 0 }}>
+                          style={{ padding: "7px 9px", borderRadius: 7, border: `1.5px solid ${C.border}`, background: "#fff", color: bemenet.sorok.length <= 1 ? C.border : C.danger, cursor: bemenet.sorok.length <= 1 ? "default" : "pointer", display: "inline-flex", alignItems: "center", flexShrink: 0 }}>
                           <Trash2 size={13} />
                         </button>
                       </div>
@@ -295,15 +295,15 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
 
             {/* ── 6. Számítás gomb ─────────────────────────────────────────── */}
             <button type="submit"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 8, border: "none", background: "#2563EB", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 8, border: "none", background: C.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
               Számítás
             </button>
           </form>
 
           {/* ── Előnézet ──────────────────────────────────────────────────── */}
           {elonezet && (
-            <div style={{ marginTop: 16, background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: 14 }}>
-              <p style={{ fontSize: 12, fontWeight: 700, color: "#0F172A", margin: "0 0 10px", fontFamily: FONT_HEADING }}>
+            <div style={{ marginTop: 16, background: "#fff", border: `1.5px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: C.text, margin: "0 0 10px", fontFamily: FONT_HEADING }}>
                 Előnézet – jóváhagyás előtt még nem kerül a csomagba
               </p>
               <p style={{ fontSize: 12, fontWeight: 600, color: anyagCfg.color, margin: "0 0 10px", fontFamily: FONT }}>
@@ -315,7 +315,7 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
               </p>
 
               {elonezet.anyaglista.length === 0 ? (
-                <p style={{ fontSize: 12, color: "#94A3B8", fontFamily: FONT }}>
+                <p style={{ fontSize: 12, color: C.muted, fontFamily: FONT }}>
                   A megadott adatok alapján egyetlen tétel sem generálódott.
                 </p>
               ) : (
@@ -337,7 +337,7 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
                           <td style={td}>{sor.kategoria || "—"}</td>
                           <td style={td}>{sor.egyseg}</td>
                           <td style={{ ...td, textAlign: "right", fontWeight: 700 }}>{sor.szamoltMennyiseg}</td>
-                          <td style={{ ...td, color: "#64748B", fontSize: 12 }}>{sor.megjegyzes}</td>
+                          <td style={{ ...td, color: C.muted, fontSize: 12 }}>{sor.megjegyzes}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -346,12 +346,12 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
               )}
 
               {elonezet.figyelmeztetes && (
-                <p style={{ fontSize: 12, color: "#D97706", fontWeight: 700, margin: "12px 0 0" }}>
+                <p style={{ fontSize: 12, color: C.warning, fontWeight: 700, margin: "12px 0 0" }}>
                   ⚠️ {elonezet.figyelmeztetes}
                 </p>
               )}
               {elonezet.hianyzoAnyagok.length > 0 && (
-                <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12, color: "#94A3B8", fontFamily: FONT }}>
+                <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12, color: C.muted, fontFamily: FONT }}>
                   {elonezet.hianyzoAnyagok.map((h, i) => (
                     <li key={i}>
                       {h.leiras} (anyagtörzs id: {h.anyagtorzsId}) – számolt: {h.szamoltMennyiseg} – nincs az anyagtörzsben, nem generálódott sor
@@ -362,7 +362,7 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
 
               {elonezet.anyaglista.length > 0 && (
                 <button type="button" onClick={handleJovahagyas}
-                  style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, padding: "9px 16px", borderRadius: 8, border: "none", background: "#16A34A", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, padding: "9px 16px", borderRadius: 8, border: "none", background: C.success, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
                   <Plus size={14} /> Jóváhagyás és hozzáadás a csomaghoz
                 </button>
               )}
@@ -370,13 +370,13 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
           )}
 
           {eredmeny && (
-            <p style={{ fontSize: 12, color: "#059669", fontWeight: 700, margin: "12px 0 0", fontFamily: FONT }}>
+            <p style={{ fontSize: 12, color: C.success, fontWeight: 700, margin: "12px 0 0", fontFamily: FONT }}>
               ✅ {eredmeny.hozzaadva.length} tétel hozzáadva a csomaghoz
               {eredmeny.duplikalt.length > 0 && ` – ${eredmeny.duplikalt.length} tétel már szerepelt a csomagban (kihagyva)`}.
             </p>
           )}
           {hiba && (
-            <p style={{ fontSize: 12, color: "#DC2626", fontWeight: 700, margin: "12px 0 0" }}>{hiba}</p>
+            <p style={{ fontSize: 12, color: C.danger, fontWeight: 700, margin: "12px 0 0" }}>{hiba}</p>
           )}
         </div>
       )}
