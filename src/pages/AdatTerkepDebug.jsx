@@ -93,19 +93,19 @@ function lsJson(key) {
 const S = {
   badge: (ok) => ({
     display: "inline-block", padding: "2px 8px", borderRadius: 6, fontSize: 11,
-    fontWeight: 700, background: ok ? "#DCFCE7" : "#F1F5F9",
-    color: ok ? "#166534" : "#94A3B8",
+    fontWeight: 700, background: ok ? C.successLight : C.bg,
+    color: ok ? C.success : C.muted,
   }),
   badgePiros: {
     display: "inline-block", padding: "2px 8px", borderRadius: 6, fontSize: 11,
-    fontWeight: 700, background: "#FEE2E2", color: "#991B1B",
+    fontWeight: 700, background: C.dangerLight, color: C.dangerDark,
   },
   sor: (kiemel) => ({
     borderBottom: `1px solid ${C.border}`,
-    background: kiemel ? "#FFFBEB" : "transparent",
+    background: kiemel ? C.warningLight : "transparent",
   }),
   td: { padding: "7px 10px", fontSize: 12, verticalAlign: "middle" },
-  th: { padding: "7px 10px", fontSize: 11, fontWeight: 700, color: "#64748B", textAlign: "left" },
+  th: { padding: "7px 10px", fontSize: 11, fontWeight: 700, color: C.muted, textAlign: "left" },
   kapcsolatSor: () => ({
     display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 0",
     borderBottom: `1px solid ${C.border}`,
@@ -138,7 +138,7 @@ function KulcsokTab({ snapshot, frissitve }) {
       <div style={{ overflowX: "auto", border: `1px solid ${C.border}`, borderRadius: 10 }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
-            <tr style={{ background: "#F8FAFC", borderBottom: `2px solid ${C.border}` }}>
+            <tr style={{ background: C.bg, borderBottom: `2px solid ${C.border}` }}>
               <th style={S.th}>Kulcs neve</th>
               <th style={S.th}>Tipus</th>
               <th style={{ ...S.th, textAlign: "right" }}>Rekord</th>
@@ -151,18 +151,18 @@ function KulcsokTab({ snapshot, frissitve }) {
             {szurt.map(e => (
               <tr key={e.key} style={S.sor(e.isFoKollekicio)}>
                 <td style={S.td}>
-                  <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: e.isFoKollekicio ? 700 : 400, color: e.isFoKollekicio ? "#1D4ED8" : C.text }}>
+                  <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: e.isFoKollekicio ? 700 : 400, color: e.isFoKollekicio ? C.accent : C.text }}>
                     {e.key}
                   </span>
-                  {e.isFoKollekicio && <span style={{ marginLeft: 6, fontSize: 10, color: "#64748B", fontWeight: 400 }}>(fo)</span>}
+                  {e.isFoKollekicio && <span style={{ marginLeft: 6, fontSize: 10, color: C.muted, fontWeight: 400 }}>(fo)</span>}
                 </td>
-                <td style={S.td}><span style={{ color: e.tipusNev === "array" ? "#7C3AED" : C.muted }}>{e.tipusNev}</span></td>
+                <td style={S.td}><span style={{ color: e.tipusNev === "array" ? C.accent : C.muted }}>{e.tipusNev}</span></td>
                 <td style={{ ...S.td, textAlign: "right", fontWeight: e.rekordszam !== null ? 600 : 400 }}>
                   {e.rekordszam !== null ? e.rekordszam : "—"}
                 </td>
                 <td style={{ ...S.td, textAlign: "right" }}>
                   {parseFloat(e.mereteKb) > 100
-                    ? <span style={{ color: "#DC2626", fontWeight: 700 }}>{e.mereteKb}</span>
+                    ? <span style={{ color: C.danger, fontWeight: 700 }}>{e.mereteKb}</span>
                     : e.mereteKb}
                 </td>
                 <td style={{ ...S.td, textAlign: "center" }}><span style={S.badge(e.isDriveSync)}>{e.isDriveSync ? "igen" : "—"}</span></td>
@@ -175,7 +175,7 @@ function KulcsokTab({ snapshot, frissitve }) {
           </tbody>
         </table>
       </div>
-      <div style={{ marginTop: 14, padding: "10px 14px", background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 8, fontSize: 11, color: "#92400E" }}>
+      <div style={{ marginTop: 14, padding: "10px 14px", background: C.warningLight, border: `1px solid ${C.warningLight}`, borderRadius: 8, fontSize: 11, color: C.warning }}>
         <strong>Drive sync</strong>: kozelito lista a per-service driveSave() hivasok alapjan.
       </div>
     </div>
@@ -189,8 +189,8 @@ function KapcsolatSor({ cimke, van, szoveg, pirosaHa = false }) {
     <div style={S.kapcsolatSor(van)}>
       <span style={{ marginTop: 2, fontSize: 16, flexShrink: 0 }}>{hiba ? "🔴" : van ? "🟢" : "⚪"}</span>
       <div>
-        <span style={{ fontWeight: 700, fontSize: 13, color: hiba ? "#991B1B" : C.text }}>{cimke}</span>
-        {szoveg && <span style={{ fontSize: 12, color: hiba ? "#DC2626" : C.muted, marginLeft: 8 }}>{szoveg}</span>}
+        <span style={{ fontWeight: 700, fontSize: 13, color: hiba ? C.dangerDark : C.text }}>{cimke}</span>
+        {szoveg && <span style={{ fontSize: 12, color: hiba ? C.danger : C.muted, marginLeft: 8 }}>{szoveg}</span>}
       </div>
     </div>
   );
@@ -214,7 +214,7 @@ function KapcsolatokTab({ projektek }) {
   return (
     <div style={{ padding: "20px 24px" }}>
       <div style={{ marginBottom: 20 }}>
-        <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.7 }}>
+        <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.7 }}>
           Projekt kivalasztasa
         </label>
         <select value={projektId} onChange={e => setProjektId(e.target.value)}
@@ -228,8 +228,8 @@ function KapcsolatokTab({ projektek }) {
       {!projekt && <div style={{ padding: "32px 0", textAlign: "center", color: C.muted, fontSize: 13 }}>Valassz ki egy projektet.</div>}
       {projekt && (
         <div>
-          <div style={{ background: "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 18px", marginBottom: 20 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 10px" }}>Projekt alap adatai</p>
+          <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 18px", marginBottom: 20 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 10px" }}>Projekt alap adatai</p>
             <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 16px", fontSize: 12 }}>
               {[
                 ["ID", projekt.id], ["Projektkod", projekt.projektkod || "—"],
@@ -238,12 +238,12 @@ function KapcsolatokTab({ projektek }) {
                 ["Frissitve", projekt.updatedAt ? new Date(projekt.updatedAt).toLocaleDateString("hu-HU") : "—"],
                 ["Verzio", projekt.version || "—"],
               ].map(([k, v]) => (
-                <><span key={k+"_k"} style={{ fontWeight: 600, color: "#475569" }}>{k}:</span><span key={k+"_v"} style={{ fontFamily: "monospace", color: C.text, wordBreak: "break-all" }}>{String(v)}</span></>
+                <><span key={k+"_k"} style={{ fontWeight: 600, color: C.textSub }}>{k}:</span><span key={k+"_v"} style={{ fontFamily: "monospace", color: C.text, wordBreak: "break-all" }}>{String(v)}</span></>
               ))}
             </div>
           </div>
           <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10, padding: "16px 20px", marginBottom: 16 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 4px" }}>Kapcsolatok es mezok</p>
+            <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 4px" }}>Kapcsolatok es mezok</p>
             <KapcsolatSor cimke="Ajanlat ID" van={!!projekt.ajanlatId}
               szoveg={projekt.ajanlatId ? (ajanlatObj ? `Talalt: ${ajanlatObj.ajanlatSzam || projekt.ajanlatId}` : `Nem talalhato: ${projekt.ajanlatId}`) : "Nincs beallitva"} />
             <KapcsolatSor cimke="Pillanatkep" van={vanPillanatkep}
@@ -321,24 +321,24 @@ function ArvaRekordokTab() {
   const arvaPerMlKulcsok    = scanArvaPerMunkalapKulcsok(munkalapIds);
   const arvaNaptarEsemenyek = scanArvaNaptarEsemenyek(munkalapIds, projektIds);
 
-  const pirosBadge = { display:"inline-block", padding:"2px 8px", borderRadius:6, fontSize:11, fontWeight:700, background:"#FEE2E2", color:"#991B1B" };
-  const zoldBadge  = { display:"inline-block", padding:"2px 8px", borderRadius:6, fontSize:11, fontWeight:700, background:"#DCFCE7", color:"#166534" };
-  const thP = { ...S.th, color:"#991B1B" };
-  const trP = { borderBottom:"1px solid #FECACA", background:"#FFF5F5" };
+  const pirosBadge = { display:"inline-block", padding:"2px 8px", borderRadius:6, fontSize:11, fontWeight:700, background:C.dangerLight, color:C.dangerDark };
+  const zoldBadge  = { display:"inline-block", padding:"2px 8px", borderRadius:6, fontSize:11, fontWeight:700, background:C.successLight, color:C.success };
+  const thP = { ...S.th, color:C.dangerDark };
+  const trP = { borderBottom:`1px solid ${C.dangerLight}`, background:"#FFF5F5" };
 
   function ArvaTabla({ cim, sorok, fejlec, sorRender, uresUzenet }) {
     return (
       <div style={{ marginBottom:28 }}>
-        <p style={{ fontSize:11, fontWeight:700, color: sorok.length > 0 ? "#991B1B" : "#166534", textTransform:"uppercase", letterSpacing:0.7, margin:"0 0 10px" }}>
+        <p style={{ fontSize:11, fontWeight:700, color: sorok.length > 0 ? C.dangerDark : C.success, textTransform:"uppercase", letterSpacing:0.7, margin:"0 0 10px" }}>
           {cim} ({sorok.length} db)
         </p>
         {sorok.length === 0 ? (
-          <div style={{ padding:"14px 16px", background:"#F0FDF4", border:"1px solid #86EFAC", borderRadius:8, fontSize:12, color:"#166534" }}>{uresUzenet}</div>
+          <div style={{ padding:"14px 16px", background:C.successLight, border:`1px solid ${C.success}`, borderRadius:8, fontSize:12, color:C.success }}>{uresUzenet}</div>
         ) : (
-          <div style={{ overflowX:"auto", border:"1px solid #FECACA", borderRadius:10 }}>
+          <div style={{ overflowX:"auto", border:`1px solid ${C.dangerLight}`, borderRadius:10 }}>
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
               <thead>
-                <tr style={{ background:"#FEF2F2", borderBottom:"2px solid #FECACA" }}>
+                <tr style={{ background:C.dangerLight, borderBottom:`2px solid ${C.dangerLight}` }}>
                   {fejlec.map(f => <th key={f} style={thP}>{f}</th>)}
                 </tr>
               </thead>
@@ -364,12 +364,12 @@ function ArvaRekordokTab() {
           const ok = !m.projektId ? "Hiányzó projektId" : !projektIds.has(m.projektId) ? "projektId nem létező projektre mutat" : m.torolt ? "torolt===true" : "archiv===true";
           return (
             <tr key={m.id} style={trP}>
-              <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700, color:"#991B1B" }}>{m.id?.slice(-8)||"—"}</td>
+              <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700, color:C.dangerDark }}>{m.id?.slice(-8)||"—"}</td>
               <td style={S.td}>{m.status||"—"}</td>
-              <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>{m.projektId || <em style={{ color:"#DC2626" }}>HIÁNYZIK</em>}</td>
+              <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>{m.projektId || <em style={{ color:C.danger }}>HIÁNYZIK</em>}</td>
               <td style={{ ...S.td, textAlign:"center" }}>{m.torolt ? "🔴 igen" : "—"}</td>
               <td style={{ ...S.td, textAlign:"center" }}>{m.archiv ? "🔴 igen" : "—"}</td>
-              <td style={{ ...S.td, color:"#DC2626", fontSize:11 }}>{ok}</td>
+              <td style={{ ...S.td, color:C.danger, fontSize:11 }}>{ok}</td>
             </tr>
           );
         }}
@@ -380,10 +380,10 @@ function ArvaRekordokTab() {
           const ok = !c.projektId ? "Hiányzó projektId" : "projektId nem létező projektre mutat";
           return (
             <tr key={c.id} style={trP}>
-              <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700, color:"#991B1B" }}>{c.id?.slice(-8)||"—"}</td>
+              <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700, color:C.dangerDark }}>{c.id?.slice(-8)||"—"}</td>
               <td style={S.td}>{c.statusz||"—"}</td>
-              <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>{c.projektId || <em style={{ color:"#DC2626" }}>HIÁNYZIK</em>}</td>
-              <td style={{ ...S.td, color:"#DC2626", fontSize:11 }}>{ok}</td>
+              <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>{c.projektId || <em style={{ color:C.danger }}>HIÁNYZIK</em>}</td>
+              <td style={{ ...S.td, color:C.danger, fontSize:11 }}>{ok}</td>
             </tr>
           );
         }}
@@ -392,10 +392,10 @@ function ArvaRekordokTab() {
         uresUzenet="Nincs árva per-munkalap kulcs (crm_ml_*, lmra_rec_*)."
         sorRender={r => (
           <tr key={r.key} style={trP}>
-            <td style={{ ...S.td, fontFamily:"monospace", fontSize:11, color:"#991B1B" }}>{r.key}</td>
+            <td style={{ ...S.td, fontFamily:"monospace", fontSize:11, color:C.dangerDark }}>{r.key}</td>
             <td style={{ ...S.td, fontSize:11 }}>{r.tipus}</td>
             <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>{r.munkalapId}</td>
-            <td style={{ ...S.td, color:"#DC2626", fontSize:11 }}>Munkalap nem található</td>
+            <td style={{ ...S.td, color:C.danger, fontSize:11 }}>Munkalap nem található</td>
           </tr>
         )}
       />
@@ -407,15 +407,15 @@ function ArvaRekordokTab() {
           const ok = mlId && !munkalapIds.has(mlId) ? "munkalapId nem létező munkalapra mutat" : "projektId nem létező projektre mutat";
           return (
             <tr key={ev.id} style={trP}>
-              <td style={{ ...S.td, fontFamily:"monospace", fontSize:11, color:"#991B1B" }}>{ev.id?.slice(-8)||"—"}</td>
+              <td style={{ ...S.td, fontFamily:"monospace", fontSize:11, color:C.dangerDark }}>{ev.id?.slice(-8)||"—"}</td>
               <td style={S.td}>{ev.title||ev.cim||"—"}</td>
               <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>{mlId||projId||"—"}</td>
-              <td style={{ ...S.td, color:"#DC2626", fontSize:11 }}>{ok}</td>
+              <td style={{ ...S.td, color:C.danger, fontSize:11 }}>{ok}</td>
             </tr>
           );
         }}
       />
-      <div style={{ marginTop:8, padding:"10px 14px", background:"#FFFBEB", border:"1px solid #FCD34D", borderRadius:8, fontSize:11, color:"#92400E" }}>
+      <div style={{ marginTop:8, padding:"10px 14px", background:C.warningLight, border:`1px solid ${C.warningLight}`, borderRadius:8, fontSize:11, color:C.warning }}>
         <strong>Árva rekord</strong>: hiányzó vagy érvénytelen hivatkozás. Csak olvasható — törléshez: Beállítások / Teljes tesztadat törlés.
       </div>
     </div>
@@ -424,10 +424,10 @@ function ArvaRekordokTab() {
 
 // ─── Projekt adatfolyam – segéd komponensek ───────────────────────────────
 const ALLAPOT_SZIN = {
-  zold:   { bg:"#F0FDF4", border:"#86EFAC", fejlecBg:"#DCFCE7", fejlecSzin:"#166534", ikon:"🟢" },
-  sarga:  { bg:"#FFFBEB", border:"#FCD34D", fejlecBg:"#FEF3C7", fejlecSzin:"#92400E", ikon:"🟡" },
-  piros:  { bg:"#FEF2F2", border:"#FECACA", fejlecBg:"#FEE2E2", fejlecSzin:"#991B1B", ikon:"🔴" },
-  szurke: { bg:"#F8FAFC", border:"#CBD5E1", fejlecBg:"#F1F5F9", fejlecSzin:"#64748B", ikon:"⚪" },
+  zold:   { bg:C.successLight, border:C.success, fejlecBg:C.successLight, fejlecSzin:C.success, ikon:"🟢" },
+  sarga:  { bg:C.warningLight, border:C.warningLight, fejlecBg:C.warningLight, fejlecSzin:C.warning, ikon:"🟡" },
+  piros:  { bg:C.dangerLight, border:C.dangerLight, fejlecBg:C.dangerLight, fejlecSzin:C.dangerDark, ikon:"🔴" },
+  szurke: { bg:C.bg, border:C.border, fejlecBg:C.bg, fejlecSzin:C.muted, ikon:"⚪" },
 };
 
 function AdatfolyamBlokk({ betu, cim, allapot, fajlok, children }) {
@@ -442,10 +442,10 @@ function AdatfolyamBlokk({ betu, cim, allapot, fajlok, children }) {
       <div style={{ padding:"12px 16px" }}>
         {children}
         {fajlok && fajlok.length > 0 && (
-          <div style={{ marginTop:10, paddingTop:8, borderTop:"1px dashed #CBD5E1" }}>
-            <span style={{ fontSize:10, color:"#94A3B8", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5 }}>Érintett fájlok: </span>
+          <div style={{ marginTop:10, paddingTop:8, borderTop:`1px dashed ${C.border}` }}>
+            <span style={{ fontSize:10, color:C.muted, fontWeight:700, textTransform:"uppercase", letterSpacing:0.5 }}>Érintett fájlok: </span>
             {fajlok.map((f, i) => (
-              <span key={f} style={{ fontSize:10, color:"#64748B", fontFamily:"monospace" }}>{i > 0 ? ", " : ""}{f}</span>
+              <span key={f} style={{ fontSize:10, color:C.muted, fontFamily:"monospace" }}>{i > 0 ? ", " : ""}{f}</span>
             ))}
           </div>
         )}
@@ -455,10 +455,10 @@ function AdatfolyamBlokk({ betu, cim, allapot, fajlok, children }) {
 }
 
 function AdatSor({ cimke, ertek, allapot }) {
-  const szin = allapot === "hiba" ? "#DC2626" : allapot === "figyelem" ? "#B45309" : allapot === "ok" ? "#166534" : "#475569";
+  const szin = allapot === "hiba" ? C.danger : allapot === "figyelem" ? C.warning : allapot === "ok" ? C.success : C.textSub;
   return (
     <div style={{ display:"flex", gap:8, padding:"3px 0", fontSize:12, alignItems:"flex-start" }}>
-      <span style={{ color:"#64748B", fontWeight:600, minWidth:175, flexShrink:0 }}>{cimke}:</span>
+      <span style={{ color:C.muted, fontWeight:600, minWidth:175, flexShrink:0 }}>{cimke}:</span>
       <span style={{ color:szin, wordBreak:"break-word", fontFamily: typeof ertek === "string" && ertek.startsWith("crm_") ? "monospace" : "inherit" }}>{ertek}</span>
     </div>
   );
@@ -466,10 +466,10 @@ function AdatSor({ cimke, ertek, allapot }) {
 
 function UzenetSor({ szoveg, tipus }) {
   const t = {
-    hiba:     { bg:"#FEE2E2", border:"#FECACA", szin:"#991B1B", cimke:"Hiba" },
-    figyelem: { bg:"#FEF3C7", border:"#FCD34D", szin:"#92400E", cimke:"Figyelem" },
-    info:     { bg:"#EFF6FF", border:"#BFDBFE", szin:"#1E40AF", cimke:"Info" },
-  }[tipus] || { bg:"#F8FAFC", border:"#CBD5E1", szin:"#475569", cimke:"" };
+    hiba:     { bg:C.dangerLight, border:C.dangerLight, szin:C.dangerDark, cimke:"Hiba" },
+    figyelem: { bg:C.warningLight, border:C.warningLight, szin:C.warning, cimke:"Figyelem" },
+    info:     { bg:C.accentLight, border:C.accentLight, szin:C.accentHover, cimke:"Info" },
+  }[tipus] || { bg:C.bg, border:C.border, szin:C.textSub, cimke:"" };
   return (
     <div style={{ padding:"6px 10px", marginTop:6, background:t.bg, border:`1px solid ${t.border}`, borderRadius:6, fontSize:11, color:t.szin, lineHeight:1.5 }}>
       <strong>{t.cimke}: </strong>{szoveg}
@@ -478,7 +478,7 @@ function UzenetSor({ szoveg, tipus }) {
 }
 
 function Nyil() {
-  return <div style={{ textAlign:"center", fontSize:22, color:"#94A3B8", lineHeight:1, padding:"6px 0", userSelect:"none" }}>↓</div>;
+  return <div style={{ textAlign:"center", fontSize:22, color:C.muted, lineHeight:1, padding:"6px 0", userSelect:"none" }}>↓</div>;
 }
 
 // ─── Projekt adatfolyam tab ───────────────────────────────────────────────
@@ -497,7 +497,7 @@ function ProjektAdatfolyamTab() {
 
   const projektSelect = (
     <div style={{ marginBottom: projekt ? 20 : 0 }}>
-      <label style={{ fontSize:11, fontWeight:700, color:"#64748B", display:"block", marginBottom:6, textTransform:"uppercase", letterSpacing:0.7 }}>
+      <label style={{ fontSize:11, fontWeight:700, color:C.muted, display:"block", marginBottom:6, textTransform:"uppercase", letterSpacing:0.7 }}>
         Projekt kiválasztása
       </label>
       <select value={projektId} onChange={e => setProjektId(e.target.value)}
@@ -793,7 +793,7 @@ function ProjektAdatfolyamTab() {
 
       </div>
 
-      <div style={{ marginTop:20, padding:"10px 14px", background:"#FFFBEB", border:"1px solid #FCD34D", borderRadius:8, fontSize:11, color:"#92400E" }}>
+      <div style={{ marginTop:20, padding:"10px 14px", background:C.warningLight, border:`1px solid ${C.warningLight}`, borderRadius:8, fontSize:11, color:C.warning }}>
         <strong>Csak olvasható nézet.</strong> Semmilyen adat nem módosul. Az összegek becsültek (egységár × tervmennyiség).
       </div>
     </div>
@@ -815,26 +815,26 @@ export default function AdatTerkepDebug() {
     return {
       padding: "9px 18px", border: "none", cursor: "pointer", fontFamily: FONT,
       fontWeight: aktiv ? 700 : 400, fontSize: 13,
-      color: aktiv ? "#1D4ED8" : C.muted,
+      color: aktiv ? C.accent : C.muted,
       background: aktiv ? "#fff" : "transparent",
-      borderBottom: aktiv ? "2px solid #2563EB" : "2px solid transparent",
+      borderBottom: aktiv ? `2px solid ${C.accent}` : "2px solid transparent",
       whiteSpace: "nowrap",
     };
   }
 
   return (
     <div style={{ fontFamily: FONT, paddingBottom: 40 }}>
-      <div style={{ margin: "0 24px 20px", marginTop: 20, padding: "12px 16px", background: "#FFFBEB", border: "2px solid #F59E0B", borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 12 }}>
+      <div style={{ margin: "0 24px 20px", marginTop: 20, padding: "12px 16px", background: C.warningLight, border: `2px solid ${C.warning}`, borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 12 }}>
         <span style={{ fontSize: 20, flexShrink: 0 }}>⚠️</span>
         <div>
-          <p style={{ fontWeight: 800, fontSize: 13, color: "#92400E", margin: "0 0 3px" }}>Fejlesztoi debug nezet – csak olvaso mod</p>
+          <p style={{ fontWeight: 800, fontSize: 13, color: C.warning, margin: "0 0 3px" }}>Fejlesztoi debug nezet – csak olvaso mod</p>
           <p style={{ fontSize: 12, color: "#78350F", margin: 0, lineHeight: 1.5 }}>
             Semmilyen adatmodositas, torles, export, import vagy restore nem vegezhetö innen. Csakis Admin szerepkornek lathato.
           </p>
         </div>
       </div>
 
-      <div style={{ borderBottom: `1px solid ${C.border}`, display: "flex", gap: 0, background: "#F8FAFC", margin: "0 24px", overflowX: "auto" }}>
+      <div style={{ borderBottom: `1px solid ${C.border}`, display: "flex", gap: 0, background: C.bg, margin: "0 24px", overflowX: "auto" }}>
         <button style={tabGombStil("kulcsok")} onClick={() => setTab("kulcsok")}>localStorage kulcsok ({snapshot.length})</button>
         <button style={tabGombStil("kapcsolatok")} onClick={() => setTab("kapcsolatok")}>Kapcsolati vizsgálat</button>
         <button style={tabGombStil("arva")} onClick={() => setTab("arva")}>Árva rekordok</button>

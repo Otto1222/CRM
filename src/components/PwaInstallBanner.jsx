@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Download, X } from "lucide-react";
-import { FONT } from "../lib/constants";
+import { C, FONT } from "../lib/constants";
 
 function isIOS() {
   return /ipad|iphone|ipod/i.test(navigator.userAgent) && !window.MSStream;
@@ -60,7 +60,7 @@ export default function PwaInstallBanner() {
   return (
     <div style={{
       position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9998,
-      background: "#0F172A",
+      background: C.text,
       borderTop: "1px solid #1E3A5F",
       padding: "14px 16px calc(14px + env(safe-area-inset-bottom, 0px)) 16px",
       fontFamily: FONT,
@@ -69,24 +69,24 @@ export default function PwaInstallBanner() {
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: mode === "ios" ? 0 : 10 }}>
         <img src="/icon.svg" alt="" style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0 }} />
         <div style={{ flex: 1 }}>
-          <p style={{ color: "#F8FAFC", fontWeight: 700, fontSize: 14, margin: "0 0 3px" }}>
+          <p style={{ color: C.bg, fontWeight: 700, fontSize: 14, margin: "0 0 3px" }}>
             📱 Telepítsd az appot!
           </p>
           {mode === "ios" ? (
-            <p style={{ color: "#94A3B8", fontSize: 12, margin: 0, lineHeight: 1.7 }}>
+            <p style={{ color: C.muted, fontSize: 12, margin: 0, lineHeight: 1.7 }}>
               Nyomd meg a <strong style={{ color: "#60A5FA" }}>⬆️ Megosztás</strong> gombot, majd válaszd:
               <br />
               <strong style={{ color: "#4ADE80" }}>"Főképernyőhöz adás"</strong>
             </p>
           ) : (
-            <p style={{ color: "#94A3B8", fontSize: 12, margin: 0 }}>
+            <p style={{ color: C.muted, fontSize: 12, margin: 0 }}>
               Offline is működik · Gyorsabb · Ikon a kezdőképernyőn
             </p>
           )}
         </div>
         <button
           onClick={dismiss}
-          style={{ border: "none", background: "none", color: "#475569", cursor: "pointer", padding: "2px", flexShrink: 0 }}
+          style={{ border: "none", background: "none", color: C.textSub, cursor: "pointer", padding: "2px", flexShrink: 0 }}
           aria-label="Bezárás"
         >
           <X size={18} />
@@ -98,7 +98,7 @@ export default function PwaInstallBanner() {
           onClick={install}
           style={{
             width: "100%", padding: "12px", borderRadius: 10, border: "none",
-            background: "#2563EB", color: "#fff", fontWeight: 700, fontSize: 14,
+            background: C.accent, color: "#fff", fontWeight: 700, fontSize: 14,
             cursor: "pointer", display: "flex", alignItems: "center",
             justifyContent: "center", gap: 8, fontFamily: FONT,
           }}

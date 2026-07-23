@@ -7,9 +7,9 @@ export default function TopBar({ title, user, driveStatus, right, onBack, backLa
     idle:      C.muted,
     saving:    C.warning,
     ok:        C.success,
-    verified:  "#059669",
+    verified:  C.success,
     error:     C.danger,
-    local_ok:  "#D97706",
+    local_ok:  C.warning,
   };
   const dsLabel = {
     idle:      "Drive",
