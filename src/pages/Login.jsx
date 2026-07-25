@@ -1,31 +1,52 @@
 import { useState } from "react";
-import { User, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, LogIn, AlertTriangle } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
-import { checkLogin } from "../lib/crmUsers";
+import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../auth/AuthProvider";
 
-export default function Login({ onLogin }) {
-  const [username, setUsername] = useState("");
+// Kívülről egységes hibaüzenet – NEM árulja el, hogy az email létezik-e.
+const GENERIC_AUTH_ERROR = "Hibás email-cím vagy jelszó.";
+
+export default function Login() {
+  const { configured, error: authError } = useAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPw,   setShowPw]   = useState(false);
-  const [error,    setError]    = useState("");
-  const [loading,  setLoading]  = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) {
-      setError("Add meg a felhasználónevet és a jelszót!");
+    if (!configured || !supabase) return;
+
+    if (!email.trim() || !password) {
+      setError("Add meg az email-címet és a jelszót!");
       return;
     }
+
     setLoading(true);
     setError("");
-    const result = await checkLogin(username.trim(), password.trim());
-    setLoading(false);
-    if (result.ok) {
-      onLogin(result.user);
-    } else {
-      setError(result.error);
+
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      // Sikeres belépésnél az AuthProvider veszi át (session + profil betöltés,
+      // inaktív fiók esetén automatikus kijelentkeztetés). Itt nincs teendő.
+      if (signInError) {
+        // Egységes üzenet – ne szivárogtassuk ki a fiók létezését.
+        setError(GENERIC_AUTH_ERROR);
+      }
+    } catch {
+      setError(GENERIC_AUTH_ERROR);
+    } finally {
+      setLoading(false);
     }
   }
+
+  // Inaktív fiók / profil-hiba üzenete az AuthProvider-től (sikeres jelszó után).
+  const displayError = error || (!loading ? authError : "");
 
   return (
     <div style={{
@@ -69,27 +90,45 @@ export default function Login({ onLogin }) {
           CRM rendszer hozzáférés
         </p>
 
+        {/* ── Konfiguráció hiánya – adminisztrátori üzenet ── */}
+        {!configured && (
+          <div style={{
+            background: "#FFFBEB", border: "1.5px solid #FDE68A",
+            borderRadius: 10, padding: "12px 14px", fontSize: 13,
+            color: "#92400E", fontWeight: 600, marginBottom: 20,
+            display: "flex", alignItems: "flex-start", gap: 8,
+          }}>
+            <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span>
+              A hitelesítés nincs beállítva. Kérjük az adminisztrátort, hogy
+              állítsa be a <b>VITE_SUPABASE_URL</b> és <b>VITE_SUPABASE_ANON_KEY</b>{" "}
+              környezeti változókat.
+            </span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-          {/* ── Felhasználónév ── */}
+          {/* ── Email ── */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: C.textSub, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 6 }}>
-              Felhasználónév
+              Email-cím
             </label>
             <div className="edi-input-wrap" style={{
               display: "flex", alignItems: "center", gap: 10,
               background: "#F2F8F7",
-              border: `1.5px solid ${error ? C.danger : C.border}`,
+              border: `1.5px solid ${displayError ? C.danger : C.border}`,
               borderRadius: 12, padding: "0 14px", transition: "all .15s",
             }}>
-              <User size={16} color={C.muted} />
+              <Mail size={16} color={C.muted} />
               <input
-                type="text"
-                value={username}
-                onChange={e => { setUsername(e.target.value); setError(""); }}
-                placeholder="pl. edi"
+                type="email"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError(""); }}
+                placeholder="pl. nev@ceg.hu"
                 autoFocus
                 autoComplete="username"
+                disabled={!configured}
                 style={{ flex: 1, border: "none", outline: "none", fontSize: 15, padding: "13px 0", fontFamily: FONT, background: "transparent", color: C.text, fontWeight: 500 }}
               />
             </div>
@@ -103,7 +142,7 @@ export default function Login({ onLogin }) {
             <div className="edi-input-wrap" style={{
               display: "flex", alignItems: "center", gap: 10,
               background: "#F2F8F7",
-              border: `1.5px solid ${error ? C.danger : C.border}`,
+              border: `1.5px solid ${displayError ? C.danger : C.border}`,
               borderRadius: 12, padding: "0 14px", transition: "all .15s",
             }}>
               <Lock size={16} color={C.muted} />
@@ -113,6 +152,7 @@ export default function Login({ onLogin }) {
                 onChange={e => { setPassword(e.target.value); setError(""); }}
                 placeholder="••••••••"
                 autoComplete="current-password"
+                disabled={!configured}
                 style={{ flex: 1, border: "none", outline: "none", fontSize: 15, padding: "13px 0", fontFamily: FONT, background: "transparent", color: C.text, fontWeight: 500 }}
               />
               <button type="button" onClick={() => setShowPw(p => !p)}
@@ -124,29 +164,29 @@ export default function Login({ onLogin }) {
           </div>
 
           {/* ── Hibaüzenet ── */}
-          {error && (
+          {displayError && (
             <div style={{
               background: C.dangerLight, border: `1.5px solid #FECACA`,
               borderRadius: 10, padding: "10px 14px", fontSize: 13,
               color: C.danger, fontWeight: 600, display: "flex", alignItems: "center", gap: 8,
             }}>
-              <span>⚠</span> {error}
+              <span>⚠</span> {displayError}
             </div>
           )}
 
           {/* ── Bejelentkezés gomb ── */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !configured}
             className="edi-login-btn"
             style={{
               marginTop: 4, padding: "14px", borderRadius: 12, border: "none",
-              background: loading ? C.muted : C.accent,
+              background: (loading || !configured) ? C.muted : C.accent,
               color: "#fff", fontWeight: 700, fontSize: 15,
-              cursor: loading ? "not-allowed" : "pointer",
+              cursor: (loading || !configured) ? "not-allowed" : "pointer",
               fontFamily: FONT, display: "flex", alignItems: "center",
               justifyContent: "center", gap: 8, transition: "all .15s",
-              boxShadow: loading ? "none" : `0 4px 16px rgba(24,172,160,.35)`,
+              boxShadow: (loading || !configured) ? "none" : `0 4px 16px rgba(24,172,160,.35)`,
               letterSpacing: 0.5,
             }}>
             {loading ? (

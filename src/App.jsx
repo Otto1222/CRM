@@ -3,7 +3,8 @@ import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
 import { driveSave, driveAvailable } from "./lib/driveApi";
 import { hasDefaultPasswords } from "./lib/crmUsers";
-import { getHomePage } from "./lib/roles";
+import { getHomePage, toDisplayRole } from "./lib/roles";
+import { useAuth } from "./auth/AuthProvider";
 import { loadLocal, saveLocal } from "./lib/localDb";
 import { syncAllFromDrive, syncAllToDrive } from "./lib/dataSync.service";
 import { migrateTelepitoCsapatok } from "./lib/csapatMigracio";
@@ -47,6 +48,49 @@ const PAGE_TITLES = {
   beallitasok:       "Beállítások / Rendszer",
 };
 
+/** Egyszerű teljes képernyős állapotjelző (loading / hibaállapot). */
+function AuthSplash({ text, detail, error = false, onLogout }) {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: `linear-gradient(145deg, #051a17 0%, #082521 45%, ${C.accentDark} 100%)`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 24, fontFamily: "system-ui, sans-serif",
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 20, padding: "36px 40px",
+        maxWidth: 440, width: "100%", textAlign: "center",
+        boxShadow: "0 24px 60px rgba(0,0,0,.4)",
+      }}>
+        {!error && (
+          <div style={{
+            width: 40, height: 40, margin: "0 auto 20px",
+            border: "3px solid rgba(24,172,160,.25)", borderTopColor: C.accent,
+            borderRadius: "50%", animation: "spin .7s linear infinite",
+          }} />
+        )}
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ fontWeight: 800, fontSize: 18, color: error ? C.danger : C.text, marginBottom: detail ? 10 : 0 }}>
+          {error ? "⚠ " : ""}{text}
+        </div>
+        {detail && (
+          <div style={{ fontSize: 13, color: C.muted, fontWeight: 500, lineHeight: 1.5 }}>{detail}</div>
+        )}
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            style={{
+              marginTop: 22, padding: "10px 20px", borderRadius: 10, border: "none",
+              background: C.accent, color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14,
+            }}>
+            Kijelentkezés
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function fixMunkalapokSzamozas(list) {
   let changed = false;
   const fixed = list.map(m => {
@@ -84,14 +128,44 @@ function loadInitialData() {
   };
 }
 
+/**
+ * A meglévő komponensek a régi, magyar szerepkör-címkéket és a
+ * name/role/initials/color mezőket várják. Ezt a Supabase session + profil
+ * párosból építjük fel, hogy a UI változatlanul működjön.
+ */
+function buildCompatUser(session, profile) {
+  if (!session?.user || !profile) return null;
+  const fullName = profile.full_name || session.user.email || "Felhasználó";
+  const initials = fullName
+    .split(/\s+/)
+    .map(w => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+  return {
+    id: session.user.id,
+    email: session.user.email,
+    name: fullName,
+    role: toDisplayRole(profile.role),  // régi magyar címke a UI kompatibilitáshoz
+    dbRole: profile.role,               // eredeti, kisbetűs DB szerepkör
+    initials,
+    color: C.accent,
+  };
+}
+
 export default function App() {
-  const [user, setUser] = useState(() => {
-    try {
-      const t = localStorage.getItem("__crm_test_session__");
-      if (t) return JSON.parse(t);
-    } catch {}
-    return null;
-  });
+  const {
+    session,
+    profile,
+    loading: authLoading,
+    profileLoading,
+    configured,
+    signOut,
+  } = useAuth();
+
+  const user = buildCompatUser(session, profile);
+  const userId = session?.user?.id || null;
+
   const [page, setPage] = useState("dashboard");
   const [sel, setSel] = useState(null);
   const [data, setData] = useState(loadInitialData);
@@ -99,11 +173,8 @@ export default function App() {
   const [defaultPwWarning, setDefaultPwWarning] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [ujMunkalapInit, setUjMunkalapInit] = useState(null);
-  const [sablonValaszto, setSablonValaszto] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => { localStorage.removeItem("__crm_test_session__"); }, []);
 
   useEffect(() => {
     const goOnline  = () => setIsOnline(true);
@@ -144,8 +215,18 @@ export default function App() {
     };
   }, []);
 
+  // Bejelentkezés utáni egyszeri mellékhatások (profil elérhetővé válásakor):
+  // kezdőoldal beállítása, sablonok inicializálása, idempotens csapat-migráció.
   useEffect(() => {
-    if (!user) return;
+    if (!userId || !profile) return;
+    setPage(getHomePage(profile.role));
+    if (profile.role === "admin") setDefaultPwWarning(hasDefaultPasswords());
+    initSablonok();
+    try { migrateTelepitoCsapatok(); } catch (e) { console.warn("[csapat migráció]", e); }
+  }, [userId, profile]);
+
+  useEffect(() => {
+    if (!userId) return;
 
     (async () => {
       if (driveAvailable()) setDrive("saving");
@@ -187,7 +268,7 @@ export default function App() {
 
       if (driveAvailable()) setTimeout(() => setDrive("idle"), 2500);
     })();
-  }, [user]);
+  }, [userId]);
 
   async function saveCollection(collection, items) {
     saveLocal(collection, items);
@@ -264,22 +345,39 @@ export default function App() {
     setSidebarOpen(false);
   }
 
-  function logout() {
-    setUser(null);
+  async function logout() {
+    // A Supabase session megszűnik; az AuthProvider figyeli az állapotváltást.
+    await signOut();
     setSel(null);
     setPage("dashboard");
   }
 
-  function handleLogin(u) {
-    setUser(u);
-    setPage(getHomePage(u?.role));
-    if (u?.role === "Admin") setDefaultPwWarning(hasDefaultPasswords());
-    initSablonok();
-    // Egyszeri, idempotens csapat-migráció (régi Telepítő csapatok → egységes Csapatok)
-    try { migrateTelepitoCsapatok(); } catch (e) { console.warn("[csapat migráció]", e); }
+  // ── Hitelesítési állapot-vezérelt renderelés ──────────────────────────────
+  // 1) Betöltés alatt: loading képernyő.
+  if (authLoading || (userId && profileLoading)) {
+    return <AuthSplash text="Betöltés…" />;
   }
 
-  if (!user) return <Login onLogin={handleLogin} />;
+  // 2) Nincs session → bejelentkezés (a Login kezeli a konfiguráció hiányát is).
+  if (!session) {
+    return <Login />;
+  }
+
+  // 3) Van session, de nincs profil → hibaállapot (nem migrált / hiányzó profil).
+  if (session && !profile) {
+    return (
+      <AuthSplash
+        error
+        text="A fiókhoz nincs profil"
+        detail={
+          configured
+            ? "A bejelentkezés sikeres, de ehhez a felhasználóhoz nem tartozik profil a rendszerben. Kérjük az adminisztrátort, hogy hozzon létre profilt (profiles tábla)."
+            : "A hitelesítés nincs beállítva."
+        }
+        onLogout={logout}
+      />
+    );
+  }
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: C.bg }}>

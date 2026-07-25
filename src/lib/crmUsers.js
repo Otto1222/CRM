@@ -1,11 +1,33 @@
 /**
  * crmUsers.js – Felhasználók és bejelentkezési adatok
  *
- * Felhasználók tárolása: localStorage["crm_napelem_users"] (Drive szinkron)
- * Jelszavak: SHA-256 hash – soha nem kerül plain text Drive-ra
+ * ============================================================================
+ * ⚠️ DEPRECATED – RÉGI, NEM BIZTONSÁGOS HITELESÍTÉS
+ * ============================================================================
+ * Ez a modul a régi, localStorage + SHA-256 alapú hitelesítést valósítja meg.
+ * A NORMÁL bejelentkezési folyamat MÁR NEM ezt használja – a bejelentkezés a
+ * Supabase Auth-on keresztül történik (src/auth/AuthProvider.jsx, Login.jsx).
  *
- * Alapértelmezett jelszavak az Admin felületen keresztül változtathatók meg.
- * (Az alapértelmezett jelszavakat NE tárold forráskódban – éles indulás előtt módosítsd!)
+ * Miért nem biztonságos (részletek: docs/SECURITY_MIGRATION.md):
+ *   - a jelszóhash a kliensen, kulcsnyújtás (salt, iteráció) nélkül készül;
+ *   - a felhasználólista és a hash a böngészőben / Drive-on olvasható;
+ *   - a "jogosultság" csak kliensoldali – nincs szerveroldali kényszerítés.
+ *
+ * A régi SHA-256 hasheket NEM migráljuk automatikusan Supabase Auth alá –
+ * a felhasználóknak új, Supabase Auth jelszót kell kapniuk.
+ *
+ * Még függő (importáló) fájlok – a későbbi migráció során átalakítandók:
+ *   - src/pages/AdminPanel.jsx        (getUsers, saveUsersLocal, hashPw)
+ *   - src/pages/Munkalapok.jsx        (getUsers – szerelő-névfeloldás)
+ *   - src/pages/UjMunkalap.jsx        (getUsers)
+ *   - src/modules/csapatok/CsapatokPage.jsx   (getUsers)
+ *   - src/modules/projektek/ProjektForm.jsx   (getUsers)
+ *   - src/lib/store.jsx               (getUsers)
+ *   - src/components/DriveStatusPanel.jsx, src/App.jsx (hasDefaultPasswords)
+ *
+ * Ezért a fájlt EGYELŐRE nem töröljük; a `checkLogin`/`hashPw` a normál
+ * belépésből ki van vezetve. A teljes leválasztás külön migrációs feladat.
+ * ============================================================================
  */
 
 import { loadLocal, saveLocal } from "./localDb";
@@ -90,7 +112,13 @@ export function hasDefaultPasswords() {
   return users.some(u => defaultHashes.has(u.passwordHash));
 }
 
-/** Bejelentkezés ellenőrzése – username vagy teljes névvel */
+/**
+ * @deprecated Régi, nem biztonságos bejelentkezés (localStorage + SHA-256).
+ * A normál belépés a Supabase Auth-ot használja (AuthProvider / Login.jsx).
+ * Ne hívd új kódból.
+ *
+ * Bejelentkezés ellenőrzése – username vagy teljes névvel
+ */
 export async function checkLogin(username, password) {
   const users = getUsers();
   const user  = users.find(u =>
