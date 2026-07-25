@@ -1,1 +1,18 @@
 node_modules
+
+# Környezeti változók – SOHA ne kerüljenek verziókezelésbe
+# (Supabase URL/anon key, Apps Script URL a .env fájlokban)
+.env
+.env.local
+.env.*.local
+
+# Build kimenet
+# (a dist/ jelenleg verziókezelt – ha CI buildel, ezt kapcsold be)
+# dist
+
+# Vitest / coverage
+coverage
+
+# Szerkesztő / OS
+.DS_Store
+*.log
