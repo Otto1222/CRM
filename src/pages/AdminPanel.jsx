@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff, Pencil, Check, X, Copy, RefreshCw, ShieldCheck, User, Lock, Plus, Trash2, AlertTriangle, UserPlus } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
-import { getUsers, saveUsersLocal, hashPw } from "../lib/crmUsers";
+import { getUsers, saveUsersLocal, hashPw, refreshUsersFromDrive } from "../lib/crmUsers";
 import Card from "../components/Card";
 
 function Avatar({ initials, color, size = 40 }) {
@@ -191,10 +191,20 @@ export default function AdminPanel({ currentUser }) {
 
   const isAdmin = currentUser?.role === "Admin";
 
+  // Panel megnyitásakor mindig frissítünk a Drive-ról – enélkül két admin
+  // két különböző gépen egymás felül-nem-látott változtatásait írná felül
+  // a mentéskor (a users mentés a teljes listát felülírja, nem merge-el).
+  useEffect(() => {
+    (async () => {
+      await refreshUsersFromDrive();
+      setUsers(getUsers());
+    })();
+  }, []);
+
   async function handleSave(userId, updates) {
-    const updated = users.map(u => u.id === userId ? { ...u, ...updates } : u);
+    const updated = users.map(u => u.id === userId ? { ...u, ...updates, updatedAt: new Date().toISOString() } : u);
     setUsers(updated);
-    saveUsersLocal(updated); // saveUsersLocal most már dispatch-el crm-db-updated "users" event-et
+    saveUsersLocal(updated); // saveUsersLocal most már a Drive-ra is azonnal ment
     // Frissítsük a munkalapokat is ahol ez a user assigneeNev-ként szerepel (ha nevét változtatta)
     if (updates.name) {
       const oldUser = users.find(u => u.id === userId);
@@ -234,6 +244,7 @@ export default function AdminPanel({ currentUser }) {
       color:           szin,
       initials,
       passwordHash:    pwHash,
+      updatedAt:       new Date().toISOString(),
     };
     const updated = [...users, newUser];
     setUsers(updated);
