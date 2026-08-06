@@ -215,7 +215,33 @@ export async function loadCollectionWithStatus(collection) {
     return { data: cleaned, status: "drive" };
   }
 
-  // Drive elérhető, de nincs/üres adat → helyi marad (nem hiba)
+  // Drive elérhető, de nincs/üres adat. Két nagyon eltérő eset rejlik emögött:
+  //  a) driveData === null → a fájl még nem létezik / kétértelmű válasz →
+  //     ne kockáztassunk, maradjon a lokális adat változatlanul.
+  //  b) driveData EXPLICIT üres tömb ([]) → a fájl LÉTEZIK a Drive-on, és
+  //     ténylegesen nincs benne egyetlen rekord sem. Ha a lokális gépen mégis
+  //     vannak rekordok, azok szinte biztosan "szellem" adatok egy korábbi,
+  //     Drive-kapcsolat nélküli időszakból (pl. egy telefonon rekedt teszt-
+  //     munkalap, amit sosem sikerült Drive-ra menteni). Ha ezt sosem
+  //     tisztítjuk, egy ilyen eszköz örökre más adatot mutat, mint a többi.
+  //     Csak a néhány percnél régebbi rekordokat töröljük lokálisan is –
+  //     a nagyon friss rekordokat megtartjuk, hátha épp folyamatban van
+  //     (vagy meghiúsult) a Drive-ra mentésük, pl. mert az eszköz most
+  //     pillanatnyilag offline.
+  if (Array.isArray(driveData) && Array.isArray(localData) && localData.length > 0) {
+    const RECENT_MS = 5 * 60 * 1000;
+    const now = Date.now();
+    const kept = localData.filter(rec => {
+      const ts = rec?.updatedAt ? new Date(rec.updatedAt).getTime() : 0;
+      return now - ts < RECENT_MS;
+    });
+    if (kept.length !== localData.length) {
+      console.warn(`[dataSync] ${collection}: Drive explicit üres – ${localData.length - kept.length} régi, sosem szinkronizált lokális rekord eltávolítva`);
+      saveLocal(collection, kept);
+    }
+    return { data: applyTombstones(collection, kept), status: "empty" };
+  }
+
   return { data: applyTombstones(collection, localData) ?? emptyOrSave(collection), status: "empty" };
 }
 

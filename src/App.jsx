@@ -151,8 +151,18 @@ const [showNew, setShowNew] = useState(false);
   // Utolsó sikeres/megkísérelt Drive-szinkron időbélyege – a fókusz-alapú
   // újraszinkron ezt nézi, hogy ne hívja túl gyakran az Apps Script backendet.
   const lastSyncRef = useRef(0);
+  // "Fut-e éppen szinkron" jelző. Enélkül a visibilitychange ÉS a focus event
+  // is elsütheti ugyanazt a triggert (pl. mobil Safari-n egy app-váltásnál
+  // mindkettő tüzel egymás után pillanatokon belül), és mivel lastSyncRef
+  // csak a szinkron VÉGÉN frissül, egy időben több teljes (18 kollekciós)
+  // syncAllFromDrive() futott párhuzamosan – ez okozta a többszörös,
+  // egymásra torlódó "Drive szinkronizálás" progress-toastokat és a
+  // észlelhető lassulást.
+  const syncInFlightRef = useRef(false);
 
   const runDriveSync = useCallback(async () => {
+    if (syncInFlightRef.current) return;
+    syncInFlightRef.current = true;
     if (driveAvailable()) setDrive("saving");
 
     try {
@@ -191,6 +201,7 @@ const [showNew, setShowNew] = useState(false);
     }
 
     lastSyncRef.current = Date.now();
+    syncInFlightRef.current = false;
     if (driveAvailable()) setTimeout(() => setDrive("idle"), 2500);
   }, []);
 
