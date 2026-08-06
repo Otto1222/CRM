@@ -77,6 +77,13 @@ export async function driveLoadStatus(collection) {
   const res = await get({ action: "loadJson", fileName: `${collection}.json` });
   if (res?.offline) return { ok: false, offline: true, content: null };
   if (res?.ok)      return { ok: true, content: res.content ?? null };
+  // "Fájl nem található" NEM hiba – azt jelenti, hogy ez a kollekció még
+  // sosem lett elmentve Drive-ra (pl. vadonatúj kollekció, mint crm_tombstones,
+  // az első törlés-esemény előtt). Ha ezt hibaként kezelnénk, minden szinkron
+  // vörös hibasávot mutatna, holott semmi nincs elromolva.
+  if (res?.error && /fájl nem található|not found/i.test(res.error)) {
+    return { ok: true, content: null };
+  }
   return { ok: false, content: null, error: res?.error || "Drive betöltési hiba" };
 }
 
