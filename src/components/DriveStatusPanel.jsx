@@ -19,6 +19,7 @@ const COLLECTION_LABELS = {
   szamlak:               "Számlák",
   anyag_ar_verziok:      "Anyagár verziók",
   kivitelezesi_csomagok: "Kivitelezési csomagok",
+  crm_tombstones:        "Törlés-napló",
 };
 
 export default function DriveStatusPanel() {

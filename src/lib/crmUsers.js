@@ -90,6 +90,11 @@ export async function refreshUsersFromDrive() {
     // Lusta import: elkerüli a crmUsers.js ↔ dataSync.service.js közötti
     // felesleges, modulbetöltéskori kereszthivatkozást.
     const { loadCollectionWithStatus } = await import("./dataSync.service");
+    // P0-005: a tombstone-lista MINDIG előbb kell, mint a user-lista – enélkül
+    // egy már törölt fiók egy korábban használt gépen (aminek a cache-ében még
+    // ott a régi rekord) egy pillanatra vissza tudna lépni, mielőtt a teljes
+    // szinkron (App.jsx, belépés után) letisztítaná.
+    await loadCollectionWithStatus("crm_tombstones");
     await loadCollectionWithStatus("crm_napelem_users");
   } catch (e) {
     console.warn("[crmUsers] Drive felhasználó-szinkron sikertelen:", e?.message || e);

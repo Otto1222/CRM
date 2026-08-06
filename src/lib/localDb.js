@@ -28,6 +28,7 @@ const KEYS = {
   crm_backups:                  "crm_backups",
   anyag_ar_verziok:             "anyag_ar_verziok",
   kivitelezesi_csomagok:        "kivitelezesi_csomagok",
+  crm_tombstones:               "crm_tombstones",
 };
 
 // ─── Cross-tab szinkronizáció BroadcastChannel-lel ───────────

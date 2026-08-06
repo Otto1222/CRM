@@ -2,7 +2,12 @@ import { driveLoad, driveLoadStatus, driveSave } from "./driveApi";
 import { loadLocal, saveLocal } from "./localDb";
 import { startJob, updateJob, finishJob, failJob } from "./jobProgress";
 
+// P0-005: "crm_tombstones" MINDIG az első – lásd lent a Tombstone szekciót.
+// A merge csak akkor tudja helyesen kiszűrni egy már törölt rekordot, ha a
+// friss törlés-napló előbb landol a localStorage-ban, mint a saját kollekció
+// feldolgozása ugyanebben a szinkron-menetben.
 export const SYNC_COLLECTIONS = [
+  "crm_tombstones",
   "projektek",
   "munkalapok",
   "ugyfelek",
@@ -20,6 +25,61 @@ export const SYNC_COLLECTIONS = [
   "kivitelezesi_csomagok",
   "ajanlatok",
 ];
+
+// ─── Tombstone (törlés-napló) ─────────────────────────────────
+// P0-005: A mergeByIdUpdatedAt() szándékosan SOHA nem töröl – ha egy rekord
+// csak lokálisan van meg, Drive-on nincs, azt "még nem szinkronizált új
+// rekordnak" tekinti és visszahozza. Ez helyes egy offline-ban létrehozott
+// rekordnál, de KATASZTRÓFA egy törölt rekordnál: egy másik eszköz elavult,
+// törlés előtti cache-e "feltámasztja" azt minden szinkronnál.
+//
+// Megoldás: minden valódi törlésnél recordDeletion()-t kell hívni. Ez egy
+// {collection, targetId, updatedAt} tombstone-t ment el, ami saját magát is
+// szinkronizálja (ld. SYNC_COLLECTIONS). Betöltéskor (loadCollectionWithStatus)
+// minden rekordot a tombstone-okhoz hasonlítunk: ha van rá törlés-bejegyzés,
+// és az legalább olyan friss, mint a rekord updatedAt-je → kiszűrjük.
+const TOMBSTONE_KEY = "crm_tombstones";
+
+/**
+ * Törlés bejelentése – hívd meg MINDEN olyan helyen, ahol egy rekordot
+ * ténylegesen kiveszel egy tömbből (nem csak státuszt vált).
+ * Enélkül a törlés csak erről az eszközről tűnik el, más eszközök
+ * elavult cache-e a következő szinkronnál visszahozza.
+ */
+export function recordDeletion(collection, targetId) {
+  if (!targetId) return;
+  try {
+    const list = loadLocal(TOMBSTONE_KEY) || [];
+    const tombId = `${collection}:${targetId}`;
+    const now = new Date().toISOString();
+    const next = [...list.filter(t => t.id !== tombId), { id: tombId, collection, targetId, updatedAt: now }];
+    saveLocal(TOMBSTONE_KEY, next);
+    driveSave(TOMBSTONE_KEY, { [TOMBSTONE_KEY]: next }).catch(() => {});
+  } catch (e) {
+    console.warn("[dataSync] recordDeletion sikertelen:", collection, targetId, e?.message || e);
+  }
+}
+
+/** Kiszűri egy kollekció adatból azokat a rekordokat, amelyekre érvényes (a
+ *  rekordnál nem régebbi) tombstone létezik. Nem-tömb adatra (pl. beallitasok)
+ *  és magára a tombstone kollekcióra no-op. */
+function applyTombstones(collection, data) {
+  if (collection === TOMBSTONE_KEY || !Array.isArray(data)) return data;
+  let tombstones;
+  try { tombstones = loadLocal(TOMBSTONE_KEY); } catch { return data; }
+  if (!Array.isArray(tombstones) || tombstones.length === 0) return data;
+  const relevant = tombstones.filter(t => t.collection === collection);
+  if (relevant.length === 0) return data;
+  return data.filter(rec => {
+    const t = relevant.find(t => t.targetId === rec?.id);
+    if (!t) return true;
+    const recordTs = rec.updatedAt ? new Date(rec.updatedAt).getTime() : 0;
+    const tombTs    = new Date(t.updatedAt).getTime();
+    // Ha a rekord frissebb, mint a törlés (pl. valaki újra létrehozta ugyanazzal
+    // az id-vel egy törlés UTÁN), a rekord marad – az újabb módosítás nyer.
+    return tombTs < recordTs;
+  });
+}
 
 // ─── Drive szinkron napló (per-kollekció utolsó szinkron státusz) ─
 const SYNC_LOG_KEY = "crm_drive_sync_log";
@@ -134,28 +194,29 @@ export async function loadCollectionWithStatus(collection) {
 
   // Drive nincs konfigurálva → nem hiba, helyi adat marad
   if (r.offline) {
-    return { data: localData ?? emptyOrSave(collection), status: "offline" };
+    return { data: applyTombstones(collection, localData) ?? emptyOrSave(collection), status: "offline" };
   }
 
   // Valódi Drive-hiba → lokálisra esünk vissza, DE jelezzük
   if (!r.ok) {
     console.warn(`[dataSync] Drive betöltési hiba: ${collection}`, r.error);
-    return { data: localData ?? emptyOrSave(collection), status: "error", error: r.error };
+    return { data: applyTombstones(collection, localData) ?? emptyOrSave(collection), status: "error", error: r.error };
   }
 
   const driveData = unwrap(collection, r.content);
   if (hasData(driveData)) {
     if (Array.isArray(driveData) && Array.isArray(localData) && localData.length > 0) {
-      const merged = mergeByIdUpdatedAt(driveData, localData);
+      const merged = applyTombstones(collection, mergeByIdUpdatedAt(driveData, localData));
       saveLocal(collection, merged);
       return { data: merged, status: "merged" };
     }
-    saveLocal(collection, driveData);
-    return { data: driveData, status: "drive" };
+    const cleaned = applyTombstones(collection, driveData);
+    saveLocal(collection, cleaned);
+    return { data: cleaned, status: "drive" };
   }
 
   // Drive elérhető, de nincs/üres adat → helyi marad (nem hiba)
-  return { data: localData ?? emptyOrSave(collection), status: "empty" };
+  return { data: applyTombstones(collection, localData) ?? emptyOrSave(collection), status: "empty" };
 }
 
 function emptyOrSave(collection) {

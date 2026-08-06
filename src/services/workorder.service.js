@@ -5,6 +5,7 @@ import {
 } from "../lib/workflowRules.js";
 import { driveSave } from "../lib/driveApi.js";
 import { saveLocal } from "../lib/localDb.js";
+import { recordDeletion } from "../lib/dataSync.service.js";
 import { nextEdiSorszam } from "../lib/dokumentumszam.js";
 import { syncMunkalapToCalendar, deleteMunkalapFromCalendar } from "./calendarSync.service.js";
 import { updateProjekt, unlinkMunkalap } from "../modules/projektek/projekt.service.js";
@@ -249,6 +250,9 @@ export function deleteWorkorder(id) {
   // projekt-unlink NEM futhat le, különben egy "élő" munkalap veszítené el
   // a naptár-eseményét és a projekt-kapcsolatát, miközben ő maga nem törlődött.
   if (!saveWorkorders(loadWorkorders().filter(w => w.id !== id))) return;
+  // P0-005: tombstone nélkül egy másik eszköz elavult (törlés előtti) cache-e
+  // a következő szinkronnál visszahozná ezt a munkalapot ("feltámadás" bug).
+  recordDeletion("munkalapok", id);
   if (toDelete) deleteMunkalapFromCalendar(toDelete).catch(() => {});
   // A8: a szülő projekt munkalapIds-éből is kivesszük (ne maradjon árva hivatkozás)
   if (toDelete?.projektId) {

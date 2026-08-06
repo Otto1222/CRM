@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Eye, EyeOff, Pencil, Check, X, Copy, RefreshCw, ShieldCheck, User, Lock, Plus, Trash2, AlertTriangle, UserPlus } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getUsers, saveUsersLocal, hashPw, refreshUsersFromDrive } from "../lib/crmUsers";
+import { recordDeletion } from "../lib/dataSync.service";
 import Card from "../components/Card";
 
 function Avatar({ initials, color, size = 40 }) {
@@ -267,6 +268,11 @@ export default function AdminPanel({ currentUser }) {
     const updated = users.filter(u => u.id !== torles.id);
     setUsers(updated);
     saveUsersLocal(updated);
+    // P0-005: tombstone nélkül egy másik eszköz elavult cache-e a következő
+    // bejelentkezéskor visszahozná ezt a törölt felhasználót – ami itt nem
+    // csak adatinkonzisztencia, hanem biztonsági kérdés is (törölt fiók
+    // újra be tudna lépni máshol).
+    recordDeletion("crm_napelem_users", torles.id);
     setTorles(null);
     setToast(torles.name + " törölve!");
     setTimeout(() => setToast(""), 3000);

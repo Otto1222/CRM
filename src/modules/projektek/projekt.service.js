@@ -7,6 +7,7 @@ import { migrateProjektStatus, migrateProjektForrasFromRekord, migrateAnyagelsza
 import { createBackup } from "../../lib/backupService.js";
 import { driveSave } from "../../lib/driveApi.js";
 import { loadLocal, saveLocal } from "../../lib/localDb.js";
+import { recordDeletion } from "../../lib/dataSync.service.js";
 import { createKivitelezesiCsomagForProjekt } from "../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 
 const KEY         = "projektek";
@@ -244,6 +245,9 @@ export function deleteProjekt(id) {
   // csomag, miközben maga a projekt még mindig ott áll a listában (árvaság
   // fordítva: a szülő él, a gyerekek/kapcsolt rekordok tűnnek el).
   if (!saveProjektek(loadProjektek().filter(p => p.id !== id))) return;
+  // P0-005: tombstone nélkül egy másik eszköz elavult cache-e a következő
+  // szinkronnál visszahozná ezt a projektet ("feltámadás" bug).
+  recordDeletion("projektek", id);
 
   // ─── Cascade takarítás (A8): ne maradjon árva referencia / rekord ───
   // Dinamikus import a körkörös függőség elkerülésére; try/catch, hogy a

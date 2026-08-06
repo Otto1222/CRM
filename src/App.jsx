@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { C } from "./lib/constants";
 import { SAMPLE_DATA } from "./lib/sampleData";
 import { driveSave, driveAvailable } from "./lib/driveApi";
@@ -148,50 +148,78 @@ const [showNew, setShowNew] = useState(false);
     };
   }, []);
 
+  // Utolsó sikeres/megkísérelt Drive-szinkron időbélyege – a fókusz-alapú
+  // újraszinkron ezt nézi, hogy ne hívja túl gyakran az Apps Script backendet.
+  const lastSyncRef = useRef(0);
+
+  const runDriveSync = useCallback(async () => {
+    if (driveAvailable()) setDrive("saving");
+
+    try {
+      const synced = await syncAllFromDrive();
+
+      // Segédfüggvény: [] truthy JS-ben, ezért a sima || operátor csendben lenyomná
+      // a lokális adatot, ha a Drive szinkron üres tömböt ad vissza.
+      // Ez csak akkor veszi a synced értéket, ha az valóban tartalmaz rekordot.
+      const pick = (synced, local, prev, empty = []) =>
+        Array.isArray(synced) && synced.length > 0
+          ? synced
+          : (local || prev || empty);
+
+      setData(prev => ({
+        ...prev,
+        projektek:            pick(synced.projektek,            loadLocal("projektek"),            prev.projektek),
+        munkalapok:           pick(synced.munkalapok,           loadLocal("munkalapok"),           prev.munkalapok),
+        ugyfelek:             pick(synced.ugyfelek,             loadLocal("ugyfelek"),             prev.ugyfelek),
+        munkatipusok:         pick(synced.munkatipusok,         loadLocal("munkatipusok"),         prev.munkatipusok),
+        fovallalkozok:        pick(synced.fovallalkozok,        loadLocal("fovallalkozok"),        prev.fovallalkozok),
+        elszamolasi_szabalyok:pick(synced.elszamolasi_szabalyok,loadLocal("elszamolasi_szabalyok"),prev.elszamolasi_szabalyok),
+        karteritesek:         pick(synced.karteritesek,         loadLocal("karteritesek"),         prev.karteritesek),
+        sablonok:             pick(synced.sablonok,             loadLocal("sablonok"),             prev.sablonok),
+        // beallitasok: object típus, nem array – az eredeti || logika helyes marad
+        beallitasok:
+          synced.beallitasok ||
+          loadLocal("beallitasok") ||
+          prev.beallitasok ||
+          {},
+      }));
+
+      if (driveAvailable()) setDrive("ok");
+    } catch (e) {
+      console.warn("[App syncAllFromDrive]", e);
+      if (driveAvailable()) setDrive("error");
+    }
+
+    lastSyncRef.current = Date.now();
+    if (driveAvailable()) setTimeout(() => setDrive("idle"), 2500);
+  }, []);
+
   useEffect(() => {
     if (!user) return;
+    runDriveSync();
+  }, [user, runDriveSync]);
 
-    (async () => {
-      if (driveAvailable()) setDrive("saving");
-
-      try {
-        const synced = await syncAllFromDrive();
-
-        // Segédfüggvény: [] truthy JS-ben, ezért a sima || operátor csendben lenyomná
-        // a lokális adatot, ha a Drive szinkron üres tömböt ad vissza.
-        // Ez csak akkor veszi a synced értéket, ha az valóban tartalmaz rekordot.
-        const pick = (synced, local, prev, empty = []) =>
-          Array.isArray(synced) && synced.length > 0
-            ? synced
-            : (local || prev || empty);
-
-        setData(prev => ({
-          ...prev,
-          projektek:            pick(synced.projektek,            loadLocal("projektek"),            prev.projektek),
-          munkalapok:           pick(synced.munkalapok,           loadLocal("munkalapok"),           prev.munkalapok),
-          ugyfelek:             pick(synced.ugyfelek,             loadLocal("ugyfelek"),             prev.ugyfelek),
-          munkatipusok:         pick(synced.munkatipusok,         loadLocal("munkatipusok"),         prev.munkatipusok),
-          fovallalkozok:        pick(synced.fovallalkozok,        loadLocal("fovallalkozok"),        prev.fovallalkozok),
-          elszamolasi_szabalyok:pick(synced.elszamolasi_szabalyok,loadLocal("elszamolasi_szabalyok"),prev.elszamolasi_szabalyok),
-          karteritesek:         pick(synced.karteritesek,         loadLocal("karteritesek"),         prev.karteritesek),
-          sablonok:             pick(synced.sablonok,             loadLocal("sablonok"),             prev.sablonok),
-          // beallitasok: object típus, nem array – az eredeti || logika helyes marad
-          beallitasok:
-            synced.beallitasok ||
-            loadLocal("beallitasok") ||
-            prev.beallitasok ||
-            {},
-        }));
-
-        if (driveAvailable()) setDrive("ok");
-      } catch (e) {
-        console.warn("[App syncAllFromDrive]", e);
-        if (driveAvailable()) setDrive("error");
-      }
-
-      if (driveAvailable()) setTimeout(() => setDrive("idle"), 2500);
-    })();
-  }, [user]);
+  // P0-005: eddig KIZÁRÓLAG bejelentkezéskor futott a Drive-szinkron – ha valaki
+  // órákig nyitva tartja a böngészőt/fület, a többiek közben mentett
+  // változásait (pl. lezárt/törölt munkalapok) sosem látta, amíg ki nem
+  // jelentkezett és vissza nem lépett. Most minden alkalommal újraszinkronizál,
+  // amikor a fül/ablak visszakapja a fókuszt, max percenkénti gyakorisággal,
+  // hogy ne terheljük feleslegesen az Apps Script backendet.
+  useEffect(() => {
+    if (!user) return;
+    const MIN_INTERVAL_MS = 60_000;
+    function onFocusOrVisible() {
+      if (document.visibilityState === "hidden") return;
+      if (Date.now() - lastSyncRef.current < MIN_INTERVAL_MS) return;
+      runDriveSync();
+    }
+    document.addEventListener("visibilitychange", onFocusOrVisible);
+    window.addEventListener("focus", onFocusOrVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onFocusOrVisible);
+      window.removeEventListener("focus", onFocusOrVisible);
+    };
+  }, [user, runDriveSync]);
 
   async function saveCollection(collection, items) {
     saveLocal(collection, items);
