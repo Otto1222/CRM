@@ -24,6 +24,7 @@ import {
 } from "./projectRules.js";
 import AddressSearch from "../../components/AddressSearch.jsx";
 import { calcRoundTripKm } from "../../lib/geoService.js";
+import TetelesExcelImportPanel from "../../components/TetelesExcelImportPanel.jsx";
 const Field = ({ label, children, half }) => (
   <div style={{ gridColumn: half ? "span 1" : "span 2" }}>
     <label
@@ -104,6 +105,9 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     projektTipus: projekt?.projektTipus || (ajanlatElofolt ? "Saját projekt" : ""),
     ajanlatId: projekt?.ajanlatId || ajanlatElofolt?.id || null,
     elfogadottAjanlatPillanatkep: projekt?.elfogadottAjanlatPillanatkep || null,
+    // P0-007: "Saját munka" két alfajtája – csak forrás==="sajat_ajanlat" esetén értelmezett.
+    sajatMunkaTipus: projekt?.sajatMunkaTipus || (ajanlatElofolt ? "ajanlat" : ""),
+    elfogadottExcelPillanatkep: projekt?.elfogadottExcelPillanatkep || null,
     fovKapcsolattarto: projekt?.fovKapcsolattarto || "",
     fovFizetesiHatarido: projekt?.fovFizetesiHatarido || "",
     fovMegjegyzes: projekt?.fovMegjegyzes || "",
@@ -157,7 +161,13 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
   useEffect(() => { formRef.current = form; }, [form]);
   const [ugyfélOpen, setUgyfélOpen] = useState(true);
   const [extraCostOpen, setExtraCostOpen] = useState(false);
-  const formBlocked = isNew && form.forrás === "sajat_ajanlat" && !form.ajanlatId;
+  // P0-007: "Saját munka" almenettől függően más a kötelező feltétel –
+  // ajánlat-alfajtánál ajánlat kiválasztása, Excel-alfajtánál sikeres import.
+  const formBlocked = isNew && form.forrás === "sajat_ajanlat" && (
+    !form.sajatMunkaTipus ||
+    (form.sajatMunkaTipus === "ajanlat" && !form.ajanlatId) ||
+    (form.sajatMunkaTipus === "tetelesExcel" && !form.elfogadottExcelPillanatkep)
+  );
 
   async function runKmAutoCalc(cim, csapatId, silent = false) {
     const cs = csapatok.find(c => c.id === csapatId);
@@ -292,9 +302,26 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     if (hiba) setHiba("");
   }
 
+  function handleExcelImport(pillanatkep) {
+    setForm(p => ({
+      ...p,
+      elfogadottExcelPillanatkep: pillanatkep,
+      elfogadottAjanlat: pillanatkep?.osszesito?.netto_osszeg || (pillanatkep ? p.elfogadottAjanlat : 0),
+    }));
+    if (pillanatkep && hiba) setHiba("");
+  }
+
   async function handleSave() {
-    if (isNew && form.forrás === "sajat_ajanlat" && !form.ajanlatId) {
+    if (isNew && form.forrás === "sajat_ajanlat" && form.sajatMunkaTipus === "ajanlat" && !form.ajanlatId) {
       setHiba("Először válassz elfogadott ajánlatot a folytatáshoz.");
+      return;
+    }
+    if (isNew && form.forrás === "sajat_ajanlat" && form.sajatMunkaTipus === "tetelesExcel" && !form.elfogadottExcelPillanatkep) {
+      setHiba("Először importáld az elfogadott tételes Excelt a folytatáshoz.");
+      return;
+    }
+    if (isNew && form.forrás === "sajat_ajanlat" && !form.sajatMunkaTipus) {
+      setHiba("Válaszd ki, hogy a Saját munka ajánlat vagy elfogadott tételes Excel alapján indul.");
       return;
     }
     if (!form.nev?.trim()) {
@@ -333,12 +360,16 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     const datumV = validateProjektDatum(form);
     if (!datumV.ok) { setHiba(datumV.error); return; }
     let valasztottAjanlat = null;
-    if (form.forrás === "sajat_ajanlat") {
+    if (form.forrás === "sajat_ajanlat" && form.sajatMunkaTipus === "ajanlat") {
       valasztottAjanlat = elfogadottAjanlatok.find(a => a.id === form.ajanlatId) || null;
       if (isNew && !valasztottAjanlat) {
         setHiba("A kiválasztott ajánlat már nem érhető el (közben megváltozott a státusza, vagy már köthették más projekthez). Válassz egy másik elfogadott ajánlatot.");
         return;
       }
+    }
+    if (isNew && form.forrás === "sajat_ajanlat" && form.sajatMunkaTipus === "tetelesExcel" && !form.elfogadottExcelPillanatkep) {
+      setHiba("Az importált tételes Excel elveszett – importáld újra a folytatáshoz.");
+      return;
     }
     setSaving(true);
     try {
@@ -472,7 +503,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             }}
           >
             {isNew
-              ? (form.forrás === "sajat_ajanlat" ? "Új projekt – Saját ajánlat"
+              ? (form.forrás === "sajat_ajanlat" ? "Új projekt – Saját munka"
                 : form.forrás === "fovallalkozoi_munka" ? "Új projekt – Fővállalkozói munka"
                 : form.forrás === "belso_munka" ? "Új projekt – Belső munka"
                 : "Új projekt")
@@ -559,30 +590,84 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               })}
             </div>
 
-            {/* sajat_ajanlat: elfogadott ajánlat kiválasztása */}
+            {/* sajat_ajanlat ("Saját munka"): melyik forrás a mérvadó – ajánlat vagy tételes Excel */}
             {form.forrás === "sajat_ajanlat" && (
-              <div style={{ marginTop: 12, background: C.accentLight, border: `1.5px solid ${C.accentLight}`, borderRadius: 10, padding: "12px 14px" }}>
+              <div style={{ marginTop: 12 }}>
                 <p style={{ fontSize: 12, fontWeight: 700, color: C.accent, margin: "0 0 8px" }}>
-                  📋 Elfogadott ajánlat kiválasztása *
+                  Saját munka típusa *
                 </p>
-                {elfogadottAjanlatok.length === 0 ? (
-                  <p style={{ fontSize: 12, color: C.danger, margin: 0, fontWeight: 600 }}>
-                    Nincs elfogadott ajánlat. Menj az <strong>Ajánlatok</strong> oldalra, módosítsd az ajánlat státuszát "Elfogadva"-ra, majd onnan hozd létre a projektet.
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                  {[
+                    { id: "ajanlat",      label: "Ajánlat alapján" },
+                    { id: "tetelesExcel", label: "Elfogadott tételes Excel alapján" },
+                  ].map(t => {
+                    const active = form.sajatMunkaTipus === t.id;
+                    return (
+                      <button key={t.id} type="button"
+                        onClick={() => {
+                          setForm(p => ({
+                            ...p,
+                            sajatMunkaTipus: t.id,
+                            // Váltáskor a másik alfajta adatai törlődnek, hogy ne maradjon
+                            // félrevezető, be nem mentett maradék állapot a formban.
+                            ajanlatId: t.id === "ajanlat" ? p.ajanlatId : null,
+                            elfogadottExcelPillanatkep: t.id === "tetelesExcel" ? p.elfogadottExcelPillanatkep : null,
+                          }));
+                          if (hiba) setHiba("");
+                        }}
+                        style={{ padding: "7px 14px", borderRadius: 8, border: `1.5px solid ${active ? C.accent : C.border}`, background: active ? C.accentLight : "#fff", color: active ? C.accent : C.muted, fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {form.sajatMunkaTipus === "ajanlat" && (
+                  <div style={{ background: C.accentLight, border: `1.5px solid ${C.accentLight}`, borderRadius: 10, padding: "12px 14px" }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: C.accent, margin: "0 0 8px" }}>
+                      📋 Elfogadott ajánlat kiválasztása *
+                    </p>
+                    {elfogadottAjanlatok.length === 0 ? (
+                      <p style={{ fontSize: 12, color: C.danger, margin: 0, fontWeight: 600 }}>
+                        Nincs elfogadott ajánlat. Menj az <strong>Ajánlatok</strong> oldalra, módosítsd az ajánlat státuszát "Elfogadva"-ra, majd onnan hozd létre a projektet.
+                      </p>
+                    ) : (
+                      <>
+                        <select value={form.ajanlatId || ""} onChange={e => handleAjanlatSelect(e.target.value)}
+                          style={{ width: "100%", padding: "9px 12px", border: `1.5px solid ${form.ajanlatId ? C.accent : C.border}`, borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none", background: "#fff" }}>
+                          <option value="">— Válassz elfogadott ajánlatot —</option>
+                          {elfogadottAjanlatok.map(a => (
+                            <option key={a.id} value={a.id}>
+                              {a.ajanlatkod} · {a.clientNev} · {a.osszeg ? a.osszeg.toLocaleString("hu-HU") + " Ft" : "—"} ({a.nev || "Nincs megnevezés"})
+                            </option>
+                          ))}
+                        </select>
+                        {form.ajanlatId && <p style={{ fontSize: 11, color: C.success, margin: "4px 0 0", fontWeight: 600 }}>✅ Ügyfél adatok automatikusan betöltve az ajánlatból</p>}
+                        {!form.ajanlatId && <p style={{ fontSize: 12, color: C.accent, margin: "6px 0 0", fontWeight: 600 }}>⬇ Válassz ajánlatot a folytatáshoz – az adatok automatikusan kitöltődnek.</p>}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {form.sajatMunkaTipus === "tetelesExcel" && (
+                  <div>
+                    <TetelesExcelImportPanel
+                      value={form.elfogadottExcelPillanatkep}
+                      onChange={handleExcelImport}
+                      disabled={!isNew}
+                    />
+                    {form.elfogadottExcelPillanatkep && (
+                      <p style={{ fontSize: 11, color: C.success, margin: "8px 0 0", fontWeight: 600 }}>
+                        ✅ A Kivitelezési Csomag tételei a projekt létrehozásakor ebből az importból generálódnak.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {!form.sajatMunkaTipus && (
+                  <p style={{ fontSize: 12, color: C.accent, margin: 0, fontWeight: 600 }}>
+                    ⬆ Válassz típust a folytatáshoz.
                   </p>
-                ) : (
-                  <>
-                    <select value={form.ajanlatId || ""} onChange={e => handleAjanlatSelect(e.target.value)}
-                      style={{ width: "100%", padding: "9px 12px", border: `1.5px solid ${form.ajanlatId ? C.accent : C.border}`, borderRadius: 9, fontSize: 14, fontFamily: FONT, outline: "none", background: "#fff" }}>
-                      <option value="">— Válassz elfogadott ajánlatot —</option>
-                      {elfogadottAjanlatok.map(a => (
-                        <option key={a.id} value={a.id}>
-                          {a.ajanlatkod} · {a.clientNev} · {a.osszeg ? a.osszeg.toLocaleString("hu-HU") + " Ft" : "—"} ({a.nev || "Nincs megnevezés"})
-                        </option>
-                      ))}
-                    </select>
-                    {form.ajanlatId && <p style={{ fontSize: 11, color: C.success, margin: "4px 0 0", fontWeight: 600 }}>✅ Ügyfél adatok automatikusan betöltve az ajánlatból</p>}
-                    {!form.ajanlatId && <p style={{ fontSize: 12, color: C.accent, margin: "6px 0 0", fontWeight: 600 }}>⬇ Válassz ajánlatot a folytatáshoz – az adatok automatikusan kitöltődnek.</p>}
-                  </>
                 )}
               </div>
             )}

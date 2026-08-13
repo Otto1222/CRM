@@ -10,6 +10,7 @@ import {
   KIVITELEZESI_CSOMAG_SCHEMA,
   KIVITELEZESI_CSOMAG_FORRAS,
   generateKiviTetelekFromAjanlatPillanatkep,
+  generateKiviTetelekFromExcelPillanatkep,
   createKeziTetelPillanatkep,
   createAnyagszamitoTetelPillanatkep,
   ellenorizStatuszValtas,
@@ -52,14 +53,19 @@ export function getKivitelezesiCsomagByProjektId(projektId) {
  *     a tételek a pillanatkép fo_tetelek-jéből generálódnak (ld.
  *     generateKiviTetelekFromAjanlatPillanatkep) – forras = "ajanlatbol",
  *     letrehozasMod = "automatikus".
- *   - Fővállalkozói / belső projekt (nincs ajanlatPillanatkep):
+ *   - Saját munka, elfogadott tételes Excel alapján (excelPillanatkep
+ *     megadva, P0-007): a tételek az importált Excel soraiból generálódnak
+ *     (ld. generateKiviTetelekFromExcelPillanatkep) – forras = "tetelesExcelbol",
+ *     letrehozasMod = "automatikus". Csak akkor számít, ha ajanlatPillanatkep
+ *     nincs megadva.
+ *   - Fővállalkozói / belső projekt (egyik pillanatkép sincs megadva):
  *     üres tétellistával jön létre, a PM tölti fel kézzel –
  *     forras = "kezi", letrehozasMod = "kezi".
  *
  * Duplikáció-védelem: ha a projekthez már tartozik csomag, a függvény
  * hibát dob és NEM hoz létre másodikat.
  */
-export function createKivitelezesiCsomagForProjekt(projekt, ajanlatPillanatkep = null, user = "") {
+export function createKivitelezesiCsomagForProjekt(projekt, ajanlatPillanatkep = null, user = "", excelPillanatkep = null) {
   if (!projekt?.id) {
     throw new Error("Kivitelezési Csomag létrehozásához projekt szükséges.");
   }
@@ -68,17 +74,23 @@ export function createKivitelezesiCsomagForProjekt(projekt, ajanlatPillanatkep =
   }
 
   const now = new Date().toISOString();
-  const automatikus = !!ajanlatPillanatkep;
-  const tetelek = automatikus
+  const automatikusAjanlat = !!ajanlatPillanatkep;
+  const automatikusExcel   = !automatikusAjanlat && !!excelPillanatkep;
+  const automatikus = automatikusAjanlat || automatikusExcel;
+  const tetelek = automatikusAjanlat
     ? generateKiviTetelekFromAjanlatPillanatkep(ajanlatPillanatkep)
+    : automatikusExcel
+    ? generateKiviTetelekFromExcelPillanatkep(excelPillanatkep)
     : [];
 
   const csomag = {
     ...KIVITELEZESI_CSOMAG_SCHEMA,
     id:                 `kcs_${crypto.randomUUID()}`,
     projektId:          projekt.id,
-    forras:             automatikus ? KIVITELEZESI_CSOMAG_FORRAS.AJANLATBOL : KIVITELEZESI_CSOMAG_FORRAS.KEZI,
-    ajanlatId:          automatikus ? (ajanlatPillanatkep.ajanlatId || projekt.ajanlatId || null) : null,
+    forras:             automatikusAjanlat ? KIVITELEZESI_CSOMAG_FORRAS.AJANLATBOL
+                       : automatikusExcel   ? KIVITELEZESI_CSOMAG_FORRAS.EXCEL_IMPORT
+                       : KIVITELEZESI_CSOMAG_FORRAS.KEZI,
+    ajanlatId:          automatikusAjanlat ? (ajanlatPillanatkep.ajanlatId || projekt.ajanlatId || null) : null,
     status:             "Tervezet",
     tetelek,
     arPillanatkepDatum: automatikus ? now : "",

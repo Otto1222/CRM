@@ -56,10 +56,13 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
   }, [projekt.id]);
 
   const sajatAjanlatbol = projekt.forrás === "sajat_ajanlat" && !!projekt.elfogadottAjanlatPillanatkep;
-  // Kézi tételfelvitel csak a nem-ajánlatból generált (fővállalkozói / belső,
-  // azaz "kezi" forrású) csomagoknál jelenik meg – a saját ajánlatos csomag
-  // tételei a pillanatképből származnak, ott PM kézi felvitelre nincs szükség.
-  const keziTetelFelvitelEngedve = csomag?.forras !== KIVITELEZESI_CSOMAG_FORRAS.AJANLATBOL;
+  // P0-007: "Saját munka – elfogadott tételes Excel" alfajta – csak akkor
+  // számít, ha nincs ajánlat-pillanatkép (a kettő kölcsönösen kizárja egymást).
+  const sajatExcelbol = projekt.forrás === "sajat_ajanlat" && !sajatAjanlatbol && !!projekt.elfogadottExcelPillanatkep;
+  // Kézi tételfelvitel csak a nem-automatikusan generált (fővállalkozói / belső,
+  // azaz "kezi" forrású) csomagoknál jelenik meg – a saját ajánlatos/Excel-es
+  // csomag tételei a pillanatképből származnak, ott PM kézi felvitelre nincs szükség.
+  const keziTetelFelvitelEngedve = ![KIVITELEZESI_CSOMAG_FORRAS.AJANLATBOL, KIVITELEZESI_CSOMAG_FORRAS.EXCEL_IMPORT].includes(csomag?.forras);
 
   const isPMvagyAdmin       = KIVITELEZESI_CSOMAG_KEZELO_SZEREPEK.includes(currentUser?.role);
   const kovetkezoStatus     = csomag ? getKivitelezesiCsomagKovetkezoStatus(csomag.status) : null;
@@ -74,7 +77,8 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
       const uj = createKivitelezesiCsomagForProjekt(
         projekt,
         sajatAjanlatbol ? projekt.elfogadottAjanlatPillanatkep : null,
-        currentUser?.name || ""
+        currentUser?.name || "",
+        sajatExcelbol ? projekt.elfogadottExcelPillanatkep : null
       );
       setCsomag(uj);
       setLetrehozva(true);
@@ -145,6 +149,8 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
         <p style={{ fontSize: 12, color: C.muted, marginBottom: 18, fontFamily: FONT }}>
           {sajatAjanlatbol
             ? "A csomag az elfogadott ajánlat lefagyasztott pillanatképéből generálódik – a tételek és árak onnan másolódnak."
+            : sajatExcelbol
+            ? "A csomag az importált, elfogadott tételes Excel pillanatképéből generálódik – a tételek és árak onnan másolódnak."
             : "A csomag üresen jön létre – a tételeket a projektvezető tölti fel kézzel."}
         </p>
         {hiba && (
@@ -194,7 +200,11 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
         </span>
         <span style={{ fontSize: 12, color: C.muted, fontFamily: FONT }}>Verzió: <strong>{csomag.version}</strong></span>
         <span style={{ fontSize: 12, color: C.muted, fontFamily: FONT }}>
-          Forrás: <strong>{csomag.forras === KIVITELEZESI_CSOMAG_FORRAS.AJANLATBOL ? "Elfogadott ajánlatból (automatikus)" : "Kézi létrehozás"}</strong>
+          Forrás: <strong>
+            {csomag.forras === KIVITELEZESI_CSOMAG_FORRAS.AJANLATBOL ? "Elfogadott ajánlatból (automatikus)"
+              : csomag.forras === KIVITELEZESI_CSOMAG_FORRAS.EXCEL_IMPORT ? "Elfogadott tételes Excelből (automatikus)"
+              : "Kézi létrehozás"}
+          </strong>
         </span>
         {csomag.arPillanatkepDatum && (
           <span style={{ fontSize: 12, color: C.muted, fontFamily: FONT }}>
@@ -214,6 +224,18 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
           <span style={{ fontSize: 12, color: C.muted, fontFamily: FONT }}>A csomag elérte az utolsó státuszt.</span>
         )}
       </div>
+
+      {/* P0-007: importált tételes Excel pillanatkép megjelenítése – az eredeti
+          forrásfájl adatai (a tételek maguk a lenti táblázatban láthatók). */}
+      {sajatExcelbol && projekt.elfogadottExcelPillanatkep && (
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14, flexWrap: "wrap", padding: "8px 14px", borderRadius: 9, background: C.bg, border: `1px solid ${C.border}`, fontSize: 12, color: C.muted, fontFamily: FONT }}>
+          <span>📄 Importált fájl: <strong style={{ color: C.text }}>{projekt.elfogadottExcelPillanatkep.fileName || "—"}</strong></span>
+          <span>Import dátuma: <strong style={{ color: C.text }}>{new Date(projekt.elfogadottExcelPillanatkep.keszult).toLocaleString("hu-HU")}</strong></span>
+          <span>Eredeti tételszám: <strong style={{ color: C.text }}>{projekt.elfogadottExcelPillanatkep.tetelek?.length || 0}</strong></span>
+          <span>Eredeti összeg (nettó): <strong style={{ color: C.text }}>{(projekt.elfogadottExcelPillanatkep.osszesito?.netto_osszeg || 0).toLocaleString("hu-HU")} Ft</strong></span>
+        </div>
+      )}
+
       {statuszHiba && (
         <p style={{ fontSize: 12, color: C.danger, fontWeight: 700, margin: "0 0 14px" }}>{statuszHiba}</p>
       )}

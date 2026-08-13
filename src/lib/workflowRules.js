@@ -31,12 +31,19 @@ export const MUNKALAP_STATUSZOK = [
 
 // ─── Projekt forrás (3 db) ────────────────────────────────────────────────
 
+// P0-007: "sajat_ajanlat" (id NEM változott – a meglévő logika/adatok
+// nagy része erre az id-re épül) mostantól "Saját munka" néven fut, mert
+// két alfajtát fed le: a régi "ajánlat a mérvadó" folyamatot ÉS az új,
+// "elfogadott tételes Excel a mérvadó" folyamatot (ld. projekt.sajatMunkaTipus:
+// "ajanlat" | "tetelesExcel"). Az id-t szándékosan nem módosítottam, hogy a
+// projekt.forrás === "sajat_ajanlat" ellenőrzések a kódban (kb. 30 helyen)
+// mindkét alfajtára helyesen, változtatás nélkül érvényesek maradjanak.
 export const PROJEKT_FORRAS = [
   {
     id: "sajat_ajanlat",
-    label: "Saját ajánlat",
+    label: "Saját munka",
     color: "#2563EB", bg: "#EFF6FF",
-    desc: "Elfogadott saját ajánlatból – ügyfél kötelező",
+    desc: "Saját értékesítés – ajánlat vagy elfogadott tételes Excel alapján, ügyfél kötelező",
   },
   {
     id: "fovallalkozoi_munka",
@@ -409,7 +416,15 @@ export function validateProjektForrás(form) {
   // ld. validateAnyagelszamolasiModStatusValtas() a workflowRules.js-ben.
 
   if (forrás === "sajat_ajanlat") {
-    if (!ajanlatId)              return { ok: false, message: "Saját ajánlat projektnél kötelező elfogadott ajánlatot kiválasztani." };
+    // P0-007: "Saját munka" két alfajtát fed le – a mérvadó forrás vagy egy
+    // elfogadott ajánlat, vagy egy elfogadott tételes Excel. Régi projekteknél
+    // (sajatMunkaTipus még nincs kitöltve) az ajánlat-ág marad az elvárás,
+    // ez a korábbi, változatlan viselkedés.
+    if (form.sajatMunkaTipus === "tetelesExcel") {
+      if (!form.elfogadottExcelPillanatkep) return { ok: false, message: "Saját munkánál (elfogadott tételes Excel) kötelező a tételes Excel importálása." };
+    } else {
+      if (!ajanlatId) return { ok: false, message: "Saját munkánál (ajánlat alapján) kötelező elfogadott ajánlatot kiválasztani." };
+    }
     if (!form.clientNev?.trim()) return { ok: false, message: "Az ügyfél neve kötelező." };
   }
 

@@ -148,14 +148,16 @@ export function createProjekt(data, createdBy = "") {
     throw new Error("A projekt mentése nem sikerült (tárhely megtelt vagy sérült adat). Ellenőrizd a figyelmeztetést és próbáld újra.");
   }
 
-  // Saját ajánlat projekteknél automatikusan létrehozza a Kivitelezési Csomagot.
+  // Saját munka (ajánlat VAGY elfogadott tételes Excel alapján – P0-007)
+  // projekteknél automatikusan létrehozza a Kivitelezési Csomagot.
   // Hiba esetén console.warn, a projekt létrehozása nem vész el.
   if (data.forrás === "sajat_ajanlat") {
     try {
       createKivitelezesiCsomagForProjekt(
         projekt,
         data.elfogadottAjanlatPillanatkep || null,
-        createdBy
+        createdBy,
+        data.elfogadottExcelPillanatkep || null
       );
     } catch (e) {
       console.warn("[createProjekt] Kivitelezési Csomag auto-létrehozás sikertelen:", e?.message || e);

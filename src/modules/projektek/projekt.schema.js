@@ -105,6 +105,19 @@ export const PROJEKT_SCHEMA = {
   // sem ajánlatmódosítás, sem anyagtörzs-árváltozás nem írhatja felül.
   // null = a projekt nem elfogadott ajánlatból jött létre (pl. fővállalkozói/belső).
   elfogadottAjanlatPillanatkep: null,
+  // P0-007: "Saját munka" (forrás==="sajat_ajanlat") két alfajtát fed le –
+  // ez a mező dönti el, melyik a mérvadó forrás. Csak forrás==="sajat_ajanlat"
+  // esetén értelmezett; üres string = régi projekt / még nem választott.
+  //   "ajanlat"      – a régi, már működő folyamat: elfogadottAjanlatPillanatkep a mérvadó.
+  //   "tetelesExcel" – új folyamat: egy már elfogadott, külső tételes Excel a mérvadó
+  //                    (nincs in-app ajánlat), ld. elfogadottExcelPillanatkep.
+  sajatMunkaTipus:     "",
+  // Immutábilis pillanatkép a felöltött, elfogadott tételes Excelről – a
+  // projekt létrehozásakor/Excel-importkor rögzül EGYSZER, utána nem frissül.
+  // Az elfogadottAjanlatPillanatkep excel-alapú megfelelője: ugyanúgy ebből
+  // generálódik a Kivitelezési Csomag tétellistája (ld. kivitelezesiCsomag.schema.js
+  // generateKiviTetelekFromExcelPillanatkep). null = nincs Excel-import.
+  elfogadottExcelPillanatkep: null,
   fovKapcsolattarto:   "",
   fovFizetesiHatarido: "",
   fovMegjegyzes:       "",

@@ -29,6 +29,7 @@ export const KIVITELEZESI_CSOMAG_SCHEMA_VERSION = "1.0";
 
 export const KIVITELEZESI_CSOMAG_FORRAS = {
   AJANLATBOL:     "ajanlatbol",       // saját munka – elfogadott ajánlatból generálva (automatikus)
+  EXCEL_IMPORT:   "tetelesExcelbol",  // saját munka – elfogadott, külső tételes Excelből generálva (automatikus, P0-007)
   SABLONBOL:      "sablonbol",        // fővállalkozói / belső – PM hozza létre sablonból
   KEZI:           "kezi",             // fővállalkozói / belső – PM kézi tételrögzítéssel
   ANYAGSZAMITO:   "anyagszamito",     // Anyagszámítási Motor – PM jóváhagyása után kerül be (Fázis 5A)
@@ -240,6 +241,47 @@ export function generateKiviTetelekFromAjanlatPillanatkep(pillanatkep) {
         telepitoLathatosag: "NONE",
       };
     });
+}
+
+/**
+ * P0-007: "Saját munka – elfogadott tételes Excel" projektnél a Kivitelezési
+ * Csomag tételei a FELTÖLTÖTT, ELFOGADOTT EXCEL PILLANATKÉPÉNEK tetelek
+ * listájából generálódnak – ugyanaz a szerep, mint amit
+ * generateKiviTetelekFromAjanlatPillanatkep() tölt be az in-app ajánlatnál,
+ * csak itt a "mérvadó forrás" egy külső, már elfogadott tételes Excel.
+ *
+ * Az excelPillanatkep alakja (ld. lib/tetelesExcelImport.js buildExcelPillanatkep):
+ *   { keszult, fileName, tetelek: [{ nev, mennyiseg, egyseg, egysegar, osszesen,
+ *     kategoria, cikkszam }], osszesito: { netto_osszeg } }
+ *
+ * Anyagtörzs-egyeztetés NINCS automatikusan (az Excel sorai szabad szöveges
+ * tételek, nem anyagtörzs-hivatkozások) – a PM utólag, a Kivitelezési Csomag
+ * fülön párosíthatja anyagtörzs-tétellel, ha szükséges.
+ */
+export function generateKiviTetelekFromExcelPillanatkep(excelPillanatkep) {
+  if (!excelPillanatkep) return [];
+  const sorok = excelPillanatkep.tetelek || [];
+  return sorok.map((t, i) => {
+    const mennyiseg = Number(t.mennyiseg) || 0;
+    return {
+      id:                    `ktet_excel_${i}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      anyagtorzs_id:         null,
+      forras:                KIVITELEZESI_CSOMAG_FORRAS.EXCEL_IMPORT,
+      cikkszam:              t.cikkszam || "",
+      nev:                   t.nev || "",
+      kategoria:             t.kategoria || "",
+      egyseg:                t.egyseg || "db",
+      egysegarPillanatkepEladasi:    Number(t.egysegar) || 0,
+      egysegarPillanatkepBeszerzesi: null,
+      tervezettMennyiseg:    mennyiseg,
+      kiadandoMennyiseg:     mennyiseg,
+      kiadottMennyiseg:      0,
+      felhasznaltMennyiseg:  0,
+      visszahozottMennyiseg: 0,
+      munkalapFelhasznalas:  [],
+      telepitoLathatosag: "NONE",
+    };
+  });
 }
 
 // ─── Fázis 4C – pillanatkép-garancia (ellenőrzés és dokumentáció) ─────────
