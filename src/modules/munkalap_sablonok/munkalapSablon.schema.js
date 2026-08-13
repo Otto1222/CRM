@@ -190,6 +190,7 @@ export const GYARI_SABLONOK = [
     gyari: true,
     beallitasok: {
       ...DEFAULT_BEALLITASOK,
+      kellVBF:              true,
       kellLMRA:             true,
       kellJelenletiIv:     true,
       kellFotoDokumentacio: true,
@@ -201,8 +202,11 @@ export const GYARI_SABLONOK = [
         legordulo_opciok: ["Áramkör bővítés", "Csere / felújítás", "Hálózat felülvizsgálat", "Mérőhely kialakítás", "Egyéb"],
       }),
       m("Elvégzett munkák leírása", "hosszu_szoveg", { kotelezo: true }),
-      m("Mért hálózati feszültség", "meresiAdat", { mertekegyseg: "V" }),
-      m("Mért áram", "meresiAdat", { mertekegyseg: "A" }),
+      // VBF-mérési adatok – ezek a "meresiAdat" mezők jelennek meg a telepítői
+      // nézet VBF fülén, és a kötelezőek blokkolják a munkalap lezárását.
+      m("Mért hálózati feszültség", "meresiAdat", { mertekegyseg: "V", kotelezo: true }),
+      m("Mért áram", "meresiAdat", { mertekegyseg: "A", kotelezo: true }),
+      m("Hurokellenállás", "meresiAdat", { mertekegyseg: "Ω", kotelezo: true }),
       m("Érintésvédelmi próba elvégzve", "igen_nem"),
       m("Megjegyzés", "hosszu_szoveg"),
     ],

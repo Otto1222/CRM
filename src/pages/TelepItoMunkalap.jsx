@@ -25,6 +25,7 @@ import {
   calcJelenletKoltseg,
 } from "../services/jelenlet.service";
 import { getCsapatTagok } from "../modules/csapatok/csapat.service";
+import { getAktivSablonok } from "../modules/munkalap_sablonok/munkalapSablon.service.js";
 
 // ─── Sorozatszámos tételek ────────────────────────────────────
 const SERIAL_CATEGORIES = ["inverter","akkumulátor","akkumulator","okosmérő","okosmerő","okos mérő","optimalizáló","optimalizalo","napelem","panel"];
@@ -538,6 +539,37 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   const clientTel = m.clientTel||client?.phone||"";
   const munkalapAzonosito = getMunkalapAzonosito(m);
 
+  // ─── P0-006: Sablon-vezérelt VBF / fotó / LMRA követelmények ──────────
+  // Legacy védőháló: ha a munkalaphoz nincs sablonId (régi rekord, a sablon-
+  // rendszer bevezetése előttről) VAGY kifejezetten a napelemes gyári sablon
+  // van kiválasztva, a viselkedés PONTOSAN ugyanaz marad, mint eddig mindig
+  // volt – a kőbe vésett napelem VBF-lista és fotókategória-lista. Ez
+  // garantálja, hogy egyetlen jelenleg folyamatban lévő napelemes munka se
+  // törjön el ettől a változtatástól.
+  // Minden MÁS sablonnál (Villanyszerelés, Belső munka, Egyéb, admin által
+  // létrehozott egyedi sablonok) a sablon saját beallitasok/mezok/
+  // fotoKategoriak adatai vezérlik, mi kötelező a lezáráshoz.
+  const munkalapSablon = useMemo(() => {
+    if (!m.sablonId) return null;
+    return getAktivSablonok().find(s => s.id === m.sablonId) || null;
+  }, [m.sablonId]);
+  const legacyNapelemMod = !munkalapSablon || munkalapSablon.id === "factory_napelem_kivitelezes";
+  const kellVBF     = legacyNapelemMod ? true : !!munkalapSablon.beallitasok?.kellVBF;
+  const kellFotoDok = legacyNapelemMod ? true : !!munkalapSablon.beallitasok?.kellFotoDokumentacio;
+  const kellLMRA    = legacyNapelemMod ? true : !!munkalapSablon.beallitasok?.kellLMRA;
+  // A sablon "meresiAdat"/"szam" típusú mezői adják a VBF-szerű mérési checklistet
+  // nem-napelemes munkatípusoknál (pl. Villanyszerelésnél: hálózati feszültség, áram).
+  const sablonVbfMezok = useMemo(() => {
+    if (legacyNapelemMod || !munkalapSablon) return [];
+    return (munkalapSablon.mezok || []).filter(mz => mz.tipus === "meresiAdat" || mz.tipus === "szam");
+  }, [legacyNapelemMod, munkalapSablon]);
+  const sablonFotoKategoriak = useMemo(() => {
+    if (legacyNapelemMod) return FOTO_KAT;
+    return (munkalapSablon.fotoKategoriak || []).map(fk => ({
+      id: fk.id, nev: fk.label, leiras: fk.minDb > 1 ? `Minimum ${fk.minDb} fotó` : "", kotelezo: fk.kotelezo, minDb: fk.minDb,
+    }));
+  }, [legacyNapelemMod, munkalapSablon]);
+
   const isLezartStatus = (ml) =>
     ml.lezarva ||
     ml.status==="Befejezett" ||
@@ -586,7 +618,11 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   }
 
   const [vbf, setVbf] = useState(()=>migrateVbfNestedToFlat(loadVbf(m.id)));
-  const [fotok,setFotok] = useState(()=>loadLocal(`fotok_${m.id}`)||Object.fromEntries(FOTO_KAT.map(k=>[k.id,[]])));
+  const [fotok,setFotok] = useState(()=>loadLocal(`fotok_${m.id}`)||Object.fromEntries(sablonFotoKategoriak.map(k=>[k.id,[]])));
+  // Nem-napelemes sablonok "meresiAdat" mezőinek értékei (VBF-szerű mérési checklist
+  // helyettesítője). A creation-kori sablonMezokErtekek-et vesszük kiindulásnak,
+  // hogy a helyszínen csak a hiányzókat kelljen kitölteni/pontosítani.
+  const [sablonMezokErtekek, setSablonMezokErtekek] = useState(() => m.sablonMezokErtekek || {});
   const [fotoHianyOkok, setFotoHianyOkok] = useState(()=>{
     const saved = loadLocal(`foto_hiany_${m.id}`);
     return saved || {};
@@ -606,18 +642,38 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
     window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:`vbf_${m.id}`}}));
   }
 
+  function updSablonMezo(mezoId, val) {
+    const nv = { ...sablonMezokErtekek, [mezoId]: val };
+    setSablonMezokErtekek(nv);
+    updateItem("munkalapok", m.id, { sablonMezokErtekek: nv });
+    window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
+  }
+
   function getVbfHianyzoMezok() {
-    return VBF_KOTELEZO_MEZOK.filter(f => {
-      const v = vbf[f.key];
-      return v === undefined || v === null || v === "";
-    });
+    if (!kellVBF) return [];
+    if (legacyNapelemMod) {
+      return VBF_KOTELEZO_MEZOK.filter(f => {
+        const v = vbf[f.key];
+        return v === undefined || v === null || v === "";
+      });
+    }
+    // Nem-napelemes sablon: a sablon saját "kötelező" mérési mezői döntenek.
+    return sablonVbfMezok
+      .filter(mz => mz.kotelezo)
+      .filter(mz => {
+        const v = sablonMezokErtekek[mz.id];
+        return v === undefined || v === null || v === "";
+      })
+      .map(mz => ({ key: mz.id, label: mz.cimke }));
   }
   function checkVbfHianyos() {
     return getVbfHianyzoMezok().length > 0;
   }
 
   function handleMegkezdes() {
-    // LMRA szükséges-e? Mindig megnyitjuk az LMRA nézetet (ha már lezárva, azonnal megkezdés)
+    // LMRA csak akkor kötelező lépés, ha a munkalap sablonja megköveteli
+    // (napelemes/legacy munkánál mindig – ld. legacyNapelemMod).
+    if (!kellLMRA) { doMegkezdes(); return; }
     setShowLmra(true);
   }
 
@@ -657,10 +713,12 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
 
     setFigy(false);
 
-    const osszesFoto = Object.values(fotok).reduce((s,a)=>s+(a.length||0),0);
-    if (osszesFoto===0) {
-      alert("⚠️ Lezárás sikertelen!\n\nNincs feltöltve egyetlen fotó sem.\nTölts fel legalább 1 fotót.");
-      return;
+    if (kellFotoDok) {
+      const osszesFoto = Object.values(fotok).reduce((s,a)=>s+(a.length||0),0);
+      if (osszesFoto===0) {
+        alert("⚠️ Lezárás sikertelen!\n\nNincs feltöltve egyetlen fotó sem.\nTölts fel legalább 1 fotót.");
+        return;
+      }
     }
 
     if (!megjegyzes||megjegyzes.trim().length===0) {
@@ -669,12 +727,14 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
       return;
     }
 
-    const hianyosKat = FOTO_KAT.filter(k=>(fotok[k.id]||[]).length===0);
-    const missing = hianyosKat.filter(k=>!fotoHianyOkok[k.id]);
-    if (missing.length>0) {
-      alert("⚠️ Lezárás sikertelen!\n\nHiányzó indoklás a következő kategóriáknál:\n"+missing.map(k=>"• "+k.nev).join("\n")+"\n\nA Fotók fülön válassz magyarázatot minden fotó nélküli kategóriához!");
-      setActiveTab(megkezdve?5:2);
-      return;
+    if (kellFotoDok) {
+      const hianyosKat = sablonFotoKategoriak.filter(k=>(fotok[k.id]||[]).length===0);
+      const missing = hianyosKat.filter(k=>!fotoHianyOkok[k.id]);
+      if (missing.length>0) {
+        alert("⚠️ Lezárás sikertelen!\n\nHiányzó indoklás a következő kategóriáknál:\n"+missing.map(k=>"• "+k.nev).join("\n")+"\n\nA Fotók fülön válassz magyarázatot minden fotó nélküli kategóriához!");
+        setActiveTab(megkezdve?5:2);
+        return;
+      }
     }
 
     setShowAlairas(true);
@@ -779,14 +839,18 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   }
 
   async function handleVbfMentes() {
-    saveVbf(m.id, vbf);
-    updateItem("munkalapok", m.id, { vbf });
+    if (legacyNapelemMod) {
+      saveVbf(m.id, vbf);
+      updateItem("munkalapok", m.id, { vbf });
+    }
+    // Nem-napelemes sablonnál a sablonMezokErtekek már mezőnkénti onBlur-ral
+    // mentve van (ld. updSablonMezo) – itt csak a Drive-visszaigazolás történik.
     window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "munkalapok" } }));
     setProgress(30);
-    setProgressMsg("VBF mentése Drive-ra…");
+    setProgressMsg(legacyNapelemMod ? "VBF mentése Drive-ra…" : "Mérési adatok mentése Drive-ra…");
     // VBF külön fájlba Drive-ra + teljes munkalapok lista szinkron
     try {
-      await driveVbfSave(m.id, vbf);
+      if (legacyNapelemMod) await driveVbfSave(m.id, vbf);
       syncMunkalapokToDrive();
     } catch(e) {
       console.warn("[VBF Drive sync]", e);
@@ -933,12 +997,14 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
 
         {!megkezdve ? (
           <div style={{ marginTop: 20 }}>
-            <div style={{ background: C.warningLight, border: `1px solid ${C.warningLight}`, borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.warning }}>
-              <Shield size={16} color={C.warning} />
-              <span><b>LMRA szükséges</b> – minden csapattag aláírja a kockázatbecslést a munkakezdés előtt</span>
-            </div>
+            {kellLMRA && (
+              <div style={{ background: C.warningLight, border: `1px solid ${C.warningLight}`, borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.warning }}>
+                <Shield size={16} color={C.warning} />
+                <span><b>LMRA szükséges</b> – minden csapattag aláírja a kockázatbecslést a munkakezdés előtt</span>
+              </div>
+            )}
             <button onClick={handleMegkezdes} style={{ width:"100%",padding:"15px",borderRadius:12,border:"none",background:C.success,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT }}>
-              <Shield size={18}/> LMRA + Megkezdés →
+              <Shield size={18}/> {kellLMRA ? "LMRA + Megkezdés →" : "Munka megkezdése →"}
             </button>
           </div>
         ) : (
@@ -998,54 +1064,78 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
 
   const VbfTab=()=>(
     <div style={{ padding:"16px",background:C.bg }}>
-      {figy&&<div style={{ background:C.dangerLight,border:`1px solid ${C.dangerLight}`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.danger,display:"flex",alignItems:"center",gap:8 }}>
-        <AlertTriangle size={16}/>Hiányos VBF mezők – töltsd ki vagy hagyd üresen ha nem releváns
-      </div>}
-      <div style={{ background:C.accentLight,border:`1px solid ${C.accentLight}`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.accent }}>
-        💡 Üres mező = nem releváns. Ha nulla az érték, hagyd üresen.
-      </div>
-      <MeroSzakasz title="AC feszültség">{["l1","l2","l3"].map(l=><MeroSor key={l} label={l.toUpperCase()} value={vbf[`ac_${l}`]} onCommit={v=>updVbf(`ac_${l}`,v)} unit="V" piros={figy}/>)}</MeroSzakasz>
-      <MeroSzakasz title="Kismegszakító – Inverternél">{["l1","l2","l3"].map(l=><MeroSor key={l} label={l.toUpperCase()} value={vbf[`ki_${l}`]} onCommit={v=>updVbf(`ki_${l}`,v)} unit="A" piros={figy}/>)}</MeroSzakasz>
-      <MeroSzakasz title="Kismegszakító – Mérőhelynél">{["l1","l2","l3"].map(l=><MeroSor key={l} label={l.toUpperCase()} value={vbf[`km_${l}`]} onCommit={v=>updVbf(`km_${l}`,v)} unit="A" piros={figy}/>)}</MeroSzakasz>
-      <MeroSzakasz title="Panelszám">{["st1","st2","st3","st4","st5","st6"].map(s=><MeroSor key={s} label={s.toUpperCase()} value={vbf[`ps_${s}`]} onCommit={v=>updVbf(`ps_${s}`,v)} unit="db" piros={figy}/>)}</MeroSzakasz>
-      <MeroSzakasz title="DC feszültség">{["st1","st2","st3","st4","st5","st6"].map(s=><MeroSor key={s} label={s.toUpperCase()} value={vbf[`dc_${s}`]} onCommit={v=>updVbf(`dc_${s}`,v)} unit="V" piros={figy}/>)}</MeroSzakasz>
-      <MeroSzakasz title="Hurokellenállás">{["l1","l2","l3"].map(l=><MeroSor key={l} label={l.toUpperCase()} value={vbf[`hu_${l}`]} onCommit={v=>updVbf(`hu_${l}`,v)} unit="MΩ" piros={figy}/>)}</MeroSzakasz>
-      <MeroSzakasz title="Smart meter & AKKU">
-        <MeroSor label="SM" value={vbf.smart_meter} onCommit={v=>updVbf("smart_meter",v)} unit="db" piros={figy}/>
-        <MeroSor label="AKKU" value={vbf.akku_db} onCommit={v=>updVbf("akku_db",v)} unit="db" piros={figy}/>
-      </MeroSzakasz>
-      <MeroSzakasz title="Betáplált DC teljesítmény">
-        <MeroSor label="DC" value={vbf.dc_teljesitmeny} onCommit={v=>updVbf("dc_teljesitmeny",v)} unit="Wp" piros={figy}/>
-      </MeroSzakasz>
-      <MeroSzakasz title="Panel pontos adatok">
-        <div style={{ marginBottom:12 }}>
-          <p style={{ fontSize:13,color:C.muted,marginBottom:6 }}>Napelem Típusa <span style={{ fontSize:11,color:C.accent }}>(szöveg)</span></p>
-          <VbfTextInput value={vbf.panel_tipus} onCommit={v=>updVbf("panel_tipus",v)} piros={figy}/>
+      {!kellVBF ? (
+        <div style={{ padding:"32px 16px",textAlign:"center",color:C.muted }}>
+          <p style={{ fontSize:14,fontWeight:600 }}>Ehhez a munkatípushoz ({munkalapSablon?.nev || "—"}) nincs VBF-mérés előírva.</p>
         </div>
-        <MeroSor label="Voc" value={vbf.panel_voc} onCommit={v=>updVbf("panel_voc",v)} unit="V" piros={figy}/>
-        <MeroSor label="Vmp" value={vbf.panel_vmp} onCommit={v=>updVbf("panel_vmp",v)} unit="V" piros={figy}/>
-        <MeroSor label="Imp" value={vbf.panel_imp} onCommit={v=>updVbf("panel_imp",v)} unit="A" piros={figy}/>
-        <MeroSor label="Isc" value={vbf.panel_isc} onCommit={v=>updVbf("panel_isc",v)} unit="A" piros={figy}/>
-        <MeroSor label="Telj." value={vbf.panel_telj} onCommit={v=>updVbf("panel_telj",v)} unit="Wp" piros={figy}/>
-      </MeroSzakasz>
-      <MeroSzakasz title="Inverter pontos adatok">
-        <MeroSor label="kVA" value={vbf.inv_nevleges} onCommit={v=>updVbf("inv_nevleges",v)} unit="kVA" piros={figy}/>
-      </MeroSzakasz>
-      <MeroSzakasz title="Tűzeseti adatok">
-        <MeroSor label="A" value={vbf.tuz_megszakito} onCommit={v=>updVbf("tuz_megszakito",v)} unit="A" piros={figy}/>
-      </MeroSzakasz>
-      <button onClick={handleVbfMentes} style={{ width:"100%",padding:"14px",borderRadius:12,border:"none",background:C.accent,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT,marginTop:8,marginBottom:32 }}>
-        <Save size={18}/>VBF mentése
-      </button>
+      ) : (
+        <>
+          {figy&&<div style={{ background:C.dangerLight,border:`1px solid ${C.dangerLight}`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.danger,display:"flex",alignItems:"center",gap:8 }}>
+            <AlertTriangle size={16}/>Hiányos VBF mezők – töltsd ki vagy hagyd üresen ha nem releváns
+          </div>}
+          <div style={{ background:C.accentLight,border:`1px solid ${C.accentLight}`,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.accent }}>
+            💡 Üres mező = nem releváns. Ha nulla az érték, hagyd üresen.
+          </div>
+          {legacyNapelemMod ? (
+            <>
+              <MeroSzakasz title="AC feszültség">{["l1","l2","l3"].map(l=><MeroSor key={l} label={l.toUpperCase()} value={vbf[`ac_${l}`]} onCommit={v=>updVbf(`ac_${l}`,v)} unit="V" piros={figy}/>)}</MeroSzakasz>
+              <MeroSzakasz title="Kismegszakító – Inverternél">{["l1","l2","l3"].map(l=><MeroSor key={l} label={l.toUpperCase()} value={vbf[`ki_${l}`]} onCommit={v=>updVbf(`ki_${l}`,v)} unit="A" piros={figy}/>)}</MeroSzakasz>
+              <MeroSzakasz title="Kismegszakító – Mérőhelynél">{["l1","l2","l3"].map(l=><MeroSor key={l} label={l.toUpperCase()} value={vbf[`km_${l}`]} onCommit={v=>updVbf(`km_${l}`,v)} unit="A" piros={figy}/>)}</MeroSzakasz>
+              <MeroSzakasz title="Panelszám">{["st1","st2","st3","st4","st5","st6"].map(s=><MeroSor key={s} label={s.toUpperCase()} value={vbf[`ps_${s}`]} onCommit={v=>updVbf(`ps_${s}`,v)} unit="db" piros={figy}/>)}</MeroSzakasz>
+              <MeroSzakasz title="DC feszültség">{["st1","st2","st3","st4","st5","st6"].map(s=><MeroSor key={s} label={s.toUpperCase()} value={vbf[`dc_${s}`]} onCommit={v=>updVbf(`dc_${s}`,v)} unit="V" piros={figy}/>)}</MeroSzakasz>
+              <MeroSzakasz title="Hurokellenállás">{["l1","l2","l3"].map(l=><MeroSor key={l} label={l.toUpperCase()} value={vbf[`hu_${l}`]} onCommit={v=>updVbf(`hu_${l}`,v)} unit="MΩ" piros={figy}/>)}</MeroSzakasz>
+              <MeroSzakasz title="Smart meter & AKKU">
+                <MeroSor label="SM" value={vbf.smart_meter} onCommit={v=>updVbf("smart_meter",v)} unit="db" piros={figy}/>
+                <MeroSor label="AKKU" value={vbf.akku_db} onCommit={v=>updVbf("akku_db",v)} unit="db" piros={figy}/>
+              </MeroSzakasz>
+              <MeroSzakasz title="Betáplált DC teljesítmény">
+                <MeroSor label="DC" value={vbf.dc_teljesitmeny} onCommit={v=>updVbf("dc_teljesitmeny",v)} unit="Wp" piros={figy}/>
+              </MeroSzakasz>
+              <MeroSzakasz title="Panel pontos adatok">
+                <div style={{ marginBottom:12 }}>
+                  <p style={{ fontSize:13,color:C.muted,marginBottom:6 }}>Napelem Típusa <span style={{ fontSize:11,color:C.accent }}>(szöveg)</span></p>
+                  <VbfTextInput value={vbf.panel_tipus} onCommit={v=>updVbf("panel_tipus",v)} piros={figy}/>
+                </div>
+                <MeroSor label="Voc" value={vbf.panel_voc} onCommit={v=>updVbf("panel_voc",v)} unit="V" piros={figy}/>
+                <MeroSor label="Vmp" value={vbf.panel_vmp} onCommit={v=>updVbf("panel_vmp",v)} unit="V" piros={figy}/>
+                <MeroSor label="Imp" value={vbf.panel_imp} onCommit={v=>updVbf("panel_imp",v)} unit="A" piros={figy}/>
+                <MeroSor label="Isc" value={vbf.panel_isc} onCommit={v=>updVbf("panel_isc",v)} unit="A" piros={figy}/>
+                <MeroSor label="Telj." value={vbf.panel_telj} onCommit={v=>updVbf("panel_telj",v)} unit="Wp" piros={figy}/>
+              </MeroSzakasz>
+              <MeroSzakasz title="Inverter pontos adatok">
+                <MeroSor label="kVA" value={vbf.inv_nevleges} onCommit={v=>updVbf("inv_nevleges",v)} unit="kVA" piros={figy}/>
+              </MeroSzakasz>
+              <MeroSzakasz title="Tűzeseti adatok">
+                <MeroSor label="A" value={vbf.tuz_megszakito} onCommit={v=>updVbf("tuz_megszakito",v)} unit="A" piros={figy}/>
+              </MeroSzakasz>
+            </>
+          ) : (
+            <MeroSzakasz title={`${munkalapSablon.nev} – mérési adatok`}>
+              {sablonVbfMezok.length === 0 && <p style={{ fontSize:13,color:C.muted }}>Ehhez a sablonhoz nincs mérési mező definiálva (szerkeszthető: ML Sablonok).</p>}
+              {sablonVbfMezok.map(mz=>(
+                <MeroSor key={mz.id} label={mz.cimke} value={sablonMezokErtekek[mz.id]} onCommit={v=>updSablonMezo(mz.id,v)} unit={mz.mertekegyseg} piros={figy && mz.kotelezo}/>
+              ))}
+            </MeroSzakasz>
+          )}
+          <button onClick={handleVbfMentes} style={{ width:"100%",padding:"14px",borderRadius:12,border:"none",background:C.accent,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:FONT,marginTop:8,marginBottom:32 }}>
+            <Save size={18}/>{legacyNapelemMod ? "VBF mentése" : "Mérési adatok mentése"}
+          </button>
+        </>
+      )}
     </div>
   );
 
   const FotokTab=()=>(
     <div style={{ padding:"16px",background:C.bg }}>
       <p style={{ fontSize:13,color:C.muted,marginBottom:16,lineHeight:1.6 }}>
-        Minden kategóriába töltsd fel a fotókat. Ha nincs fotó, kötelező magyarázatot választani!
+        {kellFotoDok
+          ? "Minden kategóriába töltsd fel a fotókat. Ha nincs fotó, kötelező magyarázatot választani!"
+          : "Ehhez a munkatípushoz nem kötelező fotódokumentáció, de feltölthetsz fotókat."}
       </p>
-      {FOTO_KAT.map(kat=>(
+      {sablonFotoKategoriak.length===0 && (
+        <p style={{ fontSize:13,color:C.muted }}>Ehhez a sablonhoz nincs fotókategória definiálva (szerkeszthető: ML Sablonok).</p>
+      )}
+      {sablonFotoKategoriak.map(kat=>(
         <FotoKartya
           key={kat.id}
           kat={kat}
@@ -1060,10 +1150,10 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
 
   const ell_vbfOk = !checkVbfHianyos();
   const ell_osszesFoto = Object.values(fotok).reduce((s,a)=>s+(a.length||0),0);
-  const ell_hianyosKat = FOTO_KAT.filter(k=>(fotok[k.id]||[]).length===0);
+  const ell_hianyosKat = kellFotoDok ? sablonFotoKategoriak.filter(k=>(fotok[k.id]||[]).length===0) : [];
   const ell_mindenKatOk = ell_hianyosKat.every(k=>fotoHianyOkok[k.id]);
   const ell_megjegyzesMegvan = megjegyzes.trim().length > 0;
-  const lezarhatoE = ell_vbfOk && ell_osszesFoto>0 && ell_megjegyzesMegvan && (ell_mindenKatOk||ell_hianyosKat.length===0);
+  const lezarhatoE = ell_vbfOk && (!kellFotoDok || ell_osszesFoto>0) && ell_megjegyzesMegvan && (ell_mindenKatOk||ell_hianyosKat.length===0);
 
   return (
     <div style={{ minHeight:"100vh",background:C.bg,fontFamily:FONT }}>
@@ -1103,10 +1193,12 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
           <div style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
             <p style={{ fontSize:15,fontWeight:700,color:C.text,marginBottom:12 }}>✅ Munka ellenőrzése</p>
             {[
-              {label:"VBF Jegyzőkönyv",ok:ell_vbfOk,info:ell_vbfOk?"":getVbfHianyzoMezok().map(f=>f.label).join(", ")},
-              {label:`Fotók (${ell_osszesFoto} db)`,ok:ell_osszesFoto>0,info:"Min. 1 fotó szükséges"},
+              ...(kellVBF ? [{label:"VBF Jegyzőkönyv",ok:ell_vbfOk,info:ell_vbfOk?"":getVbfHianyzoMezok().map(f=>f.label).join(", ")}] : []),
+              ...(kellFotoDok ? [
+                {label:`Fotók (${ell_osszesFoto} db)`,ok:ell_osszesFoto>0,info:"Min. 1 fotó szükséges"},
+                {label:"Fotó nélküli kategóriák indokolva",ok:ell_mindenKatOk||ell_hianyosKat.length===0,info:`${ell_hianyosKat.filter(k=>!fotoHianyOkok[k.id]).length} kategória indoklás hiányzik`},
+              ] : []),
               {label:"Megjegyzés megadva",ok:ell_megjegyzesMegvan,info:"Legalább egy karakter"},
-              {label:"Fotó nélküli kategóriák indokolva",ok:ell_mindenKatOk||ell_hianyosKat.length===0,info:`${ell_hianyosKat.filter(k=>!fotoHianyOkok[k.id]).length} kategória indoklás hiányzik`},
             ].map(item=>(
               <div key={item.label} style={{ display:"flex",alignItems:"flex-start",gap:10,padding:"10px 0",borderBottom:`1px solid ${C.border}` }}>
                 {item.ok?<CheckCircle2 size={20} color={C.success} style={{flexShrink:0,marginTop:2}}/>:<AlertTriangle size={20} color={C.warning} style={{flexShrink:0,marginTop:2}}/>}
