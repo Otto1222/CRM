@@ -15,50 +15,82 @@ const SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL || "";
 export const DRIVE_DB_FOLDER_ID    = "1jkRh98v5pm73Dyhmn3FioFkznBaxWwsW";
 export const DRIVE_MUNKA_FOLDER_ID = "1ccvd4iUnB-jEyrSGJBZs_fSOScL_aQPx";
 
+// ─── Átmeneti Google-oldali hibák újrapróbálása ────────────────
+// Néha (jellemzően nagyobb fájloknál, vagy ha több eszköz szinkronizál egy
+// időben) a Google infrastruktúra a scriptünket el sem érve egy HTML
+// hibaoldalt küld JSON helyett ("Unexpected token '<' ... is not valid
+// JSON") – ez NEM a script hibája (a doGet/doPost mindig try/catch-csel
+// garantáltan JSON-t ad vissza), hanem tipikusan átmeneti túlterhelés.
+// 1-2 gyors újrapróbálkozással ez a felhasználó számára észrevétlen marad,
+// ahelyett hogy hamis "szinkron hiba" jelzést kapna.
+const RETRY_DELAYS_MS = [500, 1500];
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function fetchWithRetry(doFetch) {
+  const attempts = RETRY_DELAYS_MS.length + 1;
+  let lastErr = "Ismeretlen hiba";
+  for (let i = 0; i < attempts; i++) {
+    const isLast = i === attempts - 1;
+    try {
+      const res = await doFetch();
+
+      if (!res.ok) {
+        // 5xx = szerveroldali/átmeneti – érdemes újrapróbálni. 4xx-nél nincs értelme.
+        if (res.status >= 500 && !isLast) {
+          lastErr = `HTTP ${res.status}`;
+          await sleep(RETRY_DELAYS_MS[i]);
+          continue;
+        }
+        const errText = await res.text().catch(() => "");
+        return { ok: false, error: `HTTP ${res.status}: ${errText}` };
+      }
+
+      try {
+        return await res.json();
+      } catch {
+        // Nem JSON válasz (pl. Google HTML hibaoldal) – tipikusan átmeneti.
+        if (!isLast) {
+          lastErr = "A szerver nem JSON választ adott vissza";
+          await sleep(RETRY_DELAYS_MS[i]);
+          continue;
+        }
+        return { ok: false, error: "A szerver nem JSON választ adott vissza" };
+      }
+    } catch (e) {
+      lastErr = e.message;
+      if (!isLast) { await sleep(RETRY_DELAYS_MS[i]); continue; }
+      return { ok: false, error: e.message };
+    }
+  }
+  return { ok: false, error: lastErr };
+}
+
 // ─── Alap POST hívás ──────────────────────────────────────────
 // text/plain = simple request → nincs CORS preflight → Apps Script visszaadja CORS fejléceket
 async function post(body) {
   if (!SCRIPT_URL) return { ok: false, offline: true };
-  try {
-    const res = await fetch(SCRIPT_URL, {
-      method:  "POST",
-      headers: { "Content-Type": "text/plain;charset=UTF-8" },
-      body:    JSON.stringify(body),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      return { ok: false, error: `HTTP ${res.status}: ${errText}` };
-    }
-
-    let data;
-    try {
-      data = await res.json();
-    } catch {
-      return { ok: false, error: "A szerver nem JSON választ adott vissza" };
-    }
-
-    if (!data?.ok) return { ok: false, error: data?.error || "Apps Script hiba (ok: false)" };
-    return data;
-  } catch (e) {
-    console.warn("[driveApi POST]", e.message);
-    return { ok: false, error: e.message };
+  const data = await fetchWithRetry(() => fetch(SCRIPT_URL, {
+    method:  "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body:    JSON.stringify(body),
+  }));
+  if (data?.offline) return data;
+  if (!data?.ok) {
+    if (data?.error) console.warn("[driveApi POST]", data.error);
+    return { ok: false, error: data?.error || "Apps Script hiba (ok: false)" };
   }
+  return data;
 }
 
 // ─── GET – adatok betöltése ───────────────────────────────────
 async function get(params) {
   if (!SCRIPT_URL) return { ok: false, offline: true };
-  try {
-    const url = new URL(SCRIPT_URL);
-    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-    const res  = await fetch(url.toString());
-    const data = await res.json();
-    return data;
-  } catch (e) {
-    console.warn("[driveApi GET]", e.message);
-    return { ok: false, error: e.message };
-  }
+  const url = new URL(SCRIPT_URL);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const data = await fetchWithRetry(() => fetch(url.toString()));
+  if (!data?.ok && !data?.offline && data?.error) console.warn("[driveApi GET]", data.error);
+  return data;
 }
 
 // ─── PUBLIC API ───────────────────────────────────────────────
