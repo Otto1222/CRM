@@ -144,16 +144,22 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
               </button>
             </>
           )}
-          {/* Saját ajánlat: átnavigál az Ajánlatok oldalra */}
-          {["Admin", "Projektmenedzser"].includes(userRole) && onNav && (
-            <button onClick={() => onNav("arajanlatok")}
-              style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 14px", background:C.accentLight, color:C.accent, border:`1.5px solid ${C.accentLight}`, borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
-              <Users size={14} /> Saját ajánlat projekt
-            </button>
-          )}
-          {/* Fővállalkozói / Belső: közvetlen projektnyitás */}
+          {/* Saját munka / Fővállalkozói / Belső: mindhárom közvetlenül nyitja a
+              formot, ugyanazzal a mintával – P0-007 előtt a "Saját ajánlat"
+              gomb az Ajánlatok oldalra navigált el (mert akkor kizárólag
+              onnan indulhatott saját munka), ami a tételes Excel-importos
+              alfajta bevezetése óta 3 külön, rejtett útvonalat eredményezett
+              ugyanahhoz a célhoz. Most mindhárom forrás egyenes, egylépéses
+              gombbal érhető el; a form belsejében a "Saját munka" azonnal
+              az Ajánlat/Excel alfajta-választót mutatja. Az Ajánlatok oldal
+              saját "hozz létre projektet ebből az ajánlatból" gombja marad,
+              ott hasznos kontextuális parancsikon. */}
           {["Admin", "Projektmenedzser"].includes(userRole) && (
             <>
+              <button onClick={() => { setUjForrasInit("sajat_ajanlat"); setUjOpen(true); }}
+                style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 14px", background:C.accentLight, color:C.accent, border:`1.5px solid ${C.accentLight}`, borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+                <Users size={14} /> Saját munka
+              </button>
               <button onClick={() => { setUjForrasInit("fovallalkozoi_munka"); setUjOpen(true); }}
                 style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 14px", background:C.accentLight, color:C.accent, border:`1.5px solid ${C.accentLight}`, borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
                 <Handshake size={14} /> Fővállalkozói
