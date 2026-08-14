@@ -161,6 +161,17 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
   useEffect(() => { formRef.current = form; }, [form]);
   const [ugyfélOpen, setUgyfélOpen] = useState(true);
   const [extraCostOpen, setExtraCostOpen] = useState(false);
+  // P0-008: a form eddig ~20 mezőt mutatott egyszerre, a legtöbb csak
+  // adminisztratív részlet, nem az árbecsléshez szükséges. "További adatok"
+  // mögé kerül: Csapat, Ütemezés, fővállalkozói ügyfél/kapcsolattartó
+  // részletek – becsukva indul, bármikor kinyitható/utólag is kitölthető.
+  const [reszletekOpen, setReszletekOpen] = useState(false);
+  // Fővállalkozóinál az ügyfél-mezők a "További adatok" mögé kerülnek (a
+  // saját munka / ajánlatos flow ugyfélOpen-mechanizmusa változatlan marad).
+  const ugyfelMezokLathatok =
+    form.forrás === "sajat_ajanlat" ? (ugyfélOpen || !form.ajanlatId)
+    : form.forrás === "fovallalkozoi_munka" ? reszletekOpen
+    : true;
   // P0-007: "Saját munka" almenettől függően más a kötelező feltétel –
   // ajánlat-alfajtánál ajánlat kiválasztása, Excel-alfajtánál sikeres import.
   const formBlocked = isNew && form.forrás === "sajat_ajanlat" && (
@@ -781,11 +792,23 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 ))}
               </select>
             </Field>
+
+            {/* P0-008: egyetlen, mindig látható kapcsoló a nem-alapvető
+                mezőkhöz (Csapat, Ütemezés, fővállalkozói ügyfél/kapcsolattartó
+                részletek) – a form kezdőnézete így csak a becsléshez/mentéshez
+                ténylegesen szükséges mezőket mutatja. */}
+            <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+              <button type="button" onClick={() => setReszletekOpen(o => !o)}
+                style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: `1px solid ${C.border}`, borderRadius: 8, cursor: "pointer", fontSize: 12, color: C.accent, fontWeight: 700, padding: "6px 12px", fontFamily: "inherit" }}>
+                {reszletekOpen ? "▼" : "▶"} További adatok (ügyfél, csapat, ütemezés, fővállalkozói részletek…)
+              </button>
+            </div>
+
             {form.forrás !== "belso_munka" && (<>
             <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14, display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: form.forrás === "sajat_ajanlat" && form.ajanlatId ? 0 : 10 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: ugyfelMezokLathatok ? 10 : 0 }}>
                 Ügyfél adatok
-                {!ugyfélOpen && form.clientNev && <span style={{ fontWeight: 500, color: "#374151", marginLeft: 8, textTransform: "none", fontSize: 12 }}>· {form.clientNev}</span>}
+                {!ugyfelMezokLathatok && form.clientNev && <span style={{ fontWeight: 500, color: "#374151", marginLeft: 8, textTransform: "none", fontSize: 12 }}>· {form.clientNev}</span>}
               </p>
               {form.forrás === "sajat_ajanlat" && form.ajanlatId && (
                 <button type="button" onClick={() => setUgyfélOpen(o => !o)}
@@ -794,7 +817,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 </button>
               )}
             </div>
-            {(ugyfélOpen || form.forrás !== "sajat_ajanlat" || !form.ajanlatId) && <>
+            {ugyfelMezokLathatok && <>
             <Field label="Ügyfél kiválasztása (opcionális)">
               <select value={form.clientId} onChange={handleUgyfél} style={inp}>
                 <option value="">— Válassz a listából —</option>
@@ -859,6 +882,12 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               />
             </Field>
             )}
+            {!reszletekOpen && (form.projektvezetoNev || form.csapatNev) && (
+              <div style={{ gridColumn: "span 2", fontSize: 12, color: C.muted }}>
+                Csapat: {[form.projektvezetoNev, form.csapatNev].filter(Boolean).join(" · ")}
+              </div>
+            )}
+            {reszletekOpen && (<>
             <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Csapat
@@ -887,6 +916,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 <p style={{ fontSize: 10, color: C.warning, marginTop: 3 }}>⚠️ Még nincs létrehozva csapat — előbb add hozzá a Csapat menüben</p>
               )}
             </Field>
+            </>)}
             {/* Műszaki adatok – belső munkánál (garancia/javítás) irreleváns */}
             {form.forrás !== "belso_munka" && (<>
             <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
@@ -920,6 +950,12 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               </label>
             </Field>
             </>)}
+            {!reszletekOpen && (form.tervezettKezdes || form.tervezettBefejezes) && (
+              <div style={{ gridColumn: "span 2", fontSize: 12, color: C.muted }}>
+                Ütemezés: {form.tervezettKezdes || "?"} → {form.tervezettBefejezes || "?"}
+              </div>
+            )}
+            {reszletekOpen && (<>
             <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Ütemezés
@@ -931,6 +967,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <Field label="Tervezett befejezés" half>
               <input type="date" value={form.tervezettBefejezes} onChange={e => upd("tervezettBefejezes", e.target.value)} style={inp} />
             </Field>
+            </>)}
             {/* Pénzügyi konfiguráció – csak fővállalkozói munkánál releváns */}
             {form.forrás === "fovallalkozoi_munka" && (<>
             <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
@@ -950,8 +987,8 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               {form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: C.success, marginTop: 3 }}>✅ Elszámolási szabály automatikusan betöltve</p>}
               {form.penzugy.fovallalkoziId && !form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: C.warning, marginTop: 3 }}>⚠️ Nincs aktív szabály ehhez a munkatípushoz</p>}
             </Field>
-            {/* Fővállalkozói extra mezők */}
-            {form.forrás === "fovallalkozoi_munka" && <>
+            {/* Fővállalkozói extra mezők – csak "További adatok" nyitva */}
+            {reszletekOpen && (<>
               <Field label="FV kapcsolattartó" half>
                 <input value={form.fovKapcsolattarto} onChange={e => upd("fovKapcsolattarto", e.target.value)} placeholder="Kapcsolattartó neve" style={inp} />
               </Field>
@@ -961,11 +998,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               <Field label="Fővállalkozói megjegyzés">
                 <input value={form.fovMegjegyzes} onChange={e => upd("fovMegjegyzes", e.target.value)} placeholder="Egyéb instrukciók, feltételek…" style={inp} />
               </Field>
-            </>}
-            <Field label="Elszámolási db (auto: panel db)" half>
-              <input type="number" value={form.penzugy.darabszam || form.napelemDb || 1} onChange={e => updPenz("darabszam", e.target.value)} placeholder="1" style={inp} />
-              <p style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>Szinkronizálva a Műszaki adatok panel db-vel</p>
-            </Field>
+            </>)}
             <Field label="Távolság (km, oda)" half>
               <div style={{ display: "flex", gap: 6 }}>
                 <input
@@ -1011,31 +1044,22 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               />
             </Field>
             )}
+            {reszletekOpen && (<>
             <Field label="Csapatlétszám (fő)" half>
               <input type="number" value={form.penzugy.csapatLetszam || 1} onChange={e => updPenz("csapatLetszam", e.target.value)} placeholder="1" style={inp} />
             </Field>
             <Field label="Munkanapok száma" half>
               <input type="number" value={form.penzugy.munkanapok || 1} onChange={e => updPenz("munkanapok", e.target.value)} placeholder="1" style={inp} />
             </Field>
-            <div style={{ gridColumn: "span 2", background: C.accentLight, border: `1.5px solid ${C.accentLight}`, borderRadius: 10, padding: "14px 16px 10px", marginTop: 4 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 0.7, margin: "0 0 12px" }}>
-                Elszámolási mennyiségek
-              </p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
-                <Field label="Panel / napelem db" half>
-                  <input type="number" min="0" value={form.penzugy.panel_db ?? ""} onChange={e => updPenz("panel_db", e.target.value)} placeholder="0" style={inp} />
-                </Field>
-                <Field label="Akkumulátor db" half>
-                  <input type="number" min="0" value={form.penzugy.akku_db ?? ""} onChange={e => updPenz("akku_db", e.target.value)} placeholder="0" style={inp} />
-                </Field>
-                <Field label="Smart meter db" half>
-                  <input type="number" min="0" value={form.penzugy.smart_meter_db ?? ""} onChange={e => updPenz("smart_meter_db", e.target.value)} placeholder="0" style={inp} />
-                </Field>
-                <Field label="Inverter db" half>
-                  <input type="number" min="0" value={form.penzugy.inverter_db ?? ""} onChange={e => updPenz("inverter_db", e.target.value)} placeholder="0" style={inp} />
-                </Field>
-              </div>
-            </div>
+            </>)}
+            {/* P0-008: az "Elszámolási mennyiségek" blokk (panel/akku/smart meter/
+                inverter db) törölve – duplikálta a fenti "Műszaki adatok" mezőket,
+                anélkül hogy szinkronban lett volna velük. A díjszámítás
+                (calcProjektElszamolas → buildInput) már eleve a "Műszaki adatok"
+                mezőkből (napelemDb/inverterDb/akkumulatorDb/smartMeterDb) esik
+                vissza, ha a penzugy.*_db mezők üresek – tehát ez a blokk soha
+                nem volt szükséges a helyes számításhoz, csak felesleges,
+                összezavaró dupla adatbevitelt jelentett. */}
             <div style={{ gridColumn: "span 2", marginTop: 4 }}>
               <button type="button" onClick={() => setExtraCostOpen(o => !o)}
                 style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 8, cursor: "pointer", fontSize: 12, color: C.accent, fontWeight: 700, padding: "6px 12px", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
