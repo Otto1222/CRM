@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Calculator } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Calculator, FileSpreadsheet, Upload } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { ft } from "../../lib/helpers.js";
 import {
@@ -11,6 +11,11 @@ import {
   calcSzabalyOsszeg, szabalyLeiras,
 } from "./elszamolasiMotor.js";
 import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
+import {
+  getKatalogusTetelek, groupKatalogusByKategoria,
+  updateKatalogusTetel, deleteKatalogusTetel, seedGreenHomeDijtabla,
+} from "./dijtetelKatalogus.service.js";
+import DijtablaImportPanel from "../../components/DijtablaImportPanel.jsx";
 
 const inp = {
   width: "100%", boxSizing: "border-box", padding: "8px 11px",
@@ -405,6 +410,78 @@ function SzabalyKartya({ sz, onEdit, onDelete, onToggle }) {
   );
 }
 
+// ─── Díjtétel-katalógus (tételes díjtábla) szekció ─────────────
+
+function DijtablaKatalogusSzekcio({ fv, katalogus, onRefresh }) {
+  const [importOpen, setImportOpen] = useState(false);
+  const csoportok = groupKatalogusByKategoria(katalogus);
+  const aktivDb = katalogus.filter(t => t.aktiv !== false).length;
+
+  return (
+    <div style={{ marginTop: 18, borderTop: `1px solid ${C.bg}`, paddingTop: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>Díjtétel-katalógus (tételes díjtábla)</span>
+          <span style={{ fontSize: 12, color: C.muted, marginLeft: 6 }}>
+            ({aktivDb} aktív tétel — ez tölti fel a projekt létrehozásnál a "Tételek a díjtáblából" kosarat)
+          </span>
+        </div>
+        <button onClick={() => setImportOpen(true)}
+          style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", background: katalogus.length > 0 ? "#fff" : C.accent, color: katalogus.length > 0 ? C.accent : "#fff", border: `1.5px solid ${C.accent}`, borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: FONT }}>
+          <Upload size={12} /> {katalogus.length > 0 ? "Díjtábla frissítése" : "Díjtábla import"}
+        </button>
+      </div>
+
+      {katalogus.length === 0 ? (
+        <div style={{ background: C.bg, border: `1px dashed ${C.border}`, borderRadius: 9, padding: "14px", textAlign: "center" }}>
+          <FileSpreadsheet size={20} color={C.muted} style={{ display: "block", margin: "0 auto 6px" }} />
+          <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>
+            Még nincs feltöltve tételes díjtábla. Az "Új díjtétel" fentebb a régi, munkatípus-alapú szabály-motort szerkeszti –
+            a valódi, soronkénti díjtáblához (pl. Green Home ártábla) itt tölts fel egy Excelt.
+          </p>
+        </div>
+      ) : (
+        <div style={{ border: `1px solid ${C.border}`, borderRadius: 9, overflow: "hidden" }}>
+          {csoportok.map(g => (
+            <div key={g.kategoria}>
+              <div style={{ background: C.bg, padding: "5px 12px", fontSize: 11, fontWeight: 700, color: C.textSub }}>
+                {g.kategoria}
+              </div>
+              {g.tetelek.map(t => (
+                <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", borderTop: `1px solid ${C.bg}`, opacity: t.aktiv === false ? 0.5 : 1 }}>
+                  <span style={{ fontSize: 11, color: C.muted, minWidth: 32 }}>{t.kod || "—"}</span>
+                  <span style={{ flex: 1, fontSize: 12.5, color: C.text }}>{t.megnevezes}</span>
+                  <span style={{ fontSize: 11, color: C.muted, minWidth: 40 }}>{t.egyseg}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: C.text, minWidth: 90, textAlign: "right" }}>{ft(t.ar)}</span>
+                  {t.kmDij && <span style={{ fontSize: 10, background: C.accentLight, color: C.accent, padding: "1px 6px", borderRadius: 20, fontWeight: 700 }}>+km</span>}
+                  <button onClick={() => { updateKatalogusTetel(t.id, { aktiv: t.aktiv === false }); onRefresh(); }}
+                    title={t.aktiv === false ? "Aktiválás" : "Inaktiválás"}
+                    style={{ padding: "3px 7px", background: t.aktiv === false ? C.successLight : C.warningLight, color: t.aktiv === false ? C.success : C.warning, border: "none", borderRadius: 6, cursor: "pointer", fontSize: 10, fontWeight: 700, fontFamily: FONT }}>
+                    {t.aktiv === false ? "Aktivál" : "Inakt."}
+                  </button>
+                  <button onClick={() => { if (window.confirm("Törlöd ezt a díjtétel-katalógus tételt?")) { deleteKatalogusTetel(t.id); onRefresh(); } }}
+                    style={{ padding: "3px 6px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 6, cursor: "pointer" }}>
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {importOpen && (
+        <DijtablaImportPanel
+          tulajdonosId={fv.id}
+          meglevoDb={aktivDb}
+          onClose={() => setImportOpen(false)}
+          onImported={() => { setImportOpen(false); onRefresh(); }}
+        />
+      )}
+    </div>
+  );
+}
+
 // ─── Fővállalkozó sor ─────────────────────────────────────────
 
 function FvSor({ fv, onUpdate, onDelete }) {
@@ -414,8 +491,9 @@ function FvSor({ fv, onUpdate, onDelete }) {
   const [szerkSz,   setSzerkSz]   = useState(null);
   const [fvForm,    setFvForm]    = useState({ nev: fv.nev, rovidites: fv.rovidites || "", megjegyzes: fv.megjegyzes || "" });
   const [szabalyok, setSzabalyok] = useState(() => getSzabalyokByFovallalkozo(fv.id));
+  const [katalogus, setKatalogus] = useState(() => getKatalogusTetelek(fv.id));
 
-  function refresh() { setSzabalyok(getSzabalyokByFovallalkozo(fv.id)); }
+  function refresh() { setSzabalyok(getSzabalyokByFovallalkozo(fv.id)); setKatalogus(getKatalogusTetelek(fv.id)); }
 
   function handleSzSave(data) {
     if (szerkSz?.id) updateSzabaly(szerkSz.id, data);
@@ -518,9 +596,9 @@ function FvSor({ fv, onUpdate, onDelete }) {
         <div style={{ borderTop: `1px solid ${C.bg}`, padding: "14px 18px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>Díjtételek</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>Elszámolási szabályok (kézi, munkatípus-alapú)</span>
               <span style={{ fontSize: 12, color: C.muted, marginLeft: 6 }}>
-                ({szabalyok.length} db — egy díjtétel = egy munkatípus + egy számítási mód)
+                ({szabalyok.length} db — egy szabály = egy munkatípus + egy számítási mód)
               </span>
             </div>
             <button onClick={() => setUjSz(true)}
@@ -568,7 +646,11 @@ function FvSor({ fv, onUpdate, onDelete }) {
             Mindkettő összeadódik a projekt kalkulációban.
             Ha van pontos munkatípus egyezés, az általános díjtételek nem lépnek életbe.
             Profilnévvel csoportosítsd a díjtételeket (pl. évenként, munkafázis szerint).
+            Ha ehhez a fővállalkozóhoz lent fel van töltve tételes díjtábla, a projekt létrehozásnál elsődlegesen
+            az adja a számolást – ezek a szabályok csak azoknál a projekteknél kellenek, ahol nincs tétel-kosár.
           </div>
+
+          <DijtablaKatalogusSzekcio fv={fv} katalogus={katalogus} onRefresh={refresh} />
         </div>
       )}
 
@@ -590,6 +672,13 @@ export default function FovallalkozoPage({ userRole }) {
   const [fvk,    setFvk]    = useState(() => loadFovallalkozok());
   const [ujOpen, setUjOpen] = useState(false);
   const [ujForm, setUjForm] = useState({ nev: "", rovidites: "", megjegyzes: "" });
+
+  // Egyszeri, idempotens seed: a feltöltött Green Home díjtábla (2026.07.30)
+  // automatikusan bekerül "Green Home Technologies" fővállalkozóként, a
+  // Fővállalkozók oldal első megnyitásakor. Ld. dijtetelKatalogus.service.js.
+  useEffect(() => {
+    if (seedGreenHomeDijtabla()) setFvk(loadFovallalkozok());
+  }, []);
 
   useEffect(() => {
     const fn = e => {
