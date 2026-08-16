@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, X, DownloadCloud, Truck } from "lucide-react";
+import { Plus, Pencil, Trash2, X, DownloadCloud, Truck, UploadCloud } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { ft } from "../../lib/helpers.js";
 import { DIJTETEL_EGYSEGEK, egysegLabel, groupByCsoport } from "./dijtabla.schema.js";
@@ -14,6 +14,7 @@ import {
   getDijtetelekByFovallalkozo, createDijtetel, updateDijtetel,
   deleteDijtetel, seedGreenHomeDijtabla,
 } from "./dijtabla.service.js";
+import DijtablaImportModal from "./DijtablaImportModal.jsx";
 
 const inp = {
   width: "100%", boxSizing: "border-box", padding: "8px 11px",
@@ -159,6 +160,7 @@ export default function DijtablaPanel({ fovallalkozoId, fovallalkozoNev }) {
   const [tetelek, setTetelek] = useState(() => getDijtetelekByFovallalkozo(fovallalkozoId));
   const [uj, setUj]           = useState(false);
   const [szerk, setSzerk]     = useState(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     const fn = e => {
@@ -205,6 +207,10 @@ export default function DijtablaPanel({ fovallalkozoId, fovallalkozoNev }) {
               <DownloadCloud size={13} /> Green Home díjtábla betöltése
             </button>
           )}
+          <button onClick={() => setImportOpen(true)}
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "#fff", color: C.accent, border: `1.5px solid ${C.accent}`, borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: FONT }}>
+            <UploadCloud size={13} /> Import (Excel/CSV)
+          </button>
           <button onClick={() => { setSzerk(null); setUj(true); }}
             style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", background: C.accent, color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: FONT }}>
             <Plus size={12} /> Új díjtétel
@@ -248,6 +254,15 @@ export default function DijtablaPanel({ fovallalkozoId, fovallalkozoNev }) {
           tetel={szerk}
           onSave={handleSave}
           onClose={() => { setUj(false); setSzerk(null); }}
+        />
+      )}
+
+      {importOpen && (
+        <DijtablaImportModal
+          fovallalkozoId={fovallalkozoId}
+          fovallalkozoNev={fovallalkozoNev}
+          onClose={() => setImportOpen(false)}
+          onImported={(n) => { refresh(); window.alert(`${n} díjtétel importálva.`); }}
         />
       )}
     </div>
