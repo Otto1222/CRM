@@ -10,6 +10,7 @@ import {
   ELSZAMOLASI_MODOK, ELSZAMOLASI_MUNKATIPUSOK,
   calcSzabalyOsszeg, szabalyLeiras,
 } from "./elszamolasiMotor.js";
+import DijtablaPanel from "./DijtablaPanel.jsx";
 
 const inp = {
   width: "100%", boxSizing: "border-box", padding: "8px 11px",
@@ -471,6 +472,11 @@ function FvSor({ fv, onUpdate, onDelete }) {
             Ha van pontos munkatípus egyezés, az általános szabályok nem lépnek életbe.
           </div>
         </div>
+      )}
+
+      {/* Tételes díjtábla (Rendszerterv – 1. fázis) */}
+      {open && (
+        <DijtablaPanel fovallalkozoId={fv.id} fovallalkozoNev={fv.nev} />
       )}
 
       {(ujSz || szerkSz) && (
