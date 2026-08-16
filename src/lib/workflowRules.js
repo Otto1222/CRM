@@ -431,7 +431,13 @@ export function validateProjektForrás(form) {
   if (forrás === "fovallalkozoi_munka") {
     if (!penzugy?.fovallalkoziId)       return { ok: false, message: "Fővállalkozói munkánál a fővállalkozó kiválasztása kötelező." };
     if (!kulsoAzonosito?.trim())         return { ok: false, message: "Fővállalkozói munkánál a külső munkaszám megadása kötelező." };
-    if (!penzugy?.elszamolasiSzabalyId) return { ok: false, message: "Fővállalkozói munkánál az elszámolási szabály kötelező. (Beállítások → Fővállalkozók)" };
+    // A bevétel forrása KETTŐ közül az egyik lehet: vagy a díjtábla-katalógusból
+    // összeállított tétel-kosár (ld. DijtetelKosarPicker), vagy a régi,
+    // munkatípus-alapú elszámolási szabály – legalább az egyiknek meg kell lennie.
+    const vanTetelKosar = Array.isArray(penzugy?.dijtablaTetelek) && penzugy.dijtablaTetelek.length > 0;
+    if (!vanTetelKosar && !penzugy?.elszamolasiSzabalyId) {
+      return { ok: false, message: "Fővállalkozói munkánál kötelező vagy tételeket választani a díjtáblából, vagy elszámolási szabályt beállítani. (Beállítások → Fővállalkozók)" };
+    }
   }
 
   return { ok: true, message: "" };

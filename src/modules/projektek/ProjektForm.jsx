@@ -25,6 +25,7 @@ import {
 import AddressSearch from "../../components/AddressSearch.jsx";
 import { calcRoundTripKm } from "../../lib/geoService.js";
 import TetelesExcelImportPanel from "../../components/TetelesExcelImportPanel.jsx";
+import DijtetelKosarPicker from "../../components/DijtetelKosarPicker.jsx";
 const Field = ({ label, children, half }) => (
   <div style={{ gridColumn: half ? "span 1" : "span 2" }}>
     <label
@@ -145,6 +146,10 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
         bereltEszkozKoltseg: 0,
         irodaAdminKoltseg:   0,
         egyebKoltseg:        0,
+        dijtablaTetelek:     [],
+        dijtablaKmTetelId:   "",
+        dijtablaKmKod:       "",
+        dijtablaKmDijFtKm:   0,
       }),
       panel_db:       projekt?.penzugy?.panel_db       ?? projekt?.napelemDb     ?? 0,
       akku_db:        projekt?.penzugy?.akku_db        ?? projekt?.akkumulatorDb ?? 0,
@@ -174,6 +179,13 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     : true;
   // P0-007: "Saját munka" almenettől függően más a kötelező feltétel –
   // ajánlat-alfajtánál ajánlat kiválasztása, Excel-alfajtánál sikeres import.
+  // Tétel-kosár a díjtétel-katalógusból (ld. DijtetelKosarPicker) – ha van
+  // legalább egy kiválasztott tétel, ez adja a fővállalkozói bevételt, és a
+  // régi, munkatípus-alapú legördülő a "További adatok" mögé kerül (nem
+  // kötelező többé), hogy a projekt létrehozás elsődleges nézete egyszerű
+  // maradjon akkor is, ha a fővállalkozónak sok tétele van a díjtáblájában.
+  const vanDijtablaKosar = form.forrás === "fovallalkozoi_munka" && (form.penzugy.dijtablaTetelek?.length > 0);
+
   const formBlocked = isNew && form.forrás === "sajat_ajanlat" && (
     !form.sajatMunkaTipus ||
     (form.sajatMunkaTipus === "ajanlat" && !form.ajanlatId) ||
@@ -259,12 +271,19 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
   function handleFovallalkozo(fvId) {
     const filled = autoFillPenzugy(fvId, form.penzugy?.munkatipus || "", form.penzugy);
     const sz = findSzabaly(fvId, form.penzugy?.munkatipus || "");
+    // Fővállalkozó-váltáskor a tétel-kosár érvényét veszti (más fővállalkozó
+    // katalógusára hivatkozna) – üresen indul, a PM újraválogatja az új
+    // fővállalkozó díjtáblájából.
     setForm(p => ({
       ...p,
       penzugy: {
         ...filled,
         fovallalkoziId: fvId,
         elszamolasiSzabalyId: sz?.id || "",
+        dijtablaTetelek:   fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaTetelek || [] : [],
+        dijtablaKmTetelId: fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaKmTetelId : "",
+        dijtablaKmKod:     fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaKmKod : "",
+        dijtablaKmDijFtKm: fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaKmDijFtKm : 0,
       },
     }));
   }
@@ -281,6 +300,31 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
       },
     }));
     if (hiba) setHiba("");
+  }
+  // P0-009: tétel-kosár a díjtétel-katalógusból (ld. DijtetelKosarPicker) –
+  // a kiválasztott tételek pillanatképe a penzugy.dijtablaTetelek mezőbe kerül,
+  // a km-díj tétel Ft/km rátája pedig penzugy.dijtablaKmDijFtKm-be fagyasztva.
+  function updateDijtablaKosar(ujKosar) {
+    setForm(p => ({ ...p, penzugy: { ...p.penzugy, dijtablaTetelek: ujKosar } }));
+    if (hiba) setHiba("");
+  }
+  function updateKmMeta(meta) {
+    setForm(p => ({
+      ...p,
+      penzugy: {
+        ...p.penzugy,
+        dijtablaKmTetelId: meta?.kmTetelId || "",
+        dijtablaKmKod:     meta?.kod || "",
+        dijtablaKmDijFtKm: Number(meta?.ftKm) || 0,
+      },
+    }));
+  }
+  function beillesztesSzerzodesesOsszegbe() {
+    const tetelek = form.penzugy.dijtablaTetelek || [];
+    const tetelekOsszesen = tetelek.reduce((s, t) => s + (Number(t.osszesen) || 0), 0);
+    const kellKm = tetelek.some(t => t.kmDij) && Number(form.penzugy.dijtablaKmDijFtKm) > 0;
+    const kmOsszeg = kellKm ? Math.round((Number(form.penzugy.tavKm) || 0) * 2 * (Number(form.penzugy.dijtablaKmDijFtKm) || 0)) : 0;
+    upd("elfogadottAjanlat", tetelekOsszesen + kmOsszeg);
   }
   function updPenz(k, v) {
     setForm(p => ({
@@ -775,6 +819,10 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               />
             </Field>
             )}
+            {/* P0-009: fővállalkozói munkánál, ha van tétel-kosár a díjtáblából
+                (ld. lent), a Munkatípus legördülő nem elsődleges bemenet többé –
+                a "További adatok" mögé kerül, opcionális felülírásként (ld. lent). */}
+            {!vanDijtablaKosar && (
             <Field label="Munkatípus *" half>
               <select value={form.tipus} onChange={e => handleMunkatipus(e.target.value)} style={inp}>
                 <option value="">— Válassz munkatípust —</option>
@@ -785,6 +833,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 ))}
               </select>
             </Field>
+            )}
             <Field label="Státusz *" half>
               <select value={form.status} onChange={e => upd("status", e.target.value)} style={inp}>
                 {PROJEKT_STATUSZOK.map(s => (
@@ -888,6 +937,24 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               </div>
             )}
             {reszletekOpen && (<>
+            {vanDijtablaKosar && (<>
+            <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
+                Munkatípus (opcionális – belső riportokhoz)
+              </p>
+            </div>
+            <Field label="Munkatípus (opcionális)">
+              <select value={form.tipus} onChange={e => handleMunkatipus(e.target.value)} style={inp}>
+                <option value="">— Nincs kiválasztva —</option>
+                {munkatipusok.map(t => (
+                  <option key={t.id} value={t.id}>{t.nev}</option>
+                ))}
+              </select>
+              <p style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>
+                A bevétel a fenti tétel-kosárból számolódik – ez a mező csak a belső riportok/munkalapok kategorizálásához opcionális.
+              </p>
+            </Field>
+            </>)}
             <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Csapat
@@ -984,9 +1051,31 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                   </option>
                 ))}
               </select>
-              {form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: C.success, marginTop: 3 }}>✅ Elszámolási szabály automatikusan betöltve</p>}
-              {form.penzugy.fovallalkoziId && !form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: C.warning, marginTop: 3 }}>⚠️ Nincs aktív szabály ehhez a munkatípushoz</p>}
+              {!vanDijtablaKosar && form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: C.success, marginTop: 3 }}>✅ Elszámolási szabály automatikusan betöltve</p>}
+              {!vanDijtablaKosar && form.penzugy.fovallalkoziId && !form.penzugy.elszamolasiSzabalyId && <p style={{ fontSize: 10, color: C.warning, marginTop: 3 }}>⚠️ Nincs aktív szabály ehhez a munkatípushoz – válassz tételeket lent a díjtáblából, vagy állíts be szabályt (Beállítások → Fővállalkozók)</p>}
             </Field>
+
+            {/* P0-009: tétel-kosár a fővállalkozó díjtétel-katalógusából – ez a
+                "tételes számolás", ami leváltja az egyetlen Munkatípus-választást. */}
+            {form.penzugy.fovallalkoziId && (
+            <Field label="Tételek a díjtáblából (tételes számolás)">
+              <DijtetelKosarPicker
+                tulajdonosId={form.penzugy.fovallalkoziId}
+                value={form.penzugy.dijtablaTetelek || []}
+                onChange={updateDijtablaKosar}
+                tavKm={form.penzugy.tavKm}
+                kmMeta={{ kmTetelId: form.penzugy.dijtablaKmTetelId, ftKm: form.penzugy.dijtablaKmDijFtKm }}
+                onKmMetaChange={updateKmMeta}
+              />
+              {vanDijtablaKosar && (
+                <button type="button" onClick={beillesztesSzerzodesesOsszegbe}
+                  style={{ marginTop: 8, padding: "6px 12px", background: C.accentLight, color: C.accent, border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: FONT }}>
+                  ⬇ Kosár összegének beillesztése a Szerződéses összegbe
+                </button>
+              )}
+            </Field>
+            )}
+
             {/* Fővállalkozói extra mezők – csak "További adatok" nyitva */}
             {reszletekOpen && (<>
               <Field label="FV kapcsolattartó" half>
