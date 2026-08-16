@@ -72,6 +72,10 @@ export function deleteDijtetel(id) {
   saveDijtetelek(loadDijtetelek().filter(t => t.id !== id));
 }
 
+export function deleteDijtetelekByFovallalkozo(fovallalkozoId) {
+  saveDijtetelek(loadDijtetelek().filter(t => t.fovallalkozoId !== fovallalkozoId));
+}
+
 /**
  * Tömeges beszúrás – importhoz (Excel/CSV, Fázis 2) és seedhez.
  * A meglévő tételeket nem törli; az új sorokat hozzáfűzi.
