@@ -121,6 +121,11 @@ export const PROJEKT_SCHEMA = {
   fovKapcsolattarto:   "",
   fovFizetesiHatarido: "",
   fovMegjegyzes:       "",
+  // P0-010: finanszírozási típus / címke a telepítéshez (pl. "Saját önerős",
+  // "VisszaWatt", "Junior Vital") – szabad szöveg, ugyanaz a minta, mint a
+  // munkalap "cimke" mezője (ld. UjMunkalap.jsx), csak projekt szinten,
+  // hogy már a projekt létrehozásnál rögzíthető legyen.
+  finanszirozasCimke:  "",
   driveProjektMappa:   "",
   createdAt:           "",
   updatedAt:           "",
