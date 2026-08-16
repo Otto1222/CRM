@@ -11,6 +11,7 @@ import {
   calcSzabalyOsszeg, szabalyLeiras,
 } from "./elszamolasiMotor.js";
 import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
+import DijtablaPanel from "./DijtablaPanel.jsx";
 
 const inp = {
   width: "100%", boxSizing: "border-box", padding: "8px 11px",
@@ -570,6 +571,11 @@ function FvSor({ fv, onUpdate, onDelete }) {
             Profilnévvel csoportosítsd a díjtételeket (pl. évenként, munkafázis szerint).
           </div>
         </div>
+      )}
+
+      {/* Tételes díjtábla (Rendszerterv – 1. fázis) */}
+      {open && (
+        <DijtablaPanel fovallalkozoId={fv.id} fovallalkozoNev={fv.nev} />
       )}
 
       {(ujSz || szerkSz) && (
