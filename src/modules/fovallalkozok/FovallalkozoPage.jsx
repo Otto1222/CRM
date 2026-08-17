@@ -16,6 +16,7 @@ import {
   updateKatalogusTetel, deleteKatalogusTetel, seedGreenHomeDijtabla,
 } from "./dijtetelKatalogus.service.js";
 import DijtablaImportPanel from "../../components/DijtablaImportPanel.jsx";
+import TigSablonUploader from "../../components/TigSablonUploader.jsx";
 
 const inp = {
   width: "100%", boxSizing: "border-box", padding: "8px 11px",
@@ -651,6 +652,8 @@ function FvSor({ fv, onUpdate, onDelete }) {
           </div>
 
           <DijtablaKatalogusSzekcio fv={fv} katalogus={katalogus} onRefresh={refresh} />
+
+          <TigSablonUploader fovallalkozo={fv} onUpdate={onUpdate} />
         </div>
       )}
 
