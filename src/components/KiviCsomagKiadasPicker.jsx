@@ -12,6 +12,7 @@
 import { useMemo, useState } from "react";
 import { Plus, Minus, Trash2, Search } from "lucide-react";
 import { C, FONT } from "../lib/constants";
+import { getAnyag } from "../lib/anyagtorzs.js";
 
 export default function KiviCsomagKiadasPicker({ tetelek, value, onChange }) {
   const [kereses, setKereses] = useState("");
@@ -104,12 +105,16 @@ export default function KiviCsomagKiadasPicker({ tetelek, value, onChange }) {
             {g.tetelek.map(t => {
               const kosarban = kosar.find(k => k.tetelId === t.id);
               const eddigKiadva = mar(t.id);
+              const raktarKeszlet = t.anyagtorzs_id ? Number(getAnyag(t.anyagtorzs_id)?.keszlet) || 0 : null;
               return (
                 <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderTop: `1px solid ${C.bg}` }}>
                   <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: C.text, fontWeight: 500 }}>
                     {t.nev} <span style={{ color: C.muted, fontSize: 11 }}>({t.egyseg})</span>
                     <div style={{ fontSize: 10.5, color: C.muted }}>
                       Tervezett: {t.tervezettMennyiseg ?? 0} {t.egyseg} · Eddig kiadva: {eddigKiadva} {t.egyseg}
+                      {raktarKeszlet !== null && (
+                        <> · Raktáron: <span style={{ color: raktarKeszlet <= 0 ? C.danger : C.muted, fontWeight: 700 }}>{raktarKeszlet} {t.egyseg}</span></>
+                      )}
                     </div>
                   </div>
                   <button type="button" onClick={() => addTetel(t)}

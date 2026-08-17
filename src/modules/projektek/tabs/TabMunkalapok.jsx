@@ -165,10 +165,10 @@ function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
         assigneeNev:   csapatNev,
         megjegyzes,
         status: "Létrehozva",
-      }, currentUser?.nev || "");
+      }, currentUser?.name || "");
       linkMunkalap(projekt.id, munkalap.id);
       if (anyagKosar.length > 0) {
-        assignAnyagokToMunkalap(projekt, munkalap.id, anyagKosar, csapatId, currentUser?.nev || "");
+        assignAnyagokToMunkalap(projekt, munkalap.id, anyagKosar, csapatId, currentUser?.name || "");
       }
       setMentve(true);
       setTimeout(() => onDone(), 700);
