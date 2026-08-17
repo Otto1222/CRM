@@ -149,9 +149,19 @@ export function createProjekt(data, createdBy = "") {
   }
 
   // Saját munka (ajánlat VAGY elfogadott tételes Excel alapján – P0-007)
-  // projekteknél automatikusan létrehozza a Kivitelezési Csomagot.
+  // projekteknél automatikusan létrehozza a Kivitelezési Csomagot, a
+  // pillanatképből generált tételekkel.
+  //
+  // P0-015: fővállalkozói munkánál is automatikusan létrehozzuk (üresen,
+  // "kezi" forrással) – korábban a PM-nek külön kattintania kellett a
+  // "Kivitelezési Csomag létrehozása" gombra, mielőtt egyáltalán elkezdhette
+  // volna felvinni a ténylegesen beépített anyagokat (megnevezés szinten,
+  // hogy a telepítő is lássa és a fővállalkozó felé is dokumentálható legyen
+  // – ld. TabKivitelezesiCsomag.jsx "Tétel hozzáadása anyagtörzsből"). Ez a
+  // lépés csak azt spórolja meg, amit a PM úgyis megtenne kézzel – a csomag
+  // tartalma (üres tétellista) változatlan.
   // Hiba esetén console.warn, a projekt létrehozása nem vész el.
-  if (data.forrás === "sajat_ajanlat") {
+  if (data.forrás === "sajat_ajanlat" || data.forrás === "fovallalkozoi_munka") {
     try {
       createKivitelezesiCsomagForProjekt(
         projekt,
