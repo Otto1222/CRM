@@ -186,7 +186,9 @@ export function makeUresKiviTetel() {
     felhasznaltMennyiseg:  0,
     visszahozottMennyiseg: 0,
     munkalapFelhasznalas:  [],
+    munkalapKiadas:  [],
     telepitoLathatosag: "NONE",
+    sorozatszamKoteles: false,
   };
 }
 
@@ -238,7 +240,9 @@ export function generateKiviTetelekFromAjanlatPillanatkep(pillanatkep) {
         felhasznaltMennyiseg:  0,
         visszahozottMennyiseg: 0,
         munkalapFelhasznalas:  [],
+        munkalapKiadas:  [],
         telepitoLathatosag: "NONE",
+        sorozatszamKoteles: false,
       };
     });
 }
@@ -279,7 +283,9 @@ export function generateKiviTetelekFromExcelPillanatkep(excelPillanatkep) {
       felhasznaltMennyiseg:  0,
       visszahozottMennyiseg: 0,
       munkalapFelhasznalas:  [],
+      munkalapKiadas:  [],
       telepitoLathatosag: "NONE",
+      sorozatszamKoteles: false,
     };
   });
 }
@@ -343,7 +349,9 @@ export function createKeziTetelPillanatkep(anyagtorzsId, mennyisegek = {}) {
     felhasznaltMennyiseg:  0,
     visszahozottMennyiseg: 0,
     munkalapFelhasznalas:  [],
+    munkalapKiadas:  [],
     telepitoLathatosag: "NONE",
+    sorozatszamKoteles: false,
   };
 }
 
@@ -380,7 +388,9 @@ export function createAnyagszamitoTetelPillanatkep(anyagtorzsId, szamoltMennyise
     felhasznaltMennyiseg:  0,
     visszahozottMennyiseg: 0,
     munkalapFelhasznalas:  [],
+    munkalapKiadas:  [],
     telepitoLathatosag: "NONE",
+    sorozatszamKoteles: false,
   };
 }
 

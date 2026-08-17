@@ -434,8 +434,9 @@ function KivCsomagFelhasznalasTab({ munkalapId, projektId, onSave }) {
       (csomag.tetelek || []).forEach(t => {
         const mlAdat = (t.munkalapFelhasznalas || []).find(f => f.munkalapId === munkalapId);
         init[t.id] = {
-          menny:      mlAdat ? (mlAdat.menny || 0) : 0,
-          megjegyzes: mlAdat ? (mlAdat.megjegyzes || "") : "",
+          menny:         mlAdat ? (mlAdat.menny || 0) : 0,
+          megjegyzes:    mlAdat ? (mlAdat.megjegyzes || "") : "",
+          sorozatszamok: mlAdat ? (mlAdat.sorozatszamok || []) : [],
         };
       });
     }
@@ -459,7 +460,17 @@ function KivCsomagFelhasznalasTab({ munkalapId, projektId, onSave }) {
   const tetelek = csomag.tetelek || [];
 
   function updMenny(tetelId, v) {
-    setFelhasznalasok(p => ({ ...p, [tetelId]: { ...p[tetelId], menny: Number(v) || 0 } }));
+    const menny = Number(v) || 0;
+    setFelhasznalasok(p => {
+      const eddigi = p[tetelId]?.sorozatszamok || [];
+      // Sorozatszám-mezők száma kövesse a felhasznált mennyiséget (kerekítve felfelé) –
+      // se nem törli a már beírt sorozatszámokat, se nem hagy hiányzó mezőt.
+      const cel = Math.max(0, Math.ceil(menny));
+      const sorozatszamok = eddigi.length === cel ? eddigi
+        : eddigi.length < cel ? [...eddigi, ...Array(cel - eddigi.length).fill("")]
+        : eddigi.slice(0, cel);
+      return { ...p, [tetelId]: { ...p[tetelId], menny, sorozatszamok } };
+    });
     setMentve(false);
   }
 
@@ -468,11 +479,21 @@ function KivCsomagFelhasznalasTab({ munkalapId, projektId, onSave }) {
     setMentve(false);
   }
 
+  function updSorozatszam(tetelId, idx, v) {
+    setFelhasznalasok(p => {
+      const sorozatszamok = [...(p[tetelId]?.sorozatszamok || [])];
+      sorozatszamok[idx] = v;
+      return { ...p, [tetelId]: { ...p[tetelId], sorozatszamok } };
+    });
+    setMentve(false);
+  }
+
   function handleMent() {
     const lista = tetelek.map(t => ({
-      tetelId:    t.id,
-      menny:      felhasznalasok[t.id] ? (felhasznalasok[t.id].menny || 0) : 0,
-      megjegyzes: felhasznalasok[t.id] ? (felhasznalasok[t.id].megjegyzes || "") : "",
+      tetelId:       t.id,
+      menny:         felhasznalasok[t.id] ? (felhasznalasok[t.id].menny || 0) : 0,
+      megjegyzes:    felhasznalasok[t.id] ? (felhasznalasok[t.id].megjegyzes || "") : "",
+      sorozatszamok: felhasznalasok[t.id] ? (felhasznalasok[t.id].sorozatszamok || []) : [],
     }));
     updateFelhasznaltMennyisegFromMunkalap(csomag.id, munkalapId, lista, "");
     onSave(lista);
@@ -517,6 +538,21 @@ function KivCsomagFelhasznalasTab({ munkalapId, projektId, onSave }) {
                 <input type="text" value={v.megjegyzes} onChange={e => updMegjegyzes(t.id, e.target.value)}
                   placeholder="Megjegyzés (opcionális)"
                   style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", border: `1px solid ${C.border}`, borderRadius: 7, fontSize: 12, fontFamily: FONT, outline: "none", color: C.text, background: C.bg }} />
+                {t.sorozatszamKoteles && v.menny > 0 && (
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px dashed ${C.border}` }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: C.warning, margin: "0 0 6px" }}>
+                      ⚠ Sorozatszám köteles – add meg a beépített {v.menny} db gyári sorozatszámát
+                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                      {(v.sorozatszamok || []).map((sz, idx) => (
+                        <input key={idx} type="text" value={sz}
+                          onChange={e => updSorozatszam(t.id, idx, e.target.value)}
+                          placeholder={`${idx + 1}. sorozatszám`}
+                          style={{ width: "100%", boxSizing: "border-box", padding: "5px 9px", border: `1.5px solid ${!sz?.trim() ? C.warning : C.border}`, borderRadius: 6, fontSize: 12, fontFamily: FONT, outline: "none" }} />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

@@ -9,6 +9,7 @@ import {
   setKivitelezesiCsomagStatus,
   updateKiviTetelMennyisegek,
   updateKiviTetelLathatosag,
+  updateKiviTetelSorozatszamKoteles,
 } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import {
   getKivitelezesiCsomagStatusConfig,
@@ -136,6 +137,16 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
       setCsomag(updated);
     } catch (err) {
       setMennyisegHiba(err.message || "A láthatóság módosítása sikertelen.");
+    }
+  }
+
+  function handleSorozatszamValtas(tetelId, aktualis) {
+    setMennyisegHiba("");
+    try {
+      const updated = updateKiviTetelSorozatszamKoteles(csomag.id, tetelId, !aktualis, currentUser?.name || "");
+      setCsomag(updated);
+    } catch (err) {
+      setMennyisegHiba(err.message || "A sorozatszám-kötelezettség módosítása sikertelen.");
     }
   }
 
@@ -317,6 +328,7 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
                 <th style={{ ...th, textAlign: "right" }}>Visszahozott</th>
                 <th style={{ ...th, textAlign: "right" }}>Eltérés</th>
                 <th style={{ ...th, textAlign: "center", width: 110 }}>Telepítő látja kiadott menny.</th>
+                <th style={{ ...th, textAlign: "center", width: 110 }}>Sorozatszám köteles</th>
                 {arakLathatok && (
                   <>
                     <th style={{ ...th, textAlign: "right" }}>Eladási ár</th>
@@ -378,6 +390,20 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
                       ) : (
                         <span style={{ fontSize: 11, color: t.telepitoLathatosag === "KIADOTT_MENNYISEG" ? C.success : C.muted, fontWeight: 700 }}>
                           {t.telepitoLathatosag === "KIADOTT_MENNYISEG" ? "✓ Látható" : "Rejtett"}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ ...td, textAlign: "center" }}>
+                      {mennyisegSzerkesztheto ? (
+                        <button type="button"
+                          onClick={() => handleSorozatszamValtas(t.id, !!t.sorozatszamKoteles)}
+                          title={t.sorozatszamKoteles ? "Köteles – kattints a kikapcsoláshoz" : "Nem köteles – kattints a bekapcsoláshoz"}
+                          style={{ background: t.sorozatszamKoteles ? C.warning : C.muted, color: "#fff", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+                          {t.sorozatszamKoteles ? "✓ Köteles" : "Nem köteles"}
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 11, color: t.sorozatszamKoteles ? C.warning : C.muted, fontWeight: 700 }}>
+                          {t.sorozatszamKoteles ? "✓ Köteles" : "Nem köteles"}
                         </span>
                       )}
                     </td>

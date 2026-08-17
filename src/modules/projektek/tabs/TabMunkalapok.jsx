@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Plus, ExternalLink, FilePlus, Users, ChevronDown, X, Save } from "lucide-react";
+import { Plus, ExternalLink, FilePlus, Users, ChevronDown, X, Save, Package } from "lucide-react";
 import { C, FONT, MUNKALAP_TIPUSOK } from "../../../lib/constants.js";
 import { linkMunkalap, unlinkMunkalap } from "../projekt.service.js";
 import { updateWorkorder, createWorkorder, nextWorkorderNumber } from "../../../services/workorder.service.js";
 import { getAktivCsapatok } from "../../csapatok/csapat.service.js";
 import { CSAPAT_KIOSZTASI_TIPUSOK } from "../../csapatok/csapat.schema.js";
 import { formatMunkalapAzonosito } from "../../../lib/azonositoHelper.js";
+import { assignAnyagokToMunkalap } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
+import AnyagKosarPicker from "../../../components/AnyagKosarPicker.jsx";
 
 // ─── Csapat Kiosztás Panel (PM/Admin kezeli) ─────────────────
 
@@ -126,6 +128,8 @@ function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
   const [megjegyzes, setMegjegyzes] = useState("");
   const [hiba, setHiba]           = useState("");
   const [mentve, setMentve]       = useState(false);
+  const [anyagKosar, setAnyagKosar] = useState([]);
+  const [showAnyagok, setShowAnyagok] = useState(false);
 
   const inpS = {
     padding: "8px 10px", border: `1.5px solid ${C.border}`, borderRadius: 8,
@@ -162,6 +166,9 @@ function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
         status: "Létrehozva",
       }, currentUser?.nev || "");
       linkMunkalap(projekt.id, munkalap.id);
+      if (anyagKosar.length > 0) {
+        assignAnyagokToMunkalap(projekt, munkalap.id, anyagKosar, csapatId, currentUser?.nev || "");
+      }
       setMentve(true);
       setTimeout(() => onDone(), 700);
     } catch (err) {
@@ -209,6 +216,21 @@ function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
           <input value={megjegyzes} onChange={e => setMegjegyzes(e.target.value)} placeholder="Opcionális…" style={inpS} />
         </div>
       </div>
+
+      <button type="button" onClick={() => setShowAnyagok(s => !s)}
+        style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", background: showAnyagok ? C.accentLight : "#fff", color: C.accent, border: `1.5px solid ${C.accent}`, borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: FONT, marginBottom: 10 }}>
+        <Package size={13} /> Anyagok, amit a csapat visz {anyagKosar.length > 0 ? `(${anyagKosar.length})` : ""}
+        <ChevronDown size={11} style={{ transform: showAnyagok ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+      </button>
+      {showAnyagok && (
+        <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10, padding: 12, marginBottom: 12 }}>
+          <p style={{ fontSize: 11, color: C.muted, margin: "0 0 10px" }}>
+            Add meg tétel- és mennyiség-szinten, mit vigyen magával a csapat – ez a projekt Kivitelezési
+            Csomagjának kiadott mennyiségébe kerül, a telepítő a beszerelés után validálja a felhasználást.
+          </p>
+          <AnyagKosarPicker value={anyagKosar} onChange={setAnyagKosar} />
+        </div>
+      )}
 
       <div style={{ fontSize: 11, color: C.textSub, background: C.bg, borderRadius: 7, padding: "6px 10px", marginBottom: 12 }}>
         Ügyfél: <strong>{projekt.clientNev || "—"}</strong>
