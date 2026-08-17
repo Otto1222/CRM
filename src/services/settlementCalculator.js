@@ -273,8 +273,22 @@ export function calcMunkalapElszamolas(munkalap, projekt) {
 
   const anyagkoltság = Number(ea.anyagkoltság || munkalap.anyagkoltság || 0);
 
-  // FV bevétel
-  const beveteliTetelek = buildBeveteliTetelek(fovallalkoziId, munkatipus, input);
+  // FV bevétel – P0-013: tétel-kosárnál csak a LÉTREHOZÁSKORI (első)
+  // munkalap kapja a teljes projekt-összeget (ld. workOrderFinancial.service.js
+  // calcMunkalapElszamolas – ugyanez a szabály, "Motor B paritás").
+  const ezAzElsoMunkalap = !!projekt?.munkalapIds?.length && projekt.munkalapIds[0] === munkalap.id;
+  const beveteliTetelek = (hasDijtablaKosar(projekt?.penzugy) && ezAzElsoMunkalap)
+    ? buildBeveteliTetelekKosarbol(projekt.penzugy).map((t, i) => ({
+        id:               `t_dijtabla_${i}`,
+        tetelTipusId:      t.szabalyId,
+        megnevezes:        t.megnevezes,
+        autoNetto:         t.autoNetto,
+        hasznalandoNetto:  t.autoNetto,
+        megjegyzes:        t.megjegyzes,
+        felulirva:         false,
+        hiany:             false,
+      }))
+    : buildBeveteliTetelek(fovallalkoziId, munkatipus, input);
   const bevitel = beveteliTetelek.reduce((s, t) => s + t.autoNetto, 0);
 
   // AV bér

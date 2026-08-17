@@ -512,8 +512,29 @@ export function calcMunkalapElszamolas(munkalap, projekt) {
 
   const anyagkoltság = Number(ea.anyagkoltság || munkalap.anyagkoltság || 0);
 
-  const beveteliTetelek = buildMlBeveteliTetelek(fovallalkoziId, munkatipus, input);
-  const bevitel         = beveteliTetelek.reduce((s, t) => s + t.autoNetto, 0);
+  // P0-013: ha a projekten tétel-kosár van, a projekt bevétele a
+  // LÉTREHOZÁSKORI (első) munkalapon jelenik meg – a kosár a teljes
+  // projektet írja le, nem munkalaponként bontott tétel, ezért egyértelmű
+  // felosztás hiányában csak egyszer, egy helyen számoljuk el (elkerülve,
+  // hogy több munkalap összesítve a projekt-szintű összeg többszörösét
+  // adja ki a riportokon/dashboardon). További (pl. utólagos szerviz)
+  // munkalapok a régi, munkatípus-alapú szabály-motorral számolnak tovább.
+  const vanKosar = hasDijtablaKosar(projekt?.penzugy);
+  const ezAzElsoMunkalap = !!projekt?.munkalapIds?.length && projekt.munkalapIds[0] === munkalap.id;
+
+  const beveteliTetelek = (vanKosar && ezAzElsoMunkalap)
+    ? buildBeveteliTetelekKosarbol(projekt.penzugy).map((t, i) => ({
+        id:               `t_dijtabla_${i}`,
+        tetelTipusId:      t.szabalyId,
+        megnevezes:        t.megnevezes,
+        autoNetto:         t.autoNetto,
+        hasznalandoNetto:  t.autoNetto,
+        megjegyzes:        t.megjegyzes,
+        felulirva:         false,
+        hiany:             false,
+      }))
+    : buildMlBeveteliTetelek(fovallalkoziId, munkatipus, input);
+  const bevitel = beveteliTetelek.reduce((s, t) => s + t.autoNetto, 0);
 
   const avBerResult      = calcMlAvBer(csapatId, munkatipus, input, bevitel);
   const alvallalkozoiBer = avBerResult.osszeg;
