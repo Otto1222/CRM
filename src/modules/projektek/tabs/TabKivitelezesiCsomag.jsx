@@ -345,7 +345,11 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
                     {mennyisegCella("kiadandoMennyiseg")}
                     {mennyisegCella("kiadottMennyiseg")}
                     {mennyisegCella("felhasznaltMennyiseg")}
-                    {mennyisegCella("visszahozottMennyiseg")}
+                    {/* Visszahozott mennyiség – kizárólag Raktár/PM jóváhagyása után íródik,
+                        ezért itt mindig csak megjelenítés (ld. TabRaktarJovahagyas / RaktarkeszletPage). */}
+                    <td style={{ ...td, textAlign: "right" }} title="Csak a jóváhagyott visszahozásokat mutatja – ld. Raktárkészlet oldal">
+                      {t.visszahozottMennyiseg}
+                    </td>
                     <td style={{ ...td, textAlign: "center" }}>
                       {elteres === 0 ? (
                         <span style={{ background: C.successLight, color: C.success, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>✓ Rendben</span>

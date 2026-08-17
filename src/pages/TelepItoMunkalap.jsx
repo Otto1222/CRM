@@ -434,9 +434,11 @@ function KivCsomagFelhasznalasTab({ munkalapId, projektId, onSave }) {
       (csomag.tetelek || []).forEach(t => {
         const mlAdat = (t.munkalapFelhasznalas || []).find(f => f.munkalapId === munkalapId);
         init[t.id] = {
-          menny:         mlAdat ? (mlAdat.menny || 0) : 0,
-          megjegyzes:    mlAdat ? (mlAdat.megjegyzes || "") : "",
-          sorozatszamok: mlAdat ? (mlAdat.sorozatszamok || []) : [],
+          menny:              mlAdat ? (mlAdat.menny || 0) : 0,
+          megjegyzes:         mlAdat ? (mlAdat.megjegyzes || "") : "",
+          sorozatszamok:      mlAdat ? (mlAdat.sorozatszamok || []) : [],
+          visszahozottMenny:  mlAdat ? (mlAdat.visszahozottMenny || 0) : 0,
+          visszahozasAllapot: mlAdat ? (mlAdat.visszahozasAllapot || "NINCS") : "NINCS",
         };
       });
     }
@@ -479,6 +481,11 @@ function KivCsomagFelhasznalasTab({ munkalapId, projektId, onSave }) {
     setMentve(false);
   }
 
+  function updVisszahozott(tetelId, v) {
+    setFelhasznalasok(p => ({ ...p, [tetelId]: { ...p[tetelId], visszahozottMenny: Number(v) || 0 } }));
+    setMentve(false);
+  }
+
   function updSorozatszam(tetelId, idx, v) {
     setFelhasznalasok(p => {
       const sorozatszamok = [...(p[tetelId]?.sorozatszamok || [])];
@@ -490,10 +497,11 @@ function KivCsomagFelhasznalasTab({ munkalapId, projektId, onSave }) {
 
   function handleMent() {
     const lista = tetelek.map(t => ({
-      tetelId:       t.id,
-      menny:         felhasznalasok[t.id] ? (felhasznalasok[t.id].menny || 0) : 0,
-      megjegyzes:    felhasznalasok[t.id] ? (felhasznalasok[t.id].megjegyzes || "") : "",
-      sorozatszamok: felhasznalasok[t.id] ? (felhasznalasok[t.id].sorozatszamok || []) : [],
+      tetelId:            t.id,
+      menny:              felhasznalasok[t.id] ? (felhasznalasok[t.id].menny || 0) : 0,
+      megjegyzes:         felhasznalasok[t.id] ? (felhasznalasok[t.id].megjegyzes || "") : "",
+      sorozatszamok:      felhasznalasok[t.id] ? (felhasznalasok[t.id].sorozatszamok || []) : [],
+      visszahozottMenny:  felhasznalasok[t.id] ? (felhasznalasok[t.id].visszahozottMenny || 0) : 0,
     }));
     updateFelhasznaltMennyisegFromMunkalap(csomag.id, munkalapId, lista, "");
     onSave(lista);
@@ -504,8 +512,9 @@ function KivCsomagFelhasznalasTab({ munkalapId, projektId, onSave }) {
   return (
     <div style={{ padding: 16, background: C.bg, minHeight: "60vh" }}>
       <div style={{ background: C.accentLight, border: `1px solid ${C.accentLight}`, borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: C.accent }}>
-        Rögzítsd a ténylegesen felhasznált anyagmennyiségeket.
-        Az anyaglistát a Projektmenedzser állítja össze a Kivitelezési Csomagban.
+        Rögzítsd a ténylegesen felhasznált, és a vissza nem épített, magaddal visszahozott anyagmennyiséget.
+        A visszahozott mennyiséget a Raktár a munkalap lezárása után hagyja jóvá – az anyaglistát a
+        Projektmenedzser állítja össze a Kivitelezési Csomagban.
       </div>
       {tetelek.length === 0 ? (
         <p style={{ textAlign: "center", color: C.muted, padding: "24px 0", fontSize: 13 }}>
@@ -534,6 +543,28 @@ function KivCsomagFelhasznalasTab({ munkalapId, projektId, onSave }) {
                     onChange={e => updMenny(t.id, e.target.value)}
                     style={{ width: 72, padding: "6px 8px", border: `1.5px solid ${C.border}`, borderRadius: 7, fontSize: 14, textAlign: "center", fontFamily: FONT, outline: "none" }} />
                   <span style={{ fontSize: 12, color: C.muted }}>{t.egyseg}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", minWidth: 100 }}>Visszahozott</span>
+                  {["JOVAHAGYVA", "ELUTASITVA"].includes(v.visszahozasAllapot) ? (
+                    <>
+                      <span style={{ width: 72, padding: "6px 8px", fontSize: 14, textAlign: "center", fontFamily: FONT, color: C.textSub }}>{v.visszahozottMenny}</span>
+                      <span style={{ fontSize: 12, color: C.muted }}>{t.egyseg}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: v.visszahozasAllapot === "JOVAHAGYVA" ? C.success : C.danger, background: v.visszahozasAllapot === "JOVAHAGYVA" ? C.successLight : C.dangerLight, borderRadius: 6, padding: "2px 7px" }}>
+                        {v.visszahozasAllapot === "JOVAHAGYVA" ? "✓ Raktár jóváhagyta" : "✗ Raktár elutasította"}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <input type="number" min="0" step="any" value={v.visszahozottMenny}
+                        onChange={e => updVisszahozott(t.id, e.target.value)}
+                        style={{ width: 72, padding: "6px 8px", border: `1.5px solid ${C.border}`, borderRadius: 7, fontSize: 14, textAlign: "center", fontFamily: FONT, outline: "none" }} />
+                      <span style={{ fontSize: 12, color: C.muted }}>{t.egyseg}</span>
+                      {v.visszahozasAllapot === "JELENTVE" && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: C.warning, background: C.warningLight, borderRadius: 6, padding: "2px 7px" }}>Raktár jóváhagyására vár</span>
+                      )}
+                    </>
+                  )}
                 </div>
                 <input type="text" value={v.megjegyzes} onChange={e => updMegjegyzes(t.id, e.target.value)}
                   placeholder="Megjegyzés (opcionális)"

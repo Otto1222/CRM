@@ -13,10 +13,11 @@
  * bevételezés/korrekció történik.
  */
 import { Fragment, useMemo, useState } from "react";
-import { Warehouse, Search, Plus, Minus, History, PackagePlus } from "lucide-react";
+import { Warehouse, Search, Plus, Minus, History, PackagePlus, Undo2, Check, X } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getAktivAnyagok, adjustAnyagKeszlet, TELEPITOI_KATEGORIAK } from "../lib/anyagtorzs.js";
 import { addRaktarMozgas, getRaktarMozgasokRendezve, getRaktarMozgasokByAnyag, RAKTAR_MOZGAS_TIPUSOK } from "../lib/raktarMozgas.js";
+import { getFuggoVisszahozasok, approveVisszahozas, rejectVisszahozas } from "../modules/kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import { getProjekt } from "../modules/projektek/projekt.service.js";
 import { getCsapat } from "../modules/csapatok/csapat.service.js";
 import { getWorkorder } from "../services/workorder.service.js";
@@ -30,6 +31,7 @@ const MOZGAS_LABEL = {
   [RAKTAR_MOZGAS_TIPUSOK.KIADAS_KOREKCIO]: { label: "Kiadás-korrekció", szin: C.warning },
   [RAKTAR_MOZGAS_TIPUSOK.BEVETELEZES]:     { label: "Bevételezés",     szin: C.success },
   [RAKTAR_MOZGAS_TIPUSOK.KOREKCIO]:        { label: "Korrekció",       szin: C.muted },
+  [RAKTAR_MOZGAS_TIPUSOK.VISSZAHOZAS]:     { label: "Visszahozás",     szin: C.success },
 };
 
 function hu(dt) {
@@ -95,14 +97,125 @@ function BevetelezesForm({ anyag, onDone, currentUser }) {
   );
 }
 
+// ─── Visszahozás jóváhagyás (PM / Raktár) ───────────────────────
+// A telepítő csak bejelenti, mennyit hoz vissza – ide csak akkor kerül egy
+// sor jóváhagyásra "készen", ha a munkalapot a telepítő csapat már lezárta
+// (ld. kivitelezesiCsomag.service.js approveVisszahozas dokumentációja).
+function VisszahozasJovahagyasTab({ currentUser, refreshKey, onChanged }) {
+  const [hiba, setHiba] = useState("");
+  const [sorErrors, setSorErrors] = useState({});
+
+  const sorok = useMemo(() => {
+    return getFuggoVisszahozasok().map(v => {
+      const munkalap = getWorkorder(v.munkalapId);
+      const projekt  = getProjekt(v.projektId);
+      return {
+        ...v,
+        munkalap,
+        projekt,
+        lezarva: !!munkalap?.lezarva,
+      };
+    }).sort((a, b) => (b.jelentveAt || "").localeCompare(a.jelentveAt || ""));
+  }, [refreshKey]);
+
+  function handleJovahagy(sor) {
+    setHiba(""); setSorErrors(p => ({ ...p, [sor.munkalapId + sor.tetelId]: "" }));
+    try {
+      approveVisszahozas(sor.csomagId, sor.tetelId, sor.munkalapId, currentUser?.name || "", sor.lezarva, sor.munkalap?.csapatId || null);
+      onChanged();
+    } catch (err) {
+      setSorErrors(p => ({ ...p, [sor.munkalapId + sor.tetelId]: err.message || "Jóváhagyás sikertelen." }));
+    }
+  }
+
+  function handleElutasit(sor) {
+    if (!confirm(`Biztosan elutasítod ezt a visszahozási bejelentést (${sor.anyagNev}, ${sor.visszahozottMenny} ${sor.egyseg})? A raktárkészletet nem módosítja.`)) return;
+    setHiba(""); setSorErrors(p => ({ ...p, [sor.munkalapId + sor.tetelId]: "" }));
+    try {
+      rejectVisszahozas(sor.csomagId, sor.tetelId, sor.munkalapId, currentUser?.name || "");
+      onChanged();
+    } catch (err) {
+      setSorErrors(p => ({ ...p, [sor.munkalapId + sor.tetelId]: err.message || "Elutasítás sikertelen." }));
+    }
+  }
+
+  const th = { textAlign: "left", padding: "8px 10px", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, borderBottom: `1.5px solid ${C.border}` };
+  const td = { padding: "8px 10px", fontSize: 13, color: C.text, borderBottom: `1px solid ${C.bg}` };
+
+  return (
+    <Card style={{ padding: 0, overflow: "hidden" }}>
+      {hiba && <p style={{ fontSize: 12, color: C.danger, fontWeight: 700, padding: "10px 14px", margin: 0 }}>{hiba}</p>}
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              <th style={th}>Bejelentve</th>
+              <th style={th}>Anyag</th>
+              <th style={{ ...th, textAlign: "right" }}>Mennyiség</th>
+              <th style={th}>Projekt</th>
+              <th style={th}>Munkalap</th>
+              <th style={th}>Csapat</th>
+              <th style={th}>Állapot</th>
+              <th style={{ ...th, width: 180 }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorok.map(sor => {
+              const csapat = sor.munkalap?.csapatId ? getCsapat(sor.munkalap.csapatId) : null;
+              const key = sor.munkalapId + sor.tetelId;
+              return (
+                <tr key={key}>
+                  <td style={td}>{hu(sor.jelentveAt)}</td>
+                  <td style={td}>{sor.anyagNev}</td>
+                  <td style={{ ...td, textAlign: "right", fontWeight: 700 }}>{sor.visszahozottMenny} {sor.egyseg}</td>
+                  <td style={td}>{sor.projekt ? `${sor.projekt.projektkod || ""} ${sor.projekt.nev || ""}`.trim() : "—"}</td>
+                  <td style={td}>{sor.munkalap ? formatMunkalapAzonosito(sor.munkalap) : "—"}</td>
+                  <td style={td}>{csapat?.nev || "—"}</td>
+                  <td style={td}>
+                    {sor.lezarva ? (
+                      <span style={{ fontSize: 11, fontWeight: 700, color: C.accent, background: C.accentLight, borderRadius: 6, padding: "2px 8px" }}>Jóváhagyásra kész</span>
+                    ) : (
+                      <span style={{ fontSize: 11, fontWeight: 700, color: C.muted, background: C.bg, borderRadius: 6, padding: "2px 8px" }}>Munkalap még nincs lezárva</span>
+                    )}
+                    {sorErrors[key] && <div style={{ fontSize: 11, color: C.danger, marginTop: 4 }}>{sorErrors[key]}</div>}
+                  </td>
+                  <td style={{ ...td, textAlign: "right" }}>
+                    {sor.lezarva && (
+                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                        <button type="button" onClick={() => handleJovahagy(sor)}
+                          style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 10px", background: C.successLight, color: C.success, border: "none", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: FONT }}>
+                          <Check size={12} /> Jóváhagyás
+                        </button>
+                        <button type="button" onClick={() => handleElutasit(sor)}
+                          style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 10px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: FONT }}>
+                          <X size={12} /> Elutasítás
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {sorok.length === 0 && (
+              <tr><td colSpan={8} style={{ ...td, textAlign: "center", color: C.muted }}>Nincs jóváhagyásra váró visszahozott anyag.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
+
 export default function RaktarkeszletPage({ currentUser }) {
   const [tab, setTab] = useState("keszlet");
   const [kereses, setKereses] = useState("");
   const [nyitottAnyagId, setNyitottAnyagId] = useState(null);
-  const [, forceUpdate] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const forceUpdate = () => setRefreshKey(n => n + 1);
 
-  const anyagok = useMemo(() => getAktivAnyagok(), [tab, nyitottAnyagId]);
-  const mozgasok = useMemo(() => getRaktarMozgasokRendezve(), [tab]);
+  const anyagok = useMemo(() => getAktivAnyagok(), [tab, nyitottAnyagId, refreshKey]);
+  const mozgasok = useMemo(() => getRaktarMozgasokRendezve(), [tab, refreshKey]);
+  const fuggoVisszahozasokDb = useMemo(() => getFuggoVisszahozasok().length, [refreshKey]);
 
   const szurtAnyagok = useMemo(() => {
     const q = kereses.trim().toLowerCase();
@@ -133,13 +246,22 @@ export default function RaktarkeszletPage({ currentUser }) {
         <button onClick={() => setTab("mozgasok")} style={{ padding: "8px 18px", borderRadius: 9, border: "none", background: tab === "mozgasok" ? "#fff" : "transparent", color: tab === "mozgasok" ? C.text : C.muted, fontWeight: tab === "mozgasok" ? 700 : 400, fontSize: 14, cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", gap: 6 }}>
           <History size={14} /> Mozgások ({mozgasok.length})
         </button>
+        <button onClick={() => setTab("visszahozas")} style={{ padding: "8px 18px", borderRadius: 9, border: "none", background: tab === "visszahozas" ? "#fff" : "transparent", color: tab === "visszahozas" ? C.text : C.muted, fontWeight: tab === "visszahozas" ? 700 : 400, fontSize: 14, cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", gap: 6 }}>
+          <Undo2 size={14} /> Visszahozás jóváhagyás {fuggoVisszahozasokDb > 0 && `(${fuggoVisszahozasokDb})`}
+        </button>
       </div>
 
-      <div style={{ position: "relative", marginBottom: 16, maxWidth: 360 }}>
-        <Search size={14} color={C.muted} style={{ position: "absolute", left: 10, top: 10 }} />
-        <input value={kereses} onChange={e => setKereses(e.target.value)} placeholder="Keresés anyag neve vagy kategória szerint…"
-          style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px 8px 32px", border: `1.5px solid ${C.border}`, borderRadius: 9, fontSize: 13, fontFamily: FONT, outline: "none" }} />
-      </div>
+      {tab !== "visszahozas" && (
+        <div style={{ position: "relative", marginBottom: 16, maxWidth: 360 }}>
+          <Search size={14} color={C.muted} style={{ position: "absolute", left: 10, top: 10 }} />
+          <input value={kereses} onChange={e => setKereses(e.target.value)} placeholder="Keresés anyag neve vagy kategória szerint…"
+            style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px 8px 32px", border: `1.5px solid ${C.border}`, borderRadius: 9, fontSize: 13, fontFamily: FONT, outline: "none" }} />
+        </div>
+      )}
+
+      {tab === "visszahozas" && (
+        <VisszahozasJovahagyasTab currentUser={currentUser} refreshKey={refreshKey} onChanged={forceUpdate} />
+      )}
 
       {tab === "keszlet" && (
         <Card style={{ padding: 0, overflow: "hidden" }}>
@@ -173,7 +295,7 @@ export default function RaktarkeszletPage({ currentUser }) {
                     {nyitott && (
                       <tr>
                         <td colSpan={4} style={{ ...td, background: C.bg }}>
-                          <BevetelezesForm anyag={a} currentUser={currentUser} onDone={() => { setNyitottAnyagId(null); forceUpdate(n => n + 1); }} />
+                          <BevetelezesForm anyag={a} currentUser={currentUser} onDone={() => { setNyitottAnyagId(null); forceUpdate(); }} />
                           <div style={{ marginTop: 10 }}>
                             <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, margin: "0 0 6px" }}>Legutóbbi mozgások</p>
                             {getRaktarMozgasokByAnyag(a.id).slice(0, 5).map(m => (

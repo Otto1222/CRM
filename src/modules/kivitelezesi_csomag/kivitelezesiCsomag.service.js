@@ -19,6 +19,17 @@ import {
 import { adjustAnyagKeszlet } from "../../lib/anyagtorzs.js";
 import { addRaktarMozgas, RAKTAR_MOZGAS_TIPUSOK } from "../../lib/raktarMozgas.js";
 
+// ─── Fázis 6D – Visszahozott anyag jóváhagyási állapotai ────────────────────
+// A telepítő csak BEJELENTI (JELENTVE), mennyit hoz vissza – a raktárkészletet
+// csak PM/Raktár JOVAHAGYVA döntése módosítja, és csak akkor engedett, ha a
+// munkalapot a telepítő csapat már lezárta (ld. approveVisszahozas).
+export const VISSZAHOZAS_ALLAPOTOK = {
+  NINCS:      "NINCS",
+  JELENTVE:   "JELENTVE",
+  JOVAHAGYVA: "JOVAHAGYVA",
+  ELUTASITVA: "ELUTASITVA",
+};
+
 const MENNYISEGI_MEZOK = [
   "tervezettMennyiseg",
   "kiadandoMennyiseg",
@@ -358,10 +369,32 @@ export function updateFelhasznaltMennyisegFromMunkalap(csomagId, munkalapId, fel
       ? fAdat.sorozatszamok.map(s => String(s || "").trim()).filter(Boolean)
       : (idx >= 0 ? (meglevo[idx].sorozatszamok || []) : []);
 
+    // Fázis 6D – visszahozott anyag: a telepítő itt csak BEJELENTI, mennyit
+    // hoz vissza – ez önmagában NEM változtat raktárkészletet, csak PM/Raktár
+    // jóváhagyása után (ld. approveVisszahozas), és csak akkor, ha a
+    // munkalapot a telepítő csapat már lezárta. Egy már elbírált (JOVAHAGYVA
+    // / ELUTASITVA) bejelentés a telepítő oldaláról többé nem módosítható –
+    // a régi rekord változatlan marad, hogy a jóváhagyás/elutasítás ne
+    // íródjon felül utólag.
+    const regiVisszahozas = idx >= 0 ? meglevo[idx] : null;
+    const zart = regiVisszahozas?.visszahozasAllapot === VISSZAHOZAS_ALLAPOTOK.JOVAHAGYVA
+      || regiVisszahozas?.visszahozasAllapot === VISSZAHOZAS_ALLAPOTOK.ELUTASITVA;
+    const ujVisszahozottMenny = zart
+      ? (Number(regiVisszahozas.visszahozottMenny) || 0)
+      : (Number(fAdat.visszahozottMenny) || 0);
+    const ujVisszahozasAllapot = zart
+      ? regiVisszahozas.visszahozasAllapot
+      : (ujVisszahozottMenny > 0 ? VISSZAHOZAS_ALLAPOTOK.JELENTVE : VISSZAHOZAS_ALLAPOTOK.NINCS);
+
     if (idx >= 0) {
       ujFelhasznalas = meglevo.map((f, i) =>
         i === idx
-          ? { ...f, menny: fAdat.menny, megjegyzes: fAdat.megjegyzes || "", sorozatszamok: ujSorozatszamok, rogzitveAt: now }
+          ? {
+              ...f,
+              menny: fAdat.menny, megjegyzes: fAdat.megjegyzes || "", sorozatszamok: ujSorozatszamok,
+              visszahozottMenny: ujVisszahozottMenny, visszahozasAllapot: ujVisszahozasAllapot,
+              rogzitveAt: now,
+            }
           : f
       );
     } else {
@@ -370,6 +403,10 @@ export function updateFelhasznaltMennyisegFromMunkalap(csomagId, munkalapId, fel
         menny:      fAdat.menny,
         megjegyzes: fAdat.megjegyzes || "",
         sorozatszamok: ujSorozatszamok,
+        visszahozottMenny: ujVisszahozottMenny,
+        visszahozasAllapot: ujVisszahozasAllapot,
+        visszahozasJovahagyoNev: "",
+        visszahozasJovahagyasDatum: "",
         rogzitveAt: now,
       }];
     }
@@ -384,6 +421,122 @@ export function updateFelhasznaltMennyisegFromMunkalap(csomagId, munkalapId, fel
   });
 
   return updateKivitelezesiCsomag(csomagId, { tetelek }, user);
+}
+
+// ─── Fázis 6D – Visszahozott anyag jóváhagyása (PM / Raktár) ────────────────
+//
+// A telepítő bejelentése (updateFelhasznaltMennyisegFromMunkalap – JELENTVE)
+// önmagában NEM módosít raktárkészletet. Csak ez a függvény, PM/Raktár
+// jóváhagyása után, és csak akkor, ha a munkalapot a telepítő csapat már
+// lezárta – ezt a hívó biztosítja a `munkalapLezarva` paraméterrel (a
+// modul szándékosan nem függ a workorder.service.js-től, elkerülve a
+// körkörös importot: projekt.service.js → workorder.service.js →
+// projekt.service.js → kivitelezesiCsomag.service.js láncot).
+//
+// A tétel összesített visszahozottMennyiseg mezője KIZÁRÓLAG a JÓVÁHAGYOTT
+// bejelentések összege – egy még el nem bírált vagy elutasított bejelentés
+// nem jelenik meg a Kivitelezési Csomag táblázat "Visszahozott" oszlopában.
+export function approveVisszahozas(csomagId, tetelId, munkalapId, jovahagyoNev, munkalapLezarva, csapatId = null) {
+  if (!munkalapLezarva) {
+    throw new Error("A visszahozott anyag csak akkor hagyható jóvá, ha a telepítő csapat már lezárta a munkalapot.");
+  }
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) throw new Error("A Kivitelezési Csomag nem található.");
+  const tetel = (csomag.tetelek || []).find(t => t.id === tetelId);
+  if (!tetel) throw new Error("A tétel nem található a csomagban.");
+  const entry = (tetel.munkalapFelhasznalas || []).find(f => f.munkalapId === munkalapId);
+  if (!entry || entry.visszahozasAllapot !== VISSZAHOZAS_ALLAPOTOK.JELENTVE) {
+    throw new Error("Ez a visszahozási bejelentés nem található, vagy már el lett bírálva.");
+  }
+
+  const now   = new Date().toISOString();
+  const menny = Number(entry.visszahozottMenny) || 0;
+
+  const tetelek = csomag.tetelek.map(t => {
+    if (t.id !== tetelId) return t;
+    const munkalapFelhasznalas = t.munkalapFelhasznalas.map(f =>
+      f.munkalapId === munkalapId
+        ? { ...f, visszahozasAllapot: VISSZAHOZAS_ALLAPOTOK.JOVAHAGYVA, visszahozasJovahagyoNev: jovahagyoNev, visszahozasJovahagyasDatum: now }
+        : f
+    );
+    const jovahagyottOsszes = munkalapFelhasznalas
+      .filter(f => f.visszahozasAllapot === VISSZAHOZAS_ALLAPOTOK.JOVAHAGYVA)
+      .reduce((s, f) => s + (Number(f.visszahozottMenny) || 0), 0);
+    return { ...t, munkalapFelhasznalas, visszahozottMennyiseg: jovahagyottOsszes };
+  });
+
+  const updated = updateKivitelezesiCsomag(csomagId, { tetelek }, jovahagyoNev);
+
+  if (tetel.anyagtorzs_id && menny > 0) {
+    adjustAnyagKeszlet(tetel.anyagtorzs_id, menny);
+    addRaktarMozgas({
+      anyagtorzsId:   tetel.anyagtorzs_id,
+      anyagNev:       tetel.nev,
+      egyseg:         tetel.egyseg,
+      mennyiseg:      -menny, // negatív = készletnövekedés (visszahozás)
+      tipus:          RAKTAR_MOZGAS_TIPUSOK.VISSZAHOZAS,
+      projektId:      csomag.projektId,
+      munkalapId,
+      csapatId:       csapatId || null,
+      felhasznaloNev: jovahagyoNev,
+      datum:          now,
+    });
+  }
+
+  return updated;
+}
+
+export function rejectVisszahozas(csomagId, tetelId, munkalapId, elutasitoNev, indoklas = "") {
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) throw new Error("A Kivitelezési Csomag nem található.");
+  const tetel = (csomag.tetelek || []).find(t => t.id === tetelId);
+  if (!tetel) throw new Error("A tétel nem található a csomagban.");
+  const entry = (tetel.munkalapFelhasznalas || []).find(f => f.munkalapId === munkalapId);
+  if (!entry || entry.visszahozasAllapot !== VISSZAHOZAS_ALLAPOTOK.JELENTVE) {
+    throw new Error("Ez a visszahozási bejelentés nem található, vagy már el lett bírálva.");
+  }
+  const now = new Date().toISOString();
+  const tetelek = csomag.tetelek.map(t => t.id !== tetelId ? t : {
+    ...t,
+    munkalapFelhasznalas: t.munkalapFelhasznalas.map(f =>
+      f.munkalapId === munkalapId
+        ? { ...f, visszahozasAllapot: VISSZAHOZAS_ALLAPOTOK.ELUTASITVA, visszahozasJovahagyoNev: elutasitoNev, visszahozasJovahagyasDatum: now, visszahozasIndoklas: indoklas }
+        : f
+    ),
+  });
+  return updateKivitelezesiCsomag(csomagId, { tetelek }, elutasitoNev);
+}
+
+/**
+ * Az összes, még JELENTVE (el nem bírált) visszahozási bejelentés, az
+ * összes Kivitelezési Csomagból összegyűjtve. A `munkalap.lezarva` feltételt
+ * NEM ez a függvény ellenőrzi (ld. fenti megjegyzés a körkörös import
+ * elkerüléséről) – a hívó (RaktarkeszletPage) a workorder.service.js
+ * getWorkorder()-jével dönti el, melyik bejelentés jóváhagyható már, és
+ * melyik vár még a munkalap lezárására.
+ */
+export function getFuggoVisszahozasok() {
+  const eredmeny = [];
+  for (const csomag of loadKivitelezesiCsomagok()) {
+    for (const t of (csomag.tetelek || [])) {
+      for (const f of (t.munkalapFelhasznalas || [])) {
+        if (f.visszahozasAllapot !== VISSZAHOZAS_ALLAPOTOK.JELENTVE) continue;
+        if (!((Number(f.visszahozottMenny) || 0) > 0)) continue;
+        eredmeny.push({
+          csomagId:          csomag.id,
+          tetelId:           t.id,
+          projektId:         csomag.projektId,
+          anyagtorzsId:      t.anyagtorzs_id,
+          anyagNev:          t.nev,
+          egyseg:            t.egyseg,
+          munkalapId:        f.munkalapId,
+          visszahozottMenny: Number(f.visszahozottMenny) || 0,
+          jelentveAt:        f.rogzitveAt,
+        });
+      }
+    }
+  }
+  return eredmeny;
 }
 
 // ─── Fázis 6A-2 – Telepítő kiadott mennyiség láthatóság tételenként ──────────
