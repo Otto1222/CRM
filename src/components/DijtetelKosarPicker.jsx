@@ -179,7 +179,9 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
             </div>
           ))}
 
-          {/* Km-díj sor */}
+          {/* Km-díj sor – vagy a fővállalkozó katalógusából (L01/L02-szerű
+              tétel), vagy ha ahhoz nincs km-egységű tétel feltöltve, egyedi
+              Ft/km díjazással (kézzel megadva, egyszeri projektre). */}
           {kellKmDij && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, paddingTop: 8, borderTop: `1px dashed ${C.border}` }}>
               <Navigation size={13} color={C.accent} />
@@ -194,8 +196,19 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
                   {kmTetelek.map(kt => <option key={kt.id} value={kt.id}>{kt.megnevezes}</option>)}
                 </select>
               )}
+              {kmTetelek.length === 0 && (
+                <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: C.warning }}>
+                  Egyedi Ft/km:
+                  <input type="number" min={0} value={kmMeta?.ftKm || ""}
+                    onChange={e => onKmMetaChange?.({ kmTetelId: "", kod: "", nev: "Egyedi km-díj", ftKm: Number(e.target.value) || 0 })}
+                    placeholder="pl. 210"
+                    style={{ width: 64, padding: "3px 6px", border: `1px solid ${C.warning}`, borderRadius: 6, fontSize: 11, fontFamily: FONT }} />
+                </label>
+              )}
               <span style={{ fontSize: 12.5, fontWeight: 700, color: C.text, minWidth: 90, textAlign: "right" }}>
-                {tavKm ? ft(kmOsszeg) : <span style={{ color: C.warning, fontWeight: 600 }}>nincs km megadva</span>}
+                {!tavKm ? <span style={{ color: C.warning, fontWeight: 600 }}>nincs km megadva</span>
+                  : !kmMeta?.ftKm ? <span style={{ color: C.warning, fontWeight: 600 }}>nincs km-díj megadva</span>
+                  : ft(kmOsszeg)}
               </span>
             </div>
           )}

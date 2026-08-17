@@ -112,6 +112,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     fovKapcsolattarto: projekt?.fovKapcsolattarto || "",
     fovFizetesiHatarido: projekt?.fovFizetesiHatarido || "",
     fovMegjegyzes: projekt?.fovMegjegyzes || "",
+    finanszirozasCimke: projekt?.finanszirozasCimke || "",
     napelemDb:     projekt?.napelemDb     || 0,
     inverterDb:    projekt?.inverterDb    || 0,
     akkumulatorDb: projekt?.akkumulatorDb ?? (projekt?.akkumulator ? 1 : 0),
@@ -171,11 +172,14 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
   // mögé kerül: Csapat, Ütemezés, fővállalkozói ügyfél/kapcsolattartó
   // részletek – becsukva indul, bármikor kinyitható/utólag is kitölthető.
   const [reszletekOpen, setReszletekOpen] = useState(false);
-  // Fővállalkozóinál az ügyfél-mezők a "További adatok" mögé kerülnek (a
-  // saját munka / ajánlatos flow ugyfélOpen-mechanizmusa változatlan marad).
+  // P0-010: fővállalkozói munkánál az ügyfél/telepítési adatok (név, cím,
+  // elérhetőség) MINDIG elsődlegesek – korábban a "További adatok" mögé
+  // voltak rejtve, ami miatt a telepítési cím (és vele az automatikus
+  // km-számítás alapja) csendben kimaradt a projekt létrehozás elsődleges
+  // nézetéből. A saját munka / ajánlatos flow ugyfélOpen-mechanizmusa
+  // változatlan marad.
   const ugyfelMezokLathatok =
     form.forrás === "sajat_ajanlat" ? (ugyfélOpen || !form.ajanlatId)
-    : form.forrás === "fovallalkozoi_munka" ? reszletekOpen
     : true;
   // P0-007: "Saját munka" almenettől függően más a kötelező feltétel –
   // ajánlat-alfajtánál ajánlat kiválasztása, Excel-alfajtánál sikeres import.
@@ -230,6 +234,17 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     }, 1200);
     return () => clearTimeout(kmDebounceRef.current);
   }, [form.csapatId, form.telepitesiCim, form.clientCim, form.forrás]);
+
+  // P0-010: ha csak egyetlen aktív csapat van, azt automatikusan kiválasztjuk
+  // új fővállalkozói projektnél – a km-számításhoz enélkül is kellene csapat,
+  // felesleges rákattintani, ha nincs is választási lehetőség.
+  useEffect(() => {
+    if (!isNew || form.forrás !== "fovallalkozoi_munka") return;
+    if (form.csapatId || csapatok.length !== 1) return;
+    const cs = csapatok[0];
+    setForm(p => ({ ...p, csapatId: cs.id, csapatNev: cs.nev }));
+  }, [isNew, form.forrás, form.csapatId, csapatok]);
+
   function upd(k, v) {
     setForm(p => ({ ...p, [k]: v }));
     if (hiba) setHiba("");
@@ -917,6 +932,47 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 <p style={{ fontSize: 10, color: C.success, marginTop: 3, fontWeight: 600 }}>✓ Azonos az ügyfél lakcímével</p>
               )}
             </Field>
+            {/* P0-010: fővállalkozói (Telepítés) munkánál ez a 4 mező mindig
+                elsődleges – a kivitelező csapat kell az automatikus
+                km-számításhoz (csapat telephely → telepítési cím), a többi
+                a telepítés alap-adminisztrációja. */}
+            {form.forrás === "fovallalkozoi_munka" && (<>
+            <Field label="Kivitelező csapat (a km-számításhoz)" half>
+              <select value={form.csapatId} onChange={handleCsapat} style={inp}>
+                <option value="">— Válassz csapatot —</option>
+                {csapatok.map(cs => (
+                  <option key={cs.id} value={cs.id}>
+                    {cs.nev}{cs.telephely ? ` (${cs.telephely})` : ""}
+                  </option>
+                ))}
+              </select>
+              {csapatok.length === 0 && (
+                <p style={{ fontSize: 10, color: C.warning, marginTop: 3 }}>⚠️ Még nincs létrehozva csapat — előbb add hozzá a Csapat menüben</p>
+              )}
+            </Field>
+            <Field label="Telepítés dátuma" half>
+              <input type="date" value={form.tervezettKezdes} onChange={e => upd("tervezettKezdes", e.target.value)}
+                min={new Date().toISOString().slice(0,10)} style={inp} />
+            </Field>
+            <Field label="Státusz (finanszírozás)">
+              <input
+                list="finanszirozas-opciok"
+                value={form.finanszirozasCimke}
+                onChange={e => upd("finanszirozasCimke", e.target.value)}
+                placeholder="pl. Saját önerős, VisszaWatt, Junior Vital…"
+                style={inp}
+              />
+              <datalist id="finanszirozas-opciok">
+                <option value="Saját önerős" />
+                <option value="VisszaWatt" />
+                <option value="Junior Vital" />
+              </datalist>
+            </Field>
+            <Field label="Egyéb megjegyzés (opcionális)">
+              <input value={form.fovMegjegyzes} onChange={e => upd("fovMegjegyzes", e.target.value)}
+                placeholder="Bármilyen egyéb tudnivaló a telepítéshez…" style={inp} />
+            </Field>
+            </>)}
             </>}
             </>)}
             {/* Belső munkánál nincs ügyfél section, de telepítési cím kell */}
@@ -970,6 +1026,9 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 ))}
               </select>
             </Field>
+            {/* Fővállalkozói munkánál a Kivitelező csapat fentebb, elsődlegesen
+                már megjelenik (a km-számításhoz) – itt nem duplikáljuk. */}
+            {form.forrás !== "fovallalkozoi_munka" && (
             <Field label="Kivitelező csapat" half>
               <select value={form.csapatId} onChange={handleCsapat} style={inp}>
                 <option value="">— Válassz csapatot —</option>
@@ -983,6 +1042,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 <p style={{ fontSize: 10, color: C.warning, marginTop: 3 }}>⚠️ Még nincs létrehozva csapat — előbb add hozzá a Csapat menüben</p>
               )}
             </Field>
+            )}
             </>)}
             {/* Műszaki adatok – belső munkánál (garancia/javítás) irreleváns */}
             {form.forrás !== "belso_munka" && (<>
@@ -1076,16 +1136,16 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             </Field>
             )}
 
-            {/* Fővállalkozói extra mezők – csak "További adatok" nyitva */}
+            {/* Fővállalkozói extra mezők – csak "További adatok" nyitva.
+                A "Fővállalkozói megjegyzés" (fovMegjegyzes mező) fentebb,
+                "Egyéb megjegyzés" néven már elsődlegesen szerkeszthető –
+                itt nem duplikáljuk. */}
             {reszletekOpen && (<>
               <Field label="FV kapcsolattartó" half>
                 <input value={form.fovKapcsolattarto} onChange={e => upd("fovKapcsolattarto", e.target.value)} placeholder="Kapcsolattartó neve" style={inp} />
               </Field>
               <Field label="Fizetési határidő" half>
                 <input type="date" value={form.fovFizetesiHatarido} onChange={e => upd("fovFizetesiHatarido", e.target.value)} style={inp} />
-              </Field>
-              <Field label="Fővállalkozói megjegyzés">
-                <input value={form.fovMegjegyzes} onChange={e => upd("fovMegjegyzes", e.target.value)} placeholder="Egyéb instrukciók, feltételek…" style={inp} />
               </Field>
             </>)}
             <Field label="Távolság (km, oda)" half>
