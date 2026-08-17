@@ -26,6 +26,7 @@ import AddressSearch from "../../components/AddressSearch.jsx";
 import { calcRoundTripKm } from "../../lib/geoService.js";
 import TetelesExcelImportPanel from "../../components/TetelesExcelImportPanel.jsx";
 import DijtetelKosarPicker from "../../components/DijtetelKosarPicker.jsx";
+import { becsulMuszakiAdatokKosarbol } from "../../lib/dijtablaMuszakiAdatokBecsles.js";
 const Field = ({ label, children, half }) => (
   <div style={{ gridColumn: half ? "span 1" : "span 2" }}>
     <label
@@ -245,6 +246,28 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     setForm(p => ({ ...p, csapatId: cs.id, csapatNev: cs.nev }));
   }, [isNew, form.forrás, form.csapatId, csapatok]);
 
+  // P0-011: amíg van tétel-kosár, a "Műszaki adatok" (napelem/inverter/akku/
+  // smart meter db, EV töltő) a kosárból származik – nem kell kétszer
+  // beírni ugyanazt a mennyiséget. Csak akkor írjuk felül, ha van legalább
+  // 1 tétel a kosárban; ha a PM kiüríti a kosarat, a korábban beírt/becsült
+  // értékek nem törlődnek automatikusan (kézzel maradnak módosíthatók).
+  useEffect(() => {
+    if (form.forrás !== "fovallalkozoi_munka") return;
+    const tetelek = form.penzugy.dijtablaTetelek || [];
+    if (tetelek.length === 0) return;
+    const becsult = becsulMuszakiAdatokKosarbol(tetelek);
+    setForm(p => ({
+      ...p,
+      napelemDb:     becsult.napelemDb,
+      inverterDb:    becsult.inverterDb,
+      akkumulatorDb: becsult.akkumulatorDb,
+      smartMeterDb:  becsult.smartMeterDb,
+      autoTolto:     becsult.autoTolto || p.autoTolto,
+      penzugy: { ...p.penzugy, darabszam: becsult.napelemDb || p.penzugy.darabszam },
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.forrás, form.penzugy.dijtablaTetelek]);
+
   function upd(k, v) {
     setForm(p => ({ ...p, [k]: v }));
     if (hiba) setHiba("");
@@ -286,11 +309,16 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
   function handleFovallalkozo(fvId) {
     const filled = autoFillPenzugy(fvId, form.penzugy?.munkatipus || "", form.penzugy);
     const sz = findSzabaly(fvId, form.penzugy?.munkatipus || "");
+    const fv = fovallalkozok.find(f => f.id === fvId);
     // Fővállalkozó-váltáskor a tétel-kosár érvényét veszti (más fővállalkozó
     // katalógusára hivatkozna) – üresen indul, a PM újraválogatja az új
     // fővállalkozó díjtáblájából.
     setForm(p => ({
       ...p,
+      // P0-011: a "Megbízó cég neve" a legtöbb esetben ugyanaz, mint a
+      // kiválasztott (billing-célú) fővállalkozó – auto-kitöltjük, de csak
+      // ha a mező még üres, hogy egy kézzel beírt eltérő nevet ne írjunk felül.
+      megbizoCeg: p.megbizoCeg?.trim() ? p.megbizoCeg : (fv?.nev || p.megbizoCeg),
       penzugy: {
         ...filled,
         fovallalkoziId: fvId,
@@ -834,10 +862,12 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               />
             </Field>
             )}
-            {/* P0-009: fővállalkozói munkánál, ha van tétel-kosár a díjtáblából
-                (ld. lent), a Munkatípus legördülő nem elsődleges bemenet többé –
-                a "További adatok" mögé kerül, opcionális felülírásként (ld. lent). */}
-            {!vanDijtablaKosar && (
+            {/* P0-011: fővállalkozói munkánál a Munkatípus legördülő MÁR NEM
+                elsődleges bemenet (a tétel-kosár írja le, milyen munka
+                lesz) – a "További adatok" mögé kerül, opcionális
+                felülírásként (ld. lent), a régi szabály-motoros fővállalkozók
+                számára, akikhez még nincs díjtétel-katalógus feltöltve. */}
+            {form.forrás !== "fovallalkozoi_munka" && (
             <Field label="Munkatípus *" half>
               <select value={form.tipus} onChange={e => handleMunkatipus(e.target.value)} style={inp}>
                 <option value="">— Válassz munkatípust —</option>
@@ -993,13 +1023,13 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               </div>
             )}
             {reszletekOpen && (<>
-            {vanDijtablaKosar && (<>
+            {form.forrás === "fovallalkozoi_munka" && (<>
             <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
-                Munkatípus (opcionális – belső riportokhoz)
+                Munkatípus {vanDijtablaKosar ? "(opcionális – belső riportokhoz)" : "(a régi, szabály-alapú elszámoláshoz)"}
               </p>
             </div>
-            <Field label="Munkatípus (opcionális)">
+            <Field label={vanDijtablaKosar ? "Munkatípus (opcionális)" : "Munkatípus *"}>
               <select value={form.tipus} onChange={e => handleMunkatipus(e.target.value)} style={inp}>
                 <option value="">— Nincs kiválasztva —</option>
                 {munkatipusok.map(t => (
@@ -1009,6 +1039,37 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               <p style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>
                 A bevétel a fenti tétel-kosárból számolódik – ez a mező csak a belső riportok/munkalapok kategorizálásához opcionális.
               </p>
+            </Field>
+            </>)}
+            {vanDijtablaKosar && (<>
+            <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
+                Műszaki adatok (auto-számítva a tételekből – itt felülírható)
+              </p>
+            </div>
+            <Field label="Napelem darabszám" half>
+              <input type="number" min="0" value={form.napelemDb} onChange={e => {
+                const n = Number(e.target.value);
+                setForm(p => ({ ...p, napelemDb: n, penzugy: { ...p.penzugy, darabszam: n } }));
+              }} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Inverter darabszám" half>
+              <input type="number" min="0" value={form.inverterDb} onChange={e => upd("inverterDb", Number(e.target.value))} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Akkumulátor db" half>
+              <input type="number" min="0" value={form.akkumulatorDb} onChange={e => upd("akkumulatorDb", Number(e.target.value))} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Smart meter db" half>
+              <input type="number" min="0" value={form.smartMeterDb} onChange={e => upd("smartMeterDb", Number(e.target.value))} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Elektromos autótöltő" half>
+              <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:14, fontWeight:500, color:C.textSub, userSelect:"none", paddingTop:4 }}>
+                <div onClick={() => upd("autoTolto", !form.autoTolto)}
+                  style={{ width:44, height:24, borderRadius:12, position:"relative", cursor:"pointer", background:form.autoTolto?C.accent:C.border, transition:"background .2s" }}>
+                  <div style={{ position:"absolute", top:3, left:form.autoTolto?23:3, width:18, height:18, borderRadius:"50%", background:"#fff", transition:"left .2s", boxShadow:"0 1px 3px rgba(0,0,0,.2)" }}/>
+                </div>
+                <span style={{ color:form.autoTolto?C.success:C.muted, fontWeight:700 }}>{form.autoTolto?"Van":"Nincs"}</span>
+              </label>
             </Field>
             </>)}
             <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
@@ -1044,8 +1105,12 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             </Field>
             )}
             </>)}
-            {/* Műszaki adatok – belső munkánál (garancia/javítás) irreleváns */}
-            {form.forrás !== "belso_munka" && (<>
+            {/* Műszaki adatok – belső munkánál (garancia/javítás) irreleváns.
+                P0-011: ha van tétel-kosár, ezek a mennyiségek MÁR ISMERTEK
+                a kosárból (pl. "12× A01 panel" → 12 napelem) – nem kérjük
+                újra kézzel, csak egy összefoglalót mutatunk; a "További
+                adatok" alatt bármikor felülírható, ha a becslés pontatlan. */}
+            {form.forrás !== "belso_munka" && !vanDijtablaKosar && (<>
             <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Műszaki adatok
@@ -1077,6 +1142,18 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               </label>
             </Field>
             </>)}
+            {vanDijtablaKosar && (
+              <div style={{ gridColumn: "span 2", fontSize: 12, color: C.muted }}>
+                Műszaki adatok (a tétel-kosárból): {[
+                  form.napelemDb     ? `${form.napelemDb} panel` : null,
+                  form.inverterDb    ? `${form.inverterDb} inverter` : null,
+                  form.akkumulatorDb ? `${form.akkumulatorDb} akku` : null,
+                  form.smartMeterDb  ? `${form.smartMeterDb} smart meter` : null,
+                  form.autoTolto     ? "EV töltő" : null,
+                ].filter(Boolean).join(" · ") || "—"}
+                <span style={{ marginLeft: 6 }}>(felülírható lent a "További adatok" alatt)</span>
+              </div>
+            )}
             {!reszletekOpen && (form.tervezettKezdes || form.tervezettBefejezes) && (
               <div style={{ gridColumn: "span 2", fontSize: 12, color: C.muted }}>
                 Ütemezés: {form.tervezettKezdes || "?"} → {form.tervezettBefejezes || "?"}
