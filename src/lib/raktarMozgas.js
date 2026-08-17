@@ -20,6 +20,7 @@ export const RAKTAR_MOZGAS_TIPUSOK = {
   KIADAS_KOREKCIO:"KIADAS_KOREKCIO", // korábbi kiadás utólagos csökkentése – készlet nő
   BEVETELEZES:    "BEVETELEZES",     // beszerzés / kézi feltöltés – készlet nő
   KOREKCIO:       "KOREKCIO",        // kézi leltár-korrekció (bármelyik irányban)
+  VISSZAHOZAS:    "VISSZAHOZAS",     // telepítő által visszahozott, PM/Raktár jóváhagyta – készlet nő
 };
 
 export function loadRaktarMozgasok() {

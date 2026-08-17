@@ -8,6 +8,26 @@ import { CSAPAT_KIOSZTASI_TIPUSOK } from "../../csapatok/csapat.schema.js";
 import { formatMunkalapAzonosito } from "../../../lib/azonositoHelper.js";
 import { assignAnyagokToMunkalap, getKivitelezesiCsomagByProjektId } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import KiviCsomagKiadasPicker from "../../../components/KiviCsomagKiadasPicker.jsx";
+import AnyagKosarPicker from "../../../components/AnyagKosarPicker.jsx";
+
+// Több munkalapos munkánál (javítás, pótmunka, több napos kivitelezés) egy
+// későbbi munkalap kiosztásakor előfordulhat, hogy olyan anyag is kell, ami
+// az eredeti, projekt-létrehozáskori listában nem szerepelt (ld. "plusz
+// anyag" szekció lent) – ilyenkor a két kosarat (meglévő listából + plusz)
+// anyagtorzsId szerint össze kell vonni, mennyiség-összegzéssel, mielőtt a
+// kiadás mentődik – így egy véletlenül mindkét helyen kiválasztott anyag
+// sem duplikálódik/vész el.
+function mergeAnyagKosarak(a, b) {
+  const map = new Map();
+  for (const item of [...a, ...b]) {
+    const menny = Number(item.mennyiseg) || 0;
+    if (!item.anyagtorzsId || menny <= 0) continue;
+    const meglevo = map.get(item.anyagtorzsId);
+    if (meglevo) meglevo.mennyiseg += menny;
+    else map.set(item.anyagtorzsId, { ...item, mennyiseg: menny });
+  }
+  return Array.from(map.values());
+}
 
 // ─── Csapat Kiosztás Panel (PM/Admin kezeli) ─────────────────
 
@@ -131,6 +151,8 @@ function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
   const [mentve, setMentve]       = useState(false);
   const [anyagKosar, setAnyagKosar] = useState([]);
   const [showAnyagok, setShowAnyagok] = useState(false);
+  const [pluszAnyagKosar, setPluszAnyagKosar] = useState([]);
+  const [showPluszAnyagok, setShowPluszAnyagok] = useState(false);
 
   const inpS = {
     padding: "8px 10px", border: `1.5px solid ${C.border}`, borderRadius: 8,
@@ -167,8 +189,9 @@ function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
         status: "Létrehozva",
       }, currentUser?.name || "");
       linkMunkalap(projekt.id, munkalap.id);
-      if (anyagKosar.length > 0) {
-        assignAnyagokToMunkalap(projekt, munkalap.id, anyagKosar, csapatId, currentUser?.name || "");
+      const teljesAnyagKosar = mergeAnyagKosarak(anyagKosar, pluszAnyagKosar);
+      if (teljesAnyagKosar.length > 0) {
+        assignAnyagokToMunkalap(projekt, munkalap.id, teljesAnyagKosar, csapatId, currentUser?.name || "");
       }
       setMentve(true);
       setTimeout(() => onDone(), 700);
@@ -230,6 +253,26 @@ function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
             Csomag kiadott mennyiségébe kerül, a telepítő a beszerelés után validálja a felhasználást.
           </p>
           <KiviCsomagKiadasPicker tetelek={kiviCsomag?.tetelek || []} value={anyagKosar} onChange={setAnyagKosar} />
+        </div>
+      )}
+
+      {/* Több munkalapos munkánál (javítás, pótmunka, több napos kivitelezés)
+          előfordulhat, hogy olyan anyag is kell, ami a projekt eredeti,
+          létrehozáskori listájában nem szerepelt – ez a teljes anyagtörzsből
+          választható, és automatikusan bekerül a projekt tételes listájába is. */}
+      <button type="button" onClick={() => setShowPluszAnyagok(s => !s)}
+        style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", background: showPluszAnyagok ? C.accentLight : "#fff", color: C.accent, border: `1.5px solid ${C.border}`, borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: FONT, marginBottom: 10 }}>
+        <Plus size={13} /> Plusz anyag, ami nem volt az eredeti listán {pluszAnyagKosar.length > 0 ? `(${pluszAnyagKosar.length})` : ""}
+        <ChevronDown size={11} style={{ transform: showPluszAnyagok ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+      </button>
+      {showPluszAnyagok && (
+        <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10, padding: 12, marginBottom: 12 }}>
+          <p style={{ fontSize: 11, color: C.muted, margin: "0 0 10px" }}>
+            Javításhoz, pótmunkához vagy több napos kivitelezéshez szükséges, eredetileg nem tervezett anyag –
+            ez automatikusan bekerül a projekt tételes anyaglistájába is (Kivitelezési Csomag), nemcsak ennek a
+            munkalapnak a kiadásába.
+          </p>
+          <AnyagKosarPicker value={pluszAnyagKosar} onChange={setPluszAnyagKosar} />
         </div>
       )}
 
