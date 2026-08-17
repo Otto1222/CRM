@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { Package, Plus } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../../../lib/constants.js";
-import { getAktivAnyagok } from "../../../lib/anyagtorzs.js";
 import {
   getKivitelezesiCsomagByProjektId,
   createKivitelezesiCsomagForProjekt,
-  addKeziTetelToKivitelezesiCsomag,
+  addAnyagokBulkToKivitelezesiCsomag,
   setKivitelezesiCsomagStatus,
   updateKiviTetelMennyisegek,
   updateKiviTetelLathatosag,
   updateKiviTetelSorozatszamKoteles,
 } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
+import AnyagKosarPicker from "../../../components/AnyagKosarPicker.jsx";
 import {
   getKivitelezesiCsomagStatusConfig,
   calcKiviTetelEltérés,
@@ -42,11 +42,11 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
   const [hiba, setHiba]     = useState("");
   const [letrehozva, setLetrehozva] = useState(false);
 
-  // ── Kézi tétel hozzáadás (Fázis 4C – fővállalkozói / belső projekteknél) ──
-  const [keziAnyagId, setKeziAnyagId]     = useState("");
-  const [keziTervezett, setKeziTervezett] = useState("");
-  const [keziKiadando, setKeziKiadando]   = useState("");
-  const [keziHiba, setKeziHiba]           = useState("");
+  // ── Tételes anyaglista összeállítása kosárral (Fázis 6B – fővállalkozói /
+  // belső projekteknél a projekt létrehozása UTÁN, MIELŐTT bármelyik
+  // munkalapot kiosztanák egy csapatnak) ──
+  const [keziKosar, setKeziKosar] = useState([]);
+  const [keziHiba, setKeziHiba]   = useState("");
 
   // ── Státusz- és mennyiségkezelés (Fázis 4D) ──
   const [statuszHiba, setStatuszHiba]   = useState("");
@@ -88,24 +88,22 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
     }
   }
 
-  function handleKeziTetelHozzaadas(e) {
-    e.preventDefault();
+  function handleKeziKosarHozzaadas() {
     setKeziHiba("");
-    if (!keziAnyagId) {
-      setKeziHiba("Válassz anyagot az anyagtörzsből.");
+    if (keziKosar.length === 0) {
+      setKeziHiba("Adj hozzá legalább egy anyagot a kosárhoz.");
       return;
     }
     try {
-      const updated = addKeziTetelToKivitelezesiCsomag(
+      const updated = addAnyagokBulkToKivitelezesiCsomag(
         csomag.id,
-        keziAnyagId,
-        { tervezettMennyiseg: keziTervezett, kiadandoMennyiseg: keziKiadando },
+        keziKosar.map(k => ({ anyagtorzsId: k.anyagtorzsId, mennyiseg: k.mennyiseg })),
         currentUser?.name || ""
       );
       setCsomag(updated);
-      setKeziAnyagId(""); setKeziTervezett(""); setKeziKiadando("");
+      setKeziKosar([]);
     } catch (err) {
-      setKeziHiba(err.message || "A tétel hozzáadása sikertelen.");
+      setKeziHiba(err.message || "A tételek hozzáadása sikertelen.");
     }
   }
 
@@ -259,39 +257,19 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
       {keziTetelFelvitelEngedve && (
         <div style={{ background: C.bg, border: `1.5px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 18 }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: "0 0 4px", fontFamily: FONT_HEADING }}>
-            Tétel hozzáadása anyagtörzsből
+            Tételes anyaglista összeállítása
           </p>
           <p style={{ fontSize: 12, color: C.muted, margin: "0 0 12px", fontFamily: FONT }}>
-            A tétel kizárólag az anyagtörzsből választható – szabad szöveges anyagfelvitel nincs.
-            A megnevezés, kategória, egység és árak a kiválasztás pillanatában rögzült pillanatképként kerülnek a csomagba.
+            Add meg tétel- és mennyiség-szinten, mi kell összesen a projekthez – ezt a listát a munkalapok
+            kiosztásakor (Munkalapok fül) tudod majd csapatonként kiosztani. A tétel kizárólag az
+            anyagtörzsből választható – szabad szöveges anyagfelvitel nincs, a megnevezés, kategória,
+            egység és árak a kiválasztás pillanatában rögzült pillanatképként kerülnek a csomagba.
           </p>
-          <form onSubmit={handleKeziTetelHozzaadas} style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, fontWeight: 700, color: C.muted, fontFamily: FONT, minWidth: 240 }}>
-              ANYAG
-              <select value={keziAnyagId} onChange={e => setKeziAnyagId(e.target.value)} style={inputStyle}>
-                <option value="">— válassz anyagot —</option>
-                {getAktivAnyagok().map(a => (
-                  <option key={a.id} value={a.id}>
-                    {(a.kulsoAzonosito ? `${a.kulsoAzonosito} – ` : "") + a.nev} ({a.egyseg})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, fontWeight: 700, color: C.muted, fontFamily: FONT, width: 130 }}>
-              TERVEZETT MENNYISÉG
-              <input type="number" min="0" step="any" value={keziTervezett}
-                onChange={e => setKeziTervezett(e.target.value)} style={inputStyle} />
-            </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, fontWeight: 700, color: C.muted, fontFamily: FONT, width: 130 }}>
-              KIADANDÓ MENNYISÉG
-              <input type="number" min="0" step="any" value={keziKiadando}
-                onChange={e => setKeziKiadando(e.target.value)} style={inputStyle} />
-            </label>
-            <button type="submit"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 8, border: "none", background: C.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
-              <Plus size={14} /> Hozzáadás
-            </button>
-          </form>
+          <AnyagKosarPicker value={keziKosar} onChange={setKeziKosar} />
+          <button type="button" onClick={handleKeziKosarHozzaadas} disabled={keziKosar.length === 0}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 12, padding: "9px 16px", borderRadius: 8, border: "none", background: keziKosar.length === 0 ? C.border : C.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: keziKosar.length === 0 ? "default" : "pointer", fontFamily: FONT }}>
+            <Plus size={14} /> Hozzáadás a csomaghoz
+          </button>
           {keziHiba && (
             <p style={{ fontSize: 12, color: C.danger, fontWeight: 700, margin: "10px 0 0" }}>{keziHiba}</p>
           )}

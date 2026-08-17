@@ -6,8 +6,8 @@ import { updateWorkorder, createWorkorder, nextWorkorderNumber } from "../../../
 import { getAktivCsapatok } from "../../csapatok/csapat.service.js";
 import { CSAPAT_KIOSZTASI_TIPUSOK } from "../../csapatok/csapat.schema.js";
 import { formatMunkalapAzonosito } from "../../../lib/azonositoHelper.js";
-import { assignAnyagokToMunkalap } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
-import AnyagKosarPicker from "../../../components/AnyagKosarPicker.jsx";
+import { assignAnyagokToMunkalap, getKivitelezesiCsomagByProjektId } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
+import KiviCsomagKiadasPicker from "../../../components/KiviCsomagKiadasPicker.jsx";
 
 // ─── Csapat Kiosztás Panel (PM/Admin kezeli) ─────────────────
 
@@ -121,6 +121,7 @@ function CsapatKiosztasPanel({ munkalap }) {
 
 function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
   const csapatok = getAktivCsapatok();
+  const kiviCsomag = getKivitelezesiCsomagByProjektId(projekt.id);
   const [tipus, setTipus]         = useState("Első kivitelezés");
   const [datum, setDatum]         = useState("");
   const [csapatId, setCsapatId]   = useState(projekt.csapatId || "");
@@ -225,10 +226,10 @@ function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
       {showAnyagok && (
         <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10, padding: 12, marginBottom: 12 }}>
           <p style={{ fontSize: 11, color: C.muted, margin: "0 0 10px" }}>
-            Add meg tétel- és mennyiség-szinten, mit vigyen magával a csapat – ez a projekt Kivitelezési
-            Csomagjának kiadott mennyiségébe kerül, a telepítő a beszerelés után validálja a felhasználást.
+            A projekt tételes anyaglistájából add meg, mennyit visz magával ez a csapat – ez a Kivitelezési
+            Csomag kiadott mennyiségébe kerül, a telepítő a beszerelés után validálja a felhasználást.
           </p>
-          <AnyagKosarPicker value={anyagKosar} onChange={setAnyagKosar} />
+          <KiviCsomagKiadasPicker tetelek={kiviCsomag?.tetelek || []} value={anyagKosar} onChange={setAnyagKosar} />
         </div>
       )}
 
