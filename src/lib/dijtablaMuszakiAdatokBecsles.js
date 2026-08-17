@@ -28,3 +28,27 @@ export function becsulMuszakiAdatokKosarbol(tetelek = []) {
   }
   return { napelemDb, inverterDb, akkumulatorDb, smartMeterDb, autoTolto };
 }
+
+/**
+ * Fázis 6F: saját munkánál (elfogadott ajánlat alapú) a Műszaki adatok
+ * NEM becslés, hanem közvetlen megfeleltetés az ajánlat FIX, kanonikus fő
+ * tétel-azonosítóiból (ld. ajanlat.schema.js FO_TETELEK) – az ajánlat már
+ * tartalmazza ezeket a mennyiségeket, nem kell újra kézzel beírni.
+ * Csak az aktív (ügyfélnek felkínált) fő tételeket számolja.
+ */
+const FO_TETEL_MUSZAKI_TERKEP = {
+  napelem_rendszer: "napelemDb",
+  inverter:         "inverterDb",
+  akku_egyseg:      "akkumulatorDb",
+  energia_mero:     "smartMeterDb",
+};
+export function becsulMuszakiAdatokAjanlatFoTetelekbol(fo_tetelek = []) {
+  const eredmeny = { napelemDb: 0, inverterDb: 0, akkumulatorDb: 0, smartMeterDb: 0, autoTolto: false };
+  for (const t of (fo_tetelek || [])) {
+    if (!t?.aktiv) continue;
+    const mezo = FO_TETEL_MUSZAKI_TERKEP[t.id];
+    if (!mezo) continue;
+    eredmeny[mezo] += Number(t.mennyiseg) || 0;
+  }
+  return eredmeny;
+}
