@@ -45,17 +45,26 @@ const dispatch = () =>
   window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "anyagtorzs" } }));
 
 // ─── Kategóriák ──────────────────────────────────────────────
-// Ajánlat kategóriák (FO_TETELEK.id-k) – ajánlatnál szűrnek ezekre
+// Ajánlat kategóriák (FO_TETELEK.id-k) – ajánlatnál szűrnek ezekre, és
+// ez a lista adja a Raktárkészlet oldal termék-szintű kategorizálását is
+// (ld. RaktarkeszletPage.jsx) – szándékosan NEM a telepítői kategóriákkal
+// (ld. lent), mert az raktár szempontjából túl szűk (csak szerelési
+// kellékanyag), ez viszont a teljes termékkört lefedi (panel, inverter,
+// akku, kiegészítők, szolgáltatás is).
+// "szolgaltatas" – Fázis 6E: nincs FO_TETELEK megfelelője, kifejezetten a
+// raktárkészlet-nyilvántartásban felmerülő, fizikai kicsim nélküli tételekhez
+// (pl. kiszállás, üzembe helyezés díja) – az ajánlat modul nem hivatkozik rá.
 export const AJANLAT_KATEGORIAK = [
-  { id: "napelem_rendszer", label: "Napelem panel" },
-  { id: "tartoszerkezet",   label: "Tartószerkezet" },
-  { id: "inverter",         label: "Inverter" },
+  { id: "napelem_rendszer", label: "Napelemek" },
+  { id: "tartoszerkezet",   label: "Tartószerkezetek" },
+  { id: "inverter",         label: "Inverterek" },
   { id: "energia_mero",     label: "Energia mérő / Smart meter" },
   { id: "akku_vezeto",      label: "Akkumulátor vezérlő" },
-  { id: "akku_egyseg",      label: "Akkumulátor egység" },
+  { id: "akku_egyseg",      label: "Akkumulátorok" },
   { id: "akku_kiegeszito",  label: "Akkumulátor kiegészítők" },
-  { id: "vedelmi_eszkozok", label: "Védelmi eszközök" },
+  { id: "vedelmi_eszkozok", label: "Napelem-Inverter kiegészítők" },
   { id: "villanyszereles",  label: "Villanyszerelési anyagok" },
+  { id: "szolgaltatas",     label: "Szolgáltatások" },
 ];
 
 // Telepítői kategóriák – telepítő felületen szűrnek
