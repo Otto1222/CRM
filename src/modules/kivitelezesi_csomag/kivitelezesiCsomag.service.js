@@ -308,10 +308,17 @@ export function updateFelhasznaltMennyisegFromMunkalap(csomagId, munkalapId, fel
     const idx     = meglevo.findIndex(f => f.munkalapId === munkalapId);
     let ujFelhasznalas;
 
+    // sorozatszamok: opcionális string[] – csak a sorozatszám köteles
+    // tételeknél töltődik ki (ld. t.sorozatszamKoteles), a beépített
+    // darabok gyári sorozatszámai, telepítő általi utólagos validáció.
+    const ujSorozatszamok = Array.isArray(fAdat.sorozatszamok)
+      ? fAdat.sorozatszamok.map(s => String(s || "").trim()).filter(Boolean)
+      : (idx >= 0 ? (meglevo[idx].sorozatszamok || []) : []);
+
     if (idx >= 0) {
       ujFelhasznalas = meglevo.map((f, i) =>
         i === idx
-          ? { ...f, menny: fAdat.menny, megjegyzes: fAdat.megjegyzes || "", rogzitveAt: now }
+          ? { ...f, menny: fAdat.menny, megjegyzes: fAdat.megjegyzes || "", sorozatszamok: ujSorozatszamok, rogzitveAt: now }
           : f
       );
     } else {
@@ -319,6 +326,7 @@ export function updateFelhasznaltMennyisegFromMunkalap(csomagId, munkalapId, fel
         munkalapId,
         menny:      fAdat.menny,
         megjegyzes: fAdat.megjegyzes || "",
+        sorozatszamok: ujSorozatszamok,
         rogzitveAt: now,
       }];
     }
@@ -355,4 +363,130 @@ export function updateKiviTetelLathatosag(csomagId, tetelId, telepitoLathatosag,
     t.id === tetelId ? { ...t, telepitoLathatosag } : t
   );
   return updateKivitelezesiCsomag(csomagId, { tetelek }, user);
+}
+
+/**
+ * Egy tétel "sorozatszám köteles" jelölése (PM/Admin állítja be a
+ * Kivitelezési Csomagban) – ha igaz, a telepítő az anyagfelhasználás
+ * rögzítésekor (KivCsomagFelhasznalasTab) sorozatszámonként köteles
+ * megadni a beépített darabokat (pl. inverter, akkumulátor).
+ */
+export function updateKiviTetelSorozatszamKoteles(csomagId, tetelId, sorozatszamKoteles, user = "") {
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) throw new Error("A Kivitelezési Csomag nem található.");
+  if (isKivitelezesiCsomagSzerkesztesTiltott(csomag.status)) {
+    throw new Error("Lezárt vagy elszámolt csomagban a tételek nem módosíthatók.");
+  }
+  if (!(csomag.tetelek || []).some(t => t.id === tetelId)) {
+    throw new Error("A tétel nem található a csomagban.");
+  }
+  const tetelek = (csomag.tetelek || []).map(t =>
+    t.id === tetelId ? { ...t, sorozatszamKoteles: !!sorozatszamKoteles } : t
+  );
+  return updateKivitelezesiCsomag(csomagId, { tetelek }, user);
+}
+
+// ─── Fázis 6B – Anyag kiadás munkakiosztáskor ("mit vigyen a csapat") ───────
+
+/**
+ * Munkalap-szintű kiadott mennyiség rögzítése (a Fázis 6A-1
+ * updateFelhasznaltMennyisegFromMunkalap tükörpárja, de a kiadás oldalán).
+ *
+ * Ugyanúgy per-munkalap izolált upsert: a munkalapKiadas[] tömbben
+ * munkalapId azonosítja az adott munkalap sorát, a tétel összesített
+ * kiadottMennyiseg mezője pedig az összes munkalap-kiadás ÖSSZEGE –
+ * több munkalapos projektnél egyik munkalap kiadása sem írja felül
+ * a másikét.
+ */
+export function updateKiadottMennyisegFromMunkalap(csomagId, munkalapId, kiadasok = [], user = "") {
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) return null;
+
+  const now = new Date().toISOString();
+
+  const tetelek = (csomag.tetelek || []).map(t => {
+    const kAdat = kiadasok.find(k => k.tetelId === t.id);
+    if (!kAdat) return t;
+
+    const meglevo = t.munkalapKiadas || [];
+    const idx     = meglevo.findIndex(k => k.munkalapId === munkalapId);
+    let ujKiadas;
+
+    if (idx >= 0) {
+      ujKiadas = meglevo.map((k, i) =>
+        i === idx
+          ? { ...k, menny: kAdat.menny, csapatId: kAdat.csapatId || k.csapatId || "", rogzitveAt: now }
+          : k
+      );
+    } else {
+      ujKiadas = [...meglevo, {
+        munkalapId,
+        menny:      kAdat.menny,
+        csapatId:   kAdat.csapatId || "",
+        rogzitveAt: now,
+      }];
+    }
+
+    const osszes = ujKiadas.reduce((s, k) => s + (Number(k.menny) || 0), 0);
+
+    return {
+      ...t,
+      munkalapKiadas:    ujKiadas,
+      kiadottMennyiseg:  osszes,
+      // Nincs külön "komissiózás" lépés – a munkakiosztáskori kiadás egyben
+      // a kiadandó célt is kitölti, ha még nem volt magasabb érték megadva.
+      kiadandoMennyiseg: Math.max(Number(t.kiadandoMennyiseg) || 0, osszes),
+    };
+  });
+
+  return updateKivitelezesiCsomag(csomagId, { tetelek }, user);
+}
+
+/**
+ * Munkakiosztáskor kiválasztott anyagok ("mit vigyen a csapat") beillesztése
+ * a projekt Kivitelezési Csomagjába, egy lépésben:
+ *
+ *   1. ha a projekthez még nincs Kivitelezési Csomag, létrehoz egy üres,
+ *      kézi ("kezi") csomagot – ugyanúgy, ahogy fővállalkozói munkánál a
+ *      projekt létrehozásakor is történik (ld. projekt.service.js P0-015);
+ *   2. minden kiválasztott anyaghoz: ha még nincs ilyen anyagtorzs_id-jű
+ *      tétel a csomagban, létrehozza (createKeziTetelPillanatkep), egyébként
+ *      a meglévő tételt használja;
+ *   3. a munkalaphoz rendelt mennyiséget updateKiadottMennyisegFromMunkalap-
+ *      pal, per-munkalap izolált upsert-tel rögzíti.
+ *
+ * @param {object} projekt
+ * @param {string} munkalapId
+ * @param {Array<{anyagtorzsId, mennyiseg}>} tetelekPick
+ * @param {string} [csapatId]
+ * @param {string} [user]
+ */
+export function assignAnyagokToMunkalap(projekt, munkalapId, tetelekPick = [], csapatId = "", user = "") {
+  const validPick = (tetelekPick || []).filter(p => p.anyagtorzsId && (Number(p.mennyiseg) || 0) > 0);
+  if (validPick.length === 0) return null;
+
+  let csomag = getKivitelezesiCsomagByProjektId(projekt.id);
+  if (!csomag) {
+    csomag = createKivitelezesiCsomagForProjekt(projekt, null, user, null);
+  }
+
+  for (const pick of validPick) {
+    const letezik = (csomag.tetelek || []).some(t => t.anyagtorzs_id === pick.anyagtorzsId);
+    if (!letezik) {
+      csomag = addKeziTetelToKivitelezesiCsomag(
+        csomag.id,
+        pick.anyagtorzsId,
+        { tervezettMennyiseg: pick.mennyiseg, kiadandoMennyiseg: pick.mennyiseg },
+        user
+      );
+    }
+  }
+
+  const kiadasok = validPick.map(pick => {
+    const tetel = (csomag.tetelek || []).find(t => t.anyagtorzs_id === pick.anyagtorzsId);
+    return tetel ? { tetelId: tetel.id, menny: Number(pick.mennyiseg) || 0, csapatId } : null;
+  }).filter(Boolean);
+
+  csomag = updateKiadottMennyisegFromMunkalap(csomag.id, munkalapId, kiadasok, user);
+  return csomag;
 }
