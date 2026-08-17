@@ -16,6 +16,8 @@ import {
   ellenorizStatuszValtas,
   isKivitelezesiCsomagSzerkesztesTiltott,
 } from "./kivitelezesiCsomag.schema.js";
+import { adjustAnyagKeszlet } from "../../lib/anyagtorzs.js";
+import { addRaktarMozgas, RAKTAR_MOZGAS_TIPUSOK } from "../../lib/raktarMozgas.js";
 
 const MENNYISEGI_MEZOK = [
   "tervezettMennyiseg",
@@ -444,28 +446,51 @@ export function updateKiadottMennyisegFromMunkalap(csomagId, munkalapId, kiadaso
   if (!csomag) return null;
 
   const now = new Date().toISOString();
+  // Fázis 6C – raktárkészlet: csak a DELTA (új - régi kiadott mennyiség
+  // EHHEZ a munkalaphoz) csökkenti/növeli a készletet, így egy már kiadott
+  // munkalap kiadásának utólagos módosítása (pl. korrekció) nem duplikálja
+  // a készletmozgást – mindig csak a változás könyvelődik.
+  const raktarMozgasok = [];
 
   const tetelek = (csomag.tetelek || []).map(t => {
     const kAdat = kiadasok.find(k => k.tetelId === t.id);
     if (!kAdat) return t;
 
-    const meglevo = t.munkalapKiadas || [];
-    const idx     = meglevo.findIndex(k => k.munkalapId === munkalapId);
+    const meglevo   = t.munkalapKiadas || [];
+    const idx       = meglevo.findIndex(k => k.munkalapId === munkalapId);
+    const regiMenny = idx >= 0 ? (Number(meglevo[idx].menny) || 0) : 0;
+    const ujMenny   = Number(kAdat.menny) || 0;
+    const delta     = ujMenny - regiMenny;
     let ujKiadas;
 
     if (idx >= 0) {
       ujKiadas = meglevo.map((k, i) =>
         i === idx
-          ? { ...k, menny: kAdat.menny, csapatId: kAdat.csapatId || k.csapatId || "", rogzitveAt: now }
+          ? { ...k, menny: ujMenny, csapatId: kAdat.csapatId || k.csapatId || "", rogzitveAt: now }
           : k
       );
     } else {
       ujKiadas = [...meglevo, {
         munkalapId,
-        menny:      kAdat.menny,
+        menny:      ujMenny,
         csapatId:   kAdat.csapatId || "",
         rogzitveAt: now,
       }];
+    }
+
+    if (delta !== 0 && t.anyagtorzs_id) {
+      raktarMozgasok.push({
+        anyagtorzsId:   t.anyagtorzs_id,
+        anyagNev:       t.nev,
+        egyseg:         t.egyseg,
+        mennyiseg:      delta, // pozitív: kiadás nő → készlet csökken; negatív: kiadás csökken → készlet nő
+        tipus:          delta > 0 ? RAKTAR_MOZGAS_TIPUSOK.KIADAS : RAKTAR_MOZGAS_TIPUSOK.KIADAS_KOREKCIO,
+        projektId:      csomag.projektId,
+        munkalapId,
+        csapatId:       kAdat.csapatId || "",
+        felhasznaloNev: user,
+        datum:          now,
+      });
     }
 
     const osszes = ujKiadas.reduce((s, k) => s + (Number(k.menny) || 0), 0);
@@ -480,7 +505,17 @@ export function updateKiadottMennyisegFromMunkalap(csomagId, munkalapId, kiadaso
     };
   });
 
-  return updateKivitelezesiCsomag(csomagId, { tetelek }, user);
+  const updated = updateKivitelezesiCsomag(csomagId, { tetelek }, user);
+
+  // A raktárkészlet módosítása és a mozgásnapló bejegyzés csak a fenti
+  // csomag-mentés UTÁN történik – ha a mentés hibázna, a készlet és a napló
+  // ne térjen el a Kivitelezési Csomag tényleges állapotától.
+  for (const mozgas of raktarMozgasok) {
+    adjustAnyagKeszlet(mozgas.anyagtorzsId, -mozgas.mennyiseg);
+    addRaktarMozgas(mozgas);
+  }
+
+  return updated;
 }
 
 /**

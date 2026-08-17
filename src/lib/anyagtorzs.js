@@ -132,6 +132,10 @@ function migrateAnyagV2(a, netto_egysegar) {
     beszallito:        a.beszallito ?? "",
     kulsoAzonosito:    a.kulsoAzonosito ?? "",
     inaktiv:           a.inaktiv ?? false,
+    // Fázis 6C – raktárkészlet: a jelenlegi, ténylegesen raktáron lévő
+    // mennyiség. Csak akkor tölti be nullával, ha még sosem volt beállítva –
+    // utána kizárólag adjustAnyagKeszlet / setAnyagKeszlet módosíthatja.
+    keszlet:           a.keszlet ?? 0,
   };
 }
 
@@ -236,6 +240,30 @@ export function updateAnyag(id, updates, meta = {}) {
   }
 
   saveAnyagtorzs(list.map(a => a.id === id ? { ...a, ...updates } : a));
+}
+
+// ─── Fázis 6C – Raktárkészlet ─────────────────────────────────
+// A "keszlet" mező a ténylegesen raktáron lévő mennyiséget tükrözi.
+// Csökken, amikor egy csapatnak anyagot adunk ki (ld. kivitelezesiCsomag.
+// service.js – updateKiadottMennyisegFromMunkalap), nő bevételezéskor vagy
+// kézi korrekciónál (ld. RaktarkeszletPage.jsx). Minden készletváltozást a
+// raktarMozgas.js naplóz (hova, mennyi, mikor, ki) – a keszlet mező maga
+// csak a JELENLEGI állapot, a "miért ennyi" mindig a naplóból derül ki.
+export function adjustAnyagKeszlet(id, delta) {
+  const list = loadAnyagtorzs();
+  const existing = list.find(a => a.id === id);
+  if (!existing) return null;
+  const ujKeszlet = (Number(existing.keszlet) || 0) + (Number(delta) || 0);
+  saveAnyagtorzs(list.map(a => a.id === id ? { ...a, keszlet: ujKeszlet } : a));
+  return ujKeszlet;
+}
+
+export function setAnyagKeszlet(id, ertek) {
+  const list = loadAnyagtorzs();
+  if (!list.some(a => a.id === id)) return null;
+  const ujKeszlet = Number(ertek) || 0;
+  saveAnyagtorzs(list.map(a => a.id === id ? { ...a, keszlet: ujKeszlet } : a));
+  return ujKeszlet;
 }
 
 export function deleteAnyag(id) {

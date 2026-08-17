@@ -96,6 +96,9 @@ export default function AnyagKosarPicker({ value, onChange }) {
                 <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderTop: `1px solid ${C.bg}` }}>
                   <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: C.text, fontWeight: 500 }}>
                     {a.nev} <span style={{ color: C.muted, fontSize: 11 }}>({a.egyseg})</span>
+                    <div style={{ fontSize: 10.5, color: (Number(a.keszlet) || 0) <= 0 ? C.danger : C.muted }}>
+                      Készleten: {a.keszlet ?? 0} {a.egyseg}
+                    </div>
                   </div>
                   <button type="button" onClick={() => addAnyag(a)}
                     style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 9px", background: kosarban ? C.successLight : C.accentLight, color: kosarban ? C.success : C.accent, border: "none", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: FONT, flexShrink: 0 }}>
