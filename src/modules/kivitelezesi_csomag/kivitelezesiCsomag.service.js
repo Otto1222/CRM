@@ -160,6 +160,47 @@ export function addKeziTetelToKivitelezesiCsomag(csomagId, anyagtorzsId, mennyis
 }
 
 /**
+ * Több anyag egyszerre történő felvitele a Kivitelezési Csomagba, egy
+ * kosár-jellegű kiválasztásból (ld. AnyagKosarPicker) – ez a "projekt
+ * létrehozása UTÁN, a tételes anyaglista összeállítása" lépés fővállalkozói /
+ * belső (kézi) projekteknél: a PM itt adja meg, mi kell összesen a
+ * projekthez, MIELŐTT bármelyik munkalapot kiosztaná egy csapatnak.
+ *
+ * Már szereplő anyagnál a mennyiség HOZZÁADÓDIK a meglévő tervezett/kiadandó
+ * mennyiséghez (nem felülírja) – így több körben is bővíthető a lista.
+ * Új anyagnál új tétel jön létre (createKeziTetelPillanatkep mintájára),
+ * tervezett = kiadandó = a megadott mennyiség.
+ */
+export function addAnyagokBulkToKivitelezesiCsomag(csomagId, picks = [], user = "") {
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) {
+    throw new Error("A Kivitelezési Csomag nem található.");
+  }
+  if (isKivitelezesiCsomagSzerkesztesTiltott(csomag.status)) {
+    throw new Error("Lezárt vagy elszámolt csomagba nem illeszthető be új tétel.");
+  }
+  const validPicks = (picks || []).filter(p => p.anyagtorzsId && (Number(p.mennyiseg) || 0) > 0);
+  if (validPicks.length === 0) return csomag;
+
+  const tetelek = [...(csomag.tetelek || [])];
+  for (const pick of validPicks) {
+    const menny = Number(pick.mennyiseg) || 0;
+    const idx = tetelek.findIndex(t => t.anyagtorzs_id === pick.anyagtorzsId);
+    if (idx >= 0) {
+      tetelek[idx] = {
+        ...tetelek[idx],
+        tervezettMennyiseg: (Number(tetelek[idx].tervezettMennyiseg) || 0) + menny,
+        kiadandoMennyiseg:  (Number(tetelek[idx].kiadandoMennyiseg) || 0) + menny,
+      };
+    } else {
+      const uj = createKeziTetelPillanatkep(pick.anyagtorzsId, { tervezettMennyiseg: menny, kiadandoMennyiseg: menny });
+      if (uj) tetelek.push(uj);
+    }
+  }
+  return updateKivitelezesiCsomag(csomagId, { tetelek }, user);
+}
+
+/**
  * Kivitelezési Csomag státuszváltása (Fázis 4D – belső mennyiség-életút).
  *
  * A folyamat lineáris (Tervezet → PM jóváhagyta → Komissiózás alatt →
