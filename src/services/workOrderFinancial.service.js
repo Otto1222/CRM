@@ -17,6 +17,7 @@ import {
   ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_HOZOTT_ANYAG,
   ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_NULLAS_TOVABBSZAMLAZAS,
 } from "../lib/workflowRules.js";
+import { buildBeveteliTetelekKosarbol, vanDijtablaKosar as hasDijtablaKosar } from "../modules/fovallalkozok/dijtablaBevetel.js";
 
 const TETELEK_KEY = id => `munkalap_tetelek_${id}`;
 const dispatch    = col =>
@@ -197,56 +198,82 @@ export function calcEsmentProjektPenzugy(projekt) {
   const input = { darabszam: Number(darabszam) || 1, tavKm: Number(tavKm) || 0 };
 
   // ── Fővállalkozói bevétel ──────────────────────────────────
-  const fvSzabalyok    = loadSzabalyok();
-  const egyezoFvSzab   = findEgyezoSzabalyok(fovallalkoziId, munkatipus, fvSzabalyok);
-  const autoBevitel    = egyezoFvSzab.reduce((s, sz) => s + calcSzabalyOsszeg(sz, input), 0);
+  // P0-012: a díjtétel-katalógusból összeállított tétel-kosár (ld.
+  // DijtetelKosarPicker.jsx) ELSŐBBSÉGET élvez a régi, munkatípus-alapú
+  // szabály-motorral szemben, ha a projekten van rögzített kosár – ez a
+  // motor ("Motor A") az, ami ténylegesen megjelenik a dashboardon, a
+  // projektlistán, a riportokon és a projekt-részletező füleken, ezért itt
+  // MUSZÁJ ugyanígy kezelni, mint a ProjektForm létrehozás-előnézetében
+  // (settlementCalculator.js) – ld. dijtablaBevetel.js (közös logika).
+  const fvSzabalyok  = loadSzabalyok();
+  const vanKosar     = hasDijtablaKosar(penzugy);
+  const egyezoFvSzab = vanKosar ? [] : findEgyezoSzabalyok(fovallalkoziId, munkatipus, fvSzabalyok);
 
-  const nettoBevitel   = (felultBevitel !== null && felultBevitel !== undefined)
-    ? Number(felultBevitel)
-    : autoBevitel;
-
-  // Bevételi tételek generálása szabályokból (táblázatban szerkeszthető)
-  const beveteliTetelek = egyezoFvSzab.map(sz => {
-    const autoNetto      = calcSzabalyOsszeg(sz, input);
-    const modLabel       = ELSZAMOLASI_MODOK.find(m => m.id === sz.mod)?.label || sz.mod;
-    const megnevezes     = `${sz.munkatipus || "Általános"} – ${modLabel}`;
-    const savedTetelek   = loadTetelek(projekt.id);
-    const saved          = savedTetelek.find(t => t.tetelTipusId === sz.id);
-    const felulirtNetto  = saved?.felulirva ? saved.felulirtNetto : null;
-    return {
-      id:               `t_${sz.id}`,
-      tetelTipusId:     sz.id,
-      megnevezes,
-      autoNetto,
-      felulirtNetto,
-      hasznalandoNetto: felulirtNetto !== null ? felulirtNetto : autoNetto,
-      megjegyzes:       szabalyLeiras(sz),
-      felulirva:        felulirtNetto !== null && felulirtNetto !== autoNetto,
-      hiany:            autoNetto === 0 && sz.mod === "savos",
-    };
-  });
-
-  // Ha nincs egyező FV szabály de van régi típusú szabály a rendszerben (backward compat)
-  if (beveteliTetelek.length === 0 && fovallalkoziId) {
-    // Régi `nettoBevitel`-t tartalmazó szabály fallback
-    const fvk = loadFovallalkozok();
-    const legacySzab = fvSzabalyok.find(s => {
-      const ownId = s.tulajdonosId || s.fovallalkoziId;
-      return ownId === fovallalkoziId && s.aktiv !== false &&
-        (s.munkatipus === munkatipus || !s.munkatipus) && s.nettoBevitel > 0 && !s.mod;
+  let beveteliTetelek;
+  if (vanKosar) {
+    // A kosár-tételek pillanatképek – nincs "felülírt" napló, mint a régi
+    // szabály-alapú tételeknél (a kosár maga a szerkeszthető forma a
+    // ProjektForm-on), de ugyanazt az alakot adjuk vissza, hogy a hívó UI
+    // (Dashboard, ProjektTable, TabPenzugy…) ne kelljen tudjon a különbségről.
+    beveteliTetelek = buildBeveteliTetelekKosarbol(penzugy).map((t, i) => ({
+      id:               `t_dijtabla_${i}`,
+      tetelTipusId:      t.szabalyId,
+      megnevezes:        t.megnevezes,
+      autoNetto:         t.autoNetto,
+      felulirtNetto:     null,
+      hasznalandoNetto:  t.autoNetto,
+      megjegyzes:        t.megjegyzes,
+      felulirva:         false,
+      hiany:             false,
+    }));
+  } else {
+    // Bevételi tételek generálása szabályokból (táblázatban szerkeszthető)
+    beveteliTetelek = egyezoFvSzab.map(sz => {
+      const autoNetto      = calcSzabalyOsszeg(sz, input);
+      const modLabel       = ELSZAMOLASI_MODOK.find(m => m.id === sz.mod)?.label || sz.mod;
+      const megnevezes     = `${sz.munkatipus || "Általános"} – ${modLabel}`;
+      const savedTetelek   = loadTetelek(projekt.id);
+      const saved          = savedTetelek.find(t => t.tetelTipusId === sz.id);
+      const felulirtNetto  = saved?.felulirva ? saved.felulirtNetto : null;
+      return {
+        id:               `t_${sz.id}`,
+        tetelTipusId:     sz.id,
+        megnevezes,
+        autoNetto,
+        felulirtNetto,
+        hasznalandoNetto: felulirtNetto !== null ? felulirtNetto : autoNetto,
+        megjegyzes:       szabalyLeiras(sz),
+        felulirva:        felulirtNetto !== null && felulirtNetto !== autoNetto,
+        hiany:            autoNetto === 0 && sz.mod === "savos",
+      };
     });
-    if (legacySzab) {
-      beveteliTetelek.push({
-        id: `t_${legacySzab.id}`, tetelTipusId: legacySzab.id,
-        megnevezes: legacySzab.munkatipus || "Általános",
-        autoNetto: legacySzab.nettoBevitel || 0,
-        felulirtNetto: null,
-        hasznalandoNetto: legacySzab.nettoBevitel || 0,
-        megjegyzes: "Régi formátumú szabály",
-        felulirva: false, hiany: false,
+
+    // Ha nincs egyező FV szabály de van régi típusú szabály a rendszerben (backward compat)
+    if (beveteliTetelek.length === 0 && fovallalkoziId) {
+      // Régi `nettoBevitel`-t tartalmazó szabály fallback
+      const legacySzab = fvSzabalyok.find(s => {
+        const ownId = s.tulajdonosId || s.fovallalkoziId;
+        return ownId === fovallalkoziId && s.aktiv !== false &&
+          (s.munkatipus === munkatipus || !s.munkatipus) && s.nettoBevitel > 0 && !s.mod;
       });
+      if (legacySzab) {
+        beveteliTetelek.push({
+          id: `t_${legacySzab.id}`, tetelTipusId: legacySzab.id,
+          megnevezes: legacySzab.munkatipus || "Általános",
+          autoNetto: legacySzab.nettoBevitel || 0,
+          felulirtNetto: null,
+          hasznalandoNetto: legacySzab.nettoBevitel || 0,
+          megjegyzes: "Régi formátumú szabály",
+          felulirva: false, hiany: false,
+        });
+      }
     }
   }
+
+  const autoBevitel  = beveteliTetelek.reduce((s, t) => s + t.autoNetto, 0);
+  const nettoBevitel = (felultBevitel !== null && felultBevitel !== undefined)
+    ? Number(felultBevitel)
+    : autoBevitel;
 
   // ── Alvállalkozói bér ────────────────────────────────────
   const csapatId = penzugy.csapatId || projekt.csapatId;

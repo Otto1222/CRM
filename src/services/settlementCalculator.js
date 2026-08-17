@@ -20,6 +20,7 @@ import { loadAvSzabalyok, calcCsapatAlvallalkozoiBer, getCsapat } from "../modul
 import { loadFovallalkozok } from "../modules/fovallalkozok/fovallalkozo.service.js";
 import { loadKarteritesek } from "../lib/karterites.js";
 import { updateItem } from "../lib/localDb.js";
+import { buildBeveteliTetelekKosarbol, vanDijtablaKosar as hasDijtablaKosar } from "../modules/fovallalkozok/dijtablaBevetel.js";
 
 // ─── Típus: ElszamolasInput ───────────────────────────────────
 /**
@@ -78,43 +79,6 @@ function buildBeveteliTetelek(fovallalkoziId, munkatipus, input) {
       hiany:       autoNetto === 0 && sz.mod === "savos",
     };
   });
-}
-
-/**
- * Tétel-kosár alapú bevétel (ld. DijtetelKosarPicker.jsx / dijtetelKatalogus.*) –
- * ha a projekten van rögzített díjtábla-tétel-kosár, EZ a bevétel forrása,
- * a munkatípus-alapú szabály-motor helyett (ugyanazt az alakot adja vissza,
- * mint buildBeveteliTetelek, hogy a UI-nak ne kelljen tudnia a különbségről).
- * A km-díj sor egyszer, összesítve kerül hozzá (ld. penzugy.dijtablaKmDijFtKm –
- * pillanatképként rögzített Ft/km, a mennyiség a projekt aktuális távolsága).
- */
-function buildBeveteliTetelekKosarbol(penzugy) {
-  const tetelek = penzugy?.dijtablaTetelek || [];
-  const sorok = tetelek.map(t => ({
-    szabalyId:   t.katalogusTetelId,
-    megnevezes:  `${t.kod ? t.kod + " – " : ""}${t.nev} (${t.mennyiseg} ${t.egyseg})`,
-    mod:         "dijtabla",
-    autoNetto:   Math.round((Number(t.mennyiseg) || 0) * (Number(t.egysegar) || 0)),
-    megjegyzes:  `${(Number(t.egysegar) || 0).toLocaleString("hu-HU")} Ft / ${t.egyseg}`,
-    felulirva:   false,
-    hiany:       false,
-  }));
-
-  const kellKm = tetelek.some(t => t.kmDij) && Number(penzugy?.dijtablaKmDijFtKm) > 0;
-  if (kellKm) {
-    const odaVissza = (Number(penzugy?.tavKm) || 0) * 2;
-    sorok.push({
-      szabalyId:  "dijtabla_km",
-      megnevezes: `Kiszállási díj (oda-vissza ${odaVissza} km)`,
-      mod:        "km",
-      autoNetto:  Math.round(odaVissza * (Number(penzugy?.dijtablaKmDijFtKm) || 0)),
-      megjegyzes: `${penzugy?.dijtablaKmDijFtKm?.toLocaleString?.("hu-HU") || 0} Ft/km`,
-      felulirva:  false,
-      hiany:      false,
-    });
-  }
-
-  return sorok;
 }
 
 // ─── Alvállalkozói bér ────────────────────────────────────────
@@ -188,9 +152,9 @@ export function calcProjektElszamolas(projekt, munkalapok = []) {
   });
 
   // FV bevétel – tétel-kosár elsőbbséget élvez a régi szabály-motorral szemben
-  // (ld. buildBeveteliTetelekKosarbol), ha a projekten van rögzített kosár.
-  const vanDijtablaKosar = Array.isArray(penzugy.dijtablaTetelek) && penzugy.dijtablaTetelek.length > 0;
-  const beveteliTetelek = vanDijtablaKosar
+  // (ld. dijtablaBevetel.js – KÖZÖS a workOrderFinancial.service.js "Motor A"-val,
+  // hogy a valódi dashboard/riportok is ugyanígy számoljanak, ne csak ez az előnézet).
+  const beveteliTetelek = hasDijtablaKosar(penzugy)
     ? buildBeveteliTetelekKosarbol(penzugy)
     : buildBeveteliTetelek(fovallalkoziId, munkatipus, input);
   const autoBevitel = beveteliTetelek.reduce((s, t) => s + t.autoNetto, 0);
