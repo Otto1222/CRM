@@ -13,7 +13,16 @@ export const FOVALLALKOZO_SCHEMA = {
   aktiv:      true,
   megjegyzes: "",
   createdAt:  "",
+  // P0-014: TIG (Teljesítési Igazolás) kiállítási módja – fővállalkozónként
+  // eltérő gyakorlat: van, aki munkánként (projektenként) kér TIG-et, van,
+  // aki egy-egy időszakot (pl. két hetet) összesítve. Ld. tigDocxService.js.
+  tigMod:     "munkankenti",   // "munkankenti" | "idoszaki"
 };
+
+export const TIG_MOD_OPCIOK = [
+  { id: "munkankenti", label: "Munkánkénti", hint: "Egy TIG = egy projekt, a projekt Pénzügy füléről letölthető" },
+  { id: "idoszaki",    label: "Időszaki összesített", hint: "Egy TIG = egy időszak összes elvégzett munkája, a TIG oldalon állítható össze" },
+];
 
 /**
  * Elszámolási szabály – fővállalkozóhoz VAGY alvállalkozói csapathoz.

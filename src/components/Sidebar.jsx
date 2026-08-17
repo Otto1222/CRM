@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard, Users, ClipboardList, Calendar, Settings,
   LogOut, Building2, Receipt, FileText, BarChart3, BookOpen, X,
-  AlertTriangle, LayoutTemplate, ChevronDown, TrendingUp,
+  AlertTriangle, LayoutTemplate, ChevronDown, TrendingUp, FileCheck2,
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getAllowedPages } from "../lib/roles.js";
@@ -51,6 +51,7 @@ const NAV_GROUPS = [
       { id: "szamlak",      label: "Számlák",       icon: Receipt },
       { id: "karteritesek", label: "Kártérítések",  icon: AlertTriangle },
       { id: "riportok",     label: "Riportok",      icon: BarChart3 },
+      { id: "tig",          label: "TIG",           icon: FileCheck2 },
     ],
   },
   {

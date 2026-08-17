@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { Save, Check, Plus, Receipt, RefreshCw, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Save, Check, Plus, Receipt, RefreshCw, CheckCircle2, AlertTriangle, Download } from "lucide-react";
 import { C, FONT } from "../../../lib/constants.js";
 import { ft } from "../../../lib/helpers.js";
 import { calcEsmentProjektPenzugy, ANYAGKOLTSEG_FORRAS } from "../../../services/workOrderFinancial.service.js";
@@ -20,6 +20,8 @@ import { loadSzamlak, createSzamla } from "../../szamlak/szamla.service.js";
 import { getCsapat }         from "../../csapatok/csapat.service.js";
 import { calcMunkalapRiportAdat } from "../../../lib/munkalapRiportHelper.js";
 import { getAnyagelszamolasiModConfig, hasAnyagelszamolasiMod } from "../../../lib/workflowRules.js";
+import { loadFovallalkozok } from "../../fovallalkozok/fovallalkozo.service.js";
+import { hasTigSablon, generateTigDocxEgyProjekt } from "../../../lib/tigDocxService.js";
 
 // Anyagköltség-forrás megjelenítendő rövid neve – P0-2 javítás: a forrás
 // MINDIG látható, hogy pénzügyi vita esetén egyértelmű legyen, honnan jött a szám.
@@ -92,6 +94,9 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
   // Kalkulált adatok
   const kalk = projekt.penzugy?.fovallalkoziId ? calcEsmentProjektPenzugy(projekt) : null;
   const csapat = getCsapat(projekt.penzugy?.csapatId || projekt.csapatId);
+  const fovallalkozo = projekt.penzugy?.fovallalkoziId
+    ? loadFovallalkozok().find(f => f.id === projekt.penzugy.fovallalkoziId)
+    : null;
 
   // Anyagelszámolási mód badge config
   const anyagCfg = getAnyagelszamolasiModConfig(projekt.anyagelszamolasiMod);
@@ -310,6 +315,25 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
               onChange={v => { setRec(p => ({...p, szamlazasStatusz: v})); setMentve(false); }} disabled={!isAdmin || isBelso} />
             <Pills label="TIG státusz" items={TIG_STATUSZOK} value={rec.tigStatusz}
               onChange={v => { setRec(p => ({...p, tigStatusz: v})); setMentve(false); }} disabled={!isAdmin} />
+
+            {fovallalkozo && (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
+                {(fovallalkozo.tigMod || "munkankenti") === "idoszaki" ? (
+                  <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>
+                    ℹ️ <strong>{fovallalkozo.nev}</strong> időszaki, összesített TIG-et használ – a dokumentum a <strong>TIG</strong> menüpontról generálható, több projektet egybefűzve.
+                  </p>
+                ) : hasTigSablon(fovallalkozo.id) ? (
+                  <button type="button" onClick={() => generateTigDocxEgyProjekt(projekt, fovallalkozo)}
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
+                    <Download size={14} /> TIG letöltése (.docx)
+                  </button>
+                ) : (
+                  <p style={{ fontSize: 12, color: C.warning, margin: 0 }}>
+                    ⚠️ Nincs TIG sablon feltöltve <strong>{fovallalkozo.nev}</strong> fővállalkozóhoz. Beállítások → Fővállalkozók → TIG sablon feltöltése.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div style={{ marginTop: 12 }}>

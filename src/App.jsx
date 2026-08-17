@@ -24,6 +24,7 @@ import CsapatokPage from "./modules/csapatok/CsapatokPage.jsx";
 import SzamlakPage from "./modules/szamlak/SzamlakPage.jsx";
 import PwaInstallBanner from "./components/PwaInstallBanner.jsx";
 import RiportokPage from "./pages/RiportokPage.jsx";
+import TigPage from "./pages/TigPage.jsx";
 import NaptarPage from "./pages/NaptarPage.jsx";
 import KarteritesekPage from "./pages/KarteritesekTab.jsx";
 import MunkalapSablonokPage from "./modules/munkalap_sablonok/MunkalapSablonokPage.jsx";
@@ -41,6 +42,7 @@ const PAGE_TITLES = {
   csapat:            "Csapatok",
   naptar:            "Naptár",
   riportok:          "Riportok",
+  tig:               "TIG",
   karteritesek:      "Kártérítések",
   munkalap_sablonok: "ML Sablonok",
   dokumentumok:      "Dokumentumok",
@@ -422,6 +424,7 @@ initSablonok();
             {page === "munkalap_sablonok" && <MunkalapSablonokPage userRole={user?.role} />}
 
             {page === "riportok" && <RiportokPage currentUser={user} />}
+            {page === "tig" && <TigPage currentUser={user} />}
 
             {page === "beallitasok" && (
               <>
