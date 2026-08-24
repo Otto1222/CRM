@@ -51,10 +51,8 @@ export default function Login({ onLogin }) {
       }}>
         <div style={{ animation: "fadeUp .35s ease" }}>
           <div style={{ marginBottom: 28, borderBottom: `2px solid rgba(255,255,255,0.14)`, paddingBottom: 24 }}>
-            <div style={{ fontFamily: FONT_HEADING, fontWeight: 800, fontSize: 36, color: "#fff", letterSpacing: 4, lineHeight: 1 }}>
-              E.D.I.
-            </div>
-            <div style={{ fontFamily: FONT_HEADING, fontWeight: 600, fontSize: 13, color: C.success, letterSpacing: 3, textTransform: "uppercase", marginTop: 4 }}>
+            <img src="/edi-wordmark.png" alt="E.D.I." style={{ height: 40, width: "auto", display: "block" }} />
+            <div style={{ fontFamily: FONT_HEADING, fontWeight: 600, fontSize: 13, color: C.success, letterSpacing: 3, textTransform: "uppercase", marginTop: 10 }}>
               Solutions Kft.
             </div>
             <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 11, color: "rgba(255,255,255,0.45)", letterSpacing: 2, textTransform: "uppercase", marginTop: 10 }}>
@@ -105,12 +103,12 @@ export default function Login({ onLogin }) {
           <div style={{ marginBottom: 28, textAlign: "center" }}>
             <div style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: 56, height: 56, borderRadius: 16,
-              background: C.accent,
-              boxShadow: "0 6px 20px rgba(7,94,86,0.35)",
+              width: 64, height: 64, borderRadius: 16,
+              background: "#fff",
+              boxShadow: "0 6px 20px rgba(7,94,86,0.25)",
               marginBottom: 14,
             }}>
-              <span style={{ fontFamily: FONT, fontWeight: 900, fontSize: 18, color: C.success, letterSpacing: 1 }}>EDI</span>
+              <img src="/edi-logo.png" alt="E.D.I." style={{ width: 56, height: 56, display: "block" }} />
             </div>
             <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 20, color: C.text, letterSpacing: 0.2 }}>
               Bejelentkezés
