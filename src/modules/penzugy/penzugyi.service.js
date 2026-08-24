@@ -153,8 +153,19 @@ export function autoElszamolasElokeszites(projektId, munkalapok, user = "system"
 }
 
 // ─── Dashboard KPI számítás ───────────────────────────────────
-
-export function calcDashboardPenzugyiKpik(projektek) {
+//
+// FONTOS: a fovVarhatoBevetel / sajatVarhatoProfit / belsoMunkaKoltseg
+// SOHA nem a kézzel előkészített `penzugyi` rekordból (upsertPenzugyi /
+// autoElszamolasElokeszites) számol – az csak akkor jön létre, ha valaki
+// megnyitja a projekt Pénzügy fülét, vagy ha MINDEN munkalapja lezárva
+// (ld. workorder.service.js). Egy frissen létrehozott, még folyamatban
+// lévő projektnél ez sosem létezik, ezért a dashboard mindig 0-t mutatott,
+// függetlenül attól, hány valós projekt van. Ehelyett élőben, a projekt
+// aktuális penzugy-adataiból számolunk – ugyanazzal a motorral (Motor A –
+// workOrderFinancial.service.js calcEsmentProjektPenzugy), amit a lenti
+// "Projekt szintű fővállalkozói elszámolás" tábla is használ, így a két
+// blokk sosem mond ellent egymásnak.
+export function calcDashboardPenzugyiKpik(projektek, munkalapok = []) {
   const penzugyik = loadAllPenzugyi();
 
   // Segédfüggvény: projekt + penzügyi rekord összekapcsolása
@@ -164,6 +175,29 @@ export function calcDashboardPenzugyiKpik(projektek) {
 
   const enriched = projektek.map(enrich);
 
+  // Élő kalkuláció projektenként (hibatűrő – egy rossz konfigú projekt
+  // ne dobja el az egész dashboardot).
+  function eloKalk(p) {
+    try { return calcEsmentProjektPenzugy(p) || {}; }
+    catch { return {}; }
+  }
+
+  // Bevétel forrás szerinti feloldása – ugyanaz a szabály, mint
+  // autoElszamolasElokeszites-ben: saját munkánál az elfogadott
+  // ajánlat/tétel a mérvadó, nem a fővállalkozói díjtétel-motor
+  // (aminek saját munkánál nincs is mit számolnia).
+  function resolveBevetel(p, kalk) {
+    if (p.forrás === "sajat_ajanlat" || p.forrás === "saját_ügyfél") {
+      return p.elfogadottAjanlat || kalk.nettoBevitel || 0;
+    }
+    if (p.forrás === "fovallalkozoi_munka" || p.forrás === "fővállalkozói") {
+      return kalk.nettoBevitel || 0;
+    }
+    return 0;
+  }
+
+  const aktivProjektek = enriched.filter(p => p.status !== "Lezárt");
+
   return {
     // Készre jelentett, de elszámolás nincs előkészítve → piros figyelmeztetés
     keszreJelentettElszamolasNelkul: enriched.filter(p =>
@@ -171,27 +205,41 @@ export function calcDashboardPenzugyiKpik(projektek) {
       (!p._penzugyi || p._penzugyi.elszamolasStatusz === "Nincs előkészítve")
     ).length,
 
-    // Számlázható projektek (projekt státusz = Számlázható)
+    // Számlázható projektek (projekt státusz = Számlázható) – ez már eddig is
+    // élőben, a projekt.status-ból jött, nem a penzugyi rekordból.
     szamlazhatoProjektek: enriched.filter(p => p.status === "Számlázható"),
 
-    // Számlázva, de nem kifizetett
+    // Számlázva, de nem kifizetett – ez valódi számlázási esemény, csak a
+    // penzugyi rekordban követhető (nincs rá projekt.status érték).
     szamlazvaKifizetesre: enriched.filter(p =>
       p._penzugyi?.szamlazasStatusz === "Számlázva"
     ),
 
-    // FV várható bevétel (fovallalkozoi_munka, nem lezárt)
-    fovVarhatoBevetel: enriched
-      .filter(p => p.forrás === "fovallalkozoi_munka" && p.status !== "Lezárt")
-      .reduce((s, p) => s + (p._penzugyi?.bevetelNetto || 0), 0),
+    // FV várható bevétel – élő kalkuláció minden aktív fővállalkozói
+    // projektre, nem csak a kézzel előkészítettekre.
+    fovVarhatoBevetel: aktivProjektek
+      .filter(p => p.forrás === "fovallalkozoi_munka" || p.forrás === "fővállalkozói")
+      .reduce((s, p) => s + resolveBevetel(p, eloKalk(p)), 0),
 
-    // Saját projektek várható profitja (sajat_ajanlat, nem lezárt)
-    sajatVarhatoProfit: enriched
-      .filter(p => p.forrás === "sajat_ajanlat" && p.status !== "Lezárt")
-      .reduce((s, p) => s + (p._penzugyi?.profitNetto || 0), 0),
+    // Saját projektek várható profitja – élő bevétel (elfogadott ajánlat)
+    // mínusz élő költség (Motor A), minden aktív saját munkára.
+    sajatVarhatoProfit: aktivProjektek
+      .filter(p => p.forrás === "sajat_ajanlat" || p.forrás === "saját_ügyfél")
+      .reduce((s, p) => {
+        const kalk = eloKalk(p);
+        return s + (resolveBevetel(p, kalk) - (kalk.osszesKolts || 0));
+      }, 0),
 
-    // Belső munkák költsége (belso_munka)
+    // Belső munkák költsége – a hozzájuk tartozó munkalapok tényleges
+    // anyag- és munkadíj-tételeiből összegezve (nincs bevétel, csak költség).
     belsoMunkaKoltseg: enriched
       .filter(p => p.forrás === "belso_munka")
-      .reduce((s, p) => s + (p._penzugyi?.osszesKoltsegNetto || 0), 0),
+      .reduce((s, p) => {
+        const sajatMls = munkalapok.filter(m => m.projektId === p.id);
+        const koltseg = sajatMls.reduce((x, m) => x +
+          (m.items || []).reduce((y, i) => y + (i.net || i.ar || 0) * (i.qty || i.mennyiseg || 1), 0) +
+          (m.munkaeroDij || 0) + (m.kiszallasiDij || 0) + (m.egyebKolts || 0), 0);
+        return s + koltseg;
+      }, 0),
   };
 }

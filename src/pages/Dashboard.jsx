@@ -274,9 +274,9 @@ export default function Dashboard({ user }) {
   }, [projektek]);
 
   const penzugyiKpik = useMemo(() => {
-    try { return calcDashboardPenzugyiKpik(projektek); }
+    try { return calcDashboardPenzugyiKpik(projektek, munkalapok); }
     catch { return null; }
-  }, [projektek]);
+  }, [projektek, munkalapok]);
 
   function toggleSort(f) {
     if (sortField === f) setSortDir(d => d === "asc" ? "desc" : "asc");
