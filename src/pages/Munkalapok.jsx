@@ -1028,7 +1028,24 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
             {["Felmérés","Befejezett Felmérés","Kiosztásra vár","Kivitelezésre vár","Megkezdésre Vár","Folyamatban","Kivitelezés","Ellenőrzés alatt","Lezárva","Számlázva","Kész","Meghiúsult"].map(s=>{
               const cfg=STATUS_CFG[s]||{bg:C.bg,text:C.muted,dot:C.muted};
-              return <button key={s} onClick={()=>{updateItem("munkalapok",m.id,{status:s});window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));if(onRefresh)onRefresh();}} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
+              return <button key={s} onClick={()=>{
+                // Volt egy inkonzisztencia: ez a gomb eddig nyers updateItem-mel
+                // írt (nem hívta a workorder.service.js updateWorkorder()-t),
+                // ezért NEM futott le a syncProjektFromWorkorders() – a projekt
+                // állapota itt sosem frissült, szemben a bal oldali "Infók" fül
+                // azonos célú gombjaival. Most ugyanazt a hívást használja mindkét hely.
+                import("../services/workorder.service.js").then(({updateWorkorder}) => {
+                  updateWorkorder(m.id, {status:s, statusSzin:cfg.dot}, userRole);
+                  window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
+                  if (m.projektId) {
+                    import("../modules/projektek/projektWorkflow.js").then(({syncProjektFromWorkorders}) => {
+                      syncProjektFromWorkorders(m.projektId);
+                      window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));
+                    });
+                  }
+                  if(onRefresh)onRefresh();
+                });
+              }} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
             })}
           </div>
           {/* PM Workflow gyorsgombok */}

@@ -299,6 +299,21 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
               {kalk.anyagelszamolasiModNote && (
                 <p style={{ fontSize: 11, color: C.accent, fontWeight: 600, marginTop: 4 }}>ℹ {kalk.anyagelszamolasiModNote}</p>
               )}
+              {/* Költség-oldali hiányos konfig – ugyanolyan fontos, mint a
+                  bevétel-oldali hianyosTetelek, csak eddig nem volt jelezve:
+                  van hozzárendelt csapat, de sem AV szabály, sem kézi
+                  csapatbér nincs beállítva, ezért a csapatköltség hamisan
+                  0 Ft-nak tűnik, nem "nincs is költség"-nek. */}
+              {csapat && kalk.csapatBer === 0 && kalk.alvallalkozoiBer === 0 && (
+                <p style={{ fontSize: 11, color: C.danger, fontWeight: 600, marginTop: 8 }}>
+                  ⚠ Van hozzárendelt csapat ({csapat.nev}), de nincs se AV szabály, se kézi csapatbér beállítva – a csapatköltség jelenleg 0 Ft. Állítsd be: Beállítások → Csapatok (AV szabály), vagy add meg kézzel a Tényleges költségeknél.
+                </p>
+              )}
+              {(projekt.penzugy?.tavKm || 0) > 0 && kalk.utikoltség === 0 && (
+                <p style={{ fontSize: 11, color: C.danger, fontWeight: 600, marginTop: 8 }}>
+                  ⚠ A projekthez {projekt.penzugy.tavKm} km táv van rögzítve, de az útiköltség 0 Ft – ehhez nincs automatikus km-alapú számítás, csak kézi rögzítés (Tényleges költségek → Km / Kiszállás).
+                </p>
+              )}
             </div>
           )}
 
