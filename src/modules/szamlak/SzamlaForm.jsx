@@ -4,7 +4,7 @@ import { C, FONT } from "../../lib/constants";
 import { loadLocal } from "../../lib/localDb";
 import { getAktivFovallalkozok } from "../fovallalkozok/fovallalkozo.service";
 import {
-  SZAMLA_STATUSZOK_KIMENO, SZAMLA_STATUSZOK_BEJOVO, AFA_KULCSOK,
+  SZAMLA_STATUSZOK_KIMENO, SZAMLA_STATUSZOK_BEJOVO, AFA_KULCSOK, KOLTSEG_KATEGORIAK,
 } from "./szamla.schema";
 import { createSzamla, updateSzamla } from "./szamla.service";
 
@@ -53,6 +53,7 @@ export default function SzamlaForm({ szamla, onClose, onSaved, currentUser }) {
     fizetettDatum:    szamla?.fizetettDatum     || "",
     status:           szamla?.status            || "Kiállítva",
     megjegyzes:       szamla?.megjegyzes        || "",
+    koltsegKategoria: szamla?.koltsegKategoria  || "",
   });
   const [hiba, setHiba] = useState("");
   const [saving, setSaving] = useState(false);
@@ -228,6 +229,20 @@ export default function SzamlaForm({ szamla, onClose, onSaved, currentUser }) {
                   <option value="">— Szállító kiválasztása —</option>
                   {fovallalkozok.map(f => (
                     <option key={f.id} value={f.id}>{f.nev}</option>
+                  ))}
+                </select>
+              </Field>
+            )}
+
+            {/* Költség-kategória – csak bejövő számlánál, hogy a projekt
+                "Tényleges költségek" fülén automatikusan a megfelelő sorba
+                számítson bele (ld. TabPenzugy.jsx). */}
+            {isBejovo && (
+              <Field label="Költség-kategória (a projekt elszámolásához)" half>
+                <select value={form.koltsegKategoria} onChange={e => upd("koltsegKategoria", e.target.value)} style={inp}>
+                  <option value="">— Nincs kategorizálva —</option>
+                  {KOLTSEG_KATEGORIAK.map(k => (
+                    <option key={k.id} value={k.id}>{k.label}</option>
                   ))}
                 </select>
               </Field>

@@ -17,7 +17,9 @@ import {
 } from "../../../lib/penzugyiRules.js";
 import { getPenzugyi, upsertPenzugyi, autoElszamolasElokeszites } from "../../penzugy/penzugyi.service.js";
 import { PENZUGYI_SCHEMA }   from "../../penzugy/penzugyi.schema.js";
-import { loadSzamlak, createSzamla } from "../../szamlak/szamla.service.js";
+import { loadSzamlak } from "../../szamlak/szamla.service.js";
+import { KOLTSEG_KATEGORIAK, getStatusConfig as getSzamlaStatusConfig } from "../../szamlak/szamla.schema.js";
+import SzamlaForm from "../../szamlak/SzamlaForm.jsx";
 import { getCsapat }         from "../../csapatok/csapat.service.js";
 import { calcMunkalapRiportAdat } from "../../../lib/munkalapRiportHelper.js";
 import { getAnyagelszamolasiModConfig, hasAnyagelszamolasiMod } from "../../../lib/workflowRules.js";
@@ -84,15 +86,14 @@ function Pills({ label, items, value, onChange, disabled, canGo, onBlocked }) {
 }
 
 // ─── Számla badge ─────────────────────────────────────────────
-function SzamlaBadge({ statusz }) {
-  const cfg = {
-    "Kiállítva":    { bg: C.warningLight, color: C.warning },
-    "Fizetésre vár":{ bg: C.accentLight, color: C.accent },
-    "Fizetve":      { bg: C.successLight, color: C.success },
-    "Késedelmes":   { bg: C.dangerLight, color: C.danger },
-  }[statusz] || { bg: C.bg, color: C.muted };
+// A kimenő és bejövő számláknak külön státuszkészletük van (ld.
+// szamla.schema.js SZAMLA_STATUSZOK_KIMENO / _BEJOVO) – a badge a valódi
+// kategória-színt használja a getStatusConfig()-on keresztül, nem egy külön,
+// csak félig lefedő saját színtáblát.
+function SzamlaBadge({ statusz, tipus }) {
+  const cfg = getSzamlaStatusConfig(statusz, tipus);
   return (
-    <span style={{ background: cfg.bg, color: cfg.color, borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>
+    <span style={{ background: cfg.bg, color: cfg.szin, borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>
       {statusz}
     </span>
   );
@@ -139,11 +140,16 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
   // Számlák
   const [szamlak, setSzamlak] = useState([]);
   const [ujOpen, setUjOpen]   = useState(false);
-  const [ujForm, setUjForm]   = useState({
-    tipus: "kimeno", szamlaSzam: "",
-    kiallitasDatum: new Date().toISOString().slice(0, 10),
-    fizetesiHatarido: "", nettoOsszeg: "", megjegyzes: "",
-  });
+
+  // Bejövő (szállítói/alvállalkozói) számlák összege kategóriánként – ezekből
+  // tölthető fel egy kattintással a "Tényleges költségek" fül, hogy egy
+  // beérkezett számlát ne kelljen még egyszer kézzel is beírni.
+  const bejovoSzamlaOsszegek = szamlak
+    .filter(s => s.tipus === "bejovo" && s.koltsegKategoria)
+    .reduce((acc, s) => {
+      acc[s.koltsegKategoria] = (acc[s.koltsegKategoria] || 0) + (s.nettoOsszeg || 0);
+      return acc;
+    }, {});
 
   function loadSzamlakLocal() {
     setSzamlak(loadSzamlak().filter(s => s.projektId === projekt.id));
@@ -185,11 +191,17 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
     setMentve(false);
   }
 
-  function handleUjSzamla() {
-    if (!ujForm.szamlaSzam || !ujForm.nettoOsszeg) { alert("Számlaszám és nettó összeg kötelező!"); return; }
-    createSzamla({ ...ujForm, nettoOsszeg: Number(ujForm.nettoOsszeg), projektId: projekt.id, projektKod: projekt.projektkod, clientNev: projekt.clientNev || "" }, currentUser?.name || "");
-    setUjOpen(false);
-    setUjForm({ tipus: "kimeno", szamlaSzam: "", kiallitasDatum: new Date().toISOString().slice(0,10), fizetesiHatarido: "", nettoOsszeg: "", megjegyzes: "" });
+  // A kategorizált bejövő számlák összegével tölti fel a "Tényleges
+  // költségek" mezőket – amit egy számlán már rögzítettél, azt itt nem
+  // kell még egyszer kézzel beírni.
+  function handleSzamlakAtvetel() {
+    setRec(p => {
+      const n = { ...p };
+      KOLTSEG_KATEGORIAK.forEach(k => { n[k.id] = bejovoSzamlaOsszegek[k.id] || 0; });
+      n.osszesKoltsegNetto = KOLTSEG_KATEGORIAK.reduce((s, k) => s + (n[k.id] || 0), 0);
+      return n;
+    });
+    setMentve(false);
   }
 
   const isBelso = projekt.forrás === "belso_munka";
@@ -317,14 +329,24 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
             látható élő <strong>tervezett</strong> kalkuláció. A kettő szándékosan különbözhet (pl. valós anyagár
             eltér a tervezettől), de indulásnak érdemes a tervezett értékekből kiindulni.
           </p>
-          {kalk && (
-            <button type="button" onClick={handleTervAtvetel} disabled={!isAdmin}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", marginBottom: 14,
-                background: "#fff", border: `1.5px solid ${C.accent}`, color: C.accent, borderRadius: 9,
-                cursor: isAdmin ? "pointer" : "default", fontWeight: 700, fontSize: 12.5, fontFamily: FONT }}>
-              <RefreshCw size={13} /> Tervezett értékek átvétele
-            </button>
-          )}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+            {kalk && (
+              <button type="button" onClick={handleTervAtvetel} disabled={!isAdmin}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px",
+                  background: "#fff", border: `1.5px solid ${C.accent}`, color: C.accent, borderRadius: 9,
+                  cursor: isAdmin ? "pointer" : "default", fontWeight: 700, fontSize: 12.5, fontFamily: FONT }}>
+                <RefreshCw size={13} /> Tervezett értékek átvétele
+              </button>
+            )}
+            {Object.keys(bejovoSzamlaOsszegek).length > 0 && (
+              <button type="button" onClick={handleSzamlakAtvetel} disabled={!isAdmin}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px",
+                  background: "#fff", border: `1.5px solid ${C.success}`, color: C.success, borderRadius: 9,
+                  cursor: isAdmin ? "pointer" : "default", fontWeight: 700, fontSize: 12.5, fontFamily: FONT }}>
+                <Receipt size={13} /> Kategorizált számlák összegének átvétele
+              </button>
+            )}
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {[
               { label: "Anyagköltség",           key: "anyagKoltsegNetto",        terv: kalk?.anyagkoltság },
@@ -336,7 +358,9 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
             ].map(f => (
               <div key={f.key}>
                 <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>
-                  {f.label} (Ft) {f.terv > 0 && <span style={{ fontWeight: 600, color: C.accent, textTransform: "none", letterSpacing: 0 }}>· terv: {ft(f.terv)}</span>}
+                  {f.label} (Ft)
+                  {f.terv > 0 && <span style={{ fontWeight: 600, color: C.accent, textTransform: "none", letterSpacing: 0 }}> · terv: {ft(f.terv)}</span>}
+                  {bejovoSzamlaOsszegek[f.key] > 0 && <span style={{ fontWeight: 600, color: C.success, textTransform: "none", letterSpacing: 0 }}> · számlákból: {ft(bejovoSzamlaOsszegek[f.key])}</span>}
                 </label>
                 <input type="number" min="0" disabled={!isAdmin}
                   value={rec[f.key] || ""}
@@ -467,52 +491,30 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
               {szamlak.map(s => (
                 <div key={s.id} style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                   <Receipt size={16} color={s.tipus === "kimeno" ? C.success : C.warning} style={{ flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 120 }}>
-                    <p style={{ fontWeight: 700, fontSize: 13, color: C.text, margin: 0 }}>{s.szamlaSzam || s.id}</p>
+                  <div style={{ flex: 1, minWidth: 160 }}>
+                    <p style={{ fontWeight: 700, fontSize: 13, color: C.text, margin: 0 }}>{s.szamlaszam || s.id}</p>
                     <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 0" }}>
-                      {s.tipus === "kimeno" ? "Kimenő" : "Bejövő"} · {s.kiallitasDatum}
+                      {s.tipus === "kimeno" ? "Kimenő" : "Bejövő"} · {s.kiallitasDatuma}
+                      {s.tipus === "bejovo" && s.szallitoNev && <> · {s.szallitoNev}</>}
+                      {s.tipus === "bejovo" && s.koltsegKategoria && <> · {KOLTSEG_KATEGORIAK.find(k => k.id === s.koltsegKategoria)?.label}</>}
                     </p>
                   </div>
                   <p style={{ fontWeight: 800, fontSize: 14, color: C.text, margin: 0, flexShrink: 0 }}>{ft(s.bruttoOsszeg || 0)}</p>
-                  <SzamlaBadge statusz={s.statusz} />
+                  <SzamlaBadge statusz={s.status} tipus={s.tipus} />
                 </div>
               ))}
             </div>
           )}
 
-          {/* Új számla modal */}
+          {/* Új / szerkesztendő számla – a teljes forma (szállító-választó,
+              ÁFA, projekt-kapcsolat), nem egy csonka mini-form. */}
           {ujOpen && (
-            <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-              <div style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 460, padding: 24, fontFamily: FONT, maxHeight: "90vh", overflowY: "auto" }}>
-                <h3 style={{ fontSize: 17, fontWeight: 800, margin: "0 0 18px", color: C.text }}>Új számla – {projekt.projektkod}</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4 }}>Típus</label>
-                    <select value={ujForm.tipus} onChange={e => setUjForm(p => ({...p, tipus: e.target.value}))} style={inp}>
-                      <option value="kimeno">Kimenő (vevői)</option>
-                      <option value="bejovo">Bejövő (szállítói)</option>
-                    </select>
-                  </div>
-                  {[
-                    { label: "Számlaszám *",       key: "szamlaSzam",        ph: "pl. 2026/001" },
-                    { label: "Kiállítás dátuma",   key: "kiallitasDatum",    type: "date" },
-                    { label: "Fizetési határidő",  key: "fizetesiHatarido",  type: "date" },
-                    { label: "Nettó összeg (Ft) *", key: "nettoOsszeg",      type: "number" },
-                    { label: "Megjegyzés",         key: "megjegyzes",        ph: "Opcionális" },
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4 }}>{f.label}</label>
-                      <input type={f.type || "text"} value={ujForm[f.key]} placeholder={f.ph}
-                        onChange={e => setUjForm(p => ({...p, [f.key]: e.target.value}))} style={inp} />
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                  <button onClick={() => setUjOpen(false)} style={{ flex: 1, padding: "11px", border: `1.5px solid ${C.border}`, borderRadius: 9, background: "#fff", cursor: "pointer", fontWeight: 600, fontFamily: FONT }}>Mégse</button>
-                  <button onClick={handleUjSzamla} style={{ flex: 2, padding: "11px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>Mentés</button>
-                </div>
-              </div>
-            </div>
+            <SzamlaForm
+              szamla={{ projektId: projekt.id, projektKod: projekt.projektkod, projektNev: projekt.nev }}
+              currentUser={currentUser}
+              onClose={() => setUjOpen(false)}
+              onSaved={() => loadSzamlakLocal()}
+            />
           )}
         </div>
       )}

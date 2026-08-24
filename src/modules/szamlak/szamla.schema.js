@@ -21,6 +21,19 @@ export const SZAMLA_STATUSZOK_BEJOVO = [
 
 export const AFA_KULCSOK = [27, 5, 0];
 
+// Bejövő (szállítói/alvállalkozói) számla költség-kategóriája – ugyanaz a 6
+// kategória, amit a projekt "Tényleges költségek" fülén rögzítünk (ld.
+// TabPenzugy.jsx), hogy egy beérkezett számla összege közvetlenül be tudjon
+// folyni a megfelelő tényleges-költség sorba, ne kelljen kétszer beírni.
+export const KOLTSEG_KATEGORIAK = [
+  { id: "anyagKoltsegNetto",        label: "Anyagköltség" },
+  { id: "sajatCsapatKoltsegNetto",  label: "Saját csapat munkadíja" },
+  { id: "alvallalkozoKoltsegNetto", label: "Alvállalkozói díj" },
+  { id: "kiszallasKoltsegNetto",    label: "Km / Kiszállás" },
+  { id: "emeloKoltsegNetto",        label: "Emelőgép" },
+  { id: "egyebKoltsegNetto",        label: "Egyéb" },
+];
+
 export const SZAMLA_SCHEMA = {
   id:               "",
   tipus:            "kimeno",  // "kimeno" | "bejovo"
@@ -63,6 +76,10 @@ export const SZAMLA_SCHEMA = {
   status:     "Kiállítva",  // kimeno: Kiállítva/Küldve/Fizetve/Késedelmes/Sztornózva
                              // bejovo: Befogadva/Jóváhagyva/Fizetve/Visszautasított
   megjegyzes: "",
+
+  // Bejövő számla költség-kategóriája (ld. KOLTSEG_KATEGORIAK) – csak
+  // tipus==="bejovo" esetén értelmezett, opcionális. "" = nincs kategorizálva.
+  koltsegKategoria: "",
 
   // PEASE integráció
   peaseId:       "",   // PEASE rendszer belső azonosítója
