@@ -101,8 +101,14 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
   // Anyagelszámolási mód badge config
   const anyagCfg = getAnyagelszamolasiModConfig(projekt.anyagelszamolasiMod);
 
-  // Motor D fallback munkalapok száma
-  const motorDMunkalapok = projektMls.filter(m => calcMunkalapRiportAdat(m, projekt).motor === "D").length;
+  // Motor D fallback munkalapok száma – ez a figyelmeztetés csak fővállalkozói
+  // munkánál értelmes/hibajel: ott VALÓBAN kell FV + munkatípus a pontos
+  // számításhoz. Saját munkánál és belső munkánál nincs (és nem is kell,
+  // hogy legyen) fővállalkozó – ott a Motor D a helyes, elvárt motor, nem
+  // hiányos konfiguráció, ezért ott nem szabad ijesztő hibaüzenetet mutatni.
+  const motorDMunkalapok = projekt.forrás === "fovallalkozoi_munka"
+    ? projektMls.filter(m => calcMunkalapRiportAdat(m, projekt).motor === "D").length
+    : 0;
 
   // Számlák
   const [szamlak, setSzamlak] = useState([]);

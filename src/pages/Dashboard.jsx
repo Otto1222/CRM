@@ -355,14 +355,14 @@ export default function Dashboard({ user }) {
             <p style={{ fontFamily:FONT_HEADING, fontSize:15, fontWeight:800, color: C.text, margin:0, display:"flex", alignItems:"center", gap:8 }}>
               <Building2 size={17} color={C.accent} /> Projektek – Saját / Fővállalkozói / Belső
             </p>
-            <span style={{ fontSize:12, color: C.muted }}>{forrasSplit.total} aktív projekt</span>
+            <span style={{ fontSize:15, fontWeight:800, color: C.text }}>{forrasSplit.total} <span style={{ fontSize:12, fontWeight:600, color:C.muted }}>aktív projekt</span></span>
           </div>
 
           <div style={{ display:"flex", gap:14, flexWrap:"wrap", marginBottom:16 }}>
             <div style={{ position:"relative", overflow:"hidden", flex:"1 1 220px", minWidth:220, background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 18px 16px 20px" }}>
               <div style={{ position:"absolute", left:0, top:0, bottom:0, width:4, background:C.accent }} />
               <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.accent, margin:"0 0 4px" }}>Saját munka</p>
-              <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 6px" }}>{forrasSplit.sajat.count} <span style={{ fontSize:13, fontWeight:700, color:C.muted }}>/ {forrasSplit.total} db</span></p>
+              <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 6px" }}>{forrasSplit.sajat.count} db</p>
               <p style={{ fontSize:11.5, color:C.muted, margin:0 }}>
                 {forrasSplit.sajat.kivitelezés} kivitelezés alatt · {penzugyiKpik ? penzugyiKpik.szamlazhatoProjektek.filter(p => p.forrás === "sajat_ajanlat" || p.forrás === "saját_ügyfél").length : 0} számlázható
               </p>
@@ -370,7 +370,7 @@ export default function Dashboard({ user }) {
             <div style={{ position:"relative", overflow:"hidden", flex:"1 1 220px", minWidth:220, background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 18px 16px 20px" }}>
               <div style={{ position:"absolute", left:0, top:0, bottom:0, width:4, background:C.success }} />
               <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.success, margin:"0 0 4px" }}>Fővállalkozói munka</p>
-              <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 6px" }}>{forrasSplit.fov.count} <span style={{ fontSize:13, fontWeight:700, color:C.muted }}>/ {forrasSplit.total} db</span></p>
+              <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 6px" }}>{forrasSplit.fov.count} db</p>
               <p style={{ fontSize:11.5, color:C.muted, margin:0 }}>
                 {forrasSplit.fov.kivitelezés} kivitelezés alatt · {penzugyiKpik ? penzugyiKpik.szamlazvaKifizetesre.filter(p => p.forrás === "fovallalkozoi_munka" || p.forrás === "fővállalkozói").length : 0} leszámlázva, nem fizetve
               </p>
@@ -378,7 +378,7 @@ export default function Dashboard({ user }) {
             <div style={{ position:"relative", overflow:"hidden", flex:"1 1 220px", minWidth:220, background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 18px 16px 20px" }}>
               <div style={{ position:"absolute", left:0, top:0, bottom:0, width:4, background:C.warning }} />
               <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.warning, margin:"0 0 4px" }}>Belső munka</p>
-              <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 6px" }}>{forrasSplit.belso.count} <span style={{ fontSize:13, fontWeight:700, color:C.muted }}>/ {forrasSplit.total} db</span></p>
+              <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 6px" }}>{forrasSplit.belso.count} db</p>
               <p style={{ fontSize:11.5, color:C.muted, margin:0 }}>Garancia, javítás, karbantartás</p>
             </div>
           </div>
