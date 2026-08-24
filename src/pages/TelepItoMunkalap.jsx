@@ -968,8 +968,12 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
     </div>
   );
 
-  const TABS_BEFORE=[{icon:"📄"},{icon:"📦"},{icon:"📋"}];
-  const TABS_AFTER=[{icon:"📄"},{icon:"📦"},{icon:"📋"},{icon:"⚙️"},{icon:"📐"},{icon:"📷"},{icon:"✅"}];
+  // Feliratok is kellenek a puszta ikon mellé – bare emoji-sorból (📄📦📋⚙️📐📷✅)
+  // a telepítő nem tudja kitalálni, hogy pl. a "⚙️" az anyagfelhasználás
+  // rögzítése, ezért soha nem találta meg ezt a fület (a Kivitelezési Csomag
+  // tételei ide, ebbe a fülbe futnak be – enélkül úgy tűnt, "nem megy tovább").
+  const TABS_BEFORE=[{icon:"📄",label:"Infó"},{icon:"📦",label:"Anyagok"},{icon:"📋",label:"Felmérés"}];
+  const TABS_AFTER=[{icon:"📄",label:"Infó"},{icon:"📦",label:"Anyagok"},{icon:"📋",label:"Felmérés"},{icon:"⚙️",label:"Felhasznált anyag"},{icon:"📐",label:"VBF"},{icon:"📷",label:"Fotók"},{icon:"✅",label:"Ellenőrzés"}];
   const TABS = megkezdve?TABS_AFTER:TABS_BEFORE;
 
   const Header=()=>(
@@ -1000,8 +1004,9 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
   const TabSav=()=>(
     <div style={{ display:"flex",background:"#2C4A6E",overflowX:"auto" }}>
       {TABS.map((t,i)=>(
-        <button key={i} onClick={()=>setActiveTab(i)} style={{ flex:1,padding:"12px 4px",border:"none",background:"transparent",color:activeTab===i?"#fff":C.muted,cursor:"pointer",borderBottom:activeTab===i?"3px solid #fff":"3px solid transparent",fontSize:20,minWidth:44 }}>
-          {t.icon}
+        <button key={i} onClick={()=>setActiveTab(i)} style={{ flex:1,padding:"9px 4px 8px",border:"none",background:"transparent",color:activeTab===i?"#fff":C.muted,cursor:"pointer",borderBottom:activeTab===i?"3px solid #fff":"3px solid transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:58 }}>
+          <span style={{ fontSize:20, lineHeight:1 }}>{t.icon}</span>
+          <span style={{ fontSize:9.5, fontWeight:700, whiteSpace:"nowrap", letterSpacing:.2 }}>{t.label}</span>
         </button>
       ))}
     </div>
