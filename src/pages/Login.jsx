@@ -69,7 +69,7 @@ export default function Login({ onLogin }) {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[
-              "Napelem rendszerek projektvezetése",
+              "Projektvezetés",
               "Tételes árajánlat-készítő",
               "Munkalapok & elszámolások",
             ].map(t => (
