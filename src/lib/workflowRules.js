@@ -29,6 +29,69 @@ export const MUNKALAP_STATUSZOK = [
   { id: "Sikertelen",   szin: "#DC2626", bg: "#FEF2F2", indoklas: true },
 ];
 
+// ─── Munkalap workflow – a VALÓDI, ténylegesen használt út ────────────────
+//
+// A fenti MUNKALAP_STATUSZOK (6 db) sosem felelt meg a valóságnak – egyetlen
+// oldal sem ezt a szótárt írja (ld. constants.js STATUS_CFG, ami a tényleges,
+// ~19 elemű, részben szinonim szótár). Ez itt az az EGYETLEN hely, ami
+// eldönti, milyen sorrendben haladhat egy munkalap – minden felület (Munkalapok
+// admin-nézet, Kivitelező felület, Dashboard összesítő) innen veszi át, hogy
+// ne legyen 3 különböző, egymásnak ellentmondó lépésrend a rendszerben.
+//
+// Két külön útvonal van:
+//   - felmérés-típusú munkalap: Felmérés → Befejezett Felmérés
+//   - minden más (kivitelezés) típusú munkalap: Létrehozva → … → Számlázva
+// "Meghiúsult" mindkét útvonalon bármikor elérhető vészág – onnan viszont
+// csak az útvonal elejére (0. vagy 1. lépés) lehet visszatérni.
+
+export const MUNKALAP_MEGHIUSULT = "Meghiúsult";
+
+export const MUNKALAP_FELMERES_UTVONAL = [
+  { id: "Felmérés",            aliases: [] },
+  { id: "Befejezett Felmérés", aliases: [] },
+];
+
+export const MUNKALAP_FO_UTVONAL = [
+  { id: "Létrehozva",       aliases: [] },
+  { id: "Kiosztásra vár",   aliases: ["Kiosztva csapatnak", "Megkezdésre Vár", "Kivitelezésre vár", "Ütemezett"] },
+  { id: "Folyamatban",      aliases: ["Kivitelezés"] },
+  { id: "Ellenőrzés alatt", aliases: ["Helyszínen lezárva"] },
+  { id: "Jóváhagyva",       aliases: [] },
+  { id: "Számlázásra kész", aliases: ["Kész"] },
+  { id: "Lezárva",          aliases: [] },
+  { id: "Számlázva",        aliases: [] },
+];
+
+/** Melyik útvonalon halad egy adott munkalap, a típusa alapján. */
+export function getMunkalapUtvonal(munkalap) {
+  const tipus = munkalap?.tipus || munkalap?.munkalapTipus || "";
+  return tipus === "Felmérés" ? MUNKALAP_FELMERES_UTVONAL : MUNKALAP_FO_UTVONAL;
+}
+
+function findMunkalapLepesIndex(utvonal, status) {
+  return utvonal.findIndex(l => l.id === status || l.aliases.includes(status));
+}
+
+/**
+ * Engedélyezett-e a currentStatus → nextStatus váltás egy adott munkalapon.
+ * Csak a szomszédos lépésre lehet lépni (előre, vagy vissza egy tévedés
+ * javításához) – 2+ lépést átugrani nem lehet. "Meghiúsult" bármikor
+ * elérhető, onnan pedig csak az útvonal elejére lehet visszatérni.
+ */
+export function canSetMunkalapStatus(munkalap, currentStatus, nextStatus) {
+  if (nextStatus === currentStatus) return true;
+  if (nextStatus === MUNKALAP_MEGHIUSULT) return true;
+  const utvonal = getMunkalapUtvonal(munkalap);
+  if (currentStatus === MUNKALAP_MEGHIUSULT) {
+    const nextIdx = findMunkalapLepesIndex(utvonal, nextStatus);
+    return nextIdx >= 0 && nextIdx <= 1;
+  }
+  const curIdx  = findMunkalapLepesIndex(utvonal, currentStatus);
+  const nextIdx = findMunkalapLepesIndex(utvonal, nextStatus);
+  if (curIdx === -1 || nextIdx === -1) return true; // ismeretlen/legacy érték – ne blokkoljunk
+  return Math.abs(nextIdx - curIdx) === 1;
+}
+
 // ─── Projekt forrás (3 db) ────────────────────────────────────────────────
 
 // P0-007: "sajat_ajanlat" (id NEM változott – a meglévő logika/adatok

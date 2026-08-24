@@ -23,6 +23,7 @@ import {
   ChevronDown, Save
 } from "lucide-react";
 import { C, FONT, FONT_HEADING, STATUS_CFG, WORKFLOW_STATUSES } from "../lib/constants";
+import { getMunkalapUtvonal, canSetMunkalapStatus, MUNKALAP_MEGHIUSULT } from "../lib/workflowRules.js";
 import { getUsers } from "../lib/crmUsers";
 import { loadLocal, updateItem } from "../lib/localDb";
 import { ft, totals, generateId } from "../lib/helpers";
@@ -766,16 +767,21 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
                 {m.ar>0&&(()=>{const k=(m.munkaeroDij||0)+(m.kiszallasiDij||0)+(m.egyebKolts||0)+(m.items||[]).reduce((s,i)=>s+(i.net||0)*(i.qty||1),0);const er=(m.ar||0)-k;return(<div style={{padding:"8px 10px",background:er>=0?C.successLight:C.dangerLight,borderRadius:8}}><p style={{fontSize:12,fontWeight:700,color:er>=0?C.success:C.danger,margin:0}}>Eredmény: {er.toLocaleString("hu-HU")} Ft{m.ar>0&&` (${Math.round((er/m.ar)*100)}%)`}</p></div>);})()}
               </div>
             )}
-            <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, marginBottom:10 }}>Státusz módosítása</p>
+            <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.8, marginBottom:4 }}>Státusz módosítása</p>
+            <p style={{ fontSize:10.5, color:C.muted, margin:"0 0 10px", lineHeight:1.5 }}>Csak a szomszédos lépésre léphetsz – "Meghiúsult" bármikor jelezhető.</p>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {/* Spec 5. pont teljes státusz lista */}
-              {["Létrehozva","Kiosztva csapatnak","Folyamatban","Helyszínen lezárva","Ellenőrzés alatt","Jóváhagyva","Számlázásra kész","Lezárva","Felmérés","Befejezett Felmérés","Meghiúsult"].map(s=>{
+              {/* Egységes munkalap-útvonal (ld. workflowRules.js) – csak a
+                  munkalap saját típusához (felmérés / kivitelezés) tartozó
+                  lépések jelennek meg, plusz a "Meghiúsult" vészág. */}
+              {[...getMunkalapUtvonal(m).map(l=>l.id), MUNKALAP_MEGHIUSULT].map(s=>{
                 const cfg=STATUS_CFG[s]||{bg:C.bg,text:C.muted,dot:C.muted};
                 // Admin-only státuszok: Jóváhagyva, Számlázásra kész, Lezárva
                 const adminOnly = ["Jóváhagyva","Számlázásra kész","Lezárva"].includes(s);
                 const isAdmin = ["Admin","Projektmenedzser","Iroda/Könyvelés"].includes(userRole);
                 if (adminOnly && !isAdmin) return null;
-                return <button key={s} onClick={()=>{
+                const allowed = s===m.status || canSetMunkalapStatus(m, m.status, s);
+                return <button key={s} disabled={!allowed} title={!allowed ? "Ez a lépés innen nem érhető el – csak a szomszédos állapotra léphetsz." : undefined} onClick={()=>{
+                  if (!allowed) return;
                   import("../services/workorder.service.js").then(({updateWorkorder}) => {
                     updateWorkorder(m.id, {status:s, statusSzin:cfg.dot});
                     window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
@@ -788,7 +794,11 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
                     }
                     if(onRefresh)onRefresh();
                   });
-                }} style={{ padding:"8px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
+                }} style={{ padding:"8px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`,
+                  background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:(allowed?C.textSub:"#C7CDD3"),
+                  fontSize:12, fontWeight:600, cursor:allowed?"pointer":"not-allowed", fontFamily:FONT,
+                  textDecoration: (!allowed && m.status!==s) ? "line-through" : "none",
+                  opacity: (!allowed && m.status!==s) ? .6 : 1 }}>{s}</button>;
               })}
             </div>
           </div>
@@ -1024,16 +1034,17 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
           </Card>
         )}
         <Card style={{ padding:"20px 22px", marginBottom:16 }}>
-          <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Státusz módosítása</h4>
+          <h4 style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:C.muted, textTransform:"uppercase", marginBottom:4 }}>Státusz módosítása</h4>
+          <p style={{ fontSize:10.5, color:C.muted, margin:"0 0 10px", lineHeight:1.5 }}>Csak a szomszédos lépésre léphetsz – "Meghiúsult" bármikor jelezhető.</p>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-            {["Felmérés","Befejezett Felmérés","Kiosztásra vár","Kivitelezésre vár","Megkezdésre Vár","Folyamatban","Kivitelezés","Ellenőrzés alatt","Lezárva","Számlázva","Kész","Meghiúsult"].map(s=>{
+            {/* Egységes munkalap-útvonal (ld. workflowRules.js) – ugyanaz a
+                forrás, mint az "Infók" fülön, hogy a két felület sose
+                mondhasson mást a lehetséges lépésekről. */}
+            {[...getMunkalapUtvonal(m).map(l=>l.id), MUNKALAP_MEGHIUSULT].map(s=>{
               const cfg=STATUS_CFG[s]||{bg:C.bg,text:C.muted,dot:C.muted};
-              return <button key={s} onClick={()=>{
-                // Volt egy inkonzisztencia: ez a gomb eddig nyers updateItem-mel
-                // írt (nem hívta a workorder.service.js updateWorkorder()-t),
-                // ezért NEM futott le a syncProjektFromWorkorders() – a projekt
-                // állapota itt sosem frissült, szemben a bal oldali "Infók" fül
-                // azonos célú gombjaival. Most ugyanazt a hívást használja mindkét hely.
+              const allowed = s===m.status || canSetMunkalapStatus(m, m.status, s);
+              return <button key={s} disabled={!allowed} title={!allowed ? "Ez a lépés innen nem érhető el – csak a szomszédos állapotra léphetsz." : undefined} onClick={()=>{
+                if (!allowed) return;
                 import("../services/workorder.service.js").then(({updateWorkorder}) => {
                   updateWorkorder(m.id, {status:s, statusSzin:cfg.dot}, userRole);
                   window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"munkalapok"}}));
@@ -1045,7 +1056,11 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
                   }
                   if(onRefresh)onRefresh();
                 });
-              }} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`, background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:C.textSub, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>{s}</button>;
+              }} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`,
+                background:m.status===s?cfg.bg:"#fff", color:m.status===s?cfg.text:(allowed?C.textSub:"#C7CDD3"),
+                fontSize:12, fontWeight:600, cursor:allowed?"pointer":"not-allowed", fontFamily:FONT,
+                textDecoration: (!allowed && m.status!==s) ? "line-through" : "none",
+                opacity: (!allowed && m.status!==s) ? .6 : 1 }}>{s}</button>;
             })}
           </div>
           {/* PM Workflow gyorsgombok */}

@@ -8,35 +8,41 @@ import { loadLocal } from "../lib/localDb";
 import { calcEsmentProjektPenzugy } from "../services/workOrderFinancial.service.js";
 import { calcDashboardPenzugyiKpik, calcDashboardPenzugyiOsszesito } from "../modules/penzugy/penzugyi.service.js";
 import { formatMunkalapAzonosito } from "../lib/azonositoHelper.js";
+import { MUNKALAP_FO_UTVONAL, MUNKALAP_FELMERES_UTVONAL, MUNKALAP_MEGHIUSULT } from "../lib/workflowRules.js";
 
 // ─── Munkalap-státusz csoportosítás a "Munkák állapot szerint" blokkhoz ──
 // A sok, részben szinonim munkalap-státuszt (ld. constants.js STATUS_CFG,
 // ténylegesen a workflow-oldalak által beírt értékek) néhány, a felhasználó
 // számára értelmes csoportba vonjuk össze – így minden valós státusz látszik,
-// nem csak egy önkényesen kiválasztott 3-4.
+// nem csak egy önkényesen kiválasztott 3-4. A sorrend és a lépések innentől
+// a workflowRules.js EGYETLEN közös forrásából jönnek (ugyanaz, amit a
+// Munkalapok.jsx státusz-gombjai is használnak), hogy a dashboard sose
+// mutathasson más sorrendet, mint ami ténylegesen érvényesíthető.
 const MUNKA_STATUS_BUCKETS = [
-  { label: "Létrehozva",          statuses: ["Létrehozva"] },
-  { label: "Kiosztásra vár",      statuses: ["Kiosztásra vár", "Kiosztva csapatnak", "Megkezdésre Vár", "Kivitelezésre vár", "Ütemezett"] },
-  { label: "Felmérés",            statuses: ["Felmérés"] },
-  { label: "Befejezett felmérés", statuses: ["Befejezett Felmérés"] },
-  { label: "Folyamatban",         statuses: ["Folyamatban", "Kivitelezés"] },
-  { label: "Ellenőrzés alatt",    statuses: ["Ellenőrzés alatt", "Helyszínen lezárva"] },
-  { label: "Jóváhagyva",          statuses: ["Jóváhagyva", "Számlázásra kész", "Kész"] },
-  { label: "Számlázva",           statuses: ["Számlázva"] },
-  { label: "Lezárva",             statuses: ["Lezárva", "Befejezett"] },
-  { label: "Meghiúsult",          statuses: ["Meghiúsult"] },
-];
+  MUNKALAP_FO_UTVONAL[0],       // Létrehozva
+  MUNKALAP_FO_UTVONAL[1],       // Kiosztásra vár
+  MUNKALAP_FELMERES_UTVONAL[0], // Felmérés
+  MUNKALAP_FELMERES_UTVONAL[1], // Befejezett Felmérés
+  MUNKALAP_FO_UTVONAL[2],       // Folyamatban
+  MUNKALAP_FO_UTVONAL[3],       // Ellenőrzés alatt
+  MUNKALAP_FO_UTVONAL[4],       // Jóváhagyva
+  MUNKALAP_FO_UTVONAL[5],       // Számlázásra kész
+  MUNKALAP_FO_UTVONAL[6],       // Lezárva
+  MUNKALAP_FO_UTVONAL[7],       // Számlázva
+].map(l => ({ label: l.id, statuses: [l.id, ...l.aliases] }))
+ .concat([{ label: MUNKALAP_MEGHIUSULT, statuses: [MUNKALAP_MEGHIUSULT] }]);
 
 const MUNKA_STATUS_SZIN = {
   "Létrehozva":          C.muted,
   "Kiosztásra vár":      C.success,
   "Felmérés":            C.success,
-  "Befejezett felmérés": C.success,
+  "Befejezett Felmérés": C.success,
   "Folyamatban":         C.warning,
   "Ellenőrzés alatt":    C.warning,
   "Jóváhagyva":          C.success,
-  "Számlázva":           C.accent,
+  "Számlázásra kész":    C.success,
   "Lezárva":             C.accent,
+  "Számlázva":           C.accent,
   "Meghiúsult":          C.danger,
   "Egyéb":               C.muted,
 };
