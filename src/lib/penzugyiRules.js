@@ -120,6 +120,47 @@ export function ellenorzLezarhatosagas(projekt, penzugyi) {
   return { ok: problems.length === 0, problems };
 }
 
+// ─── Kapuellenőrzés: sorrend-kényszerítés a Státuszok fülön ──────────────
+//
+// A 3 pill-választó (Elszámolási/Számlázási/TIG) eddig szabadon, bármilyen
+// sorrendben kattintható volt – bármikor rá lehetett kattintani "Számlázva"-ra
+// úgy, hogy előtte semmi más nem volt kipipálva. Ez a helyes viselkedés:
+// egyszerre csak egyet szabad lépni előre vagy vissza a listán, a "hiba/
+// javítás" ág (Javítani kell / Hiánypótlás) viszont bármikor elérhető –
+// onnan pedig csak az elejére (0. vagy 1. index) lehet visszalépni, ott
+// kell újraindítani a folyamatot.
+
+function canStepAdjacent(items, backId, current, next) {
+  if (next === current) return true;
+  if (backId && next === backId) return true;
+  const ids = items.map(i => i.id);
+  const curIdx = ids.indexOf(current);
+  const nextIdx = ids.indexOf(next);
+  if (curIdx === -1 || nextIdx === -1) return true; // ismeretlen/legacy érték – ne blokkoljunk
+  if (backId && current === backId) return nextIdx <= 1;
+  return Math.abs(nextIdx - curIdx) === 1;
+}
+
+export function canSetElszamolasStatusz(current, next) {
+  return canStepAdjacent(ELSZAMOLAS_STATUSZOK, "Javítani kell", current, next);
+}
+
+export function canSetTigStatusz(current, next) {
+  return canStepAdjacent(TIG_STATUSZOK, "Hiánypótlás", current, next);
+}
+
+/**
+ * Számlázási státusz váltás engedélyezése. A "Számlázható"-ra lépéshez a
+ * valódi üzleti kapuellenőrzés (ellenorzSzamlazhatosagas) is teljesülnie
+ * kell – ez a függvény már régóta létezett, csak eddig sehol nem hívta
+ * senki, ezért a pill szabadon kattintható volt a mögötte álló feltételek
+ * teljesülése nélkül is.
+ */
+export function canSetSzamlazasStatusz(current, next, szamlazhatosagGate) {
+  if (next === "Számlázható" && szamlazhatosagGate && !szamlazhatosagGate.ok) return false;
+  return canStepAdjacent(SZAMLAZAS_STATUSZOK, null, current, next);
+}
+
 // ─── Profit számítás ──────────────────────────────────────────
 
 export function calcProfit(bevetel, koltseg) {

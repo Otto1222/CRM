@@ -13,6 +13,7 @@ import {
   ELSZAMOLAS_STATUSZOK, SZAMLAZAS_STATUSZOK, TIG_STATUSZOK,
   getElszamolasConfig, getSzamlazasConfig, getTigConfig,
   ellenorzSzamlazhatosagas,
+  canSetElszamolasStatusz, canSetTigStatusz, canSetSzamlazasStatusz,
 } from "../../../lib/penzugyiRules.js";
 import { getPenzugyi, upsertPenzugyi, autoElszamolasElokeszites } from "../../penzugy/penzugyi.service.js";
 import { PENZUGYI_SCHEMA }   from "../../penzugy/penzugyi.schema.js";
@@ -46,19 +47,37 @@ function KPI({ label, value, color, sub }) {
 }
 
 // ─── Státuszpill ─────────────────────────────────────────────
-function Pills({ label, items, value, onChange, disabled }) {
+// canGo(nextId) dönti el, hogy az adott lépés engedélyezett-e a jelenlegi
+// állapotból (sorrend-kényszerítés – ld. penzugyiRules.js canSetXStatusz).
+// A tiltott lépések nem tűnnek el, csak áthúzva/szürkén látszanak, hogy a
+// teljes folyamat útvonala mindig látható maradjon.
+function Pills({ label, items, value, onChange, disabled, canGo, onBlocked }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <p style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .7, margin: "0 0 7px" }}>{label}</p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {items.map(s => (
-          <button key={s.id} onClick={() => !disabled && onChange(s.id)}
-            style={{ padding: "6px 14px", borderRadius: 20, border: `2px solid ${value === s.id ? s.szin : C.border}`,
-              background: value === s.id ? s.bg : "#fff", color: value === s.id ? s.szin : C.muted,
-              fontWeight: value === s.id ? 700 : 400, fontSize: 12, cursor: disabled ? "default" : "pointer", fontFamily: FONT }}>
-            {s.id}
-          </button>
-        ))}
+        {items.map(s => {
+          const allowed = disabled ? false : !canGo || s.id === value || canGo(s.id);
+          return (
+            <button key={s.id}
+              onClick={() => {
+                if (disabled) return;
+                if (s.id === value) return;
+                if (canGo && !canGo(s.id)) { onBlocked?.(s.id); return; }
+                onChange(s.id);
+              }}
+              title={!disabled && canGo && !allowed ? "Ez a lépés innen nem érhető el – csak a szomszédos állapotra léphetsz." : undefined}
+              style={{ padding: "6px 14px", borderRadius: 20, border: `2px solid ${value === s.id ? s.szin : C.border}`,
+                background: value === s.id ? s.bg : "#fff", color: value === s.id ? s.szin : (allowed ? C.muted : "#C7CDD3"),
+                fontWeight: value === s.id ? 700 : 400, fontSize: 12,
+                cursor: disabled ? "default" : (allowed ? "pointer" : "not-allowed"),
+                textDecoration: (!disabled && !allowed && value !== s.id) ? "line-through" : "none",
+                opacity: (!disabled && !allowed && value !== s.id) ? .6 : 1,
+                fontFamily: FONT }}>
+              {s.id}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -90,6 +109,13 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
   const [rec, setRec]   = useState(() => getPenzugyi(projekt.id) || { ...PENZUGYI_SCHEMA, projektId: projekt.id });
   const [mentve, setMentve] = useState(false);
   const [section, setSection] = useState("osszesito"); // osszesito | koltsegek | statusz | szamlak
+  const [blockedMsg, setBlockedMsg] = useState(null);
+
+  // Valódi üzleti kapuellenőrzés a "Számlázható" lépéshez – eddig létezett,
+  // csak sehol nem hívta senki, ezért bármikor rá lehetett kattintani a
+  // pill-re a mögötte álló feltételek (minden munkalap lezárva, elszámolás
+  // előkészítve, TIG rendezve) teljesülése nélkül is.
+  const szamlazhatosagGate = ellenorzSzamlazhatosagas(projekt, projektMls, rec);
 
   // Kalkulált adatok
   const kalk = projekt.penzugy?.fovallalkoziId ? calcEsmentProjektPenzugy(projekt) : null;
@@ -138,6 +164,27 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
     setTimeout(() => setMentve(false), 2500);
   }
 
+  // A "Tényleges költségek" fület a tervezett (Motor A) értékekkel tölti fel
+  // egy kattintással, hogy ne kelljen nulláról begépelni – onnantól szabadon
+  // felülírható, ha a valóság eltér a tervtől.
+  function handleTervAtvetel() {
+    if (!kalk) return;
+    setRec(p => {
+      const n = {
+        ...p,
+        anyagKoltsegNetto:        kalk.anyagkoltság || 0,
+        sajatCsapatKoltsegNetto:  kalk.csapatBer || 0,
+        alvallalkozoKoltsegNetto: (kalk.alvallalkozoiBer || 0) + (kalk.alvallalkozoiKmBer || 0),
+        kiszallasKoltsegNetto:    kalk.utikoltség || 0,
+        emeloKoltsegNetto:        kalk.emelőgepKoltseg || 0,
+        egyebKoltsegNetto:        (kalk.daruKoltseg||0) + (kalk.szallasKoltseg||0) + (kalk.bereltEszkozKoltseg||0) + (kalk.irodaAdminKoltseg||0) + (kalk.egyebKoltseg||0),
+      };
+      n.osszesKoltsegNetto = n.anyagKoltsegNetto + n.sajatCsapatKoltsegNetto + n.alvallalkozoKoltsegNetto + n.kiszallasKoltsegNetto + n.emeloKoltsegNetto + n.egyebKoltsegNetto;
+      return n;
+    });
+    setMentve(false);
+  }
+
   function handleUjSzamla() {
     if (!ujForm.szamlaSzam || !ujForm.nettoOsszeg) { alert("Számlaszám és nettó összeg kötelező!"); return; }
     createSzamla({ ...ujForm, nettoOsszeg: Number(ujForm.nettoOsszeg), projektId: projekt.id, projektKod: projekt.projektkod, clientNev: projekt.clientNev || "" }, currentUser?.name || "");
@@ -157,7 +204,7 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
   // Szekció navigáció
   const SECTIONS = [
     { id: "osszesito", label: "Összesítő" },
-    { id: "koltsegek", label: "Költségek" },
+    { id: "koltsegek", label: "Tényleges költségek" },
     { id: "statusz",   label: "Státuszok" },
     { id: "szamlak",   label: `Számlák (${szamlak.length})` },
   ];
@@ -265,17 +312,32 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
       {/* ── KÖLTSÉGEK ── */}
       {section === "koltsegek" && (
         <div>
+          <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 12px", lineHeight: 1.6 }}>
+            Ez a <strong>tényleges</strong>, zárás előtt rögzített költség – nem ugyanaz, mint az "Összesítő" fülön
+            látható élő <strong>tervezett</strong> kalkuláció. A kettő szándékosan különbözhet (pl. valós anyagár
+            eltér a tervezettől), de indulásnak érdemes a tervezett értékekből kiindulni.
+          </p>
+          {kalk && (
+            <button type="button" onClick={handleTervAtvetel} disabled={!isAdmin}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", marginBottom: 14,
+                background: "#fff", border: `1.5px solid ${C.accent}`, color: C.accent, borderRadius: 9,
+                cursor: isAdmin ? "pointer" : "default", fontWeight: 700, fontSize: 12.5, fontFamily: FONT }}>
+              <RefreshCw size={13} /> Tervezett értékek átvétele
+            </button>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {[
-              { label: "Anyagköltség",           key: "anyagKoltsegNetto" },
-              { label: "Saját csapat munkadíja", key: "sajatCsapatKoltsegNetto" },
-              { label: "Alvállalkozói díj",      key: "alvallalkozoKoltsegNetto" },
-              { label: "Km / Kiszállás",         key: "kiszallasKoltsegNetto" },
-              { label: "Emelőgép",               key: "emeloKoltsegNetto" },
-              { label: "Egyéb",                  key: "egyebKoltsegNetto" },
+              { label: "Anyagköltség",           key: "anyagKoltsegNetto",        terv: kalk?.anyagkoltság },
+              { label: "Saját csapat munkadíja", key: "sajatCsapatKoltsegNetto",  terv: kalk?.csapatBer },
+              { label: "Alvállalkozói díj",      key: "alvallalkozoKoltsegNetto", terv: kalk ? (kalk.alvallalkozoiBer||0) + (kalk.alvallalkozoiKmBer||0) : undefined },
+              { label: "Km / Kiszállás",         key: "kiszallasKoltsegNetto",    terv: kalk?.utikoltség },
+              { label: "Emelőgép",               key: "emeloKoltsegNetto",        terv: kalk?.emelőgepKoltseg },
+              { label: "Egyéb",                  key: "egyebKoltsegNetto",        terv: kalk ? (kalk.daruKoltseg||0) + (kalk.szallasKoltseg||0) + (kalk.bereltEszkozKoltseg||0) + (kalk.irodaAdminKoltseg||0) + (kalk.egyebKoltseg||0) : undefined },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>{f.label} (Ft)</label>
+                <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>
+                  {f.label} (Ft) {f.terv > 0 && <span style={{ fontWeight: 600, color: C.accent, textTransform: "none", letterSpacing: 0 }}>· terv: {ft(f.terv)}</span>}
+                </label>
                 <input type="number" min="0" disabled={!isAdmin}
                   value={rec[f.key] || ""}
                   onChange={e => {
@@ -312,15 +374,35 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
               🏢 Belső munka – nincs bevétel, számlázható státuszba nem kerülhet.
             </div>
           )}
+          {blockedMsg && (
+            <div style={{ display:"flex", alignItems:"flex-start", gap:8, background:C.dangerLight, border:`1.5px solid ${C.danger}`, borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
+              <AlertTriangle size={15} color={C.danger} style={{ flexShrink:0, marginTop:1 }} />
+              <div style={{ fontSize:12.5, color:C.danger, fontWeight:600, lineHeight:1.6, whiteSpace:"pre-line" }}>{blockedMsg}</div>
+            </div>
+          )}
           <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 18px" }}>
+            <p style={{ fontSize:11.5, color:C.muted, margin:"0 0 12px", lineHeight:1.6 }}>
+              A státuszok csak a folyamat szerinti szomszédos állapotra léphetnek – lépést kihagyni nem lehet.
+              Hibát/javítást bármikor jelezhetsz, onnan az elejéről indul újra a folyamat.
+            </p>
             <Pills label="Elszámolási státusz" items={ELSZAMOLAS_STATUSZOK} value={rec.elszamolasStatusz}
-              onChange={v => { setRec(p => ({...p, elszamolasStatusz: v})); setMentve(false); }} disabled={!isAdmin} />
+              canGo={next => canSetElszamolasStatusz(rec.elszamolasStatusz, next)}
+              onBlocked={next => setBlockedMsg(`Az elszámolási státuszt nem lehet közvetlenül "${next}"-ra állítani – csak a szomszédos lépésre, vagy "Javítani kell"-re léphetsz innen.`)}
+              onChange={v => { setRec(p => ({...p, elszamolasStatusz: v})); setMentve(false); setBlockedMsg(null); }} disabled={!isAdmin} />
             <Pills label="Számlázási státusz"
               items={isBelso ? SZAMLAZAS_STATUSZOK.filter(s => s.id === "Nem számlázható") : SZAMLAZAS_STATUSZOK}
               value={rec.szamlazasStatusz}
-              onChange={v => { setRec(p => ({...p, szamlazasStatusz: v})); setMentve(false); }} disabled={!isAdmin || isBelso} />
+              canGo={next => canSetSzamlazasStatusz(rec.szamlazasStatusz, next, szamlazhatosagGate)}
+              onBlocked={next => setBlockedMsg(
+                next === "Számlázható" && !szamlazhatosagGate.ok
+                  ? `A projekt még nem számlázható:\n• ${szamlazhatosagGate.problems.join("\n• ")}`
+                  : `A számlázási státuszt nem lehet közvetlenül "${next}"-ra állítani – csak a szomszédos lépésre léphetsz innen.`
+              )}
+              onChange={v => { setRec(p => ({...p, szamlazasStatusz: v})); setMentve(false); setBlockedMsg(null); }} disabled={!isAdmin || isBelso} />
             <Pills label="TIG státusz" items={TIG_STATUSZOK} value={rec.tigStatusz}
-              onChange={v => { setRec(p => ({...p, tigStatusz: v})); setMentve(false); }} disabled={!isAdmin} />
+              canGo={next => canSetTigStatusz(rec.tigStatusz, next)}
+              onBlocked={next => setBlockedMsg(`A TIG státuszt nem lehet közvetlenül "${next}"-ra állítani – csak a szomszédos lépésre, vagy "Hiánypótlás"-ra léphetsz innen.`)}
+              onChange={v => { setRec(p => ({...p, tigStatusz: v})); setMentve(false); setBlockedMsg(null); }} disabled={!isAdmin} />
 
             {fovallalkozo && (
               <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
