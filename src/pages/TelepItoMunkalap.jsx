@@ -1099,24 +1099,64 @@ export default function TelepItoMunkalap({ m, data, onBack, currentUser }) {
     );
   };
 
-  const AnyagokTab=()=>(
-    <div style={{ background:C.bg }}>
-      <div style={{ background:"#FFF7ED", border:"1px solid #FED7AA", borderRadius:8, padding:"10px 14px", margin:"12px 16px 4px", fontSize:12, color:C.warning }}>
-        📋 <strong>Tájékoztató anyaglista</strong> – régi rendszer. A tényleges anyagfelhasználást a <strong>⚙️ Anyagfelhasználás</strong> lapon rögzítsd a Kivitelezési Csomag alapján.
+  const AnyagokTab=()=>{
+    // Ez a fül a MEGKEZDÉS ELŐTT is elérhető – ide kell néznie a telepítőnek,
+    // hogy tudja, mit vigyen magával. Eddig itt semmi nem volt (a Kivitelezési
+    // Csomag tételei csak az "⚙️ Anyagfelhasználás" fülön jelentek meg, ami
+    // viszont csak MEGKEZDÉS UTÁN érhető el – vagyis indulás előtt sehol nem
+    // látszott, mit kell hoznia). Most a csomag kiadott (vagy ha az még
+    // nincs, a tervezett) mennyisége itt, olvasható "csomaglistaként" jelenik
+    // meg, a tényleges felhasználás rögzítése továbbra is a ⚙️ fülön történik.
+    const projektIdLocal = m.projektId || proj?.id;
+    const csomag = projektIdLocal ? getKivitelezesiCsomagByProjektId(projektIdLocal) : null;
+    const csomagTetelek = csomag?.tetelek || [];
+    const legacyAnyagok = m.anyagok || [];
+
+    return (
+      <div style={{ background:C.bg }}>
+        {csomagTetelek.length > 0 ? (
+          <>
+            <div style={{ background:C.accentLight, border:`1px solid ${C.accentLight}`, borderRadius:8, padding:"10px 14px", margin:"12px 16px 4px", fontSize:12, color:C.accent }}>
+              🎒 <strong>Mit vigyél magaddal</strong> – a Kivitelezési Csomag alapján. A tényleges felhasznált mennyiséget és a sorozatszámokat a munka megkezdése után a <strong>⚙️ Felhasznált anyag</strong> lapon rögzítsd.
+            </div>
+            {csomagTetelek.map(t=>{
+              const menny = t.kiadottMennyiseg > 0 ? t.kiadottMennyiseg : t.tervezettMennyiseg;
+              const forrasCimke = t.kiadottMennyiseg > 0 ? "kiadott" : "tervezett";
+              return (
+                <div key={t.id} style={{ padding:"13px 16px",borderBottom:"1px solid #D1D9E6",display:"flex",alignItems:"center",gap:10 }}>
+                  <div style={{ flex:1, paddingRight:16 }}>
+                    <p style={{ fontWeight:600,fontSize:14,color:C.text,margin:0 }}>{t.nev}</p>
+                    {t.kategoria && <p style={{ fontSize:11,color:C.muted,margin:"2px 0 0" }}>{t.kategoria}</p>}
+                  </div>
+                  <div style={{ textAlign:"right" }}>
+                    <p style={{ fontWeight:700,fontSize:14,color:C.text,whiteSpace:"nowrap",margin:0 }}>{menny || 0} {t.egyseg}</p>
+                    <p style={{ fontSize:10,color:C.muted,margin:0 }}>{forrasCimke}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        ) : legacyAnyagok.length > 0 ? (
+          <>
+            <div style={{ background:"#FFF7ED", border:"1px solid #FED7AA", borderRadius:8, padding:"10px 14px", margin:"12px 16px 4px", fontSize:12, color:C.warning }}>
+              📋 <strong>Tájékoztató anyaglista</strong> – régi rendszer.
+            </div>
+            {legacyAnyagok.map((a,i)=>(
+              <div key={i} style={{ padding:"13px 16px",borderBottom:"1px solid #D1D9E6",display:"flex",justifyContent:"space-between" }}>
+                <p style={{ fontWeight:600,fontSize:14,color:C.text,flex:1,paddingRight:16 }}>{a.nev}</p>
+                <p style={{ fontWeight:700,fontSize:14,color:C.text,whiteSpace:"nowrap" }}>{a.menny} {a.egyseg}</p>
+              </div>
+            ))}
+          </>
+        ) : (
+          <div style={{ padding:"32px 16px", textAlign:"center", color:C.muted }}>
+            <p style={{ fontSize:14, fontWeight:600, marginBottom:6 }}>Ehhez a munkához még nincs anyag hozzárendelve.</p>
+            <p style={{ fontSize:12 }}>Kérdezd a Projektmenedzsert – a Kivitelezési Csomagban kell kiadnia az anyagot ehhez a munkalaphoz.</p>
+          </div>
+        )}
       </div>
-      {(m.anyagok||[]).length===0 ? (
-        <div style={{ padding:"32px 16px", textAlign:"center", color:C.muted }}>
-          <p style={{ fontSize:14, fontWeight:600, marginBottom:6 }}>Az anyagfelhasználás az új rendszerben a Kivitelezési Csomag alapján történik.</p>
-          <p style={{ fontSize:12 }}>Az anyagokat a ⚙️ Anyagfelhasználás lapon rögzítsd.</p>
-        </div>
-      ) : (m.anyagok||[]).map((a,i)=>(
-        <div key={i} style={{ padding:"13px 16px",borderBottom:"1px solid #D1D9E6",display:"flex",justifyContent:"space-between" }}>
-          <p style={{ fontWeight:600,fontSize:14,color:C.text,flex:1,paddingRight:16 }}>{a.nev}</p>
-          <p style={{ fontWeight:700,fontSize:14,color:C.text,whiteSpace:"nowrap" }}>{a.menny} {a.egyseg}</p>
-        </div>
-      ))}
-    </div>
-  );
+    );
+  };
 
   const FelmeresTab=()=>{
     const f=m.felmeres||{};
