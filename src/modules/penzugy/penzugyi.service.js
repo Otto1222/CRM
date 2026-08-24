@@ -9,6 +9,7 @@ import { getBevetelTipus, calcProfit, defaultSzamlazasStatusz } from "../../lib/
 import { calcEsmentProjektPenzugy } from "../../services/workOrderFinancial.service.js";
 import { driveSave } from "../../lib/driveApi.js";
 import { loadProjektek } from "../projektek/projekt.service.js";
+import { loadKarteritesek } from "../../lib/karterites.js";
 
 const KEY = "penzugyi";
 
@@ -152,19 +153,41 @@ export function autoElszamolasElokeszites(projektId, munkalapok, user = "system"
   }, user);
 }
 
-// ─── Dashboard KPI számítás ───────────────────────────────────
+// ─── Dashboard élő kalkuláció – közös segédek ─────────────────
 //
-// FONTOS: a fovVarhatoBevetel / sajatVarhatoProfit / belsoMunkaKoltseg
-// SOHA nem a kézzel előkészített `penzugyi` rekordból (upsertPenzugyi /
-// autoElszamolasElokeszites) számol – az csak akkor jön létre, ha valaki
-// megnyitja a projekt Pénzügy fülét, vagy ha MINDEN munkalapja lezárva
-// (ld. workorder.service.js). Egy frissen létrehozott, még folyamatban
-// lévő projektnél ez sosem létezik, ezért a dashboard mindig 0-t mutatott,
-// függetlenül attól, hány valós projekt van. Ehelyett élőben, a projekt
-// aktuális penzugy-adataiból számolunk – ugyanazzal a motorral (Motor A –
-// workOrderFinancial.service.js calcEsmentProjektPenzugy), amit a lenti
-// "Projekt szintű fővállalkozói elszámolás" tábla is használ, így a két
-// blokk sosem mond ellent egymásnak.
+// FONTOS: ezek SOHA nem a kézzel előkészített `penzugyi` rekordból
+// (upsertPenzugyi / autoElszamolasElokeszites) számolnak – az csak akkor
+// jön létre, ha valaki megnyitja a projekt Pénzügy fülét, vagy ha MINDEN
+// munkalapja lezárva (ld. workorder.service.js). Egy frissen létrehozott,
+// még folyamatban lévő projektnél ez sosem létezik, ezért a dashboard eddig
+// mindig 0-t mutatott, függetlenül attól, hány valós projekt van. Ehelyett
+// élőben, a projekt aktuális penzugy-adataiból számolunk – ugyanazzal a
+// motorral (Motor A – workOrderFinancial.service.js calcEsmentProjektPenzugy),
+// amit a lenti "Projekt szintű fővállalkozói elszámolás" tábla is használ,
+// így egyik dashboard-blokk sem mond ellent a másiknak.
+
+// Élő kalkuláció projektenként (hibatűrő – egy rossz konfigú projekt
+// ne dobja el az egész dashboardot).
+function eloKalk(p) {
+  try { return calcEsmentProjektPenzugy(p) || {}; }
+  catch { return {}; }
+}
+
+// Bevétel forrás szerinti feloldása – ugyanaz a szabály, mint
+// autoElszamolasElokeszites-ben: saját munkánál az elfogadott
+// ajánlat/tétel a mérvadó, nem a fővállalkozói díjtétel-motor
+// (aminek saját munkánál nincs is mit számolnia).
+function resolveBevetel(p, kalk) {
+  if (p.forrás === "sajat_ajanlat" || p.forrás === "saját_ügyfél") {
+    return p.elfogadottAjanlat || kalk.nettoBevitel || 0;
+  }
+  if (p.forrás === "fovallalkozoi_munka" || p.forrás === "fővállalkozói") {
+    return kalk.nettoBevitel || 0;
+  }
+  return 0;
+}
+
+// ─── Dashboard KPI számítás ───────────────────────────────────
 export function calcDashboardPenzugyiKpik(projektek, munkalapok = []) {
   const penzugyik = loadAllPenzugyi();
 
@@ -174,28 +197,6 @@ export function calcDashboardPenzugyiKpik(projektek, munkalapok = []) {
   }
 
   const enriched = projektek.map(enrich);
-
-  // Élő kalkuláció projektenként (hibatűrő – egy rossz konfigú projekt
-  // ne dobja el az egész dashboardot).
-  function eloKalk(p) {
-    try { return calcEsmentProjektPenzugy(p) || {}; }
-    catch { return {}; }
-  }
-
-  // Bevétel forrás szerinti feloldása – ugyanaz a szabály, mint
-  // autoElszamolasElokeszites-ben: saját munkánál az elfogadott
-  // ajánlat/tétel a mérvadó, nem a fővállalkozói díjtétel-motor
-  // (aminek saját munkánál nincs is mit számolnia).
-  function resolveBevetel(p, kalk) {
-    if (p.forrás === "sajat_ajanlat" || p.forrás === "saját_ügyfél") {
-      return p.elfogadottAjanlat || kalk.nettoBevitel || 0;
-    }
-    if (p.forrás === "fovallalkozoi_munka" || p.forrás === "fővállalkozói") {
-      return kalk.nettoBevitel || 0;
-    }
-    return 0;
-  }
-
   const aktivProjektek = enriched.filter(p => p.status !== "Lezárt");
 
   return {
@@ -241,5 +242,65 @@ export function calcDashboardPenzugyiKpik(projektek, munkalapok = []) {
           (m.munkaeroDij || 0) + (m.kiszallasiDij || 0) + (m.egyebKolts || 0), 0);
         return s + koltseg;
       }, 0),
+  };
+}
+
+// ─── Dashboard – teljes pénzügyi összesítő (bevétel/kiadás/haszon + bontás) ──
+//
+// A Dashboard "Pénzügyi összesítő" blokkjához: összes bevétel, összes kiadás,
+// haszon, és a kiadás kategóriánkénti bontása (saját csapat bér, alvállalkozói
+// díj, szerelési anyag, üzemanyag/kiszállás, kártérítés, egyéb) – minden AKTÍV
+// (nem "Lezárt") projektre, élőben számolva. A fővállalkozói/saját projektek
+// Motor A-val (calcEsmentProjektPenzugy) számolnak, a belső munkáké a hozzájuk
+// kötött munkalapok tényleges tételeiből (nincs FV-díjszabás, nincs bevétel).
+export function calcDashboardPenzugyiOsszesito(projektek, munkalapok = []) {
+  const aktivProjektek = projektek.filter(p => p.status !== "Lezárt");
+  const fovSajat = aktivProjektek.filter(p =>
+    ["fovallalkozoi_munka", "fővállalkozói", "sajat_ajanlat", "saját_ügyfél"].includes(p.forrás)
+  );
+  const belso = aktivProjektek.filter(p => p.forrás === "belso_munka");
+
+  const bontas = {
+    csapatBer: 0, alvallalkozoiDij: 0, anyagkoltseg: 0, utikoltseg: 0, egyeb: 0,
+  };
+  let osszesBevetel = 0;
+
+  fovSajat.forEach(p => {
+    const kalk = eloKalk(p);
+    osszesBevetel          += resolveBevetel(p, kalk);
+    bontas.csapatBer        += kalk.csapatBer || 0;
+    bontas.alvallalkozoiDij += (kalk.alvallalkozoiBer || 0) + (kalk.alvallalkozoiKmBer || 0);
+    bontas.anyagkoltseg     += kalk.anyagkoltság || 0;
+    bontas.utikoltseg       += kalk.utikoltség || 0;
+    bontas.egyeb            += (kalk.emelőgepKoltseg || 0) + (kalk.daruKoltseg || 0)
+                              + (kalk.szallasKoltseg || 0) + (kalk.bereltEszkozKoltseg || 0)
+                              + (kalk.irodaAdminKoltseg || 0) + (kalk.egyebKoltseg || 0);
+  });
+
+  belso.forEach(p => {
+    const mls = munkalapok.filter(m => m.projektId === p.id);
+    mls.forEach(m => {
+      bontas.anyagkoltseg += (m.items || []).reduce((y, i) => y + (i.net || i.ar || 0) * (i.qty || i.mennyiseg || 1), 0);
+      bontas.csapatBer    += m.munkaeroDij || 0;
+      bontas.utikoltseg   += m.kiszallasiDij || 0;
+      bontas.egyeb        += m.egyebKolts || 0;
+    });
+  });
+
+  // Kártérítés: a globális elfogadott kártérítés-összeg (nem projektenként
+  // Motor A-ból, mert az a saját/FV szétbontásnál duplikálná – a belső
+  // munkára eső kártérítést viszont csak így kapjuk el).
+  const karteritesOsszeg = loadKarteritesek()
+    .filter(k => k.elfogadott === true)
+    .reduce((s, k) => s + (k.osszeg || 0), 0);
+
+  const osszesKiadas = bontas.csapatBer + bontas.alvallalkozoiDij + bontas.anyagkoltseg
+    + bontas.utikoltseg + bontas.egyeb + karteritesOsszeg;
+  const haszon    = osszesBevetel - osszesKiadas;
+  const haszonPct = osszesBevetel > 0 ? Math.round((haszon / osszesBevetel) * 100) : null;
+
+  return {
+    osszesBevetel, osszesKiadas, haszon, haszonPct,
+    koltsegBontas: { ...bontas, karterites: karteritesOsszeg },
   };
 }

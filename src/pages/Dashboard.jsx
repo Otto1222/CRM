@@ -1,26 +1,45 @@
 import { useState, useMemo, useEffect } from "react";
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Clock, Wrench, Building2, FileText, Users, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, Wrench, Building2, FileText, BarChart3 } from "lucide-react";
 import { C, FONT, FONT_HEADING, STATUS_CFG } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import { loadKarteritesek, addKarterites, updateKarterites } from "../lib/karterites";
 import { canSeePrice } from "../lib/roles";
 import { loadLocal } from "../lib/localDb";
 import { calcEsmentProjektPenzugy } from "../services/workOrderFinancial.service.js";
-import { calcDashboardPenzugyiKpik } from "../modules/penzugy/penzugyi.service.js";
+import { calcDashboardPenzugyiKpik, calcDashboardPenzugyiOsszesito } from "../modules/penzugy/penzugyi.service.js";
 import { formatMunkalapAzonosito } from "../lib/azonositoHelper.js";
 
-function StatCard({ label, value, sub, color, bg, icon: Icon }) {
-  return (
-    <div style={{ background: bg || C.card, borderRadius: 14, padding: "18px 20px", border: `1px solid ${color}30`, flex: 1, minWidth: 140 }}>
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-        {Icon && <Icon size={18} color={color} />}
-        <p style={{ fontSize:11, fontWeight:700, color: color, textTransform:"uppercase", letterSpacing:.7, margin:0 }}>{label}</p>
-      </div>
-      <p style={{ fontSize:24, fontWeight:800, color: C.text, margin:0 }}>{value}</p>
-      {sub && <p style={{ fontSize:11, color: C.muted, margin:"4px 0 0" }}>{sub}</p>}
-    </div>
-  );
-}
+// ─── Munkalap-státusz csoportosítás a "Munkák állapot szerint" blokkhoz ──
+// A sok, részben szinonim munkalap-státuszt (ld. constants.js STATUS_CFG,
+// ténylegesen a workflow-oldalak által beírt értékek) néhány, a felhasználó
+// számára értelmes csoportba vonjuk össze – így minden valós státusz látszik,
+// nem csak egy önkényesen kiválasztott 3-4.
+const MUNKA_STATUS_BUCKETS = [
+  { label: "Létrehozva",          statuses: ["Létrehozva"] },
+  { label: "Kiosztásra vár",      statuses: ["Kiosztásra vár", "Kiosztva csapatnak", "Megkezdésre Vár", "Kivitelezésre vár", "Ütemezett"] },
+  { label: "Felmérés",            statuses: ["Felmérés"] },
+  { label: "Befejezett felmérés", statuses: ["Befejezett Felmérés"] },
+  { label: "Folyamatban",         statuses: ["Folyamatban", "Kivitelezés"] },
+  { label: "Ellenőrzés alatt",    statuses: ["Ellenőrzés alatt", "Helyszínen lezárva"] },
+  { label: "Jóváhagyva",          statuses: ["Jóváhagyva", "Számlázásra kész", "Kész"] },
+  { label: "Számlázva",           statuses: ["Számlázva"] },
+  { label: "Lezárva",             statuses: ["Lezárva", "Befejezett"] },
+  { label: "Meghiúsult",          statuses: ["Meghiúsult"] },
+];
+
+const MUNKA_STATUS_SZIN = {
+  "Létrehozva":          C.muted,
+  "Kiosztásra vár":      C.success,
+  "Felmérés":            C.success,
+  "Befejezett felmérés": C.success,
+  "Folyamatban":         C.warning,
+  "Ellenőrzés alatt":    C.warning,
+  "Jóváhagyva":          C.success,
+  "Számlázva":           C.accent,
+  "Lezárva":             C.accent,
+  "Meghiúsult":          C.danger,
+  "Egyéb":               C.muted,
+};
 
 function StatusBadge({ s }) {
   const cfg = STATUS_CFG[s] || { bg: C.bg, text: C.muted, dot: C.muted };
@@ -182,25 +201,17 @@ export default function Dashboard({ user }) {
     };
   }, []);
 
-  const stats = useMemo(() => {
-    const projektIds = new Set(projektek.map(p => p.id));
-    const aktiv      = munkalapok.filter(m =>
-      m.projektId && projektIds.has(m.projektId) && !m.torolt && !m.archiv &&
-      !["Lezárva","Számlázva","Meghiúsult","Befejezett","Befejezett Felmérés"].includes(m.status)
-    ).length;
-    const ellenorzes = munkalapok.filter(m => m.status === "Ellenőrzés alatt").length;
-    const lezarva    = munkalapok.filter(m => m.status === "Lezárva").length;
-    const felmeres   = munkalapok.filter(m => m.status === "Felmérés" || m.status === "Befejezett Felmérés").length;
-    const osszesBev  = munkalapok.reduce((s,m) => {
-      const itemsBrutto = (m.items||[]).reduce((x,i) => x + (i.qty||i.mennyiseg||1)*(i.net||i.ar||0)*(1+(i.vat||27)/100), 0);
-      return s + (m.ar || itemsBrutto || 0);
-    }, 0);
-    const osszesCost = munkalapok.reduce((s,m) => s +
-      (m.items||[]).reduce((x,i) => x + (i.net||i.ar||0)*(i.qty||i.mennyiseg||1), 0) +
-      (m.munkaeroDij||0) + (m.kiszallasiDij||0) + (m.egyebKolts||0), 0);
-    const elfKart    = karteritesek.filter(k=>k.elfogadott===true).reduce((s,k)=>s+k.osszeg,0);
-    return { aktiv, ellenorzes, lezarva, felmeres, osszesBev, osszesCost, elfKartEritesek: elfKart, eredmeny: osszesBev - osszesCost - elfKart };
-  }, [munkalapok, karteritesek, projektek]);
+  // "Munkák állapot szerint" – minden valós munkalap-státusz, csoportosítva.
+  const statusOverview = useMemo(() => {
+    const elo = munkalapok.filter(m => !m.torolt && !m.archiv);
+    const matched = new Set(MUNKA_STATUS_BUCKETS.flatMap(b => b.statuses));
+    const buckets = MUNKA_STATUS_BUCKETS
+      .map(b => ({ label: b.label, count: elo.filter(m => b.statuses.includes(m.status)).length }))
+      .filter(b => b.count > 0);
+    const egyebCount = elo.filter(m => !matched.has(m.status)).length;
+    if (egyebCount > 0) buckets.push({ label: "Egyéb", count: egyebCount });
+    return { buckets, total: elo.length };
+  }, [munkalapok]);
 
   const tableData = useMemo(() => {
     return munkalapok
@@ -265,16 +276,27 @@ export default function Dashboard({ user }) {
     };
   }, [ajanlatok]);
 
-  const projektStats = useMemo(() => {
-    const sajat      = projektek.filter(p => p.forrás === "sajat_ajanlat" || p.forrás === "saját_ügyfél");
-    const fov        = projektek.filter(p => p.forrás === "fovallalkozoi_munka" || p.forrás === "fővállalkozói");
-    const kivitelezés= projektek.filter(p => p.status === "Kivitelezés alatt");
-    const szamlazva  = projektek.filter(p => p.status === "Számlázható" || p.status === "Leszámlázva");
-    return { sajat: sajat.length, fov: fov.length, kivitelezés: kivitelezés.length, leszamlazva: szamlazva.length };
+  // "Projektek – Saját / Fővállalkozói / Belső" megoszlás.
+  const forrasSplit = useMemo(() => {
+    const sajat = projektek.filter(p => p.forrás === "sajat_ajanlat" || p.forrás === "saját_ügyfél");
+    const fov   = projektek.filter(p => p.forrás === "fovallalkozoi_munka" || p.forrás === "fővállalkozói");
+    const belso = projektek.filter(p => p.forrás === "belso_munka");
+    return {
+      total: projektek.length,
+      sajat: { count: sajat.length, kivitelezés: sajat.filter(p => p.status === "Kivitelezés alatt").length },
+      fov:   { count: fov.length,   kivitelezés: fov.filter(p => p.status === "Kivitelezés alatt").length },
+      belso: { count: belso.length },
+    };
   }, [projektek]);
 
   const penzugyiKpik = useMemo(() => {
     try { return calcDashboardPenzugyiKpik(projektek, munkalapok); }
+    catch { return null; }
+  }, [projektek, munkalapok]);
+
+  // "Pénzügyi összesítő" – összes bevétel / kiadás / haszon + kategóriánkénti bontás.
+  const penzugyOsszesito = useMemo(() => {
+    try { return calcDashboardPenzugyiOsszesito(projektek, munkalapok); }
     catch { return null; }
   }, [projektek, munkalapok]);
 
@@ -291,25 +313,165 @@ export default function Dashboard({ user }) {
         💰 Pénzügy
       </h1>
 
-      {/* Stat kártyák */}
-      <div style={{ display:"flex", gap:12, flexWrap:"wrap", marginBottom:24 }}>
-        <StatCard label="Aktív munkák"     value={stats.aktiv}      color={C.accent}  bg={C.accentLight}  icon={Wrench}/>
-        <StatCard label="Ellenőrzésre vár" value={stats.ellenorzes} color={C.warning} bg={C.warningLight} icon={AlertTriangle}/>
-        <StatCard label="Lezárva"          value={stats.lezarva}    color={C.success} bg={C.successLight} icon={CheckCircle2}/>
-        <StatCard label="Felmérés fázis"   value={stats.felmeres}   color={C.accent}  bg={C.accentLight}  icon={Clock}/>
-        {isAdmin && <>
-          <StatCard label="Összes bevétel" value={ft(stats.osszesBev)}         color={C.success} bg={C.successLight} icon={TrendingUp}/>
-          <StatCard label="Kártérítések"   value={ft(stats.elfKartEritesek)}   color={C.danger}  bg={C.dangerLight}  icon={TrendingDown}/>
-          <StatCard
-            label="Eredmény"
-            value={ft(stats.eredmeny)}
-            color={stats.eredmeny >= 0 ? C.success : C.danger}
-            bg={stats.eredmeny >= 0 ? C.successLight : C.dangerLight}
-            icon={stats.eredmeny >= 0 ? TrendingUp : TrendingDown}
-            sub={stats.osszesBev > 0 ? `${Math.round((stats.eredmeny/stats.osszesBev)*100)}% haszon` : undefined}
-          />
-        </>}
+      {/* Munkák állapot szerint */}
+      <div style={{ background: C.card, borderRadius:14, border:`1px solid ${C.border}`, padding:"16px 20px", marginBottom:20 }}>
+        <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:10, marginBottom:14, flexWrap:"wrap" }}>
+          <p style={{ fontFamily:FONT_HEADING, fontSize:15, fontWeight:800, color: C.text, margin:0, display:"flex", alignItems:"center", gap:8 }}>
+            <Wrench size={17} color={C.accent} /> Munkák állapot szerint
+          </p>
+          <span style={{ fontSize:12, color: C.muted }}>Összesen <strong style={{ color: C.text }}>{statusOverview.total}</strong> munkalap</span>
+        </div>
+        {statusOverview.total === 0 ? (
+          <p style={{ color: C.muted, fontSize:13, margin:0 }}>Nincs rögzített munkalap</p>
+        ) : (
+          <>
+            <div style={{ display:"flex", width:"100%", height:10, borderRadius:6, overflow:"hidden", background:C.bg, marginBottom:14 }}>
+              {statusOverview.buckets.map(b => (
+                <div key={b.label} title={`${b.label}: ${b.count}`}
+                  style={{ width:`${(b.count/statusOverview.total)*100}%`, background: MUNKA_STATUS_SZIN[b.label] || C.muted }} />
+              ))}
+            </div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {statusOverview.buckets.map(b => (
+                <div key={b.label} style={{
+                  display:"flex", alignItems:"center", gap:8, padding:"8px 12px",
+                  border:`1px solid ${C.border}`, borderRadius:10, background:C.bg,
+                  fontSize:12.5, fontWeight:600, color:C.textSub, flex:"1 1 150px", minWidth:150,
+                }}>
+                  <span style={{ width:9, height:9, borderRadius:3, background: MUNKA_STATUS_SZIN[b.label] || C.muted, flexShrink:0 }} />
+                  <span style={{ whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{b.label}</span>
+                  <span style={{ marginLeft:"auto", fontWeight:800, color:C.text, fontSize:14 }}>{b.count}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Projektek – Saját / Fővállalkozói / Belső */}
+      {isAdmin && (
+        <div style={{ background: C.card, borderRadius:14, border:`1px solid ${C.border}`, padding:"16px 20px", marginBottom:20 }}>
+          <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:10, marginBottom:14, flexWrap:"wrap" }}>
+            <p style={{ fontFamily:FONT_HEADING, fontSize:15, fontWeight:800, color: C.text, margin:0, display:"flex", alignItems:"center", gap:8 }}>
+              <Building2 size={17} color={C.accent} /> Projektek – Saját / Fővállalkozói / Belső
+            </p>
+            <span style={{ fontSize:12, color: C.muted }}>{forrasSplit.total} aktív projekt</span>
+          </div>
+
+          <div style={{ display:"flex", gap:14, flexWrap:"wrap", marginBottom:16 }}>
+            <div style={{ position:"relative", overflow:"hidden", flex:"1 1 220px", minWidth:220, background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 18px 16px 20px" }}>
+              <div style={{ position:"absolute", left:0, top:0, bottom:0, width:4, background:C.accent }} />
+              <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.accent, margin:"0 0 4px" }}>Saját munka</p>
+              <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 6px" }}>{forrasSplit.sajat.count} <span style={{ fontSize:13, fontWeight:700, color:C.muted }}>/ {forrasSplit.total} db</span></p>
+              <p style={{ fontSize:11.5, color:C.muted, margin:0 }}>
+                {forrasSplit.sajat.kivitelezés} kivitelezés alatt · {penzugyiKpik ? penzugyiKpik.szamlazhatoProjektek.filter(p => p.forrás === "sajat_ajanlat" || p.forrás === "saját_ügyfél").length : 0} számlázható
+              </p>
+            </div>
+            <div style={{ position:"relative", overflow:"hidden", flex:"1 1 220px", minWidth:220, background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 18px 16px 20px" }}>
+              <div style={{ position:"absolute", left:0, top:0, bottom:0, width:4, background:C.success }} />
+              <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.success, margin:"0 0 4px" }}>Fővállalkozói munka</p>
+              <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 6px" }}>{forrasSplit.fov.count} <span style={{ fontSize:13, fontWeight:700, color:C.muted }}>/ {forrasSplit.total} db</span></p>
+              <p style={{ fontSize:11.5, color:C.muted, margin:0 }}>
+                {forrasSplit.fov.kivitelezés} kivitelezés alatt · {penzugyiKpik ? penzugyiKpik.szamlazvaKifizetesre.filter(p => p.forrás === "fovallalkozoi_munka" || p.forrás === "fővállalkozói").length : 0} leszámlázva, nem fizetve
+              </p>
+            </div>
+            <div style={{ position:"relative", overflow:"hidden", flex:"1 1 220px", minWidth:220, background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 18px 16px 20px" }}>
+              <div style={{ position:"absolute", left:0, top:0, bottom:0, width:4, background:C.warning }} />
+              <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.warning, margin:"0 0 4px" }}>Belső munka</p>
+              <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 6px" }}>{forrasSplit.belso.count} <span style={{ fontSize:13, fontWeight:700, color:C.muted }}>/ {forrasSplit.total} db</span></p>
+              <p style={{ fontSize:11.5, color:C.muted, margin:0 }}>Garancia, javítás, karbantartás</p>
+            </div>
+          </div>
+
+          {forrasSplit.total > 0 && (
+            <div>
+              <div style={{ display:"flex", height:8, borderRadius:5, overflow:"hidden", border:`1px solid ${C.border}`, background:C.bg }}>
+                <div style={{ width:`${(forrasSplit.sajat.count/forrasSplit.total)*100}%`, background:C.accent }} />
+                <div style={{ width:`${(forrasSplit.fov.count/forrasSplit.total)*100}%`, background:C.success }} />
+                <div style={{ width:`${(forrasSplit.belso.count/forrasSplit.total)*100}%`, background:C.warning }} />
+              </div>
+              <div style={{ display:"flex", gap:16, fontSize:11.5, color:C.muted, flexWrap:"wrap", marginTop:9 }}>
+                <span style={{ display:"inline-flex", alignItems:"center", gap:6 }}><span style={{ width:8, height:8, borderRadius:2, background:C.accent, display:"inline-block" }} />Saját {Math.round((forrasSplit.sajat.count/forrasSplit.total)*100)}%</span>
+                <span style={{ display:"inline-flex", alignItems:"center", gap:6 }}><span style={{ width:8, height:8, borderRadius:2, background:C.success, display:"inline-block" }} />Fővállalkozói {Math.round((forrasSplit.fov.count/forrasSplit.total)*100)}%</span>
+                <span style={{ display:"inline-flex", alignItems:"center", gap:6 }}><span style={{ width:8, height:8, borderRadius:2, background:C.warning, display:"inline-block" }} />Belső {Math.round((forrasSplit.belso.count/forrasSplit.total)*100)}%</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pénzügyi összesítő */}
+      {isAdmin && penzugyOsszesito && (
+        <div style={{ background: C.card, borderRadius:14, border:`1px solid ${C.border}`, padding:"16px 20px", marginBottom:20 }}>
+          <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:10, marginBottom:14, flexWrap:"wrap" }}>
+            <p style={{ fontFamily:FONT_HEADING, fontSize:15, fontWeight:800, color: C.text, margin:0, display:"flex", alignItems:"center", gap:8 }}>
+              <BarChart3 size={17} color={C.success} /> Pénzügyi összesítő
+            </p>
+            <span style={{ fontSize:12, color: C.muted }}>Élő számítás – minden aktív projekt tényleges adataiból</span>
+          </div>
+
+          {penzugyiKpik?.keszreJelentettElszamolasNelkul > 0 && (
+            <div style={{ display:"flex", alignItems:"center", gap:8, background:C.dangerLight, border:`1px solid ${C.danger}40`, borderRadius:9, padding:"9px 14px", marginBottom:14, fontSize:12.5, color:C.danger, fontWeight:600 }}>
+              <AlertTriangle size={15} />
+              {penzugyiKpik.keszreJelentettElszamolasNelkul} projekt készre jelentve, de az elszámolás még nincs előkészítve
+            </div>
+          )}
+
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:14, marginBottom:18 }}>
+            <div style={{ background:C.accentLight, border:`1px solid ${C.accent}40`, borderRadius:12, padding:"16px 18px" }}>
+              <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.accent, margin:"0 0 6px", display:"flex", alignItems:"center", gap:6 }}><TrendingUp size={14}/> Összes bevétel</p>
+              <p style={{ fontSize:24, fontWeight:800, color:C.text, margin:"0 0 4px" }}>{ft(penzugyOsszesito.osszesBevetel)}</p>
+              <p style={{ fontSize:11.5, color:C.textSub, margin:0 }}>{munkalapok.length} munkalap · {projektek.length} projekt alapján</p>
+            </div>
+            <div style={{ background:C.dangerLight, border:`1px solid ${C.danger}40`, borderRadius:12, padding:"16px 18px" }}>
+              <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.danger, margin:"0 0 6px", display:"flex", alignItems:"center", gap:6 }}><TrendingDown size={14}/> Összes kiadás</p>
+              <p style={{ fontSize:24, fontWeight:800, color:C.text, margin:"0 0 4px" }}>{ft(penzugyOsszesito.osszesKiadas)}</p>
+              <p style={{ fontSize:11.5, color:C.textSub, margin:0 }}>csapat, anyag, üzemanyag, egyéb együtt</p>
+            </div>
+            <div style={{ background: penzugyOsszesito.haszon >= 0 ? C.successLight : C.dangerLight, border:`1px solid ${penzugyOsszesito.haszon >= 0 ? C.success : C.danger}40`, borderRadius:12, padding:"16px 18px" }}>
+              <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color: penzugyOsszesito.haszon >= 0 ? C.success : C.danger, margin:"0 0 6px" }}>⚑ Haszon</p>
+              <p style={{ fontSize:24, fontWeight:800, color:C.text, margin:"0 0 4px" }}>{ft(penzugyOsszesito.haszon)}</p>
+              <p style={{ fontSize:11.5, color:C.textSub, margin:0 }}>{penzugyOsszesito.haszonPct !== null ? `${penzugyOsszesito.haszonPct}% haszonkulcs a bevételből` : "nincs még bevétel"}</p>
+            </div>
+          </div>
+
+          {penzugyOsszesito.osszesKiadas > 0 && (() => {
+            const kb = penzugyOsszesito.koltsegBontas;
+            const rows = [
+              { label:"Saját csapat bér",      val:kb.csapatBer,        color:C.accent },
+              { label:"Alvállalkozói díj",     val:kb.alvallalkozoiDij, color:C.success },
+              { label:"Szerelési anyag",       val:kb.anyagkoltseg,     color:C.warning },
+              { label:"Üzemanyag / kiszállás", val:kb.utikoltseg,       color:"#B45309" },
+              { label:"Kártérítés",            val:kb.karterites,       color:C.danger },
+              { label:"Egyéb költség",         val:kb.egyeb,            color:C.muted },
+            ].filter(r => r.val > 0);
+            const total = penzugyOsszesito.osszesKiadas;
+            return (
+              <div style={{ display:"flex", flexWrap:"wrap", gap:26, alignItems:"center" }}>
+                <div style={{ display:"flex", flex:"2 1 320px", minWidth:260, height:34, borderRadius:9, overflow:"hidden", border:`1px solid ${C.border}` }}>
+                  {rows.map(r => (
+                    <div key={r.label} title={`${r.label}: ${ft(r.val)}`} style={{ width:`${(r.val/total)*100}%`, background:r.color, height:"100%" }} />
+                  ))}
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:9, flex:"1 1 260px", minWidth:220 }}>
+                  {rows.map(r => (
+                    <div key={r.label} style={{ display:"flex", alignItems:"center", gap:10, fontSize:13 }}>
+                      <span style={{ width:10, height:10, borderRadius:3, background:r.color, flexShrink:0 }} />
+                      <span style={{ color:C.textSub, flex:1 }}>{r.label}</span>
+                      <span style={{ fontWeight:700, color:C.text }}>{ft(r.val)}</span>
+                      <span style={{ fontSize:11.5, color:C.muted, width:38, textAlign:"right" }}>{Math.round((r.val/total)*100)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          <p style={{ marginTop:16, paddingTop:14, borderTop:`1px dashed ${C.border}`, fontSize:11.5, color:C.muted, lineHeight:1.6 }}>
+            A bevétel és a haszon a fővállalkozói díjszabás-motorból és a saját munkák elfogadott ajánlataiból/tételes Excel-jeiből számol; a kiadás a munkalapok tényleges anyagtételeiből, a csapatbérekből és a rögzített útiköltség / egyéb tételekből áll össze – projektenként, élőben.
+          </p>
+        </div>
+      )}
 
       {/* Értékesítés – Árajánlatok */}
       {isAdmin && (
@@ -333,82 +495,6 @@ export default function Dashboard({ user }) {
               <p style={{ fontSize:20, fontWeight:800, color: C.text, margin:"0 0 2px" }}>{ajanlatStats.elutasit.db} db</p>
               {ajanlatStats.elutasit.osszeg > 0 && <p style={{ fontSize:11, color: C.muted, margin:0 }}>{ft(ajanlatStats.elutasit.osszeg)}</p>}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Projektek áttekintése */}
-      {isAdmin && (
-        <div style={{ background: C.card, borderRadius:14, border:`1px solid ${C.border}`, padding:"16px 20px", marginBottom:20 }}>
-          <p style={{ fontFamily:FONT_HEADING, fontSize:15, fontWeight:800, color: C.text, margin:"0 0 14px", display:"flex", alignItems:"center", gap:8 }}>
-            <Building2 size={17} color={C.accent} /> Projektek áttekintése
-          </p>
-          <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-            <div style={{ background: C.accentLight, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.accent}30`, flex:1, minWidth:130 }}>
-              <p style={{ fontSize:10, fontWeight:700, color: C.accent, textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Saját projektek</p>
-              <p style={{ fontSize:20, fontWeight:800, color: C.text, margin:0 }}>{projektStats.sajat}</p>
-            </div>
-            <div style={{ background: C.successLight, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.success}30`, flex:1, minWidth:130 }}>
-              <p style={{ fontSize:10, fontWeight:700, color: C.success, textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Fővállalkozói</p>
-              <p style={{ fontSize:20, fontWeight:800, color: C.text, margin:0 }}>{projektStats.fov}</p>
-            </div>
-            <div style={{ background: C.accentLight, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.accent}30`, flex:1, minWidth:130 }}>
-              <p style={{ fontSize:10, fontWeight:700, color: C.accent, textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Kivitelezés alatt</p>
-              <p style={{ fontSize:20, fontWeight:800, color: C.text, margin:0 }}>{projektStats.kivitelezés}</p>
-            </div>
-            <div style={{ background: C.successLight, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.success}30`, flex:1, minWidth:130 }}>
-              <p style={{ fontSize:10, fontWeight:700, color: C.success, textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Leszámlázva (nem fizetve)</p>
-              <p style={{ fontSize:20, fontWeight:800, color: C.text, margin:0 }}>{projektStats.leszamlazva}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Projekt pénzügyi KPI-k */}
-      {isAdmin && penzugyiKpik && (
-        <div style={{ background: C.card, borderRadius:14, border:`1px solid ${C.border}`, padding:"16px 20px", marginBottom:20 }}>
-          <p style={{ fontFamily:FONT_HEADING, fontSize:15, fontWeight:800, color: C.text, margin:"0 0 14px", display:"flex", alignItems:"center", gap:8 }}>
-            <BarChart3 size={17} color={C.success} /> Projekt pénzügyi összesítő
-          </p>
-          <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-            {penzugyiKpik.keszreJelentettElszamolasNelkul > 0 && (
-              <div style={{ background: C.dangerLight, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.danger}40`, flex:1, minWidth:140 }}>
-                <p style={{ fontSize:10, fontWeight:700, color: C.danger, textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>⚠ Elszámolás hiányzik</p>
-                <p style={{ fontSize:20, fontWeight:800, color: C.text, margin:"0 0 2px" }}>{penzugyiKpik.keszreJelentettElszamolasNelkul} projekt</p>
-                <p style={{ fontSize:11, color: C.muted, margin:0 }}>Készre jelentve, de nincs pénzügyi rekord</p>
-              </div>
-            )}
-            <div style={{ background: C.warningLight, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.warning}40`, flex:1, minWidth:140 }}>
-              <p style={{ fontSize:10, fontWeight:700, color: C.warning, textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Számlázható</p>
-              <p style={{ fontSize:20, fontWeight:800, color: C.text, margin:"0 0 2px" }}>{penzugyiKpik.szamlazhatoProjektek.length} projekt</p>
-              <p style={{ fontSize:11, color: C.muted, margin:0 }}>Kész, számlára vár</p>
-            </div>
-            <div style={{ background: C.accentLight, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.accent}40`, flex:1, minWidth:140 }}>
-              <p style={{ fontSize:10, fontWeight:700, color: C.accent, textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Számlázva – várja a kifizetést</p>
-              <p style={{ fontSize:20, fontWeight:800, color: C.text, margin:"0 0 2px" }}>{penzugyiKpik.szamlazvaKifizetesre.length} projekt</p>
-              <p style={{ fontSize:11, color: C.muted, margin:0 }}>Kiküldött számla, nem érkezett be</p>
-            </div>
-            {penzugyiKpik.fovVarhatoBevetel > 0 && (
-              <div style={{ background: C.accentLight, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.accent}40`, flex:1, minWidth:140 }}>
-                <p style={{ fontSize:10, fontWeight:700, color: C.accent, textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>FV várható bevétel</p>
-                <p style={{ fontSize:18, fontWeight:800, color: C.text, margin:"0 0 2px" }}>{ft(penzugyiKpik.fovVarhatoBevetel)}</p>
-                <p style={{ fontSize:11, color: C.muted, margin:0 }}>Aktív fővállalkozói projektek</p>
-              </div>
-            )}
-            {penzugyiKpik.sajatVarhatoProfit !== 0 && (
-              <div style={{ background: penzugyiKpik.sajatVarhatoProfit >= 0 ? C.successLight : C.dangerLight, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.success}40`, flex:1, minWidth:140 }}>
-                <p style={{ fontSize:10, fontWeight:700, color: penzugyiKpik.sajatVarhatoProfit >= 0 ? C.success : C.danger, textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Saját projektek profitja</p>
-                <p style={{ fontSize:18, fontWeight:800, color: C.text, margin:"0 0 2px" }}>{ft(penzugyiKpik.sajatVarhatoProfit)}</p>
-                <p style={{ fontSize:11, color: C.muted, margin:0 }}>Aktív saját ajánlat projektek</p>
-              </div>
-            )}
-            {penzugyiKpik.belsoMunkaKoltseg > 0 && (
-              <div style={{ background: C.successLight, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.success}40`, flex:1, minWidth:140 }}>
-                <p style={{ fontSize:10, fontWeight:700, color: C.success, textTransform:"uppercase", letterSpacing:.7, margin:"0 0 3px" }}>Belső munkák költsége</p>
-                <p style={{ fontSize:18, fontWeight:800, color: C.text, margin:"0 0 2px" }}>{ft(penzugyiKpik.belsoMunkaKoltseg)}</p>
-                <p style={{ fontSize:11, color: C.muted, margin:0 }}>Garancia, javítás, karbantartás</p>
-              </div>
-            )}
           </div>
         </div>
       )}
