@@ -24,6 +24,7 @@ export const SYNC_COLLECTIONS = [
   "anyag_ar_verziok",
   "kivitelezesi_csomagok",
   "ajanlatok",
+  "ceges_fix_koltsegek",
 ];
 
 // ─── Tombstone (törlés-napló) ─────────────────────────────────

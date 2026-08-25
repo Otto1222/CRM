@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, AlertTriangle, Wrench, Building2, FileText, B
 import { C, FONT, FONT_HEADING, STATUS_CFG } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import { loadKarteritesek, addKarterites, updateKarterites } from "../lib/karterites";
+import { calcCegesFixKoltsegHavi } from "../lib/cegesKoltsegek.js";
 import { canSeePrice } from "../lib/roles";
 import { loadLocal } from "../lib/localDb";
 import { calcEsmentProjektPenzugy } from "../services/workOrderFinancial.service.js";
@@ -189,6 +190,7 @@ export default function Dashboard({ user }) {
   const [projektek, setProjektek]       = useState(() => loadLocal("projektek")    || []);
   const [ajanlatok, setAjanlatok]       = useState(() => loadLocal("ajanlatok")   || []);
   const [karteritesek, setKarteritesek] = useState(() => loadKarteritesek());
+  const [cegesFixKoltsegHavi, setCegesFixKoltsegHavi] = useState(() => calcCegesFixKoltsegHavi());
 
   const isAdmin = canSeePrice(user?.role);
 
@@ -198,6 +200,7 @@ export default function Dashboard({ user }) {
       setProjektek(loadLocal("projektek")    || []);
       setAjanlatok(loadLocal("ajanlatok")   || []);
       setKarteritesek(loadKarteritesek());
+      setCegesFixKoltsegHavi(calcCegesFixKoltsegHavi());
     }
     window.addEventListener("crm-db-updated", refresh);
     window.addEventListener("storage", refresh);
@@ -469,6 +472,27 @@ export default function Dashboard({ user }) {
               </div>
             );
           })()}
+
+          {cegesFixKoltsegHavi > 0 && (
+            <div style={{ marginTop:18, paddingTop:16, borderTop:`1px solid ${C.border}` }}>
+              <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.muted, margin:"0 0 10px" }}>
+                Projekthez nem köthető, céges fix költségek
+              </p>
+              <div style={{ display:"flex", gap:14, flexWrap:"wrap" }}>
+                <div style={{ background:C.bg, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 16px", flex:"1 1 200px" }}>
+                  <p style={{ fontSize:11, color:C.muted, margin:"0 0 3px" }}>Iroda és egyéb havi fix költség</p>
+                  <p style={{ fontSize:16, fontWeight:800, color:C.text, margin:0 }}>{ft(cegesFixKoltsegHavi)}</p>
+                </div>
+                <div style={{ background: (penzugyOsszesito.haszon - cegesFixKoltsegHavi) >= 0 ? C.successLight : C.dangerLight, border:`1px solid ${(penzugyOsszesito.haszon - cegesFixKoltsegHavi) >= 0 ? C.success : C.danger}40`, borderRadius:10, padding:"10px 16px", flex:"1 1 200px" }}>
+                  <p style={{ fontSize:11, color: (penzugyOsszesito.haszon - cegesFixKoltsegHavi) >= 0 ? C.success : C.danger, margin:"0 0 3px" }}>Eredmény iroda-költség után</p>
+                  <p style={{ fontSize:16, fontWeight:800, color:C.text, margin:0 }}>{ft(penzugyOsszesito.haszon - cegesFixKoltsegHavi)}</p>
+                </div>
+              </div>
+              <p style={{ fontSize:11, color:C.muted, margin:"8px 0 0" }}>
+                A fenti "Haszon" az aktív projektek összesített hasznát mutatja, ebből vonja le ez a sor a havi iroda-típusú fix költséget – nem projektenként osztódik szét. Szerkesztés: Beállítások → Céges fix költségek.
+              </p>
+            </div>
+          )}
 
           <p style={{ marginTop:16, paddingTop:14, borderTop:`1px dashed ${C.border}`, fontSize:11.5, color:C.muted, lineHeight:1.6 }}>
             A bevétel és a haszon a fővállalkozói díjszabás-motorból és a saját munkák elfogadott ajánlataiból/tételes Excel-jeiből számol; a kiadás a munkalapok tényleges anyagtételeiből, a csapatbérekből és a rögzített útiköltség / egyéb tételekből áll össze – projektenként, élőben.

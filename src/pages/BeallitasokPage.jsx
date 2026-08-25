@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink, Upload, CheckCircle2, Save, Check, X, UserPlus, Pencil,
+  Users, Settings, FileText, Wrench, Building2, ChevronRight, BookTemplate, Shield, Trash2, BookOpen, ExternalLink, Upload, CheckCircle2, Save, Check, X, UserPlus, Pencil, Coins,
 } from "lucide-react";
 import { loadLocal, saveLocal } from "../lib/localDb";
+import { loadCegesFixKoltsegek, addCegesFixKoltseg, updateCegesFixKoltseg, deleteCegesFixKoltseg } from "../lib/cegesKoltsegek.js";
 import { clearCollection } from "../lib/dataSync.service";
 import {
   hasSablon, saveSablon, deleteSablon, getSablonMeta,
@@ -45,6 +46,14 @@ const MENU_ITEMS = [
     icon: Wrench,
     color: C.accent,
     bg: C.accentLight,
+  },
+  {
+    id: "cegeskoltsegek",
+    label: "Céges fix költségek",
+    desc: "Iroda bér és egyéb, projekthez nem köthető havi költségek",
+    icon: Coins,
+    color: C.warning,
+    bg: C.warningLight,
   },
   {
     id: "anyagtorzs",
@@ -183,6 +192,14 @@ export default function BeallitasokPage({ currentUser }) {
     );
   }
 
+  if (aktiv === "cegeskoltsegek") {
+    return (
+      <div>
+        <BackBtn onClick={() => setAktiv(null)} label="Céges fix költségek" />
+        <CegesFixKoltsegekBeallitasok />
+      </div>
+    );
+  }
   if (aktiv === "anyagtorzs") {
     return (
       <>
@@ -368,6 +385,73 @@ function KezikonyvekPanel() {
           <button onClick={() => openInstaller(true)} style={{ flex: 1, padding: "10px 0", background: C.success, color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>📥 Letöltés PDF-ként</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Céges fix költségek (iroda bér stb. – nem projekt-specifikus) ──
+function CegesFixKoltsegekBeallitasok() {
+  const [lista, setLista] = useState(() => loadCegesFixKoltsegek());
+  const [ujNev, setUjNev] = useState("");
+  const [ujOsszeg, setUjOsszeg] = useState("");
+
+  function frissit() { setLista(loadCegesFixKoltsegek()); }
+
+  function handleHozzaad() {
+    if (!ujNev.trim() || !ujOsszeg) return;
+    addCegesFixKoltseg(ujNev.trim(), Number(ujOsszeg));
+    setUjNev(""); setUjOsszeg("");
+    frissit();
+  }
+
+  const osszesen = lista.filter(i => i.aktiv !== false).reduce((s, i) => s + (i.haviOsszeg || 0), 0);
+  const inp = { flex: 1, padding: "9px 12px", border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, fontFamily: FONT, outline: "none" };
+
+  return (
+    <div style={{ padding: "0 28px 40px", fontFamily: FONT, maxWidth: 680 }}>
+      <p style={{ fontSize: 13, color: C.muted, marginBottom: 20, lineHeight: 1.6 }}>
+        Olyan havi, <strong>egyetlen projekthez sem köthető</strong> fix költségek (pl. iroda bér, bérleti díj,
+        könyvelő), amik függetlenül attól, hány projekt/csapat fut éppen, ugyanannyiba kerülnek. Ez a lista{" "}
+        <strong>nem oszlik szét</strong> projektenként – az egyes projektek nyeresége tiszta marad –, hanem a
+        Dashboard pénzügyi összesítőjén egy külön, teljes cégre vonatkozó sorként vonódik le a végleges eredményből.
+      </p>
+
+      <div style={{ background: C.accentLight, border: `1.5px solid ${C.accent}40`, borderRadius: 12, padding: "14px 18px", marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: .6 }}>Havi összesen</span>
+        <span style={{ fontSize: 20, fontWeight: 800, color: C.text }}>{osszesen.toLocaleString("hu-HU")} Ft</span>
+      </div>
+
+      <div style={{ background: "#fff", border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "14px 16px", marginBottom: 18 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .6, margin: "0 0 10px" }}>Új tétel</p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input value={ujNev} onChange={e => setUjNev(e.target.value)} placeholder="pl. Iroda bér" style={{ ...inp, minWidth: 160 }} />
+          <input type="number" min={0} value={ujOsszeg} onChange={e => setUjOsszeg(e.target.value)} placeholder="Ft / hó" style={{ ...inp, maxWidth: 140 }} />
+          <button onClick={handleHozzaad} style={{ padding: "9px 18px", background: C.accent, color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: "pointer" }}>
+            + Hozzáadás
+          </button>
+        </div>
+      </div>
+
+      {lista.length === 0 ? (
+        <p style={{ fontSize: 13, color: C.muted, fontStyle: "italic" }}>Még nincs rögzített céges fix költség.</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {lista.map(item => (
+            <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", opacity: item.aktiv === false ? .55 : 1 }}>
+              <span style={{ flex: 1, fontWeight: 600, fontSize: 13, color: C.text }}>{item.nev}</span>
+              <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{(item.haviOsszeg || 0).toLocaleString("hu-HU")} Ft/hó</span>
+              <button onClick={() => { updateCegesFixKoltseg(item.id, { aktiv: item.aktiv === false }); frissit(); }}
+                style={{ padding: "4px 10px", background: item.aktiv === false ? C.bg : C.successLight, color: item.aktiv === false ? C.muted : C.success, border: "none", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+                {item.aktiv === false ? "Inaktív" : "✓ Aktív"}
+              </button>
+              <button onClick={() => { deleteCegesFixKoltseg(item.id); frissit(); }}
+                style={{ padding: "5px 7px", background: "none", border: "none", color: C.danger, cursor: "pointer", display: "flex" }}>
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
