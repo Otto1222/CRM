@@ -466,8 +466,12 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
               Hibát/javítást bármikor jelezhetsz, onnan az elejéről indul újra a folyamat.
             </p>
             <Pills label="Elszámolási státusz" items={ELSZAMOLAS_STATUSZOK} value={rec.elszamolasStatusz}
-              canGo={next => canSetElszamolasStatusz(rec.elszamolasStatusz, next)}
-              onBlocked={next => setBlockedMsg(`Az elszámolási státuszt nem lehet közvetlenül "${next}"-ra állítani – csak a szomszédos lépésre, vagy "Javítani kell"-re léphetsz innen.`)}
+              canGo={next => canSetElszamolasStatusz(rec.elszamolasStatusz, next, rec.osszesKoltsegNetto)}
+              onBlocked={next => setBlockedMsg(
+                next === "Jóváhagyva" && !(Number(rec.osszesKoltsegNetto) > 0)
+                  ? `Az elszámolás nem hagyható jóvá, amíg a "Tényleges költségek" fülön az összeg 0 Ft – minden munkánál van legalább csapatbér és üzemanyag/kiszállás költség, töltsd ki és mentsd el, mielőtt jóváhagynád.`
+                  : `Az elszámolási státuszt nem lehet közvetlenül "${next}"-ra állítani – csak a szomszédos lépésre, vagy "Javítani kell"-re léphetsz innen.`
+              )}
               onChange={v => { setRec(p => ({...p, elszamolasStatusz: v})); setMentve(false); setBlockedMsg(null); }} disabled={!isAdmin} />
             <Pills label="Számlázási státusz"
               items={isBelso ? SZAMLAZAS_STATUSZOK.filter(s => s.id === "Nem számlázható") : SZAMLAZAS_STATUSZOK}

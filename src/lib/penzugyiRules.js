@@ -141,7 +141,17 @@ function canStepAdjacent(items, backId, current, next) {
   return Math.abs(nextIdx - curIdx) === 1;
 }
 
-export function canSetElszamolasStatusz(current, next) {
+/**
+ * Elszámolási státusz váltás engedélyezése. A "Jóváhagyva"-ra lépéshez a
+ * Tényleges költségek fülön rögzített összegnek ki kell töltve lennie
+ * (nem 0) – minden munkánál (garanciális javításnál is) van legalább
+ * saját csapat munkadíj + üzemanyag/kiszállás költség, tehát a 0 Ft itt
+ * azt jelenti, hogy még senki nem töltötte ki, nem azt, hogy tényleg
+ * ennyi volt. Enélkül a "Jóváhagyva" csak egy gombnyomás volt, semmit
+ * nem ellenőrzött a mögötte álló tényleges számokból.
+ */
+export function canSetElszamolasStatusz(current, next, tenylegesKoltsegOsszeg) {
+  if (next === "Jóváhagyva" && !(Number(tenylegesKoltsegOsszeg) > 0)) return false;
   return canStepAdjacent(ELSZAMOLAS_STATUSZOK, "Javítani kell", current, next);
 }
 
