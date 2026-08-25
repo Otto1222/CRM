@@ -33,6 +33,36 @@ import Card from "../components/Card";
 import StatusBadge from "../components/StatusBadge";
 import Avatar from "../components/Avatar";
 
+// ─── Kötelező dokumentumok (VBF/TIG/LMRA) automatikus generálása ────
+//
+// A felhasználó kérésére: amint egy munkalap "Ellenőrzés alatt" státuszba
+// kerül (a munka ténylegesen befejeződött, minden mező/fotó/aláírás meg
+// kell legyen), a sablonja szerint kötelező dokumentumok CSENDBEN,
+// kattintás nélkül legenerálódnak és a projekt Drive-mappájába
+// ("03_Dokumentumok") mentődnek – nem kell utólag 3 külön képernyőn
+// keresgélni, munkalaponként kattintgatni. Hiányzó sablon/Drive esetén
+// nem blokkolja a státuszváltást, csak jelez (crm-sync-warning toast).
+function kicsiAutoDokumentumGeneralas(munkalap, ujStatus) {
+  // "Ellenőrzés alatt"-nál generálódik először (a munka ekkor már kész,
+  // minden mező/fotó/aláírás meg kell legyen); "Lezárva"-nál újra fut
+  // (felülírja a fájlt), hogy a PM gyorsgombjai (amik "Ellenőrzés alatt"-ot
+  // átugorva egyenesen "Lezárva"-ra ugranak) se maradjanak dokumentum
+  // nélkül – a Drive-mentés névazonosság alapján felülír, nem duplikál.
+  if (ujStatus !== "Ellenőrzés alatt" && ujStatus !== "Lezárva") return;
+  const projektek = loadLocal("projektek") || [];
+  const projekt = projektek.find(p => p.id === munkalap.projektId);
+  if (!projekt) return;
+  import("../lib/kotelezoDokumentumok.service.js").then(({ generateKotelezoDokumentumok }) => {
+    generateKotelezoDokumentumok(munkalap, projekt).then(eredmeny => {
+      if (eredmeny.hiba?.length > 0) {
+        window.dispatchEvent(new CustomEvent("crm-sync-warning", {
+          detail: { message: `Kötelező dokumentum mentése sikertelen (${eredmeny.hiba.map(h => h.tipus).join(", ")}) – ${munkalap.dokumentumszam || munkalap.id}. Részletek: ${eredmeny.hiba.map(h => h.ok).join("; ")}` },
+        }));
+      }
+    }).catch(() => {});
+  }).catch(() => {});
+}
+
 function useIsMobile() {
   return window.innerWidth < 900;
 }
@@ -711,6 +741,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
                       window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));
                     });
                   }
+                  kicsiAutoDokumentumGeneralas(m, "Lezárva");
                   if(onRefresh) onRefresh();
                 });
               }} style={{ flex:1, padding:"10px", background:C.success, color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
@@ -792,6 +823,7 @@ function AdminMobileDetail({ m, data, userRole, onDelete, onRefresh }) {
                         window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));
                       });
                     }
+                    kicsiAutoDokumentumGeneralas(m, s);
                     if(onRefresh)onRefresh();
                   });
                 }} style={{ padding:"8px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`,
@@ -1054,6 +1086,7 @@ function AdminDesktopDetail({ m, data, userRole, onDelete, onRefresh }) {
                       window.dispatchEvent(new CustomEvent("crm-db-updated",{detail:{collection:"projektek"}}));
                     });
                   }
+                  kicsiAutoDokumentumGeneralas(m, s);
                   if(onRefresh)onRefresh();
                 });
               }} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${m.status===s?cfg.dot:C.border}`,

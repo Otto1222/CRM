@@ -131,25 +131,21 @@ function buildData(munkalap, projekt, vbf) {
   };
 }
 
-// ─── Fő generáló függvény ─────────────────────────────────────
-
-export async function generateVbfDocx(munkalap, projekt, vbf) {
+// ─── Blob előállítás (letöltés NÉLKÜL) ─────────────────────────
+//
+// Ezt használja mind a kézi "VBF letöltés" gomb (generateVbfDocx, lásd
+// lent), mind az automatikus, munkalap-státuszváltáskor induló generálás
+// (ld. kotelezoDokumentumok.service.js), ami a blobot nem letölti, hanem
+// a projekt Drive-mappájába menti – KÖZÖS logika, nem duplikáljuk.
+export function buildVbfDocxBlob(munkalap, projekt, vbf) {
   const b64 = localStorage.getItem(SABLON_LS_KEY);
-  if (!b64) {
-    alert(
-      "Nincs VBF sablon feltöltve!\n\n" +
-      "Lépés: Beállítások → VBF Sablon → .docx fájl feltöltése"
-    );
-    return false;
-  }
+  if (!b64) return { ok: false, error: "Nincs VBF sablon feltöltve (Beállítások → VBF Sablon)." };
 
   try {
-    // base64 → Uint8Array
     const binaryStr = atob(b64);
     const bytes = new Uint8Array(binaryStr.length);
     for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
 
-    // docxtemplater betöltés + kitöltés
     const zip = new PizZip(bytes);
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
@@ -159,7 +155,6 @@ export async function generateVbfDocx(munkalap, projekt, vbf) {
 
     doc.render(buildData(munkalap, projekt, vbf));
 
-    // Letöltés
     const blob = doc.getZip().generate({
       type: "blob",
       mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -171,36 +166,37 @@ export async function generateVbfDocx(munkalap, projekt, vbf) {
       munkalap?.clientNev?.replace(/\s+/g, "_") || "",
     ].filter(Boolean).join("_").replace(/[^a-zA-Z0-9_\-áéíóöőúüű]/g, "");
 
-    const url = URL.createObjectURL(blob);
-    const a   = document.createElement("a");
-    a.href     = url;
-    a.download = `${fajlnev}.docx`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    return true;
-
+    return { ok: true, blob, fajlnev: `${fajlnev}.docx` };
   } catch (err) {
     console.error("[vbfDocxService]", err);
-
-    // Docxtemplater specifikus hibaüzenet – hiányzó / hibás placeholder
     const errors = err?.properties?.errors;
-    if (errors?.length) {
-      const lista = errors
-        .map(e => e?.properties?.id || e?.message || "")
-        .filter(Boolean)
-        .join(", ");
-      alert(
-        `VBF sablon hiba!\n\n` +
-        `A Word fájlban ismeretlen vagy rosszul írt mező:\n${lista}\n\n` +
-        `Ellenőrizd a sablonban lévő {mezőneveket}.`
-      );
-    } else {
-      alert(`VBF generálás sikertelen:\n${err?.message || err}`);
-    }
+    const detail = errors?.length
+      ? `A Word fájlban ismeretlen vagy rosszul írt mező: ${errors.map(e => e?.properties?.id || e?.message || "").filter(Boolean).join(", ")}`
+      : (err?.message || String(err));
+    return { ok: false, error: detail };
+  }
+}
+
+// ─── Fő generáló függvény (kézi gomb – letölt) ─────────────────
+
+export async function generateVbfDocx(munkalap, projekt, vbf) {
+  const res = buildVbfDocxBlob(munkalap, projekt, vbf);
+  if (!res.ok) {
+    alert(res.error.startsWith("Nincs VBF sablon")
+      ? `${res.error}`
+      : `VBF sablon hiba!\n\n${res.error}`);
     return false;
   }
+
+  const url = URL.createObjectURL(res.blob);
+  const a   = document.createElement("a");
+  a.href     = url;
+  a.download = res.fajlnev;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  return true;
 }
 
 // ─── Placeholder dokumentáció (Beállítások oldalhoz) ─────────

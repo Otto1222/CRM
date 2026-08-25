@@ -66,6 +66,7 @@ function dispatch(p) {
   if (action === "saveFoto")             return saveFoto(p);
   if (action === "createMunkalapFolder") return createMunkalapFolder(p);
   if (action === "createProjektFolder")  return createProjektFolder(p);
+  if (action === "saveGeneratedDoc")     return saveGeneratedDoc(p);
 
   return { ok: false, error: "Ismeretlen action: " + action };
 }
@@ -300,6 +301,54 @@ function createProjektFolder(p) {
 
   Logger.log("Projekt mappa létrehozva: " + mappaName + " id=" + projektFolder.getId());
   return { ok: true, folderId: projektFolder.getId() };
+}
+
+// ─── Automatikusan generált dokumentum mentése (VBF/TIG/LMRA) ─────
+// params: { projektkod, clientNev?, fajlNev, fajlBase64, mimeType? }
+// A projekt "03_Dokumentumok" almappájába kerül – ha a projekt mappa
+// még nem létezik, létrehozza (ugyanúgy, mint createProjektFolder).
+// Névütközésnél a régi, azonos nevű fájlt felülírja (nem duplikál),
+// hogy egy munkalap ismételt automatikus generálása ne szemeteljen.
+function saveGeneratedDoc(p) {
+  if (!p.projektkod || !p.fajlNev || !p.fajlBase64) {
+    return { ok: false, error: "Hiányzó paraméter (projektkod / fajlNev / fajlBase64)" };
+  }
+
+  var projektek  = getOrCreateFolder(MUNKA_FOLDER_ID, "Projektek");
+  var mappaName  = p.clientNev
+    ? p.projektkod + " – " + p.clientNev
+    : p.projektkod;
+
+  var projektFolder = findProjektFolder(projektek, p.projektkod);
+  if (!projektFolder) {
+    projektFolder = projektek.createFolder(mappaName);
+    projektFolder.createFolder("01_Felmérés");
+    projektFolder.createFolder("02_Kivitelezés");
+    projektFolder.createFolder("03_Dokumentumok");
+    projektFolder.createFolder("04_Számlák");
+  }
+
+  var dokFolder = getOrCreateFolder(projektFolder.getId(), "03_Dokumentumok");
+
+  // Régi, azonos nevű fájl(ok) törlése – felülírás, nem duplikálás
+  var meglevo = dokFolder.getFilesByName(p.fajlNev);
+  while (meglevo.hasNext()) meglevo.next().setTrashed(true);
+
+  var blob = Utilities.newBlob(
+    Utilities.base64Decode(p.fajlBase64),
+    p.mimeType || "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    p.fajlNev
+  );
+  var file = dokFolder.createFile(blob);
+
+  return {
+    ok:        true,
+    action:    "saveGeneratedDoc",
+    fajlNev:   p.fajlNev,
+    fileId:    file.getId(),
+    folderId:  dokFolder.getId(),
+    timestamp: new Date().toISOString(),
+  };
 }
 
 // ─── Segédfüggvények ──────────────────────────────────────────────

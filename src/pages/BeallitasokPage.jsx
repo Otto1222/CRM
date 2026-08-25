@@ -923,6 +923,102 @@ function BackBtn({ onClick, label }) {
 // ─── LMRA Beállítások – PDF sablon feltöltés ─────────────────
 import { hasPdfSablon, savePdfSablon, deletePdfSablon, getPdfSablonMeta, readFileAsBase64 as lmraReadFile, LMRA_KOCKAZATOK } from "../lib/lmraService";
 import { hasVbfPdfSablon, saveVbfPdfSablon, deleteVbfPdfSablon, getVbfPdfSablonMeta } from "../lib/vbfPdfMerge";
+import {
+  hasLmraDocxSablon, saveLmraDocxSablon, deleteLmraDocxSablon, getLmraDocxSablonMeta, LMRA_PLACEHOLDER_DOCS,
+} from "../lib/lmraDocxService.js";
+
+// ─── LMRA Word sablon – az automatikus dokumentum-generáláshoz ─────
+// Ez KÜLÖNBÖZIK a lenti "LMRA nyomtatvány" feltöltéstől: az egy statikus
+// referencia-PDF a helyszíni megtekintéshez, EZ viszont a docxtemplater
+// által kitöltött, munkalap-lezáráskor automatikusan generált Word
+// dokumentum sablonja (ugyanaz a minta, mint a VBF/TIG sablonoknál).
+function LmraDocxSablonBeallitas() {
+  const fileRef = useRef();
+  const [van, setVan]   = useState(hasLmraDocxSablon);
+  const [meta, setMeta] = useState(getLmraDocxSablonMeta);
+  const [uploading, setUploading] = useState(false);
+  const [showDocs, setShowDocs]   = useState(false);
+
+  async function handleFeltoltes(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.endsWith(".docx")) { alert("Csak .docx (Word) fájl fogadható el!"); return; }
+    setUploading(true);
+    try {
+      const b64 = await lmraReadFile(file);
+      saveLmraDocxSablon(b64);
+      setVan(true); setMeta(getLmraDocxSablonMeta());
+    } catch (err) { alert("Feltöltés sikertelen: " + err.message); }
+    setUploading(false); e.target.value = "";
+  }
+
+  function handleTorles() {
+    if (!window.confirm("Biztosan törlöd a feltöltött LMRA Word sablont?")) return;
+    deleteLmraDocxSablon(); setVan(false); setMeta(null);
+  }
+
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div style={{ background: van ? C.successLight : C.warningLight, border: `1.5px solid ${van ? C.success : C.warningLight}`, borderRadius: 12, padding: "14px 18px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12 }}>
+        {van ? <CheckCircle2 size={20} color={C.success} /> : <Upload size={20} color={C.warning} />}
+        <div style={{ flex: 1 }}>
+          <p style={{ fontWeight: 700, fontSize: 13, color: van ? C.success : C.warning, margin: 0 }}>
+            {van ? `✓ LMRA Word sablon feltöltve (${meta?.kb ?? "?"} KB)` : "Nincs LMRA Word sablon feltöltve"}
+          </p>
+          <p style={{ fontSize: 11.5, color: van ? C.success : C.warning, margin: "2px 0 0" }}>
+            {van
+              ? "A munkalap \"Ellenőrzés alatt\" státuszba állításakor automatikusan legenerálódik és a projekt Drive-mappájába kerül."
+              : "Ezzel generálódik automatikusan a kitöltött LMRA Word dokumentum – enélkül az automatikus generálás kimarad."}
+          </p>
+        </div>
+        {van && (
+          <button onClick={handleTorles} style={{ padding: "6px 14px", background: C.dangerLight, color: C.danger, border: `1px solid ${C.dangerLight}`, borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: FONT }}>
+            Törlés
+          </button>
+        )}
+      </div>
+
+      <input ref={fileRef} type="file" accept=".docx" style={{ display: "none" }} onChange={handleFeltoltes} />
+      <button onClick={() => fileRef.current?.click()} disabled={uploading}
+        style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", background: uploading ? C.border : C.accent, color: "#fff", border: "none", borderRadius: 10, cursor: uploading ? "default" : "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT, marginBottom: 14 }}>
+        <Upload size={15} />
+        {uploading ? "Feltöltés..." : van ? "Word sablon cseréje" : "Word sablon (.docx) feltöltése"}
+      </button>
+
+      <div style={{ background: "#fff", border: `1.5px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
+        <button onClick={() => setShowDocs(s => !s)}
+          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: C.bg, border: "none", cursor: "pointer", fontFamily: FONT }}>
+          <span style={{ fontWeight: 700, fontSize: 13, color: C.text }}>📋 Útmutató: LMRA Word sablon placeholderek</span>
+          <span style={{ fontSize: 16, color: C.muted }}>{showDocs ? "▲" : "▼"}</span>
+        </button>
+        {showDocs && (
+          <div style={{ padding: "16px 18px" }}>
+            <div style={{ background: C.warningLight, border: `1px solid ${C.warningLight}`, borderRadius: 10, padding: "10px 14px", marginBottom: 14 }}>
+              <p style={{ fontSize: 12, color: C.warning, margin: 0, fontWeight: 600 }}>
+                ⚠️ Az aláírás-kép címkéje <code>%</code> jellel kezdődik (pl. <code>{"{%alairas}"}</code>), a szöveges mezők simán <code>{"{"}</code>-vel.
+              </p>
+            </div>
+            {LMRA_PLACEHOLDER_DOCS.map(({ csoport, mezok }) => (
+              <div key={csoport} style={{ marginBottom: 14 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>{csoport}</p>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                  <tbody>
+                    {mezok.map(([placeholder, leiras]) => (
+                      <tr key={placeholder} style={{ borderBottom: `1px solid ${C.border}` }}>
+                        <td style={{ padding: "6px 10px", fontFamily: "monospace", color: C.accent, fontWeight: 700, whiteSpace: "nowrap", background: C.accentLight }}>{placeholder}</td>
+                        <td style={{ padding: "6px 10px", color: C.textSub, fontSize: 12 }}>{leiras}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function LmraBeallitasok() {
   const fileRef = useRef();
@@ -952,6 +1048,17 @@ function LmraBeallitasok() {
 
   return (
     <div style={{ padding: "20px 24px", fontFamily: FONT, maxWidth: 640 }}>
+
+      <p style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: .7, margin: "0 0 10px" }}>
+        Automatikus Word-generáláshoz
+      </p>
+      <LmraDocxSablonBeallitas />
+
+      <div style={{ borderTop: `1px solid ${C.border}`, margin: "8px 0 20px" }} />
+      <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .7, margin: "0 0 10px" }}>
+        Helyszíni referencia + digitális kockázati pontok
+      </p>
+
       {/* Info */}
       <div style={{ background: C.dangerLight, border: `1.5px solid ${C.dangerLight}`, borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", gap: 10 }}>
         <Shield size={18} color={C.danger} style={{ flexShrink: 0, marginTop: 1 }} />

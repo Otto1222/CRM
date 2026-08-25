@@ -169,6 +169,28 @@ export async function driveCreateProjektFolder(projekt) {
   });
 }
 
+/**
+ * Automatikusan generált dokumentum (VBF/TIG/LMRA .docx) mentése a projekt
+ * "03_Dokumentumok" Drive-mappájába – felülírja az azonos nevű korábbi
+ * fájlt, nem duplikál. `blob` egy .docx Blob (pl. docxtemplater kimenete).
+ */
+export async function driveSaveGeneratedDoc(projekt, fajlNev, blob, mimeType) {
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => resolve(e.target.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+  return post({
+    action:      "saveGeneratedDoc",
+    projektkod:  projekt.projektkod,
+    clientNev:   projekt.clientNev || "",
+    fajlNev,
+    fajlBase64:  base64,
+    mimeType:    mimeType || "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  });
+}
+
 export function getDriveProjektSearchUrl(projektkod) {
   return `https://drive.google.com/drive/search?q=${encodeURIComponent('"' + projektkod + '"')}`;
 }

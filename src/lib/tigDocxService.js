@@ -103,9 +103,14 @@ export function buildTigTetelSorok(projekt) {
   }
 }
 
-// ─── Docxtemplater futtatás + letöltés ─────────────────────────
+// ─── Docxtemplater futtatás ─────────────────────────────────────
+//
+// renderToBlob: KÖZÖS mag – ezt használja a kézi letöltés
+// (renderAndDownload) ÉS az automatikus, munkalap-státuszváltáskor
+// induló generálás (ld. kotelezoDokumentumok.service.js), ami a blobot
+// nem letölti, hanem a projekt Drive-mappájába menti.
 
-function renderAndDownload(base64, data, fajlnev) {
+function renderToBlob(base64, data) {
   const binaryStr = atob(base64);
   const bytes = new Uint8Array(binaryStr.length);
   for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
@@ -118,10 +123,14 @@ function renderAndDownload(base64, data, fajlnev) {
   });
   doc.render(data);
 
-  const blob = doc.getZip().generate({
+  return doc.getZip().generate({
     type: "blob",
     mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   });
+}
+
+function renderAndDownload(base64, data, fajlnev) {
+  const blob = renderToBlob(base64, data);
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -130,6 +139,44 @@ function renderAndDownload(base64, data, fajlnev) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Blob előállítás letöltés nélkül – ugyanaz az adat-összeállítás, mint
+ * generateTigDocxEgyProjekt-nél, csak nem tölti le, hanem visszaadja a
+ * blobot + fájlnevet, hogy a hívó (automatikus generálás) elmenthesse
+ * a Drive-ra.
+ */
+export function buildTigDocxBlob(projekt, fovallalkozo) {
+  const meta = getTigSablonMeta(fovallalkozo?.id);
+  if (!meta) return { ok: false, error: "Nincs TIG sablon feltöltve ehhez a fővállalkozóhoz (Fővállalkozók oldal → TIG sablon)." };
+
+  const tetelek = buildTigTetelSorok(projekt);
+  const osszesen = tetelek.reduce((s, t) => s + t.osszesen, 0);
+  const data = {
+    fovallalkozo_nev: fovallalkozo?.nev || "",
+    ugyfel_nev:       projekt?.clientNev || "",
+    ugyfel_cim:       projekt?.clientCim || "",
+    telepitesi_cim:   projekt?.telepitesiCim || projekt?.clientCim || "",
+    projekt_kod:      projekt?.projektkod || "",
+    kulso_azonosito:  projekt?.kulsoAzonosito || "",
+    datum:            tigProjektDatum(projekt) || new Date().toLocaleDateString("hu-HU"),
+    tetelek:          tetelek.map(t => ({ ...t, egysegar: huFt(t.egysegar), osszesen: huFt(t.osszesen) })),
+    osszesen:         huFt(osszesen),
+  };
+
+  try {
+    const map = loadSablonok();
+    const blob = renderToBlob(map[fovallalkozo.id].base64, data);
+    return { ok: true, blob, fajlnev: `TIG_${projekt?.projektkod || projekt?.id || "projekt"}.docx` };
+  } catch (err) {
+    console.error("[tigDocxService] buildTigDocxBlob", err);
+    const errors = err?.properties?.errors;
+    const detail = errors?.length
+      ? `A Word fájlban ismeretlen vagy rosszul írt mező: ${errors.map(e => e?.properties?.id || e?.message || "").filter(Boolean).join(", ")}`
+      : (err?.message || String(err));
+    return { ok: false, error: detail };
+  }
 }
 
 function handleDocxHiba(err, cimke) {
