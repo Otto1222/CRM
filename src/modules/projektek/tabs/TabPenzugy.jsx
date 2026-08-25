@@ -278,8 +278,37 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
               <p style={{ fontSize: 11, fontWeight: 700, color: C.success, textTransform: "uppercase", letterSpacing: .7, margin: "0 0 10px" }}>
                 Fővállalkozói kalkuláció – {kalk.fovallalkoNev}
               </p>
+              {/* Nettó bevétel – tételesen, pontosan azok a fővállalkozói
+                  díjtábla-tételek/mennyiségek, amiket a projekt létrehozásánál
+                  (vagy szerkesztésénél) a kosárba választottak – ugyanaz az
+                  adat, mint a DijtetelKosarPicker-ben, csak itt már csak
+                  megjelenítve. Enélkül a "Nettó bevétel" egy fekete doboz
+                  volt, nem lehetett látni, miből jön ki az összeg. */}
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C.successLight}` }}>
+                <span style={{ fontSize: 12, color: "#374151", fontWeight: 700 }}>Nettó bevétel</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.success }}>{ft(kalk.nettoBevitel)}</span>
+              </div>
+              {kalk.beveteliTetelek?.length > 0 ? (
+                <div style={{ margin: "2px 0 8px", paddingLeft: 12, borderLeft: `2px solid ${C.successLight}` }}>
+                  {kalk.beveteliTetelek.map((t, i) => (
+                    <div key={t.szabalyId || t.id || i} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "4px 0" }}>
+                      <span style={{ fontSize: 11.5, color: C.textSub }}>
+                        {t.megnevezes}
+                        {t.megjegyzes && <span style={{ color: C.muted }}> · {t.megjegyzes}</span>}
+                        {t.hiany && <span style={{ color: C.danger, fontWeight: 700 }}> ⚠ hiányos</span>}
+                      </span>
+                      <span style={{ fontSize: 11.5, fontWeight: 600, color: C.text, whiteSpace: "nowrap" }}>
+                        {ft(t.hasznalandoNetto ?? t.autoNetto)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: 11, color: C.warning, margin: "2px 0 8px" }}>
+                  ⚠ Nincs egyetlen kiválasztott díjtábla-tétel sem – a bevétel innen nem tételes, ellenőrizd a Pénzügyi konfigurációt.
+                </p>
+              )}
               {[
-                ["Nettó bevétel",     kalk.nettoBevitel,      C.success],
                 // P0: "Csapat bér" és "Alvállalkozói díj" korábban két külön
                 // sorban jelentek meg, ami félrevezető volt – egy SAJÁT csapat
                 // AV-szabály szerinti bére is az "Alvállalkozói díj" sorban
@@ -318,7 +347,10 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
               )}
               {(projekt.penzugy?.tavKm || 0) > 0 && kalk.utikoltség === 0 && (
                 <p style={{ fontSize: 11, color: C.danger, fontWeight: 600, marginTop: 8 }}>
-                  ⚠ A projekthez {projekt.penzugy.tavKm} km táv van rögzítve, de az útiköltség 0 Ft – ehhez nincs automatikus km-alapú számítás, csak kézi rögzítés (Tényleges költségek → Km / Kiszállás).
+                  ⚠ Ez a kiadás-oldali útiköltség (a mi tényleges üzemanyag/utazás költségünk), NEM a fővállalkozótól kapott
+                  kiszállási díj – az utóbbi, ha a kosárban van ilyen tétel, a fenti Nettó bevétel részeként már megjelenik.
+                  A projekthez {projekt.penzugy.tavKm} km táv van rögzítve, de a mi kiadásunk 0 Ft – ehhez nincs automatikus
+                  km-alapú számítás, csak kézi rögzítés (Tényleges költségek → Km / Kiszállás).
                 </p>
               )}
             </div>
