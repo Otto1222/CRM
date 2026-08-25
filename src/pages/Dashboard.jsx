@@ -4,7 +4,7 @@ import { C, FONT, FONT_HEADING, STATUS_CFG } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import { loadKarteritesek, addKarterites, updateKarterites } from "../lib/karterites";
 import { calcCegesFixKoltsegHavi } from "../lib/cegesKoltsegek.js";
-import { canSeePrice } from "../lib/roles";
+import { hasPermission } from "../lib/permissions.js";
 import { loadLocal } from "../lib/localDb";
 import { calcEsmentProjektPenzugy } from "../services/workOrderFinancial.service.js";
 import { calcDashboardPenzugyiKpik, calcDashboardPenzugyiOsszesito, calcCsapatBerBontas } from "../modules/penzugy/penzugyi.service.js";
@@ -192,7 +192,7 @@ export default function Dashboard({ user }) {
   const [karteritesek, setKarteritesek] = useState(() => loadKarteritesek());
   const [cegesFixKoltsegHavi, setCegesFixKoltsegHavi] = useState(() => calcCegesFixKoltsegHavi());
 
-  const isAdmin = canSeePrice(user?.role);
+  const isAdmin = hasPermission(user, "lat_arakat");
 
   useEffect(() => {
     function refresh() {

@@ -5,7 +5,7 @@ import {
   AlertTriangle, LayoutTemplate, ChevronDown, TrendingUp, FileCheck2, Warehouse,
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
-import { getAllowedPages } from "../lib/roles.js";
+import { getAllowedPagesForUser } from "../lib/permissions.js";
 import Avatar from "./Avatar";
 
 // ─── Navigáció struktúra ─────────────────────────────────────────────────────
@@ -241,7 +241,7 @@ function GroupItem({ group, page, onNav, onClose, allowed, openGroups, toggleGro
 // ─── Sidebar belső tartalom ───────────────────────────────────────────────────
 
 function SidebarContent({ page, onNav, user, onLogout, onClose }) {
-  const allowed    = getAllowedPages(user?.role);
+  const allowed    = getAllowedPagesForUser(user);
   const isTelepito = user?.role === "Telepítő";
 
   // Csoportok nyitott állapota – az aktív oldal csoportja automatikusan nyílik

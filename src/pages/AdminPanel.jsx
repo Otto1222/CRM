@@ -3,6 +3,7 @@ import { Eye, EyeOff, Pencil, Check, X, Copy, RefreshCw, ShieldCheck, User, Lock
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getUsers, saveUsersLocal, hashPw, refreshUsersFromDrive } from "../lib/crmUsers";
 import { recordDeletion } from "../lib/dataSync.service";
+import { PERMISSION_GROUPS, getEffectivePermissions } from "../lib/permissions.js";
 import Card from "../components/Card";
 
 function Avatar({ initials, color, size = 40 }) {
@@ -19,9 +20,62 @@ function genPassword() {
   return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
+// ─── Jogosultság-szerkesztő – szerepkör alapértelmezett, egyénileg felülírható ──
+function PermissionsPanel({ user, onSave }) {
+  const [saving, setSaving] = useState(false);
+  const eff = getEffectivePermissions(user);
+  const hasOverride = Object.values(eff).some(v => v.isOverride);
+
+  async function toggle(key) {
+    const perms = { ...(user.permissions || {}), [key]: !eff[key].checked };
+    setSaving(true);
+    await onSave(user.id, { permissions: perms });
+    setSaving(false);
+  }
+
+  async function resetAll() {
+    setSaving(true);
+    await onSave(user.id, { permissions: {} });
+    setSaving(false);
+  }
+
+  return (
+    <div style={{ marginTop: 14, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .6 }}>
+          Jogosultságok – {user.role} szerepkör alapján, egyedileg felülírható
+        </span>
+        {hasOverride && (
+          <button onClick={resetAll} disabled={saving} style={{ fontSize: 11.5, fontWeight: 600, color: C.textSub, background: "#fff", border: `1px solid ${C.border}`, borderRadius: 7, padding: "5px 10px", cursor: "pointer", fontFamily: FONT }}>
+            ↺ Vissza az alapértelmezettre
+          </button>
+        )}
+      </div>
+      {PERMISSION_GROUPS.map(g => (
+        <div key={g.id} style={{ marginBottom: 12 }}>
+          <p style={{ fontSize: 10.5, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .5, margin: "0 0 6px" }}>{g.label}</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "2px 8px" }}>
+            {g.permissions.map(p => {
+              const state = eff[p.key];
+              return (
+                <label key={p.key} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 6px", borderRadius: 6, fontSize: 12.5, background: state.isOverride ? C.warningLight : "transparent", cursor: saving ? "default" : "pointer" }}>
+                  <input type="checkbox" checked={state.checked} disabled={saving} onChange={() => toggle(p.key)} />
+                  <span style={{ flex: 1, color: state.checked ? C.text : C.muted }}>{p.label}</span>
+                  {state.isOverride && <span style={{ fontSize: 9, fontWeight: 700, color: C.warning, border: `1px solid ${C.warning}`, borderRadius: 3, padding: "0 4px", flexShrink: 0 }}>egyedi</span>}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Egy felhasználó sor ─────────────────────────────────────
 function UserRow({ user, onSave, onDelete }) {
   const [editing,  setEditing]  = useState(false);
+  const [permOpen, setPermOpen] = useState(false);
   const [name,     setName]     = useState(user.name);
   const [username, setUsername] = useState(user.username);
   const [newPw,    setNewPw]    = useState("");
@@ -75,6 +129,9 @@ function UserRow({ user, onSave, onDelete }) {
 
         {!editing ? (
           <div style={{ display:"flex", gap:6 }}>
+            <button onClick={() => setPermOpen(p => !p)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: `1px solid ${permOpen ? C.accent : C.border}`, background: permOpen ? C.accentLight : "#fff", color: permOpen ? C.accent : C.textSub, cursor: "pointer", fontSize: 13, fontFamily: FONT }}>
+              <ShieldCheck size={14} /> Jogosultságok
+            </button>
             <button onClick={() => setEditing(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: "#fff", color: C.textSub, cursor: "pointer", fontSize: 13, fontFamily: FONT }}>
               <Pencil size={14} /> Szerkesztés
             </button>
@@ -172,6 +229,8 @@ function UserRow({ user, onSave, onDelete }) {
           </div>
         </div>
       )}
+
+      {permOpen && !editing && <PermissionsPanel user={user} onSave={onSave} />}
     </div>
   );
 }
