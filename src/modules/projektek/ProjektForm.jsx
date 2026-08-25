@@ -4,7 +4,7 @@ import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { getUsers } from "../../lib/crmUsers.js";
 import { loadLocal, saveLocal } from "../../lib/localDb.js";
 import {
-  PROJEKT_STATUSZOK, PROJEKT_FORRAS, getProjektTipus,
+  PROJEKT_FORRAS, getProjektTipus,
   ANYAGELSZAMOLAS_NINCS_KIVALASZTVA, ANYAGELSZAMOLASI_MODOK,
   hasAnyagelszamolasiMod, validateAnyagelszamolasiModStatusValtas,
 } from "./projekt.schema.js";
@@ -544,9 +544,19 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
       const clientNevVegleges = form.forrás === "fovallalkozoi_munka" && !form.clientNev?.trim()
         ? (form.megbizoCeg?.trim() || form.nev?.trim() || form.clientNev)
         : form.clientNev;
+      // Kosár-alapú fővállalkozói munkánál a "Napelem darabszám" mezőt nem
+      // lehet kézzel megadni (ld. fent) – ehelyett itt, mentéskor számoljuk
+      // ki a kosár "panel" egységű tételeinek mennyiség-összegéből, hogy a
+      // Riportok / TIG-dokumentumok / installer-nézet ne maradjon üresen.
+      const napelemDbVegleges = vanDijtablaKosar
+        ? (form.penzugy.dijtablaTetelek || [])
+            .filter(t => t.egyseg === "panel")
+            .reduce((s, t) => s + (Number(t.mennyiseg) || 0), 0)
+        : form.napelemDb;
       const data = {
         ...form,
         clientNev: clientNevVegleges,
+        napelemDb: napelemDbVegleges,
         elfogadottAjanlat: Number(form.elfogadottAjanlat) || 0,
         projektTipus: getProjektTipus(form.forrás),
         // Backward compat boolean mezők szinkronban az db értékekkel
@@ -554,7 +564,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
         okosmerő:    (form.smartMeterDb  || 0) > 0,
         penzugy: {
           ...form.penzugy,
-          darabszam: form.napelemDb || form.penzugy?.darabszam || 1,
+          darabszam: napelemDbVegleges || form.penzugy?.darabszam || 1,
         },
       };
       delete data.megjegyzes;
@@ -958,13 +968,15 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               </select>
             </Field>
             )}
-            <Field label="Státusz *" half>
-              <select value={form.status} onChange={e => upd("status", e.target.value)} style={inp}>
-                {PROJEKT_STATUSZOK.map(s => (
-                  <option key={s.id}>{s.id}</option>
-                ))}
-              </select>
-            </Field>
+            {/* "Státusz" szabad legördülő törölve – a projekt státusza a
+                munkalapok tényleges előrehaladásából, automatikusan
+                számolódik (syncProjektFromWorkorders), nem szabad kézzel
+                bárhonnan átállítható legyen (ld. a session korábbi,
+                "a státusz sehol ne legyen szabadon állítható" elve). Új
+                projekt mindig "Létrehozva" státusszal indul (ld. a form
+                kezdőállapota), szerkesztésnél a meglévő érték megmarad,
+                módosítani csak a megfelelő munkafolyamat-lépéseken keresztül
+                lehet (Munkalapok oldal). */}
 
             {/* P0-008: egyetlen, mindig látható kapcsoló a nem-alapvető
                 mezőkhöz (Csapat, Ütemezés, fővállalkozói ügyfél/kapcsolattartó
@@ -1178,10 +1190,17 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                   form.smartMeterDb  ? `${form.smartMeterDb} smart meter` : null,
                   form.autoTolto     ? "EV töltő" : null,
                 ].filter(Boolean).join(" · ") || "—"}
-                <span style={{ marginLeft: 6 }}>(felülírható lent a "További adatok" alatt)</span>
+                {!vanDijtablaKosar && <span style={{ marginLeft: 6 }}>(felülírható lent a "További adatok" alatt)</span>}
               </div>
             )}
-            {reszletekOpen && form.forrás !== "belso_munka" && (<>
+            {/* Kosár-alapú fővállalkozói munkánál (Wagner-Solar, Green Home)
+                ezek a mezők NEM jelennek meg kézi bevitelre – a panelszám a
+                kosár "panel" egységű tételeiből mentéskor automatikusan
+                számolódik (ld. lent, a mentés előtti "data" összeállításnál),
+                az inverter/akku/smart meter/EV töltő pedig a kosárban saját,
+                önálló tételként (pl. B06, C09) van díjazva, nincs rá külön
+                darabszám-mezőre szükség. */}
+            {reszletekOpen && form.forrás !== "belso_munka" && !vanDijtablaKosar && (<>
             <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Műszaki adatok {vanAutoMuszakiForras && "(auto-számítva – itt felülírható)"}
