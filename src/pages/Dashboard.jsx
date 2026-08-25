@@ -352,59 +352,59 @@ export default function Dashboard({ user }) {
             </div>
           </>
         )}
+
+        {/* Projektek – Saját / Fővállalkozói / Belső – ugyanabban a kártyában,
+            elválasztóval, hogy ne tűnjön két külön, egymást megismétlő
+            blokknak. A csempéken csak a tiszta darabszám szerepel, magyarázó
+            "X kivitelezés alatt · Y ..." alszöveg nélkül – az korábban
+            zavaró volt, mert sosem adta ki a teljes darabszámot (a fennmaradó
+            projektek egyszerűen más, itt nem részletezett státuszban vannak,
+            ld. fent a teljes "Munkák állapot szerint" bontást). */}
+        {isAdmin && (
+          <>
+            <div style={{ borderTop:`1px solid ${C.border}`, margin:"20px 0 16px" }} />
+            <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:10, marginBottom:14, flexWrap:"wrap" }}>
+              <p style={{ fontFamily:FONT_HEADING, fontSize:15, fontWeight:800, color: C.text, margin:0, display:"flex", alignItems:"center", gap:8 }}>
+                <Building2 size={17} color={C.accent} /> Projektek – Saját / Fővállalkozói / Belső
+              </p>
+              <span style={{ fontSize:15, fontWeight:800, color: C.text }}>{forrasSplit.total} <span style={{ fontSize:12, fontWeight:600, color:C.muted }}>aktív projekt</span></span>
+            </div>
+
+            <div style={{ display:"flex", gap:14, flexWrap:"wrap", marginBottom:16 }}>
+              <div style={{ position:"relative", overflow:"hidden", flex:"1 1 220px", minWidth:220, background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 18px 16px 20px" }}>
+                <div style={{ position:"absolute", left:0, top:0, bottom:0, width:4, background:C.accent }} />
+                <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.accent, margin:"0 0 4px" }}>Saját munka</p>
+                <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:0 }}>{forrasSplit.sajat.count} db</p>
+              </div>
+              <div style={{ position:"relative", overflow:"hidden", flex:"1 1 220px", minWidth:220, background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 18px 16px 20px" }}>
+                <div style={{ position:"absolute", left:0, top:0, bottom:0, width:4, background:C.success }} />
+                <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.success, margin:"0 0 4px" }}>Fővállalkozói munka</p>
+                <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:0 }}>{forrasSplit.fov.count} db</p>
+              </div>
+              <div style={{ position:"relative", overflow:"hidden", flex:"1 1 220px", minWidth:220, background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 18px 16px 20px" }}>
+                <div style={{ position:"absolute", left:0, top:0, bottom:0, width:4, background:C.warning }} />
+                <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.warning, margin:"0 0 4px" }}>Belső munka</p>
+                <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:0 }}>{forrasSplit.belso.count} db</p>
+              </div>
+            </div>
+
+            {forrasSplit.total > 0 && (
+              <div>
+                <div style={{ display:"flex", height:8, borderRadius:5, overflow:"hidden", border:`1px solid ${C.border}`, background:C.bg }}>
+                  <div style={{ width:`${(forrasSplit.sajat.count/forrasSplit.total)*100}%`, background:C.accent }} />
+                  <div style={{ width:`${(forrasSplit.fov.count/forrasSplit.total)*100}%`, background:C.success }} />
+                  <div style={{ width:`${(forrasSplit.belso.count/forrasSplit.total)*100}%`, background:C.warning }} />
+                </div>
+                <div style={{ display:"flex", gap:16, fontSize:11.5, color:C.muted, flexWrap:"wrap", marginTop:9 }}>
+                  <span style={{ display:"inline-flex", alignItems:"center", gap:6 }}><span style={{ width:8, height:8, borderRadius:2, background:C.accent, display:"inline-block" }} />Saját {Math.round((forrasSplit.sajat.count/forrasSplit.total)*100)}%</span>
+                  <span style={{ display:"inline-flex", alignItems:"center", gap:6 }}><span style={{ width:8, height:8, borderRadius:2, background:C.success, display:"inline-block" }} />Fővállalkozói {Math.round((forrasSplit.fov.count/forrasSplit.total)*100)}%</span>
+                  <span style={{ display:"inline-flex", alignItems:"center", gap:6 }}><span style={{ width:8, height:8, borderRadius:2, background:C.warning, display:"inline-block" }} />Belső {Math.round((forrasSplit.belso.count/forrasSplit.total)*100)}%</span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
-
-      {/* Projektek – Saját / Fővállalkozói / Belső */}
-      {isAdmin && (
-        <div style={{ background: C.card, borderRadius:14, border:`1px solid ${C.border}`, padding:"16px 20px", marginBottom:20 }}>
-          <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:10, marginBottom:14, flexWrap:"wrap" }}>
-            <p style={{ fontFamily:FONT_HEADING, fontSize:15, fontWeight:800, color: C.text, margin:0, display:"flex", alignItems:"center", gap:8 }}>
-              <Building2 size={17} color={C.accent} /> Projektek – Saját / Fővállalkozói / Belső
-            </p>
-            <span style={{ fontSize:15, fontWeight:800, color: C.text }}>{forrasSplit.total} <span style={{ fontSize:12, fontWeight:600, color:C.muted }}>aktív projekt</span></span>
-          </div>
-
-          <div style={{ display:"flex", gap:14, flexWrap:"wrap", marginBottom:16 }}>
-            <div style={{ position:"relative", overflow:"hidden", flex:"1 1 220px", minWidth:220, background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 18px 16px 20px" }}>
-              <div style={{ position:"absolute", left:0, top:0, bottom:0, width:4, background:C.accent }} />
-              <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.accent, margin:"0 0 4px" }}>Saját munka</p>
-              <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 6px" }}>{forrasSplit.sajat.count} db</p>
-              <p style={{ fontSize:11.5, color:C.muted, margin:0 }}>
-                {forrasSplit.sajat.kivitelezés} kivitelezés alatt · {penzugyiKpik ? penzugyiKpik.szamlazhatoProjektek.filter(p => p.forrás === "sajat_ajanlat" || p.forrás === "saját_ügyfél").length : 0} számlázható
-              </p>
-            </div>
-            <div style={{ position:"relative", overflow:"hidden", flex:"1 1 220px", minWidth:220, background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 18px 16px 20px" }}>
-              <div style={{ position:"absolute", left:0, top:0, bottom:0, width:4, background:C.success }} />
-              <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.success, margin:"0 0 4px" }}>Fővállalkozói munka</p>
-              <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 6px" }}>{forrasSplit.fov.count} db</p>
-              <p style={{ fontSize:11.5, color:C.muted, margin:0 }}>
-                {forrasSplit.fov.kivitelezés} kivitelezés alatt · {penzugyiKpik ? penzugyiKpik.szamlazvaKifizetesre.filter(p => p.forrás === "fovallalkozoi_munka" || p.forrás === "fővállalkozói").length : 0} leszámlázva, nem fizetve
-              </p>
-            </div>
-            <div style={{ position:"relative", overflow:"hidden", flex:"1 1 220px", minWidth:220, background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, padding:"16px 18px 16px 20px" }}>
-              <div style={{ position:"absolute", left:0, top:0, bottom:0, width:4, background:C.warning }} />
-              <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.warning, margin:"0 0 4px" }}>Belső munka</p>
-              <p style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 6px" }}>{forrasSplit.belso.count} db</p>
-              <p style={{ fontSize:11.5, color:C.muted, margin:0 }}>Garancia, javítás, karbantartás</p>
-            </div>
-          </div>
-
-          {forrasSplit.total > 0 && (
-            <div>
-              <div style={{ display:"flex", height:8, borderRadius:5, overflow:"hidden", border:`1px solid ${C.border}`, background:C.bg }}>
-                <div style={{ width:`${(forrasSplit.sajat.count/forrasSplit.total)*100}%`, background:C.accent }} />
-                <div style={{ width:`${(forrasSplit.fov.count/forrasSplit.total)*100}%`, background:C.success }} />
-                <div style={{ width:`${(forrasSplit.belso.count/forrasSplit.total)*100}%`, background:C.warning }} />
-              </div>
-              <div style={{ display:"flex", gap:16, fontSize:11.5, color:C.muted, flexWrap:"wrap", marginTop:9 }}>
-                <span style={{ display:"inline-flex", alignItems:"center", gap:6 }}><span style={{ width:8, height:8, borderRadius:2, background:C.accent, display:"inline-block" }} />Saját {Math.round((forrasSplit.sajat.count/forrasSplit.total)*100)}%</span>
-                <span style={{ display:"inline-flex", alignItems:"center", gap:6 }}><span style={{ width:8, height:8, borderRadius:2, background:C.success, display:"inline-block" }} />Fővállalkozói {Math.round((forrasSplit.fov.count/forrasSplit.total)*100)}%</span>
-                <span style={{ display:"inline-flex", alignItems:"center", gap:6 }}><span style={{ width:8, height:8, borderRadius:2, background:C.warning, display:"inline-block" }} />Belső {Math.round((forrasSplit.belso.count/forrasSplit.total)*100)}%</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Pénzügyi összesítő */}
       {isAdmin && penzugyOsszesito && (
