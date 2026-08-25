@@ -4,6 +4,7 @@
  */
 
 import { KM_TIPUSOK } from "../modules/munkatipusok/munkatipus.schema.js";
+import { calcKmDijOsszeg } from "../modules/fovallalkozok/elszamolasiMotor.js";
 
 /**
  * @param {object} params
@@ -30,11 +31,10 @@ export function calcKmElszamolas({ kmTipus, kmEgyirany = 0, ftKm = 0, kuszobKm =
 
     case "kuszob_folott": {
       const kuszob = Number(kuszobKm) || 0;
-      const elszam = Math.max(0, km - kuszob);
-      const osszeg = Math.round(elszam * 2 * rate);
+      const { odaVisszaTeljes, fizetendoKm, osszeg } = calcKmDijOsszeg(km, kuszob, rate);
       return {
         netto: osszeg,
-        megjegyzes: `${km} km − ${kuszob} km küszöb = ${elszam} km × 2 × ${rate} Ft/km = ${osszeg} Ft`,
+        megjegyzes: `Teljes oda-vissza ${odaVisszaTeljes} km − ${kuszob} km küszöb = fizetendő ${fizetendoKm} km × ${rate} Ft/km = ${osszeg} Ft`,
       };
     }
 

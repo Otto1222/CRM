@@ -58,6 +58,30 @@ export function calcSavosOsszeg(savok, darabszam) {
 }
 
 /**
+ * Küszöb-alapú (sávos) kiszállási díj – EGYETLEN, közös képlet, hogy ne
+ * duplikálódjon (és ne térjen el) a projekt létrehozás előnézetében
+ * (ProjektForm.jsx), a kosár-választóban (DijtetelKosarPicker.jsx), a
+ * kosár-alapú bevétel-számításban (dijtablaBevetel.js) és a klasszikus
+ * "km" szabály-módban (lent) sem.
+ *
+ * A küszöböt a TELJES oda-vissza távra kell alkalmazni, nem az
+ * egyirányú távra (majd utána duplázni) – pl. 70 km egyirányú, 50 km
+ * küszöb esetén a fizetendő táv (70×2)−50 = 90 km, NEM (70−50)×2 = 40 km.
+ * Küszöb nélkül (0) a képlet visszaesik a teljes oda-vissza távra, tehát
+ * a küszöb nélküli fővállalkozóknál (teljes utat fizetik) a viselkedés
+ * változatlan marad.
+ */
+export function calcKmDijOsszeg(tavKmEgyirany, kuszobKm, ftKm) {
+  const odaVisszaTeljes = (Number(tavKmEgyirany) || 0) * 2;
+  const fizetendoKm     = Math.max(0, odaVisszaTeljes - (Number(kuszobKm) || 0));
+  return {
+    odaVisszaTeljes,
+    fizetendoKm,
+    osszeg: Math.round(fizetendoKm * (Number(ftKm) || 0)),
+  };
+}
+
+/**
  * Egy szabály alapján kiszámolja az összeget.
  * @param {object} szabaly  – rule objektum
  * @param {object} input    – { darabszam?: number, tavKm?: number }
@@ -84,12 +108,8 @@ export function calcSzabalyOsszeg(szabaly, input = {}) {
     case "savos":
       return calcSavosOsszeg(szabaly.savok, darabszam);
 
-    case "km": {
-      const ftKm   = Number(szabaly.kmDijFtKm)  || 0;
-      const kuszob = Number(szabaly.kmKuszobKm) || 0;
-      const effKm  = Math.max(0, tavKm - kuszob);
-      return Math.round(effKm * 2 * ftKm);
-    }
+    case "km":
+      return calcKmDijOsszeg(tavKm, szabaly.kmKuszobKm, szabaly.kmDijFtKm).osszeg;
 
     case "fix_kiszallas":
       return Number(szabaly.kiszallasiDij) || 0;

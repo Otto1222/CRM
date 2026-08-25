@@ -26,6 +26,7 @@ import AddressSearch from "../../components/AddressSearch.jsx";
 import { calcRoundTripKm } from "../../lib/geoService.js";
 import TetelesExcelImportPanel from "../../components/TetelesExcelImportPanel.jsx";
 import DijtetelKosarPicker from "../../components/DijtetelKosarPicker.jsx";
+import { calcKmDijOsszeg } from "../fovallalkozok/elszamolasiMotor.js";
 import { becsulMuszakiAdatokKosarbol, becsulMuszakiAdatokAjanlatFoTetelekbol } from "../../lib/dijtablaMuszakiAdatokBecsles.js";
 const Field = ({ label, children, half }) => (
   <div style={{ gridColumn: half ? "span 1" : "span 2" }}>
@@ -427,9 +428,9 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     const tetelek = form.penzugy.dijtablaTetelek || [];
     const tetelekOsszesen = tetelek.reduce((s, t) => s + (Number(t.osszesen) || 0), 0);
     const kellKm = tetelek.some(t => t.kmDij) && Number(form.penzugy.dijtablaKmDijFtKm) > 0;
-    const kuszob = Number(form.penzugy.dijtablaKmKuszobKm) || 0;
-    const effKm  = Math.max(0, (Number(form.penzugy.tavKm) || 0) - kuszob);
-    const kmOsszeg = kellKm ? Math.round(effKm * 2 * (Number(form.penzugy.dijtablaKmDijFtKm) || 0)) : 0;
+    const kmOsszeg = kellKm
+      ? calcKmDijOsszeg(form.penzugy.tavKm, form.penzugy.dijtablaKmKuszobKm, form.penzugy.dijtablaKmDijFtKm).osszeg
+      : 0;
     upd("elfogadottAjanlat", tetelekOsszesen + kmOsszeg);
   }
   function updPenz(k, v) {

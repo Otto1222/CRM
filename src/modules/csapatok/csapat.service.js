@@ -1,4 +1,5 @@
 import { CSAPAT_SCHEMA, CSAPAT_TAG_SCHEMA } from "./csapat.schema.js";
+import { calcKmDijOsszeg } from "../fovallalkozok/elszamolasiMotor.js";
 
 const KEY            = "csapatok";
 const CSAPAT_TAGOK_KEY = "csapat_tagok";
@@ -138,9 +139,13 @@ export function calcCsapatKmBer(csapat, tavKm = 0) {
   if (!csapat?.kmElszamolasAktiv || !csapat.kmDijFtKm) return { osszeg: 0, megjegyzes: "" };
   const kuszob = Number(csapat.kmKuszobKm) || 0;
   const ftKm   = Number(csapat.kmDijFtKm)  || 0;
-  const elszam = Math.max(0, tavKm - kuszob);
-  const osszeg = Math.round(elszam * 2 * ftKm);
-  return { osszeg, megjegyzes: `${tavKm} km − ${kuszob} km küszöb = ${elszam} km × 2 × ${ftKm} Ft/km` };
+  const { odaVisszaTeljes, fizetendoKm, osszeg } = calcKmDijOsszeg(tavKm, kuszob, ftKm);
+  return {
+    osszeg,
+    megjegyzes: kuszob > 0
+      ? `Teljes oda-vissza ${odaVisszaTeljes} km − ${kuszob} km küszöb = fizetendő ${fizetendoKm} km × ${ftKm} Ft/km`
+      : `Oda-vissza ${odaVisszaTeljes} km × ${ftKm} Ft/km`,
+  };
 }
 
 // ─── Alvállalkozói elszámolási szabályok (új motor) ───────────

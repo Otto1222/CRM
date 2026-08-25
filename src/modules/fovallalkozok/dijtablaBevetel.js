@@ -12,7 +12,7 @@
  * csak a form-előnézetben jelent meg helyesen, a valódi dashboardon/riportokon
  * nem (ld. git history – P0-012 javítás).
  */
-import { calcSavosOsszeg } from "./elszamolasiMotor.js";
+import { calcSavosOsszeg, calcKmDijOsszeg } from "./elszamolasiMotor.js";
 
 /**
  * @param {object} penzugy  – projekt.penzugy (tartalmazza a dijtablaTetelek
@@ -61,17 +61,17 @@ export function buildBeveteliTetelekKosarbol(penzugy) {
     // díjat, ahogy a klasszikus szabály-motor "km" módja is teszi
     // (ld. elszamolasiMotor.js). Küszöb nélkül (0/nincs megadva) a
     // viselkedés változatlan – a teljes táv számolódik, mint eddig.
-    const kuszob  = Number(penzugy?.dijtablaKmKuszobKm) || 0;
-    const effKm   = Math.max(0, (Number(penzugy?.tavKm) || 0) - kuszob);
-    const odaVissza = effKm * 2;
+    const kuszob = Number(penzugy?.dijtablaKmKuszobKm) || 0;
+    const ftKm   = Number(penzugy?.dijtablaKmDijFtKm) || 0;
+    const { odaVisszaTeljes, fizetendoKm, osszeg } = calcKmDijOsszeg(penzugy?.tavKm, kuszob, ftKm);
     sorok.push({
       szabalyId:  "dijtabla_km",
       megnevezes: kuszob > 0
-        ? `Kiszállási díj (${kuszob} km felett, oda-vissza ${odaVissza} km)`
-        : `Kiszállási díj (oda-vissza ${odaVissza} km)`,
+        ? `Kiszállási díj (${kuszob} km felett, teljes oda-vissza ${odaVisszaTeljes} km – ebből fizetendő ${fizetendoKm} km)`
+        : `Kiszállási díj (oda-vissza ${odaVisszaTeljes} km)`,
       mod:        "km",
-      autoNetto:  Math.round(odaVissza * (Number(penzugy?.dijtablaKmDijFtKm) || 0)),
-      megjegyzes: `${penzugy?.dijtablaKmDijFtKm?.toLocaleString?.("hu-HU") || 0} Ft/km${kuszob > 0 ? ` (${kuszob} km küszöb felett)` : ""}`,
+      autoNetto:  osszeg,
+      megjegyzes: `${ftKm.toLocaleString("hu-HU")} Ft/km${kuszob > 0 ? ` (${kuszob} km küszöb felett, a teljes oda-vissza távból)` : ""}`,
       felulirva:  false,
       hiany:      false,
     });

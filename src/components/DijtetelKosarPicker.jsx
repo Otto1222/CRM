@@ -17,7 +17,7 @@ import { useMemo, useState } from "react";
 import { Plus, Minus, Trash2, Search, Navigation } from "lucide-react";
 import { C, FONT } from "../lib/constants";
 import { getAktivKatalogusTetelek, groupKatalogusByKategoria } from "../modules/fovallalkozok/dijtetelKatalogus.service.js";
-import { calcSavosOsszeg } from "../modules/fovallalkozok/elszamolasiMotor.js";
+import { calcSavosOsszeg, calcKmDijOsszeg } from "../modules/fovallalkozok/elszamolasiMotor.js";
 
 const ft = n => Number(n || 0).toLocaleString("hu-HU") + " Ft";
 
@@ -84,10 +84,9 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
   }
 
   const tetelekOsszesen = kosar.reduce((s, k) => s + (Number(k.osszesen) || 0), 0);
-  const kuszobKm  = Number(kmMeta?.kuszobKm) || 0;
-  const effKm     = Math.max(0, (Number(tavKm) || 0) - kuszobKm);
-  const odaVissza = effKm * 2;
-  const kmOsszeg = kellKmDij ? Math.round(odaVissza * (Number(kmMeta?.ftKm) || 0)) : 0;
+  const kuszobKm = Number(kmMeta?.kuszobKm) || 0;
+  const { odaVisszaTeljes: odaVissza, fizetendoKm, osszeg: kmOsszegSzamolt } = calcKmDijOsszeg(tavKm, kuszobKm, kmMeta?.ftKm);
+  const kmOsszeg = kellKmDij ? kmOsszegSzamolt : 0;
   const vegosszeg = tetelekOsszesen + kmOsszeg;
 
   if (!tulajdonosId) {
@@ -210,7 +209,9 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, paddingTop: 8, borderTop: `1px dashed ${C.border}` }}>
               <Navigation size={13} color={C.accent} />
               <span style={{ flex: 1, fontSize: 12, color: C.textSub }}>
-                Kiszállási díj ({kuszobKm > 0 ? `${kuszobKm} km felett, ` : ""}oda-vissza {odaVissza || 0} km × {ft(kmMeta?.ftKm)}/km)
+                {kuszobKm > 0
+                  ? `Kiszállási díj (teljes oda-vissza ${odaVissza || 0} km, ${kuszobKm} km küszöb felett fizetendő ${fizetendoKm || 0} km × ${ft(kmMeta?.ftKm)}/km)`
+                  : `Kiszállási díj (oda-vissza ${odaVissza || 0} km × ${ft(kmMeta?.ftKm)}/km)`}
               </span>
               {kmTetelek.length > 1 && (
                 <select value={kmMeta?.kmTetelId || ""} onChange={e => {
