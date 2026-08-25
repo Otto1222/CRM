@@ -997,11 +997,10 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <Field label={form.forrás === "sajat_ajanlat" ? "Ügyfél neve *" : "Ügyfél neve (opcionális)"} half>
               <input value={form.clientNev} onChange={e => upd("clientNev", e.target.value)} placeholder="Kovács János" style={inp} />
             </Field>
-            {form.forrás === "fovallalkozoi_munka" && (
-            <Field label="Megbízó cég neve" half>
-              <input value={form.megbizoCeg || ""} onChange={e => upd("megbizoCeg", e.target.value)} placeholder="pl. Green-Home Kft." style={inp} />
-            </Field>
-            )}
+            {/* Megbízó cég neve: manuális input törölve (alig 3 fájlban
+                használt mező volt) – marad az automatikus kitöltés a
+                kiválasztott fővállalkozó nevéből (ld. handleFovallalkozo),
+                csak nincs hozzá saját szerkesztő mező a form-on. */}
             <Field label="Kapcsolattartó" half>
               <input value={form.kapcsolattarto} onChange={e => upd("kapcsolattarto", e.target.value)} placeholder="Kapcsolattartó neve" style={inp} />
             </Field>
@@ -1072,22 +1071,10 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               <input value={form.fovMegjegyzes} onChange={e => upd("fovMegjegyzes", e.target.value)}
                 placeholder="Bármilyen egyéb tudnivaló a telepítéshez…" style={inp} />
             </Field>
-            {reszletekOpen && (
-            <Field label="Státusz (finanszírozás)">
-              <input
-                list="finanszirozas-opciok"
-                value={form.finanszirozasCimke}
-                onChange={e => upd("finanszirozasCimke", e.target.value)}
-                placeholder="pl. Saját önerős, VisszaWatt, Junior Vital…"
-                style={inp}
-              />
-              <datalist id="finanszirozas-opciok">
-                <option value="Saját önerős" />
-                <option value="VisszaWatt" />
-                <option value="Junior Vital" />
-              </datalist>
-            </Field>
-            )}
+            {/* Státusz (finanszírozás): mező törölve a form-ról (alig 1
+                fájlban használt) – a projekt.finanszirozasCimke séma-mező
+                megmarad (régi projekteknél megjelenik, ha be volt írva),
+                csak nincs hozzá szerkesztő a létrehozás/szerkesztés form-on. */}
             </>)}
             </>)}
             {/* Belső munkánál nincs ügyfél section, de telepítési cím kell */}
