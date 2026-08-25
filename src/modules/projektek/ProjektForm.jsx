@@ -185,12 +185,14 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
   const ugyfelMezokLathatok =
     form.forrás === "sajat_ajanlat" ? (ugyfélOpen || !form.ajanlatId)
     : true;
-  // P0-013: fővállalkozói munkánál a "puha" ügyfél-adminisztráció (nem a
-  // Telepítési cím, ami mindig kell a km-hez) csak a "További adatok"
-  // megnyitása után látszik – a projekt létrehozás elsődleges nézete így
-  // nem mutat ~9 olyan mezőt, ami a költségszámításhoz nem szükséges.
-  const softUgyfelMezokLathatok =
-    ugyfelMezokLathatok && (form.forrás !== "fovallalkozoi_munka" || reszletekOpen);
+  // P0-013 (revízió): a felhasználó egyértelműen jelezte, hogy az Ügyfél
+  // neve / Kapcsolattartó / Telefonszám / E-mail / Ügyfél lakcíme mezőket
+  // ténylegesen minden fővállalkozói projektnél kitölti – ezek tehát ismét
+  // elsődlegesen láthatók, NEM a "További adatok" mögött. Csak azokat a
+  // mezőket rejtettük el / töröltük, amikhez tényleg nincs referencia
+  // máshol a rendszerben (ld. FV kapcsolattartó, Fizetési határidő,
+  // Megbízó cég neve, Státusz/finanszírozás).
+  const softUgyfelMezokLathatok = ugyfelMezokLathatok;
   // P0-007: "Saját munka" almenettől függően más a kötelező feltétel –
   // ajánlat-alfajtánál ajánlat kiválasztása, Excel-alfajtánál sikeres import.
   // Tétel-kosár a díjtétel-katalógusból (ld. DijtetelKosarPicker) – ha van
@@ -1210,6 +1212,16 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               </label>
             </Field>
             </>)}
+            {/* Fővállalkozói munkánál a "Tervezett befejezés" elsődlegesen
+                látható (a felhasználó ezt ténylegesen kitölti), a "Tervezett
+                kezdés" viszont ugyanaz a mező, mint a fentebbi "Telepítés
+                dátuma" (form.tervezettKezdes) – itt nem duplikáljuk. */}
+            {form.forrás === "fovallalkozoi_munka" && (
+            <Field label="Tervezett befejezés" half>
+              <input type="date" value={form.tervezettBefejezes} onChange={e => upd("tervezettBefejezes", e.target.value)} style={inp} />
+            </Field>
+            )}
+            {form.forrás !== "fovallalkozoi_munka" && (<>
             {!reszletekOpen && (form.tervezettKezdes || form.tervezettBefejezes) && (
               <div style={{ gridColumn: "span 2", fontSize: 12, color: C.muted }}>
                 Ütemezés: {form.tervezettKezdes || "?"} → {form.tervezettBefejezes || "?"}
@@ -1221,17 +1233,13 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 Ütemezés
               </p>
             </div>
-            {/* Fővállalkozói munkánál a "Tervezett kezdés" ugyanaz a mező,
-                mint a fentebbi "Telepítés dátuma" (form.tervezettKezdes) –
-                itt nem duplikáljuk, csak a záró dátum marad. */}
-            {form.forrás !== "fovallalkozoi_munka" && (
             <Field label="Tervezett kezdés" half>
               <input type="date" value={form.tervezettKezdes} onChange={e => upd("tervezettKezdes", e.target.value)} min={new Date().toISOString().slice(0,10)} style={inp} />
             </Field>
-            )}
             <Field label="Tervezett befejezés" half>
               <input type="date" value={form.tervezettBefejezes} onChange={e => upd("tervezettBefejezes", e.target.value)} style={inp} />
             </Field>
+            </>)}
             </>)}
             {/* Pénzügyi konfiguráció – csak fővállalkozói munkánál releváns */}
             {form.forrás === "fovallalkozoi_munka" && (<>
@@ -1274,18 +1282,12 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             </Field>
             )}
 
-            {/* Fővállalkozói extra mezők – csak "További adatok" nyitva.
-                A "Fővállalkozói megjegyzés" (fovMegjegyzes mező) fentebb,
-                "Egyéb megjegyzés" néven már elsődlegesen szerkeszthető –
-                itt nem duplikáljuk. */}
-            {reszletekOpen && (<>
-              <Field label="FV kapcsolattartó" half>
-                <input value={form.fovKapcsolattarto} onChange={e => upd("fovKapcsolattarto", e.target.value)} placeholder="Kapcsolattartó neve" style={inp} />
-              </Field>
-              <Field label="Fizetési határidő" half>
-                <input type="date" value={form.fovFizetesiHatarido} onChange={e => upd("fovFizetesiHatarido", e.target.value)} style={inp} />
-              </Field>
-            </>)}
+            {/* "FV kapcsolattartó" és "Fizetési határidő" mezők törölve –
+                sehol máshol a rendszerben nem volt rájuk hivatkozás
+                (fovKapcsolattarto / fovFizetesiHatarido), tisztán
+                begyűjtött, sehol meg nem jelenő adat volt. A "Fővállalkozói
+                megjegyzés" (fovMegjegyzes) fentebb, "Egyéb megjegyzés"
+                néven elsődlegesen szerkeszthető, azt nem érintettük. */}
             <Field label="Távolság (km, oda)" half>
               <div style={{ display: "flex", gap: 6 }}>
                 <input
