@@ -315,9 +315,6 @@ export default function Dashboard({ user }) {
 
   return (
     <div style={{ padding:"24px 28px", fontFamily:FONT, background: C.bg, minHeight:"100vh" }}>
-      <h1 style={{ fontFamily:FONT_HEADING, fontSize:24, fontWeight:800, color: C.text, margin:"0 0 20px" }}>
-        💰 Pénzügy
-      </h1>
 
       {/* Munkák állapot szerint */}
       <div style={{ background: C.card, borderRadius:14, border:`1px solid ${C.border}`, padding:"16px 20px", marginBottom:20 }}>
