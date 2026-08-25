@@ -532,8 +532,19 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     }
     setSaving(true);
     try {
+      // P0-013 kiegészítés: "Ügyfél neve" fővállalkozói munkánál el van
+      // rejtve a "További adatok" mögé (nem kötelező), de sok más dokumentum
+      // (munkalap, TIG, PDF-export, naptár) erre a mezőre hivatkozik – ha
+      // véletlenül üresen marad, azokon is üresen jelenne meg. Ezért, ha
+      // nincs kitöltve, automatikusan a Megbízó cég nevéből (ami már eddig
+      // is a fővállalkozó nevéből töltődik) vagy a projekt nevéből esik
+      // vissza – SOHA nem marad üresen, kézi kitöltés nélkül is.
+      const clientNevVegleges = form.forrás === "fovallalkozoi_munka" && !form.clientNev?.trim()
+        ? (form.megbizoCeg?.trim() || form.nev?.trim() || form.clientNev)
+        : form.clientNev;
       const data = {
         ...form,
+        clientNev: clientNevVegleges,
         elfogadottAjanlat: Number(form.elfogadottAjanlat) || 0,
         projektTipus: getProjektTipus(form.forrás),
         // Backward compat boolean mezők szinkronban az db értékekkel
