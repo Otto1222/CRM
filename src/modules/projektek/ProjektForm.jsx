@@ -1040,10 +1040,16 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               )}
             </Field>
             )}
-            {/* Kivitelező csapat – szintén mindig látható fővállalkozói
-                munkánál (km + csapatbér-számításhoz kell). A telepítés
-                adminisztrációs mezői (dátum, finanszírozás, megjegyzés)
-                viszont a "További adatok" mögé kerültek. */}
+            {/* Kivitelező csapat, Telepítés dátuma, Egyéb megjegyzés –
+                mindhárom mindig látható fővállalkozói munkánál: a csapat és
+                a dátum a km/csapatbér-számításhoz kell, a megjegyzés pedig
+                általánosan hasznos, alacsony súrlódású szabad szöveg. A
+                "Telepítés dátuma" UGYANAZT a form.tervezettKezdes mezőt írja,
+                mint az Ütemezés blokk "Tervezett kezdés" mezője – szándékosan
+                csak EGY helyen (itt) szerkeszthető, hogy ne tűnjön két külön
+                dátumnak (ld. lent, az Ütemezésnél csak "Tervezett befejezés"
+                maradt). A "Státusz (finanszírozás)" a "További adatok" mögé
+                került – ritkábban kell, nem elsődleges. */}
             {form.forrás === "fovallalkozoi_munka" && (<>
             <Field label="Kivitelező csapat (a km- és csapatbér-számításhoz)" half>
               <select value={form.csapatId} onChange={handleCsapat} style={inp}>
@@ -1058,11 +1064,15 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 <p style={{ fontSize: 10, color: C.warning, marginTop: 3 }}>⚠️ Még nincs létrehozva csapat — előbb add hozzá a Csapat menüben</p>
               )}
             </Field>
-            {reszletekOpen && (<>
             <Field label="Telepítés dátuma" half>
               <input type="date" value={form.tervezettKezdes} onChange={e => upd("tervezettKezdes", e.target.value)}
                 min={new Date().toISOString().slice(0,10)} style={inp} />
             </Field>
+            <Field label="Egyéb megjegyzés (opcionális)">
+              <input value={form.fovMegjegyzes} onChange={e => upd("fovMegjegyzes", e.target.value)}
+                placeholder="Bármilyen egyéb tudnivaló a telepítéshez…" style={inp} />
+            </Field>
+            {reszletekOpen && (
             <Field label="Státusz (finanszírozás)">
               <input
                 list="finanszirozas-opciok"
@@ -1077,11 +1087,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 <option value="Junior Vital" />
               </datalist>
             </Field>
-            <Field label="Egyéb megjegyzés (opcionális)">
-              <input value={form.fovMegjegyzes} onChange={e => upd("fovMegjegyzes", e.target.value)}
-                placeholder="Bármilyen egyéb tudnivaló a telepítéshez…" style={inp} />
-            </Field>
-            </>)}
+            )}
             </>)}
             </>)}
             {/* Belső munkánál nincs ügyfél section, de telepítési cím kell */}
@@ -1217,9 +1223,14 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 Ütemezés
               </p>
             </div>
+            {/* Fővállalkozói munkánál a "Tervezett kezdés" ugyanaz a mező,
+                mint a fentebbi "Telepítés dátuma" (form.tervezettKezdes) –
+                itt nem duplikáljuk, csak a záró dátum marad. */}
+            {form.forrás !== "fovallalkozoi_munka" && (
             <Field label="Tervezett kezdés" half>
               <input type="date" value={form.tervezettKezdes} onChange={e => upd("tervezettKezdes", e.target.value)} min={new Date().toISOString().slice(0,10)} style={inp} />
             </Field>
+            )}
             <Field label="Tervezett befejezés" half>
               <input type="date" value={form.tervezettBefejezes} onChange={e => upd("tervezettBefejezes", e.target.value)} style={inp} />
             </Field>
