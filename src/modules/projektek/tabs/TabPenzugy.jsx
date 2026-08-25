@@ -183,9 +183,11 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
         alvallalkozoKoltsegNetto: (kalk.alvallalkozoiBer || 0) + (kalk.alvallalkozoiKmBer || 0),
         kiszallasKoltsegNetto:    kalk.utikoltség || 0,
         emeloKoltsegNetto:        kalk.emelőgepKoltseg || 0,
+        szerelesiKoltsegNetto:    kalk.szerelesiAnyagKoltseg || 0,
+        szerszamKoltsegNetto:     kalk.szerszamKoltseg || 0,
         egyebKoltsegNetto:        (kalk.daruKoltseg||0) + (kalk.szallasKoltseg||0) + (kalk.bereltEszkozKoltseg||0) + (kalk.irodaAdminKoltseg||0) + (kalk.egyebKoltseg||0),
       };
-      n.osszesKoltsegNetto = n.anyagKoltsegNetto + n.sajatCsapatKoltsegNetto + n.alvallalkozoKoltsegNetto + n.kiszallasKoltsegNetto + n.emeloKoltsegNetto + n.egyebKoltsegNetto;
+      n.osszesKoltsegNetto = n.anyagKoltsegNetto + n.sajatCsapatKoltsegNetto + n.alvallalkozoKoltsegNetto + n.kiszallasKoltsegNetto + n.emeloKoltsegNetto + n.szerelesiKoltsegNetto + n.szerszamKoltsegNetto + n.egyebKoltsegNetto;
       return n;
     });
     setMentve(false);
@@ -369,7 +371,9 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
               { label: "Alvállalkozói díj",      key: "alvallalkozoKoltsegNetto", terv: kalk ? (kalk.alvallalkozoiBer||0) + (kalk.alvallalkozoiKmBer||0) : undefined },
               { label: "Km / Kiszállás",         key: "kiszallasKoltsegNetto",    terv: kalk?.utikoltség },
               { label: "Emelőgép",               key: "emeloKoltsegNetto",        terv: kalk?.emelőgepKoltseg },
-              { label: "Egyéb",                  key: "egyebKoltsegNetto",        terv: kalk ? (kalk.daruKoltseg||0) + (kalk.szallasKoltseg||0) + (kalk.bereltEszkozKoltseg||0) + (kalk.irodaAdminKoltseg||0) + (kalk.egyebKoltseg||0) : undefined },
+              { label: "Szerelési kellék (kábel, csatorna, csavar)", key: "szerelesiKoltsegNetto", terv: kalk?.szerelesiAnyagKoltseg },
+              { label: "Szerszám / eszköz vásárlás",                 key: "szerszamKoltsegNetto",  terv: kalk?.szerszamKoltseg },
+              { label: "Egyéb (gépbérlés, állvány, autó, organizáció)", key: "egyebKoltsegNetto",  terv: kalk ? (kalk.daruKoltseg||0) + (kalk.szallasKoltseg||0) + (kalk.bereltEszkozKoltseg||0) + (kalk.irodaAdminKoltseg||0) + (kalk.egyebKoltseg||0) : undefined },
             ].map(f => (
               <div key={f.key}>
                 <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>
@@ -383,7 +387,7 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
                     const v = Number(e.target.value) || 0;
                     setRec(p => {
                       const n = { ...p, [f.key]: v };
-                      n.osszesKoltsegNetto = (n.anyagKoltsegNetto||0) + (n.sajatCsapatKoltsegNetto||0) + (n.alvallalkozoKoltsegNetto||0) + (n.kiszallasKoltsegNetto||0) + (n.emeloKoltsegNetto||0) + (n.egyebKoltsegNetto||0);
+                      n.osszesKoltsegNetto = (n.anyagKoltsegNetto||0) + (n.sajatCsapatKoltsegNetto||0) + (n.alvallalkozoKoltsegNetto||0) + (n.kiszallasKoltsegNetto||0) + (n.emeloKoltsegNetto||0) + (n.szerelesiKoltsegNetto||0) + (n.szerszamKoltsegNetto||0) + (n.egyebKoltsegNetto||0);
                       return n;
                     });
                     setMentve(false);

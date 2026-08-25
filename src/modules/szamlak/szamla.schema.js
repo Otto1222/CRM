@@ -31,6 +31,8 @@ export const KOLTSEG_KATEGORIAK = [
   { id: "alvallalkozoKoltsegNetto", label: "Alvállalkozói díj" },
   { id: "kiszallasKoltsegNetto",    label: "Km / Kiszállás" },
   { id: "emeloKoltsegNetto",        label: "Emelőgép" },
+  { id: "szerelesiKoltsegNetto",    label: "Szerelési kellék (kábel, csatorna, csavar)" },
+  { id: "szerszamKoltsegNetto",     label: "Szerszám / eszköz vásárlás" },
   { id: "egyebKoltsegNetto",        label: "Egyéb" },
 ];
 

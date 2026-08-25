@@ -19,6 +19,8 @@ export const PENZUGYI_SCHEMA = {
   alvallalkozoKoltsegNetto: 0,
   kiszallasKoltsegNetto:    0,
   emeloKoltsegNetto:        0,
+  szerelesiKoltsegNetto:    0,   // szerelési kellék: kábel, csatorna, csavar stb.
+  szerszamKoltsegNetto:     0,   // szerszám / eszköz vásárlás
   egyebKoltsegNetto:        0,
   osszesKoltsegNetto:       0,
 

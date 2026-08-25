@@ -142,12 +142,14 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
         keziUtikoltség: null,
         keziAnyagkoltség: null,
         keziKartérités: null,
-        emelőgepKoltseg:     0,
-        daruKoltseg:         0,
-        szallasKoltseg:      0,
-        bereltEszkozKoltseg: 0,
-        irodaAdminKoltseg:   0,
-        egyebKoltseg:        0,
+        emelőgepKoltseg:       0,
+        daruKoltseg:           0,
+        szallasKoltseg:        0,
+        bereltEszkozKoltseg:   0,
+        irodaAdminKoltseg:     0,
+        egyebKoltseg:          0,
+        szerelesiAnyagKoltseg: 0,
+        szerszamKoltseg:       0,
         dijtablaTetelek:     [],
         dijtablaKmTetelId:   "",
         dijtablaKmKod:       "",
@@ -1310,10 +1312,16 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <div style={{ gridColumn: "span 2", marginTop: 4 }}>
               <button type="button" onClick={() => setExtraCostOpen(o => !o)}
                 style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 8, cursor: "pointer", fontSize: 12, color: C.accent, fontWeight: 700, padding: "6px 12px", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
-                {extraCostOpen ? "▼" : "▶"} Részletes költségek (emelőgép, daru, szállás…)
+                {extraCostOpen ? "▼" : "▶"} Részletes költségek (szerelési kellék, szerszám, emelőgép…)
               </button>
             </div>
             {extraCostOpen && (<>
+            <Field label="Szerelési kellék (kábel, csatorna, csavar stb.) (Ft)" half>
+              <input type="number" value={form.penzugy.szerelesiAnyagKoltseg || ""} onChange={e => updPenz("szerelesiAnyagKoltseg", e.target.value)} placeholder="0" style={inp} />
+            </Field>
+            <Field label="Szerszám / eszköz vásárlás (Ft)" half>
+              <input type="number" value={form.penzugy.szerszamKoltseg || ""} onChange={e => updPenz("szerszamKoltseg", e.target.value)} placeholder="0" style={inp} />
+            </Field>
             <Field label="Emelőgép (Ft)" half>
               <input type="number" value={form.penzugy.emelőgepKoltseg || ""} onChange={e => updPenz("emelőgepKoltseg", e.target.value)} placeholder="0" style={inp} />
             </Field>
@@ -1323,13 +1331,13 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <Field label="Szállás (Ft)" half>
               <input type="number" value={form.penzugy.szallasKoltseg || ""} onChange={e => updPenz("szallasKoltseg", e.target.value)} placeholder="0" style={inp} />
             </Field>
-            <Field label="Bérelt eszközök (Ft)" half>
+            <Field label="Gépbérlés / állvány / eszközbérlés (Ft)" half>
               <input type="number" value={form.penzugy.bereltEszkozKoltseg || ""} onChange={e => updPenz("bereltEszkozKoltseg", e.target.value)} placeholder="0" style={inp} />
             </Field>
             <Field label="Iroda / Admin (Ft)" half>
               <input type="number" value={form.penzugy.irodaAdminKoltseg || ""} onChange={e => updPenz("irodaAdminKoltseg", e.target.value)} placeholder="0" style={inp} />
             </Field>
-            <Field label="Egyéb költség (Ft)" half>
+            <Field label="Egyéb (autó szerviz, tankolás, organizáció stb.) (Ft)" half>
               <input type="number" value={form.penzugy.egyebKoltseg || ""} onChange={e => updPenz("egyebKoltseg", e.target.value)} placeholder="0" style={inp} />
             </Field>
             </>)}

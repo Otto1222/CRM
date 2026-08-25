@@ -133,6 +133,7 @@ export function calcProjektElszamolas(projekt, munkalapok = []) {
     keziCsapatBer, keziUtikoltség, keziAnyagkoltság, keziKartérités,
     emelőgepKoltseg = 0, daruKoltseg = 0, szallasKoltseg = 0,
     bereltEszkozKoltseg = 0, irodaAdminKoltseg = 0, egyebKoltseg = 0,
+    szerelesiAnyagKoltseg = 0, szerszamKoltseg = 0,
   } = penzugy;
 
   const csapatId = penzugy.csapatId || projekt.csapatId || "";
@@ -195,8 +196,11 @@ export function calcProjektElszamolas(projekt, munkalapok = []) {
 
   const fixKoltsegek = [emelőgepKoltseg, daruKoltseg, szallasKoltseg, bereltEszkozKoltseg, irodaAdminKoltseg, egyebKoltseg]
     .reduce((s, v) => s + (Number(v) || 0), 0);
+  const szerelesiAnyagOsszeg = Number(szerelesiAnyagKoltseg) || 0;
+  const szerszamOsszeg       = Number(szerszamKoltseg) || 0;
 
-  const osszesKolts = csapatBer + alvallalkozoiBer + utikoltség + anyagkoltság + fixKoltsegek + kartérités;
+  const osszesKolts = csapatBer + alvallalkozoiBer + utikoltség + anyagkoltság + fixKoltsegek
+    + szerelesiAnyagOsszeg + szerszamOsszeg + kartérités;
   const haszon      = nettoBevitel - osszesKolts;
   const haszonPct   = nettoBevitel > 0 ? Math.round((haszon / nettoBevitel) * 100) : null;
 
@@ -230,6 +234,8 @@ export function calcProjektElszamolas(projekt, munkalapok = []) {
     bereltEszkozKoltseg: Number(bereltEszkozKoltseg || 0),
     irodaAdminKoltseg:   Number(irodaAdminKoltseg   || 0),
     egyebKoltseg:    Number(egyebKoltseg    || 0),
+    szerelesiAnyagKoltseg: szerelesiAnyagOsszeg,
+    szerszamKoltseg:       szerszamOsszeg,
     fixKoltsegek,
     osszesKolts,
     // Eredmény

@@ -7,7 +7,7 @@ import { calcCegesFixKoltsegHavi } from "../lib/cegesKoltsegek.js";
 import { canSeePrice } from "../lib/roles";
 import { loadLocal } from "../lib/localDb";
 import { calcEsmentProjektPenzugy } from "../services/workOrderFinancial.service.js";
-import { calcDashboardPenzugyiKpik, calcDashboardPenzugyiOsszesito } from "../modules/penzugy/penzugyi.service.js";
+import { calcDashboardPenzugyiKpik, calcDashboardPenzugyiOsszesito, calcCsapatBerBontas } from "../modules/penzugy/penzugyi.service.js";
 import { formatMunkalapAzonosito } from "../lib/azonositoHelper.js";
 import { MUNKALAP_FO_UTVONAL, MUNKALAP_FELMERES_UTVONAL, MUNKALAP_MEGHIUSULT } from "../lib/workflowRules.js";
 
@@ -309,6 +309,13 @@ export default function Dashboard({ user }) {
     catch { return null; }
   }, [projektek, munkalapok]);
 
+  // "Csapatok bére" – ugyanez a pénz csapatokra bontva, dinamikusan (nincs
+  // fix csapatlista, amelyiknek van aktív munkája, az bekerül).
+  const csapatBerBontas = useMemo(() => {
+    try { return calcCsapatBerBontas(projektek, munkalapok); }
+    catch { return []; }
+  }, [projektek, munkalapok]);
+
   function toggleSort(f) {
     if (sortField === f) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortField(f); setSortDir("desc"); }
@@ -444,12 +451,13 @@ export default function Dashboard({ user }) {
           {penzugyOsszesito.osszesKiadas > 0 && (() => {
             const kb = penzugyOsszesito.koltsegBontas;
             const rows = [
-              { label:"Saját csapat bér",      val:kb.csapatBer,        color:C.accent },
-              { label:"Alvállalkozói díj",     val:kb.alvallalkozoiDij, color:C.success },
-              { label:"Szerelési anyag",       val:kb.anyagkoltseg,     color:C.warning },
-              { label:"Üzemanyag / kiszállás", val:kb.utikoltseg,       color:"#B45309" },
-              { label:"Kártérítés",            val:kb.karterites,       color:C.danger },
-              { label:"Egyéb költség",         val:kb.egyeb,            color:C.muted },
+              { label:"Csapatok bére",                          val:kb.csapatBer,      color:C.accent },
+              { label:"Anyagköltség",                           val:kb.anyagkoltseg,   color:C.warning },
+              { label:"Szerelési kellék (kábel, csatorna…)",    val:kb.szerelesiAnyag, color:"#0E7C72" },
+              { label:"Szerszám / eszköz vásárlás",             val:kb.szerszam,       color:"#7C3AED" },
+              { label:"Üzemanyag / kiszállás",                  val:kb.utikoltseg,     color:"#B45309" },
+              { label:"Kártérítés",                             val:kb.karterites,     color:C.danger },
+              { label:"Egyéb (gépbérlés, állvány, autó…)",      val:kb.egyeb,          color:C.muted },
             ].filter(r => r.val > 0);
             const total = penzugyOsszesito.osszesKiadas;
             return (
@@ -473,6 +481,35 @@ export default function Dashboard({ user }) {
             );
           })()}
 
+          {csapatBerBontas.length > 0 && (
+            <div style={{ marginTop:18, paddingTop:16, borderTop:`1px solid ${C.border}` }}>
+              <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.muted, margin:"0 0 10px" }}>
+                Csapatok bére – csapatonként
+              </p>
+              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                {csapatBerBontas.map(c => {
+                  const pct = penzugyOsszesito.koltsegBontas.csapatBer > 0
+                    ? Math.round((c.osszeg / penzugyOsszesito.koltsegBontas.csapatBer) * 100) : 0;
+                  return (
+                    <div key={c.csapatId} style={{ display:"flex", alignItems:"center", gap:12, fontSize:13 }}>
+                      <span style={{ flex:"0 0 200px", fontWeight:600, color:C.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                        {c.nev}
+                        {c.tipus && <span style={{ fontWeight:400, color:C.muted, fontSize:11.5 }}> · {c.tipus === "sajat" ? "saját" : "alvállalkozó"}</span>}
+                      </span>
+                      <div style={{ flex:1, height:6, borderRadius:3, background:C.bg, overflow:"hidden" }}>
+                        <div style={{ width:`${pct}%`, height:"100%", background:C.accent, borderRadius:3 }} />
+                      </div>
+                      <span style={{ fontWeight:700, color:C.text, width:100, textAlign:"right" }}>{ft(c.osszeg)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p style={{ fontSize:11, color:C.muted, margin:"10px 0 0" }}>
+                A lista automatikus – amelyik csapathoz aktív projekt/munkalap tartozik, az itt megjelenik a saját béregyenlegével, nincs hozzá külön beállítás.
+              </p>
+            </div>
+          )}
+
           {cegesFixKoltsegHavi > 0 && (
             <div style={{ marginTop:18, paddingTop:16, borderTop:`1px solid ${C.border}` }}>
               <p style={{ fontSize:11, fontWeight:700, letterSpacing:.7, textTransform:"uppercase", color:C.muted, margin:"0 0 10px" }}>
@@ -484,12 +521,12 @@ export default function Dashboard({ user }) {
                   <p style={{ fontSize:16, fontWeight:800, color:C.text, margin:0 }}>{ft(cegesFixKoltsegHavi)}</p>
                 </div>
                 <div style={{ background: (penzugyOsszesito.haszon - cegesFixKoltsegHavi) >= 0 ? C.successLight : C.dangerLight, border:`1px solid ${(penzugyOsszesito.haszon - cegesFixKoltsegHavi) >= 0 ? C.success : C.danger}40`, borderRadius:10, padding:"10px 16px", flex:"1 1 200px" }}>
-                  <p style={{ fontSize:11, color: (penzugyOsszesito.haszon - cegesFixKoltsegHavi) >= 0 ? C.success : C.danger, margin:"0 0 3px" }}>Eredmény iroda-költség után</p>
+                  <p style={{ fontSize:11, color: (penzugyOsszesito.haszon - cegesFixKoltsegHavi) >= 0 ? C.success : C.danger, margin:"0 0 3px" }}>Nettó haszon – minden költség után</p>
                   <p style={{ fontSize:16, fontWeight:800, color:C.text, margin:0 }}>{ft(penzugyOsszesito.haszon - cegesFixKoltsegHavi)}</p>
                 </div>
               </div>
               <p style={{ fontSize:11, color:C.muted, margin:"8px 0 0" }}>
-                A fenti "Haszon" az aktív projektek összesített hasznát mutatja, ebből vonja le ez a sor a havi iroda-típusú fix költséget – nem projektenként osztódik szét. Szerkesztés: Beállítások → Céges fix költségek.
+                A fenti "Haszon" az aktív projektek összesített hasznát mutatja (csapatbér, anyag, szerelési kellék, szerszám, üzemanyag és egyéb költség után), ebből vonja le ez a sor a havi iroda-típusú fix költséget – nem projektenként osztódik szét. Szerkesztés: Beállítások → Céges fix költségek.
               </p>
             </div>
           )}

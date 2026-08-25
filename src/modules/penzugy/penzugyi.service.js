@@ -10,6 +10,7 @@ import { calcEsmentProjektPenzugy } from "../../services/workOrderFinancial.serv
 import { driveSave } from "../../lib/driveApi.js";
 import { loadProjektek } from "../projektek/projekt.service.js";
 import { loadKarteritesek } from "../../lib/karterites.js";
+import { getCsapat } from "../csapatok/csapat.service.js";
 
 const KEY = "penzugyi";
 
@@ -260,21 +261,29 @@ export function calcDashboardPenzugyiOsszesito(projektek, munkalapok = []) {
   );
   const belso = aktivProjektek.filter(p => p.forrás === "belso_munka");
 
+  // "csapatBer" itt EGYETLEN, összevont sor: minden pénz, ami a kivitelező
+  // csapatokhoz kerül – akár saját, akár alvállalkozó csapatról van szó,
+  // akár a régi kézi mezőből (keziCsapatBer), akár az AV szabály-motorból
+  // (alvallalkozoiBer) jön. Korábban ez két külön sorban ("Saját csapat
+  // bér" / "Alvállalkozói díj") jelent meg, ami félrevezető volt: egy
+  // saját csapat AV szabály szerinti bére is az "Alvállalkozói díj"
+  // sorban landolt, mintha külsős cégnek fizetnénk ki.
   const bontas = {
-    csapatBer: 0, alvallalkozoiDij: 0, anyagkoltseg: 0, utikoltseg: 0, egyeb: 0,
+    csapatBer: 0, anyagkoltseg: 0, szerelesiAnyag: 0, szerszam: 0, utikoltseg: 0, egyeb: 0,
   };
   let osszesBevetel = 0;
 
   fovSajat.forEach(p => {
     const kalk = eloKalk(p);
-    osszesBevetel          += resolveBevetel(p, kalk);
-    bontas.csapatBer        += kalk.csapatBer || 0;
-    bontas.alvallalkozoiDij += (kalk.alvallalkozoiBer || 0) + (kalk.alvallalkozoiKmBer || 0);
-    bontas.anyagkoltseg     += kalk.anyagkoltság || 0;
-    bontas.utikoltseg       += kalk.utikoltség || 0;
-    bontas.egyeb            += (kalk.emelőgepKoltseg || 0) + (kalk.daruKoltseg || 0)
-                              + (kalk.szallasKoltseg || 0) + (kalk.bereltEszkozKoltseg || 0)
-                              + (kalk.irodaAdminKoltseg || 0) + (kalk.egyebKoltseg || 0);
+    osszesBevetel        += resolveBevetel(p, kalk);
+    bontas.csapatBer      += (kalk.csapatBer || 0) + (kalk.alvallalkozoiBer || 0) + (kalk.alvallalkozoiKmBer || 0);
+    bontas.anyagkoltseg   += kalk.anyagkoltság || 0;
+    bontas.szerelesiAnyag += kalk.szerelesiAnyagKoltseg || 0;
+    bontas.szerszam       += kalk.szerszamKoltseg || 0;
+    bontas.utikoltseg     += kalk.utikoltség || 0;
+    bontas.egyeb          += (kalk.emelőgepKoltseg || 0) + (kalk.daruKoltseg || 0)
+                            + (kalk.szallasKoltseg || 0) + (kalk.bereltEszkozKoltseg || 0)
+                            + (kalk.irodaAdminKoltseg || 0) + (kalk.egyebKoltseg || 0);
   });
 
   belso.forEach(p => {
@@ -294,8 +303,8 @@ export function calcDashboardPenzugyiOsszesito(projektek, munkalapok = []) {
     .filter(k => k.elfogadott === true)
     .reduce((s, k) => s + (k.osszeg || 0), 0);
 
-  const osszesKiadas = bontas.csapatBer + bontas.alvallalkozoiDij + bontas.anyagkoltseg
-    + bontas.utikoltseg + bontas.egyeb + karteritesOsszeg;
+  const osszesKiadas = bontas.csapatBer + bontas.anyagkoltseg + bontas.szerelesiAnyag
+    + bontas.szerszam + bontas.utikoltseg + bontas.egyeb + karteritesOsszeg;
   const haszon    = osszesBevetel - osszesKiadas;
   const haszonPct = osszesBevetel > 0 ? Math.round((haszon / osszesBevetel) * 100) : null;
 
@@ -303,4 +312,49 @@ export function calcDashboardPenzugyiOsszesito(projektek, munkalapok = []) {
     osszesBevetel, osszesKiadas, haszon, haszonPct,
     koltsegBontas: { ...bontas, karterites: karteritesOsszeg },
   };
+}
+
+// ─── Dashboard – csapatonkénti bér-bontás ─────────────────────
+//
+// "Ki mennyit hoz be, ki mennyit visz el" – a fenti összesítő csak EGY
+// közös "csapatBer" számot ad. Ez a függvény ugyanezt a pénzt csapatokra
+// bontja szét, DINAMIKUSAN: nincs fix csapatlista, amelyik csapathoz van
+// aktív munkalapja/projektje, az automatikusan bekerül a listába a saját
+// összegével – új csapat felvételekor semmit nem kell itt karbantartani.
+export function calcCsapatBerBontas(projektek, munkalapok = []) {
+  const aktivProjektek = projektek.filter(p => p.status !== "Lezárt");
+  const map = new Map();
+
+  function add(csapatId, osszeg) {
+    const ertek = Number(osszeg) || 0;
+    if (!ertek) return;
+    const key = csapatId || "_nincs";
+    const csapat = csapatId ? getCsapat(csapatId) : null;
+    const cur = map.get(key) || {
+      csapatId: key,
+      nev: csapat?.nev || "Nincs hozzárendelt csapat",
+      tipus: csapat?.tipus || "",
+      osszeg: 0,
+    };
+    cur.osszeg += ertek;
+    map.set(key, cur);
+  }
+
+  aktivProjektek
+    .filter(p => ["fovallalkozoi_munka", "fővállalkozói", "sajat_ajanlat", "saját_ügyfél"].includes(p.forrás))
+    .forEach(p => {
+      const kalk = eloKalk(p);
+      const csapatId = p.penzugy?.csapatId || p.csapatId || "";
+      add(csapatId, (kalk.csapatBer || 0) + (kalk.alvallalkozoiBer || 0) + (kalk.alvallalkozoiKmBer || 0));
+    });
+
+  aktivProjektek
+    .filter(p => p.forrás === "belso_munka")
+    .forEach(p => {
+      munkalapok.filter(m => m.projektId === p.id).forEach(m => {
+        add(m.csapatId || m.assigneeId || "", m.munkaeroDij || 0);
+      });
+    });
+
+  return [...map.values()].sort((a, b) => b.osszeg - a.osszeg);
 }
