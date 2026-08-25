@@ -472,7 +472,7 @@ export function isInstallerVisibleWorkorder(workorder, currentUser) {
 // ─── Validáció ────────────────────────────────────────────────────────────
 
 export function validateProjektForrás(form) {
-  const { forrás, ajanlatId, penzugy, kulsoAzonosito } = form;
+  const { forrás, ajanlatId, penzugy, kulsoAzonosito, projektvezetoId, csapatId } = form;
   if (!forrás) return { ok: false, message: "A projekt forrásának megadása kötelező." };
   // D1 megjegyzés: az anyagelszámolási mód kötelező-választás validációja a
   // mezőt megjelenítő UI-val EGYÜTT kerül bekötésre (következő fázis) –
@@ -494,6 +494,11 @@ export function validateProjektForrás(form) {
   if (forrás === "fovallalkozoi_munka") {
     if (!penzugy?.fovallalkoziId)       return { ok: false, message: "Fővállalkozói munkánál a fővállalkozó kiválasztása kötelező." };
     if (!kulsoAzonosito?.trim())         return { ok: false, message: "Fővállalkozói munkánál a külső munkaszám megadása kötelező." };
+    // P0-013: a Projektvezető és a Kivitelező csapat közvetlenül a
+    // km- és csapatbér-számítást hajtja – enélkül a kalkuláció hiányos
+    // vagy hibás lenne, ezért kötelezővé tettük (nem csak "ajánlott").
+    if (!projektvezetoId)                return { ok: false, message: "Fővállalkozói munkánál a projektvezető kiválasztása kötelező." };
+    if (!csapatId)                       return { ok: false, message: "Fővállalkozói munkánál a kivitelező csapat kiválasztása kötelező." };
     // A bevétel forrása KETTŐ közül az egyik lehet: vagy a díjtábla-katalógusból
     // összeállított tétel-kosár (ld. DijtetelKosarPicker), vagy a régi,
     // munkatípus-alapú elszámolási szabály – legalább az egyiknek meg kell lennie.

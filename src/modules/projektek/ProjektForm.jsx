@@ -851,12 +851,12 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                   🤝 Fővállalkozói munka – kötelező mezők:
                 </p>
                 <p style={{ fontSize: 12, color: C.accent, margin: 0 }}>
-                  Külső munkaszám (fent) · Fővállalkozó · Elszámolási szabály / díjtábla-tételek (Pénzügyi konfiguráció)
+                  Külső munkaszám (fent) · Fővállalkozó · Elszámolási szabály / díjtábla-tételek (Pénzügyi konfiguráció) ·
+                  Projektvezető · Kivitelező csapat
                 </p>
                 <p style={{ fontSize: 11.5, color: C.accent, margin: "6px 0 0", opacity: .85 }}>
-                  Ajánlott (a km- és csapatbér-számítás pontosságához): Telepítési cím, Kivitelező csapat. Minden más
-                  ügyfél-adat (kapcsolattartó, telefon, e-mail…) csak akkor kell, ha a "További adatok" alatt fontos –
-                  nem befolyásolja a költséget.
+                  Minden más ügyfél-adat (kapcsolattartó, telefon, e-mail…) csak akkor kell, ha a "További adatok" alatt
+                  fontos – nem befolyásolja a költséget.
                 </p>
               </div>
             )}
@@ -1107,25 +1107,29 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 Csapat: {[form.projektvezetoNev, form.csapatNev].filter(Boolean).join(" · ")}
               </div>
             )}
-            {reszletekOpen && (<>
-            {form.forrás === "fovallalkozoi_munka" && (<>
-            <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
-                Munkatípus {vanDijtablaKosar ? "(opcionális – belső riportokhoz)" : "(a régi, szabály-alapú elszámoláshoz)"}
-              </p>
-            </div>
-            <Field label={vanDijtablaKosar ? "Munkatípus (opcionális)" : "Munkatípus *"}>
-              <select value={form.tipus} onChange={e => handleMunkatipus(e.target.value)} style={inp}>
-                <option value="">— Nincs kiválasztva —</option>
-                {munkatipusok.map(t => (
-                  <option key={t.id} value={t.id}>{t.nev}</option>
+            {/* Munkatípus törölve fővállalkozói munkánál – a klasszikus
+                szabály-motor "általános" (munkatípus nélküli) szabályokkal
+                is működik, ha egy fővállalkozónak csak EGY, mindenre
+                érvényes díja van; ha valaha munkatípusonként eltérő díjra
+                lenne szükség, azt a fővállalkozó Excel-katalógusával vagy
+                explicit munkatípusos szabállyal kell megoldani, nem ezzel
+                a mezővel. Nem szükséges projektenként kitölteni. */}
+            {/* Projektvezető – fővállalkozói munkánál mindig elsődlegesen
+                látható és kötelező (a validáció is megköveteli, ld. lent). */}
+            {form.forrás === "fovallalkozoi_munka" && (
+            <Field label="Projektvezető *" half>
+              <select value={form.projektvezetoId} onChange={handlePM} style={inp}>
+                <option value="">— Válassz —</option>
+                {pmList.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
                 ))}
               </select>
-              <p style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>
-                A bevétel a fenti tétel-kosárból számolódik – ez a mező csak a belső riportok/munkalapok kategorizálásához opcionális.
-              </p>
             </Field>
-            </>)}
+            )}
+            {reszletekOpen && (<>
+            {form.forrás !== "fovallalkozoi_munka" && (<>
             <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 10 }}>
                 Csapat
@@ -1141,9 +1145,6 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 ))}
               </select>
             </Field>
-            {/* Fővállalkozói munkánál a Kivitelező csapat fentebb, elsődlegesen
-                már megjelenik (a km-számításhoz) – itt nem duplikáljuk. */}
-            {form.forrás !== "fovallalkozoi_munka" && (
             <Field label="Kivitelező csapat" half>
               <select value={form.csapatId} onChange={handleCsapat} style={inp}>
                 <option value="">— Válassz csapatot —</option>
@@ -1157,7 +1158,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 <p style={{ fontSize: 10, color: C.warning, marginTop: 3 }}>⚠️ Még nincs létrehozva csapat — előbb add hozzá a Csapat menüben</p>
               )}
             </Field>
-            )}
+            </>)}
             </>)}
             {/* Műszaki adatok – belső munkánál (garancia/javítás) irreleváns.
                 P0-012: EGYETLEN forrás a mérvadó, nincs kétszeri/kézi
@@ -1333,13 +1334,26 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               />
             </Field>
             )}
+            {/* Munkanapok száma – fővállalkozói munkánál elsődlegesen
+                látható, mert ha ez alapértéken (1) marad egy több napos
+                munkánál, a "Ft/nap" csapatbér-szabály CSENDBEN alulszámolja
+                a csapat bérét. A "Csapatlétszám" viszont csak a ritkán
+                használt "Ft/nap/fő" módnál számít – az marad rejtve,
+                alapértéken (1) biztonságos. */}
+            {form.forrás === "fovallalkozoi_munka" && (
+            <Field label="Munkanapok száma (a csapatbér-számításhoz, ha a csapat napidíjas)" half>
+              <input type="number" value={form.penzugy.munkanapok || 1} onChange={e => updPenz("munkanapok", e.target.value)} placeholder="1" style={inp} />
+            </Field>
+            )}
             {reszletekOpen && (<>
             <Field label="Csapatlétszám (fő)" half>
               <input type="number" value={form.penzugy.csapatLetszam || 1} onChange={e => updPenz("csapatLetszam", e.target.value)} placeholder="1" style={inp} />
             </Field>
+            {form.forrás !== "fovallalkozoi_munka" && (
             <Field label="Munkanapok száma" half>
               <input type="number" value={form.penzugy.munkanapok || 1} onChange={e => updPenz("munkanapok", e.target.value)} placeholder="1" style={inp} />
             </Field>
+            )}
             </>)}
             {/* P0-008: az "Elszámolási mennyiségek" blokk (panel/akku/smart meter/
                 inverter db) törölve – duplikálta a fenti "Műszaki adatok" mezőket,
