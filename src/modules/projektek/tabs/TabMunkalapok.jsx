@@ -143,10 +143,12 @@ function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
   const csapatok = getAktivCsapatok();
   const kiviCsomag = getKivitelezesiCsomagByProjektId(projekt.id);
   const [tipus, setTipus]         = useState("Első kivitelezés");
-  const [datum, setDatum]         = useState("");
+  // Örökli a projekten már rögzített tervezett dátumot / megjegyzést –
+  // ha nem stimmel erre a munkalapra, itt bármikor felülírható mentés előtt.
+  const [datum, setDatum]         = useState(projekt.tervezettKezdes || "");
   const [csapatId, setCsapatId]   = useState(projekt.csapatId || "");
   const [csapatNev, setCsapatNev] = useState(projekt.csapatNev || "");
-  const [megjegyzes, setMegjegyzes] = useState("");
+  const [megjegyzes, setMegjegyzes] = useState(projekt.fovMegjegyzes || "");
   const [hiba, setHiba]           = useState("");
   const [mentve, setMentve]       = useState(false);
   const [anyagKosar, setAnyagKosar] = useState([]);
@@ -226,7 +228,7 @@ function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
         </div>
         <div>
           <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4 }}>Tervezett dátum</label>
-          <input type="date" value={datum} onChange={e => setDatum(e.target.value)} style={inpS} />
+          <input type="date" value={datum} onChange={e => setDatum(e.target.value)} min={new Date().toISOString().slice(0,10)} style={inpS} />
         </div>
         <div style={{ gridColumn: "span 2" }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4 }}>Csapat</label>

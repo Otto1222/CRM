@@ -280,8 +280,13 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
               </p>
               {[
                 ["Nettó bevétel",     kalk.nettoBevitel,      C.success],
-                ["Csapat bér",        kalk.csapatBer,         C.danger],
-                kalk.alvallalkozoiBer > 0 ? [`Alvállalkozói díj (${csapat?.nev || ""})`, kalk.alvallalkozoiBer, C.accent] : null,
+                // P0: "Csapat bér" és "Alvállalkozói díj" korábban két külön
+                // sorban jelentek meg, ami félrevezető volt – egy SAJÁT csapat
+                // AV-szabály szerinti bére is az "Alvállalkozói díj" sorban
+                // landolt, mintha külsős cégnek fizetnénk ki. Egy összevont
+                // "Csapat bér (csapatnév)" sor, ugyanaz a logika, mint a
+                // Dashboard Pénzügyi összesítőjénél.
+                [`Csapat bér${csapat?.nev ? ` (${csapat.nev})` : ""}`, (kalk.csapatBer || 0) + (kalk.alvallalkozoiBer || 0), C.danger],
                 kalk.utikoltség > 0  ? ["Km-díj",             kalk.utikoltség,        C.danger] : null,
                 kalk.anyagkoltság > 0 ? [`Anyagköltség (forrás: ${ANYAGKOLTSEG_FORRAS_LABEL[kalk.anyagkoltsegForras] || kalk.anyagkoltsegForras})`, kalk.anyagkoltság, C.danger] : null,
                 ["Összes ktg (terv)", kalk.osszesKolts,       C.danger],
