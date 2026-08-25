@@ -558,13 +558,15 @@ function AvSzabalyForm({ szabaly, csapatId, onSave, onClose }) {
     kmDijFtKm:     szabaly?.kmDijFtKm     || 0,
     kmKuszobKm:    szabaly?.kmKuszobKm    || 0,
     kiszallasiDij: szabaly?.kiszallasiDij || 0,
+    napiDij:       szabaly?.napiDij       || 0,
     megjegyzes:    szabaly?.megjegyzes    || "",
   });
   const u = (k, v) => setF(p => ({ ...p, [k]: v }));
 
   const [preDb, setPreDb] = useState(10);
   const [preKm, setPreKm] = useState(50);
-  const eredmeny = calcSzabalyOsszeg(f, { darabszam: preDb, tavKm: preKm });
+  const [preNap, setPreNap] = useState(1);
+  const eredmeny = calcSzabalyOsszeg(f, { darabszam: preDb, tavKm: preKm, munkanapok: preNap });
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 3100, background: "rgba(0,0,0,.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
@@ -626,6 +628,15 @@ function AvSzabalyForm({ szabaly, csapatId, onSave, onClose }) {
               </div>
             </div>
           )}
+          {f.mod === "nap" && (
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Napidíj (Ft/nap)</label>
+              <input type="number" min={0} value={f.napiDij} onChange={e => u("napiDij", Number(e.target.value))} style={inpF}/>
+              <p style={{ fontSize: 11, color: C.muted, margin: "5px 0 0" }}>
+                A projektnél rögzített munkanapok számával szorzódik (Projekt → Pénzügy → munkanapok mező).
+              </p>
+            </div>
+          )}
           <div style={{ gridColumn: "span 2" }}>
             <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: .6 }}>Megjegyzés</label>
             <input value={f.megjegyzes} onChange={e => u("megjegyzes", e.target.value)} placeholder="opcionális" style={inpF}/>
@@ -647,6 +658,12 @@ function AvSzabalyForm({ szabaly, csapatId, onSave, onClose }) {
               <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
                 km: <input type="number" value={preKm} onChange={e => setPreKm(Number(e.target.value))}
                   style={{ width: 65, padding: "4px 7px", border: "1.5px solid #BBF7D0", borderRadius: 6, fontSize: 12, fontFamily: FONT }}/>
+              </label>
+            )}
+            {f.mod === "nap" && (
+              <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
+                nap: <input type="number" value={preNap} onChange={e => setPreNap(Number(e.target.value))}
+                  style={{ width: 55, padding: "4px 7px", border: "1.5px solid #BBF7D0", borderRadius: 6, fontSize: 12, fontFamily: FONT }}/>
               </label>
             )}
             <span style={{ fontSize: 15, fontWeight: 800, color: eredmeny > 0 ? C.success : C.muted }}>

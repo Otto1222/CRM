@@ -109,14 +109,16 @@ function SavokSzerkeszto({ savok, onChange }) {
 function KalkulacioTesztelo({ szabaly }) {
   const [db, setDb] = useState(10);
   const [km, setKm] = useState(50);
+  const [nap, setNap] = useState(1);
 
   if (!szabaly?.mod) return null;
   const needsDb    = ["darab", "savos"].includes(szabaly.mod);
   const needsKm    = ["km", "fix_kiszallas"].includes(szabaly.mod);
+  const needsNap   = szabaly.mod === "nap";
   const aktAlap    = szabaly.alapMennyiseg || "";
   const dbInputKey = aktAlap && aktAlap !== "tavKm" && aktAlap !== "fix" ? aktAlap : "darabszam";
   const dbLabel    = ALAPMENNYISEG_OPCIOK.find(o => o.value === aktAlap)?.label || "Darabszám";
-  const testInput  = { darabszam: db, tavKm: km, [dbInputKey]: db };
+  const testInput  = { darabszam: db, tavKm: km, munkanapok: nap, [dbInputKey]: db };
   const eredmeny   = calcSzabalyOsszeg(szabaly, testInput);
 
   return (
@@ -137,6 +139,13 @@ function KalkulacioTesztelo({ szabaly }) {
             Egyirányú km:
             <input type="number" min={0} value={km} onChange={e => setKm(Number(e.target.value))}
               style={{ ...inp, width: 80, padding: "5px 8px" }} />
+          </label>
+        )}
+        {needsNap && (
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#374151" }}>
+            Munkanapok:
+            <input type="number" min={0} value={nap} onChange={e => setNap(Number(e.target.value))}
+              style={{ ...inp, width: 70, padding: "5px 8px" }} />
           </label>
         )}
         <span style={{ fontSize: 16, fontWeight: 800, color: eredmeny > 0 ? C.success : C.muted, marginLeft: 8 }}>
@@ -184,6 +193,7 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
     kmDijFtKm:     szabaly?.kmDijFtKm     || 0,
     kmKuszobKm:    szabaly?.kmKuszobKm    || 0,
     kiszallasiDij: szabaly?.kiszallasiDij || 0,
+    napiDij:       szabaly?.napiDij       || 0,
     megjegyzes:    szabaly?.megjegyzes    || "",
   });
   const u = (k, v) => setF(p => ({ ...p, [k]: v }));
@@ -292,6 +302,13 @@ function SzabalyForm({ szabaly, tulajdonosId, onSave, onClose }) {
             <FL label="Fix kiszállási díj (Ft)" half>
               <input type="number" min={0} value={f.kiszallasiDij}
                 onChange={e => u("kiszallasiDij", Number(e.target.value))} style={inp} />
+            </FL>
+          )}
+
+          {f.mod === "nap" && (
+            <FL label="Napidíj (Ft / nap)" half>
+              <input type="number" min={0} value={f.napiDij}
+                onChange={e => u("napiDij", Number(e.target.value))} style={inp} />
             </FL>
           )}
 

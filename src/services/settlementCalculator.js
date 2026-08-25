@@ -48,6 +48,7 @@ export function buildInput(source) {
     // Régi nevek – backward compat (meglévő szabályok, meglévő kód)
     darabszam:    panel_db,
     tavKm:        Number(source.tavKm) || 0,
+    munkanapok:   Number(source.munkanapok) || 0,
     akkDb:        akku_db,
     smartMeterDb: smart_meter_db,
     inverterDb:   inverter_db,
@@ -149,6 +150,7 @@ export function calcProjektElszamolas(projekt, munkalapok = []) {
     akkumulatorDb: projekt.akkumulatorDb || (projekt.akkumulator ? 1 : 0),
     smartMeterDb:  projekt.smartMeterDb  || (projekt.okosmerő  ? 1 : 0),
     tavKm:         penzugy.tavKm || 0,
+    munkanapok:    penzugy.munkanapok || 0,
   });
 
   // FV bevétel – tétel-kosár elsőbbséget élvez a régi szabály-motorral szemben

@@ -31,6 +31,7 @@ export const ELSZAMOLASI_MODOK = [
   { id: "savos",         label: "Sávos díjazás",        hint: "Darabszám alapján sávonkénti fix összeg" },
   { id: "km",            label: "Km alapú",             hint: "Km-díj × (oda-vissza km − küszöb)" },
   { id: "fix_kiszallas", label: "Fix kiszállási díj",   hint: "Állandó kiszállási díj, km-tól függetlenül" },
+  { id: "nap",           label: "Ft/nap",               hint: "Napidíj × a projekten rögzített munkanapok száma" },
 ];
 
 /**
@@ -76,6 +77,9 @@ export function calcSzabalyOsszeg(szabaly, input = {}) {
 
     case "fix_kiszallas":
       return Number(szabaly.kiszallasiDij) || 0;
+
+    case "nap":
+      return Math.round((Number(input.munkanapok) || 0) * (Number(szabaly.napiDij) || 0));
 
     case "_legacy":
     default:
@@ -125,6 +129,8 @@ export function szabalyLeiras(szabaly) {
       return `${fmt(szabaly.kmDijFtKm)} Ft/km${Number(szabaly.kmKuszobKm) > 0 ? ` (>${szabaly.kmKuszobKm} km küszöb)` : ""}`;
     case "fix_kiszallas":
       return `Fix kiszállás: ${fmt(szabaly.kiszallasiDij)} Ft`;
+    case "nap":
+      return `${fmt(szabaly.napiDij)} Ft/nap`;
     default:
       return Number(szabaly.nettoBevitel) > 0 ? `${fmt(szabaly.nettoBevitel)} Ft` : "—";
   }

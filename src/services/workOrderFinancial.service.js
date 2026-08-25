@@ -42,6 +42,7 @@ export function buildInput(source) {
     inverterDb:   Number(source.inverterDb) || 0,
     akkDb:        Number(source.akkumulatorDb || (source.akkumulator ? 1 : 0)) || 0,
     smartMeterDb: Number(source.smartMeterDb || (source.okosmerő ? 1 : 0)) || 0,
+    munkanapok:   Number(source.munkanapok) || 0,
   };
 }
 
@@ -195,7 +196,7 @@ export function calcEsmentProjektPenzugy(projekt) {
     bereltEszkozKoltseg = 0, irodaAdminKoltseg = 0, egyebKoltseg = 0,
   } = penzugy;
 
-  const input = { darabszam: Number(darabszam) || 1, tavKm: Number(tavKm) || 0 };
+  const input = { darabszam: Number(darabszam) || 1, tavKm: Number(tavKm) || 0, munkanapok: Number(munkanapok) || 0 };
 
   // ── Fővállalkozói bevétel ──────────────────────────────────
   // P0-012: a díjtétel-katalógusból összeállított tétel-kosár (ld.
@@ -508,6 +509,7 @@ export function calcMunkalapElszamolas(munkalap, projekt) {
     akkumulatorDb: ea.akkumulatorDb || munkalap.akkumulatorDb || projekt?.akkumulatorDb || 0,
     smartMeterDb:  ea.smartMeterDb  || munkalap.smartMeterDb  || projekt?.smartMeterDb  || 0,
     tavKm:         ea.tavKm         || munkalap.tavKm         || projekt?.penzugy?.tavKm || 0,
+    munkanapok:    ea.munkanapok    || munkalap.munkanapok    || projekt?.penzugy?.munkanapok || 0,
   });
 
   const anyagkoltság = Number(ea.anyagkoltság || munkalap.anyagkoltság || 0);
