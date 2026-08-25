@@ -18,15 +18,14 @@ import FovallalkozoPage from "../modules/fovallalkozok/FovallalkozoPage";
 import MunkatipusokPage from "../modules/munkatipusok/MunkatipusokPage";
 import SablonKezelo from "./SablonKezelo";
 import BackupKezelo from "./BackupKezelo";
-import CsapatokPage from "../modules/csapatok/CsapatokPage";
 import AnyagtorzsPage from "./AnyagtorzsPage";
 import AdatTerkepDebug from "./AdatTerkepDebug";
 
 const MENU_ITEMS = [
   {
     id: "felhasznalok",
-    label: "Felhasználók & Szerelő csapatok",
-    desc: "CRM login felhasználók, jelszavak, szerepkörök + szerelő csapatok kezelése",
+    label: "Felhasználók",
+    desc: "CRM login felhasználók, jelszavak, szerepkörök, jogosultságok – a csapatokat a fősáv Csapatok menüje kezeli",
     icon: Users,
     color: C.accent,
     bg: C.accentLight,
@@ -154,7 +153,7 @@ export default function BeallitasokPage({ currentUser }) {
   if (aktiv === "felhasznalok") {
     return (
       <div>
-        <BackBtn onClick={() => setAktiv(null)} label="Felhasználók & Csapatok" />
+        <BackBtn onClick={() => setAktiv(null)} label="Felhasználók" />
         <FelhasznalokCsapatokTab currentUser={currentUser} />
       </div>
     );
@@ -676,50 +675,20 @@ function TeljesTorlesPanel() {
   );
 }
 
-// ─── Felhasználók & Csapatok – kombinált tab nézet ───────────
+// ─── Felhasználók ─────────────────────────────────────────────
+// A szerelő csapatok kezelése korábban itt is duplikálva volt (külön
+// tabként), miközben a bal oldali fősáv "Csapatok" menüpontja ugyanazt a
+// CsapatokPage-et jeleníti meg – két helyen ugyanaz az adat, ami zavaró
+// volt. Innentől ez a kártya csak a CRM login-felhasználókért felel,
+// a csapatokat a fősáv "Csapatok" menüpontjában kezeld.
 function FelhasznalokCsapatokTab({ currentUser }) {
-  const [tab, setTab] = useState("felhasznalok");
-
-  function tabStyle(id) {
-    const active = tab === id;
-    return {
-      padding: "9px 22px", border: "none", cursor: "pointer", fontFamily: FONT,
-      fontWeight: active ? 700 : 400, fontSize: 14,
-      color: active ? C.accent : C.textSub,
-      background: active ? "#fff" : "transparent",
-      borderBottom: active ? `2px solid ${C.accent}` : "2px solid transparent",
-    };
-  }
-
   return (
-    <div>
-      {/* Tab fejléc */}
-      <div style={{ borderBottom: `1px solid ${C.border}`, display: "flex", gap: 2, background: C.bg }}>
-        <button style={tabStyle("felhasznalok")} onClick={() => setTab("felhasznalok")}>
-          👤 CRM Felhasználók (login)
-        </button>
-        <button style={tabStyle("csapatok")} onClick={() => setTab("csapatok")}>
-          🛠️ Szerelő csapatok
-        </button>
+    <div style={{ padding: "0 28px" }}>
+      <div style={{ padding: "12px 0 4px", fontSize: 12, color: C.muted }}>
+        Akik be tudnak lépni a CRM rendszerbe (Admin, PM, Telepítő, Iroda szerepkörrel). A szerelő
+        csapatokat a bal oldali fősáv "Csapatok" menüpontjában találod.
       </div>
-
-      {tab === "felhasznalok" && (
-        <div style={{ padding: "0 28px" }}>
-          <div style={{ padding: "12px 0 4px", fontSize: 12, color: C.muted }}>
-            Akik be tudnak lépni a CRM rendszerbe (Admin, PM, Telepítő, Iroda szerepkörrel).
-          </div>
-          <AdminPanel currentUser={currentUser} />
-        </div>
-      )}
-
-      {tab === "csapatok" && (
-        <div>
-          <div style={{ padding: "12px 28px 4px", fontSize: 12, color: C.muted }}>
-            Szerelő csapatok: kiszállási helyszín, tagok, kapacitás. Projektekhez rendelhetők.
-          </div>
-          <CsapatokPage currentUser={currentUser} />
-        </div>
-      )}
+      <AdminPanel currentUser={currentUser} />
     </div>
   );
 }
