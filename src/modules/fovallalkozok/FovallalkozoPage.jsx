@@ -13,7 +13,7 @@ import {
 import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
 import {
   getKatalogusTetelek, groupKatalogusByKategoria,
-  updateKatalogusTetel, deleteKatalogusTetel, seedGreenHomeDijtabla,
+  updateKatalogusTetel, deleteKatalogusTetel, seedGreenHomeDijtabla, seedWagnerSolarDijtabla,
 } from "./dijtetelKatalogus.service.js";
 import DijtablaImportPanel from "../../components/DijtablaImportPanel.jsx";
 import TigSablonUploader from "../../components/TigSablonUploader.jsx";
@@ -48,7 +48,7 @@ function SavokSzerkeszto({ savok, onChange }) {
   function addSav() {
     const last = savok[savok.length - 1];
     const ujTol = last ? (Number(last.ig) + 1) : 1;
-    onChange([...savok, { tol: ujTol, ig: "", osszeg: 0 }]);
+    onChange([...savok, { tol: ujTol, ig: "", osszeg: 0, perDb: false }]);
   }
   function removeSav(i) {
     onChange(savok.filter((_, idx) => idx !== i));
@@ -89,6 +89,11 @@ function SavokSzerkeszto({ savok, onChange }) {
               style={{ ...inp, flex: 1, textAlign: "right" }}
             />
             <span style={{ fontSize: 11, color: C.muted }}>Ft</span>
+            <label title="Ha be van pipálva, a fenti összeg Ft/db egységár, ami a TELJES darabszámra vetül (nem csak a sávba esőre). Kikapcsolva: az összeg egy fix, sávonkénti végösszeg."
+              style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, color: C.textSub, cursor: "pointer", whiteSpace: "nowrap" }}>
+              <input type="checkbox" checked={!!sav.perDb} onChange={e => updateSav(i, "perDb", e.target.checked)} />
+              Ft/db
+            </label>
           </div>
           <button onClick={() => removeSav(i)}
             style={{ padding: "4px 6px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 6, cursor: "pointer" }}>
@@ -404,7 +409,7 @@ function SzabalyKartya({ sz, onEdit, onDelete, onToggle }) {
           <div style={{ marginTop: 6, display: "flex", gap: 4, flexWrap: "wrap" }}>
             {(sz.savok || []).map((s, i) => (
               <span key={i} style={{ fontSize: 10, background: C.accentLight, color: C.accent, padding: "2px 7px", borderRadius: 20, fontWeight: 600 }}>
-                {s.tol}–{s.ig || "∞"} db: {Number(s.osszeg || 0).toLocaleString("hu-HU")} Ft
+                {s.tol}–{s.ig || "∞"} db: {Number(s.osszeg || 0).toLocaleString("hu-HU")} Ft{s.perDb ? "/db" : ""}
               </span>
             ))}
           </div>
@@ -622,6 +627,17 @@ function FvSor({ fv, onUpdate, onDelete }) {
       {/* Díjtételek – profilNev szerint csoportosítva */}
       {open && (
         <div style={{ borderTop: `1px solid ${C.bg}`, padding: "14px 18px" }}>
+          {katalogus.length > 0 && szabalyok.length > 0 && (
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-start", background: C.warningLight, border: `1px solid ${C.warning}40`, borderRadius: 9, padding: "9px 12px", marginBottom: 12, fontSize: 12, color: C.warning }}>
+              <span>⚠</span>
+              <span>
+                Ennél a fővállalkozónál van feltöltött <strong>díjtétel-katalógus</strong> (lentebb) – új projektnél a bevétel
+                onnan, a "tételek a díjtáblából" kosárból számolódik. Az alábbi kézi szabályok csak akkor érvényesülnek,
+                ha egy adott projektnél senki nem választ tételt a kosárból – ezért, hogy ne legyen kétértelmű, melyik
+                számít, célszerű vagy törölni ezeket, vagy inaktiválni.
+              </span>
+            </div>
+          )}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div>
               <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>Elszámolási szabályok (kézi, munkatípus-alapú)</span>
@@ -641,7 +657,8 @@ function FvSor({ fv, onUpdate, onDelete }) {
               <p style={{ fontSize: 12, marginTop: 4 }}>Add hozzá az „Új díjtétel" gombbal</p>
             </div>
           ) : (
-            profilCsoportok.map(({ profilNev, tetelek }) => (
+            <div style={{ opacity: katalogus.length > 0 ? 0.55 : 1 }}>
+            {profilCsoportok.map(({ profilNev, tetelek }) => (
               <div key={profilNev || "__nincs__"} style={{ marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                   {profilNev ? (
@@ -665,7 +682,8 @@ function FvSor({ fv, onUpdate, onDelete }) {
                   />
                 ))}
               </div>
-            ))
+            ))}
+            </div>
           )}
 
           {/* Súgó */}
@@ -703,11 +721,13 @@ export default function FovallalkozoPage({ userRole }) {
   const [ujOpen, setUjOpen] = useState(false);
   const [ujForm, setUjForm] = useState({ nev: "", rovidites: "", megjegyzes: "" });
 
-  // Egyszeri, idempotens seed: a feltöltött Green Home díjtábla (2026.07.30)
-  // automatikusan bekerül "Green Home Technologies" fővállalkozóként, a
-  // Fővállalkozók oldal első megnyitásakor. Ld. dijtetelKatalogus.service.js.
+  // Egyszeri, idempotens seed: a feltöltött Green Home / Wagner-Solar
+  // díjtáblák automatikusan bekerülnek fővállalkozóként, a Fővállalkozók
+  // oldal első megnyitásakor. Ld. dijtetelKatalogus.service.js.
   useEffect(() => {
-    if (seedGreenHomeDijtabla()) setFvk(loadFovallalkozok());
+    const ghUj      = seedGreenHomeDijtabla();
+    const wagnerUj  = seedWagnerSolarDijtabla();
+    if (ghUj || wagnerUj) setFvk(loadFovallalkozok());
   }, []);
 
   useEffect(() => {

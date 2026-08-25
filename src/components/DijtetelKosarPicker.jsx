@@ -17,6 +17,7 @@ import { useMemo, useState } from "react";
 import { Plus, Minus, Trash2, Search, Navigation } from "lucide-react";
 import { C, FONT } from "../lib/constants";
 import { getAktivKatalogusTetelek, groupKatalogusByKategoria } from "../modules/fovallalkozok/dijtetelKatalogus.service.js";
+import { calcSavosOsszeg } from "../modules/fovallalkozok/elszamolasiMotor.js";
 
 const ft = n => Number(n || 0).toLocaleString("hu-HU") + " Ft";
 
@@ -42,10 +43,12 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
   const csoportok = useMemo(() => groupKatalogusByKategoria(szurt), [szurt]);
 
   function addTetel(kt) {
+    const isSavos = kt.tipus === "savos";
     const meglevo = kosar.find(k => k.katalogusTetelId === kt.id);
     if (meglevo) {
+      const m = meglevo.mennyiseg + 1;
       onChange(kosar.map(k => k.katalogusTetelId === kt.id
-        ? { ...k, mennyiseg: k.mennyiseg + 1, osszesen: Math.round((k.mennyiseg + 1) * k.egysegar) }
+        ? { ...k, mennyiseg: m, osszesen: isSavos ? calcSavosOsszeg(k.savok, m) : Math.round(m * k.egysegar) }
         : k));
       return;
     }
@@ -56,20 +59,23 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
       nev: kt.megnevezes,
       egyseg: kt.egyseg,
       egysegar: Number(kt.ar) || 0,
+      tipus: isSavos ? "savos" : "flat",
+      savok: isSavos ? (kt.savok || []) : [],
       mennyiseg: 1,
-      osszesen: Number(kt.ar) || 0,
+      osszesen: isSavos ? calcSavosOsszeg(kt.savok, 1) : (Number(kt.ar) || 0),
       kmDij: !!kt.kmDij,
     }]);
     // Ha ez az első km-díjas tétel a kosárban, alapértelmezetten beállítjuk az első elérhető km-díj tételt.
     if (kt.kmDij && !kmMeta?.kmTetelId && kmTetelek.length > 0) {
-      onKmMetaChange?.({ kmTetelId: kmTetelek[0].id, kod: kmTetelek[0].kod, nev: kmTetelek[0].megnevezes, ftKm: Number(kmTetelek[0].ar) || 0 });
+      const elso = kmTetelek[0];
+      onKmMetaChange?.({ kmTetelId: elso.id, kod: elso.kod, nev: elso.megnevezes, ftKm: Number(elso.ar) || 0, kuszobKm: Number(elso.kmKuszobKm) || 0 });
     }
   }
 
   function updMennyiseg(katalogusTetelId, mennyiseg) {
     const m = Math.max(0, Number(mennyiseg) || 0);
     onChange(kosar.map(k => k.katalogusTetelId === katalogusTetelId
-      ? { ...k, mennyiseg: m, osszesen: Math.round(m * k.egysegar) }
+      ? { ...k, mennyiseg: m, osszesen: k.tipus === "savos" ? calcSavosOsszeg(k.savok, m) : Math.round(m * k.egysegar) }
       : k));
   }
 
@@ -78,7 +84,9 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
   }
 
   const tetelekOsszesen = kosar.reduce((s, k) => s + (Number(k.osszesen) || 0), 0);
-  const odaVissza = (Number(tavKm) || 0) * 2;
+  const kuszobKm  = Number(kmMeta?.kuszobKm) || 0;
+  const effKm     = Math.max(0, (Number(tavKm) || 0) - kuszobKm);
+  const odaVissza = effKm * 2;
   const kmOsszeg = kellKmDij ? Math.round(odaVissza * (Number(kmMeta?.ftKm) || 0)) : 0;
   const vegosszeg = tetelekOsszesen + kmOsszeg;
 
@@ -135,7 +143,9 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
                     </div>
                   </div>
                   <div style={{ fontSize: 12, color: C.muted, minWidth: 90, textAlign: "right" }}>
-                    {ft(kt.ar)} / {kt.egyseg}
+                    {kt.tipus === "savos"
+                      ? <span style={{ color: C.accent, fontWeight: 600 }}>sávos ár</span>
+                      : `${ft(kt.ar)} / ${kt.egyseg}`}
                   </div>
                   <button type="button" onClick={() => addTetel(kt)}
                     style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 9px", background: kosarban ? C.successLight : C.accentLight, color: kosarban ? C.success : C.accent, border: "none", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: FONT, flexShrink: 0 }}>
@@ -154,9 +164,22 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
           <p style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 0.5, margin: "0 0 8px" }}>
             Kiválasztott tételek ({kosar.length})
           </p>
-          {kosar.map(k => (
+          {kosar.map(k => {
+            const aktSav = k.tipus === "savos" ? (k.savok || []).find(s => {
+              const tol = Number(s.tol) || 0;
+              const ig  = (s.ig !== "" && s.ig !== null && s.ig !== undefined) ? Number(s.ig) : Infinity;
+              return (Number(k.mennyiseg) || 0) >= tol && (Number(k.mennyiseg) || 0) <= ig;
+            }) : null;
+            return (
             <div key={k.katalogusTetelId} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              <span style={{ flex: 1, fontSize: 12.5, color: C.text }}>{k.kod ? `${k.kod} · ` : ""}{k.nev}</span>
+              <span style={{ flex: 1, fontSize: 12.5, color: C.text }}>
+                {k.kod ? `${k.kod} · ` : ""}{k.nev}
+                {k.tipus === "savos" && (
+                  <span style={{ marginLeft: 6, fontSize: 10.5, color: aktSav ? C.accent : C.warning }}>
+                    {aktSav ? `(sáv: ${aktSav.tol}–${aktSav.ig || "∞"} db)` : "(nincs egyező sáv)"}
+                  </span>
+                )}
+              </span>
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <button type="button" onClick={() => updMennyiseg(k.katalogusTetelId, k.mennyiseg - 1)}
                   style={{ width: 22, height: 22, border: `1px solid ${C.border}`, background: "#fff", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -177,7 +200,8 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
                 <Trash2 size={11} />
               </button>
             </div>
-          ))}
+            );
+          })}
 
           {/* Km-díj sor – vagy a fővállalkozó katalógusából (L01/L02-szerű
               tétel), vagy ha ahhoz nincs km-egységű tétel feltöltve, egyedi
@@ -186,12 +210,12 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, paddingTop: 8, borderTop: `1px dashed ${C.border}` }}>
               <Navigation size={13} color={C.accent} />
               <span style={{ flex: 1, fontSize: 12, color: C.textSub }}>
-                Kiszállási díj (oda-vissza {odaVissza || 0} km × {ft(kmMeta?.ftKm)}/km)
+                Kiszállási díj ({kuszobKm > 0 ? `${kuszobKm} km felett, ` : ""}oda-vissza {odaVissza || 0} km × {ft(kmMeta?.ftKm)}/km)
               </span>
               {kmTetelek.length > 1 && (
                 <select value={kmMeta?.kmTetelId || ""} onChange={e => {
                   const kt = kmTetelek.find(x => x.id === e.target.value);
-                  if (kt) onKmMetaChange?.({ kmTetelId: kt.id, kod: kt.kod, nev: kt.megnevezes, ftKm: Number(kt.ar) || 0 });
+                  if (kt) onKmMetaChange?.({ kmTetelId: kt.id, kod: kt.kod, nev: kt.megnevezes, ftKm: Number(kt.ar) || 0, kuszobKm: Number(kt.kmKuszobKm) || 0 });
                 }} style={{ fontSize: 11, padding: "3px 6px", border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: FONT }}>
                   {kmTetelek.map(kt => <option key={kt.id} value={kt.id}>{kt.megnevezes}</option>)}
                 </select>
@@ -200,7 +224,7 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
                 <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: C.warning }}>
                   Egyedi Ft/km:
                   <input type="number" min={0} value={kmMeta?.ftKm || ""}
-                    onChange={e => onKmMetaChange?.({ kmTetelId: "", kod: "", nev: "Egyedi km-díj", ftKm: Number(e.target.value) || 0 })}
+                    onChange={e => onKmMetaChange?.({ kmTetelId: "", kod: "", nev: "Egyedi km-díj", ftKm: Number(e.target.value) || 0, kuszobKm: kmMeta?.kuszobKm || 0 })}
                     placeholder="pl. 210"
                     style={{ width: 64, padding: "3px 6px", border: `1px solid ${C.warning}`, borderRadius: 6, fontSize: 11, fontFamily: FONT }} />
                 </label>

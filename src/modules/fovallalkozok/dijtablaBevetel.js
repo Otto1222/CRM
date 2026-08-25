@@ -12,6 +12,7 @@
  * csak a form-előnézetben jelent meg helyesen, a valódi dashboardon/riportokon
  * nem (ld. git history – P0-012 javítás).
  */
+import { calcSavosOsszeg } from "./elszamolasiMotor.js";
 
 /**
  * @param {object} penzugy  – projekt.penzugy (tartalmazza a dijtablaTetelek
@@ -22,25 +23,55 @@
  */
 export function buildBeveteliTetelekKosarbol(penzugy) {
   const tetelek = penzugy?.dijtablaTetelek || [];
-  const sorok = tetelek.map(t => ({
-    szabalyId:   t.katalogusTetelId,
-    megnevezes:  `${t.kod ? t.kod + " – " : ""}${t.nev} (${t.mennyiseg} ${t.egyseg})`,
-    mod:         "dijtabla",
-    autoNetto:   Math.round((Number(t.mennyiseg) || 0) * (Number(t.egysegar) || 0)),
-    megjegyzes:  `${(Number(t.egysegar) || 0).toLocaleString("hu-HU")} Ft / ${t.egyseg}`,
-    felulirva:   false,
-    hiany:       false,
-  }));
+  const sorok = tetelek.map(t => {
+    if (t.tipus === "savos") {
+      const osszeg = calcSavosOsszeg(t.savok, t.mennyiseg);
+      const sav = (t.savok || []).find(s => {
+        const tol = Number(s.tol) || 0;
+        const ig  = (s.ig !== "" && s.ig !== null && s.ig !== undefined) ? Number(s.ig) : Infinity;
+        return (Number(t.mennyiseg) || 0) >= tol && (Number(t.mennyiseg) || 0) <= ig;
+      });
+      return {
+        szabalyId:  t.katalogusTetelId,
+        megnevezes: `${t.kod ? t.kod + " – " : ""}${t.nev} (${t.mennyiseg} ${t.egyseg})`,
+        mod:        "dijtabla_savos",
+        autoNetto:  osszeg,
+        megjegyzes: sav
+          ? `Sáv: ${sav.tol}–${sav.ig || "∞"} ${t.egyseg} · ${(Number(sav.osszeg)||0).toLocaleString("hu-HU")} Ft${sav.perDb ? "/db" : " (fix)"}`
+          : "Nincs egyező sáv erre a mennyiségre",
+        felulirva:  false,
+        hiany:      !sav,
+      };
+    }
+    return {
+      szabalyId:   t.katalogusTetelId,
+      megnevezes:  `${t.kod ? t.kod + " – " : ""}${t.nev} (${t.mennyiseg} ${t.egyseg})`,
+      mod:         "dijtabla",
+      autoNetto:   Math.round((Number(t.mennyiseg) || 0) * (Number(t.egysegar) || 0)),
+      megjegyzes:  `${(Number(t.egysegar) || 0).toLocaleString("hu-HU")} Ft / ${t.egyseg}`,
+      felulirva:   false,
+      hiany:       false,
+    };
+  });
 
   const kellKm = tetelek.some(t => t.kmDij) && Number(penzugy?.dijtablaKmDijFtKm) > 0;
   if (kellKm) {
-    const odaVissza = (Number(penzugy?.tavKm) || 0) * 2;
+    // P0: km-küszöb támogatás – ha a fővállalkozó díjtétele (pl. "50 km
+    // feletti többlet-kiszállás") csak a küszöb FELETTI részre számol
+    // díjat, ahogy a klasszikus szabály-motor "km" módja is teszi
+    // (ld. elszamolasiMotor.js). Küszöb nélkül (0/nincs megadva) a
+    // viselkedés változatlan – a teljes táv számolódik, mint eddig.
+    const kuszob  = Number(penzugy?.dijtablaKmKuszobKm) || 0;
+    const effKm   = Math.max(0, (Number(penzugy?.tavKm) || 0) - kuszob);
+    const odaVissza = effKm * 2;
     sorok.push({
       szabalyId:  "dijtabla_km",
-      megnevezes: `Kiszállási díj (oda-vissza ${odaVissza} km)`,
+      megnevezes: kuszob > 0
+        ? `Kiszállási díj (${kuszob} km felett, oda-vissza ${odaVissza} km)`
+        : `Kiszállási díj (oda-vissza ${odaVissza} km)`,
       mod:        "km",
       autoNetto:  Math.round(odaVissza * (Number(penzugy?.dijtablaKmDijFtKm) || 0)),
-      megjegyzes: `${penzugy?.dijtablaKmDijFtKm?.toLocaleString?.("hu-HU") || 0} Ft/km`,
+      megjegyzes: `${penzugy?.dijtablaKmDijFtKm?.toLocaleString?.("hu-HU") || 0} Ft/km${kuszob > 0 ? ` (${kuszob} km küszöb felett)` : ""}`,
       felulirva:  false,
       hiany:      false,
     });

@@ -17,7 +17,14 @@
  * elszamolasiMotor.js) VÁLTOZATLANUL megmarad – aki nem tölt fel
  * katalógust egy fővállalkozóhoz, a korábbi kézi szabály-flow-t használja
  * tovább (ld. ProjektForm.jsx, validateProjektForrás).
+ *
+ * "savos" típusú tétel: a fix "ár × mennyiség" helyett a mennyiség (pl.
+ * panelszám) alapján SÁV szerint számol – ugyanaz a lookup, mint az
+ * elszamolasiMotor.js "savos" szabály-módja (ld. calcSavosOsszeg, közösen
+ * használva, nincs duplikálva). Pl.: "1–10 db: fix 81 120 Ft, 11–15 db:
+ * 8 112 Ft/db a teljes darabszámra" – nem progresszív sávozás.
  */
+import { calcSavosOsszeg } from "./elszamolasiMotor.js";
 
 // Egy katalógus-tétel (= a díjtábla egy sora)
 export const DIJTETEL_KATALOGUS_TETEL_SCHEMA = {
@@ -27,8 +34,11 @@ export const DIJTETEL_KATALOGUS_TETEL_SCHEMA = {
   kategoria:     "",     // pl. "A) ALAPTELEPÍTÉS / KIVITELEZÉS" – csoportosításhoz a kosárban
   megnevezes:    "",     // pl. "Napelem kivitelezés – teljes anyagvásárlással"
   egyseg:        "db",   // panel | db | m | óra | alkalom | km | ...
-  ar:            0,      // nettó Ft / egység (a "km" egységű tételeknél Ft/km)
+  ar:            0,      // nettó Ft / egység (a "km" egységű tételeknél Ft/km) – "savos" típusnál nem használt
+  tipus:         "flat", // "flat" (ár × mennyiség) | "savos" (mennyiség szerinti sáv-lookup, ld. savok)
+  savok:         [],     // csak tipus==="savos": [{ tol, ig, osszeg, perDb }]
   kmDij:         false,  // true = "+ km-díj" – a projektben egyszer, összesítve számolandó fel
+  kmKuszobKm:    0,      // csak kmDij tételnél: ennyi km-ig nincs km-díj, csak a felette lévő rész számolódik
   aktiv:         true,
   megjegyzes:    "",
   forras:        "kezi", // "kezi" | "excelImport"
@@ -49,12 +59,17 @@ export const DIJTABLA_KOSAR_TETEL_SCHEMA = {
   nev:              "",
   egyseg:           "db",
   egysegar:         0,
+  tipus:            "flat", // "flat" | "savos" – a katalógus-tétel pillanatképe
+  savok:            [],     // csak tipus==="savos"
   mennyiseg:        1,
   osszesen:         0,
   kmDij:            false,
 };
 
 export function calcKosarTetelOsszesen(tetel) {
+  if (tetel?.tipus === "savos") {
+    return calcSavosOsszeg(tetel.savok, tetel.mennyiseg);
+  }
   return Math.round((Number(tetel?.mennyiseg) || 0) * (Number(tetel?.egysegar) || 0));
 }
 

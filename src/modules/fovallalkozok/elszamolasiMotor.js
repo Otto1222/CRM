@@ -35,6 +35,29 @@ export const ELSZAMOLASI_MODOK = [
 ];
 
 /**
+ * Sávos díjazás kiszámolása – önálló segédfüggvény, hogy a fix/darab/km
+ * szabály-motoron (calcSzabalyOsszeg) KÍVÜL is felhasználható legyen, pl. a
+ * fővállalkozói díjtétel-katalógus (dijtetelKatalogus.*, kosár-alapú
+ * projektszámolás) sávos tételeinél – ugyanaz a lookup, nem duplikáljuk.
+ * @param {object[]} savok      – [{ tol, ig, osszeg, perDb }]
+ * @param {number}   darabszam
+ * @returns {number}
+ */
+export function calcSavosOsszeg(savok, darabszam) {
+  const lista = Array.isArray(savok) ? savok : [];
+  const db    = Number(darabszam) || 0;
+  const sav   = lista.find(s => {
+    const tol = Number(s.tol) || 0;
+    const ig  = (s.ig !== "" && s.ig !== null && s.ig !== undefined) ? Number(s.ig) : Infinity;
+    return db >= tol && db <= ig;
+  });
+  if (!sav) return 0;
+  // perDb: a "összeg" Ft/db, a TELJES darabszámra vetítve (nem progresszív).
+  // Nélküle az "összeg" egy fix, sávonkénti végösszeg.
+  return sav.perDb ? Math.round(db * (Number(sav.osszeg) || 0)) : (Number(sav.osszeg) || 0);
+}
+
+/**
  * Egy szabály alapján kiszámolja az összeget.
  * @param {object} szabaly  – rule objektum
  * @param {object} input    – { darabszam?: number, tavKm?: number }
@@ -58,15 +81,8 @@ export function calcSzabalyOsszeg(szabaly, input = {}) {
     case "darab":
       return Math.round(darabszam * (Number(szabaly.darabEgysegAr) || 0));
 
-    case "savos": {
-      const savok = Array.isArray(szabaly.savok) ? szabaly.savok : [];
-      const sav   = savok.find(s => {
-        const tol = Number(s.tol) || 0;
-        const ig  = (s.ig !== "" && s.ig !== null && s.ig !== undefined) ? Number(s.ig) : Infinity;
-        return darabszam >= tol && darabszam <= ig;
-      });
-      return sav ? (Number(sav.osszeg) || 0) : 0;
-    }
+    case "savos":
+      return calcSavosOsszeg(szabaly.savok, darabszam);
 
     case "km": {
       const ftKm   = Number(szabaly.kmDijFtKm)  || 0;
@@ -123,7 +139,7 @@ export function szabalyLeiras(szabaly) {
     case "savos": {
       const s = szabaly.savok || [];
       if (!s.length) return "Sávos (nincs sáv)";
-      return `Sávos: ${s.length} sáv  (${fmt(s[0]?.osszeg)}–${fmt(s[s.length-1]?.osszeg)} Ft)`;
+      return `Sávos: ${s.length} sáv  (${fmt(s[0]?.osszeg)}${s[0]?.perDb ? " Ft/db" : " Ft"}–${fmt(s[s.length-1]?.osszeg)}${s[s.length-1]?.perDb ? " Ft/db" : " Ft"})`;
     }
     case "km":
       return `${fmt(szabaly.kmDijFtKm)} Ft/km${Number(szabaly.kmKuszobKm) > 0 ? ` (>${szabaly.kmKuszobKm} km küszöb)` : ""}`;

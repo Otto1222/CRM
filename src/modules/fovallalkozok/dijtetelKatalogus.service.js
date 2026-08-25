@@ -190,3 +190,68 @@ export function seedGreenHomeDijtabla() {
     return null;
   }
 }
+
+// ─── Wagner-Solar – kiinduló díjtábla (2026. július, megfeleltetési javaslat alapján) ──
+//
+// Forrás: Wagner-Solar_2026-07-30.xlsx – a napelem építés/bontás SÁVOS (nem
+// progresszív, a TELJES darabszámra vetített) díjkalkulátorral, és egy
+// 50 km feletti kiszállási felárral (küszöb-alapú km-díj). A többi tétel
+// egyszerű, fix ár × mennyiség.
+const WAGNER_SEED_FLAG = "wagner_dijtabla_seed_v1";
+
+export const WAGNER_DIJTABLA_SEED = [
+  {
+    kod: "N01", kategoria: "N) NAPELEM ÉPÍTÉS / BONTÁS (SÁVOS)",
+    megnevezes: "Napelem építés/bontás – sávos díjazás",
+    egyseg: "panel", tipus: "savos", kmDij: true,
+    savok: [
+      { tol: 1,  ig: 10,  osszeg: 81120, perDb: false },
+      { tol: 11, ig: 15,  osszeg: 8112,  perDb: true  },
+      { tol: 16, ig: 20,  osszeg: 7571,  perDb: true  },
+      { tol: 21, ig: "",  osszeg: 7030,  perDb: true  },
+    ],
+    megjegyzes: "1–10 db: fix 81 120 Ft összesen. 11 db-tól: Ft/panel × TELJES darabszám (nem progresszív – pl. 16 panel díja 16×7 571 Ft).",
+  },
+  { kod: "B06", kategoria: "B) INVERTER ÉS AKKUMULÁTOR", megnevezes: "Inverter szerelés (AC és DC bekötéssel, kulcsrakészen)", egyseg: "db", ar: 90000, kmDij: true, megjegyzes: "" },
+  { kod: "C09", kategoria: "C) MÉRÉS ÉS CSATLAKOZÁS", megnevezes: "Okosmérő szerelés (bekötéssel)", egyseg: "db", ar: 35000, kmDij: true, megjegyzes: "" },
+  { kod: "B03", kategoria: "B) INVERTER ÉS AKKUMULÁTOR", megnevezes: "Energiatároló (akkumulátor) szerelés (bekötéssel)", egyseg: "db", ar: 30000, kmDij: true, megjegyzes: "Mérés nélkül" },
+  { kod: "D01", kategoria: "D) BACKUP RENDSZEREK", megnevezes: "EPS/Backup doboz szerelés (bekötéssel)", egyseg: "db", ar: 70000, kmDij: true, megjegyzes: "" },
+  { kod: "E01", kategoria: "E) EV TÖLTŐ", megnevezes: "Elektromos autótöltő szerelés (bekötéssel)", egyseg: "db", ar: 80000, kmDij: true, megjegyzes: "" },
+  { kod: "K03", kategoria: "K) SUPPORT ÉS SZERVIZ", megnevezes: "Egyéb munkák napidíja (villanyszerelő)", egyseg: "nap", ar: 65000, kmDij: false, megjegyzes: "" },
+  { kod: "K04", kategoria: "K) SUPPORT ÉS SZERVIZ", megnevezes: "Egyéb munkák napidíja (ács/segéd)", egyseg: "nap", ar: 55000, kmDij: false, megjegyzes: "" },
+  { kod: "J04", kategoria: "J) BONTÁS / LESZERELÉS", megnevezes: "Kivitelezéssel egybekötött napkollektor-bontás", egyseg: "db", ar: 20800, kmDij: true, megjegyzes: "" },
+  { kod: "L03", kategoria: "L) KISZÁLLÁSI DÍJAK", megnevezes: "Kiszállási díj – 50 km feletti távolság", egyseg: "km", ar: 130, kmDij: false, kmKuszobKm: 50, megjegyzes: "Csak az 50 km feletti rész számolódik: MAX(távolság−50;0)×130 Ft, oda-vissza." },
+  { kod: "M02", kategoria: "M) EGYÉB", megnevezes: "Állásidő", egyseg: "nap", ar: 100000, kmDij: false, megjegyzes: "Rögzíteni kell, mikortól és milyen igazolással számolható el." },
+];
+
+/**
+ * Idempotens seed – ugyanaz a minta, mint seedGreenHomeDijtabla(): létrehozza
+ * a "Wagner-Solar" fővállalkozót (ha még nincs) és betölti hozzá a fenti
+ * díjtáblát, csak egyszer fut le, utána a Fővállalkozók oldalon bármikor
+ * felülírható/frissíthető.
+ */
+export function seedWagnerSolarDijtabla() {
+  try {
+    if (localStorage.getItem(WAGNER_SEED_FLAG)) return null;
+    localStorage.setItem(WAGNER_SEED_FLAG, new Date().toISOString());
+
+    const fvk = loadFovallalkozok();
+    let wagner = fvk.find(f => f.nev?.trim().toLowerCase() === "wagner-solar");
+    if (!wagner) {
+      wagner = createFovallalkozo({
+        nev: "Wagner-Solar",
+        rovidites: "WGS",
+        aktiv: true,
+        megjegyzes: "Vállalkozói díjak megfeleltetése – 2026. július. A díjtétel-katalógus a Fővállalkozók oldalon frissíthető.",
+      });
+    }
+
+    if (getKatalogusTetelek(wagner.id).length === 0) {
+      bulkUpsertKatalogus(wagner.id, WAGNER_DIJTABLA_SEED, "csere", { fileName: "Wagner-Solar_2026-07-30.xlsx" });
+    }
+    return wagner;
+  } catch (e) {
+    console.warn("[dijtetelKatalogus] seedWagnerSolarDijtabla hiba:", e);
+    return null;
+  }
+}

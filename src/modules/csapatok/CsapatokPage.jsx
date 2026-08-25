@@ -503,7 +503,7 @@ function CsapatTagPanel({ csapatId }) {
 function AvSavokSzerkeszto({ savok, onChange }) {
   function addSav() {
     const last = savok[savok.length - 1];
-    onChange([...savok, { tol: last ? (Number(last.ig) + 1) : 1, ig: "", osszeg: 0 }]);
+    onChange([...savok, { tol: last ? (Number(last.ig) + 1) : 1, ig: "", osszeg: 0, perDb: false }]);
   }
   function removeSav(i) { onChange(savok.filter((_, idx) => idx !== i)); }
   function updSav(i, k, v) { onChange(savok.map((s, idx) => idx === i ? { ...s, [k]: v } : s)); }
@@ -523,6 +523,11 @@ function AvSavokSzerkeszto({ savok, onChange }) {
           <input type="number" value={sav.osszeg} onChange={e => updSav(i, "osszeg", e.target.value)}
             placeholder="Ft" style={{ ...inpS, flex: 1, textAlign: "right" }} />
           <span style={{ fontSize: 10, color: C.muted }}>Ft</span>
+          <label title="Ha be van pipálva, a fenti összeg Ft/db egységár, ami a TELJES darabszámra vetül. Kikapcsolva: fix, sávonkénti végösszeg."
+            style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, color: C.textSub, cursor: "pointer", whiteSpace: "nowrap" }}>
+            <input type="checkbox" checked={!!sav.perDb} onChange={e => updSav(i, "perDb", e.target.checked)} />
+            Ft/db
+          </label>
           <button onClick={() => removeSav(i)}
             style={{ padding: "3px 5px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 5, cursor: "pointer" }}>
             <X size={10} />
@@ -731,7 +736,7 @@ function AvSzabalyPanel({ csapatId }) {
                   <div style={{ marginTop: 4, display: "flex", gap: 3, flexWrap: "wrap" }}>
                     {(sz.savok || []).map((s, i) => (
                       <span key={i} style={{ fontSize: 10, background: "#EDE9FE", color: "#6D28D9", padding: "1px 6px", borderRadius: 20 }}>
-                        {s.tol}–{s.ig || "∞"}: {Number(s.osszeg || 0).toLocaleString("hu-HU")} Ft
+                        {s.tol}–{s.ig || "∞"}: {Number(s.osszeg || 0).toLocaleString("hu-HU")} Ft{s.perDb ? "/db" : ""}
                       </span>
                     ))}
                   </div>

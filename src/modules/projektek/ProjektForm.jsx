@@ -154,6 +154,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
         dijtablaKmTetelId:   "",
         dijtablaKmKod:       "",
         dijtablaKmDijFtKm:   0,
+        dijtablaKmKuszobKm:  0,
       }),
       panel_db:       projekt?.penzugy?.panel_db       ?? projekt?.napelemDb     ?? 0,
       akku_db:        projekt?.penzugy?.akku_db        ?? projekt?.akkumulatorDb ?? 0,
@@ -373,10 +374,11 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
         ...filled,
         fovallalkoziId: fvId,
         elszamolasiSzabalyId: sz?.id || "",
-        dijtablaTetelek:   fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaTetelek || [] : [],
-        dijtablaKmTetelId: fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaKmTetelId : "",
-        dijtablaKmKod:     fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaKmKod : "",
-        dijtablaKmDijFtKm: fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaKmDijFtKm : 0,
+        dijtablaTetelek:    fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaTetelek || [] : [],
+        dijtablaKmTetelId:  fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaKmTetelId : "",
+        dijtablaKmKod:      fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaKmKod : "",
+        dijtablaKmDijFtKm:  fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaKmDijFtKm : 0,
+        dijtablaKmKuszobKm: fvId === p.penzugy?.fovallalkoziId ? p.penzugy?.dijtablaKmKuszobKm : 0,
       },
     }));
   }
@@ -406,9 +408,10 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
       ...p,
       penzugy: {
         ...p.penzugy,
-        dijtablaKmTetelId: meta?.kmTetelId || "",
-        dijtablaKmKod:     meta?.kod || "",
-        dijtablaKmDijFtKm: Number(meta?.ftKm) || 0,
+        dijtablaKmTetelId:  meta?.kmTetelId || "",
+        dijtablaKmKod:      meta?.kod || "",
+        dijtablaKmDijFtKm:  Number(meta?.ftKm) || 0,
+        dijtablaKmKuszobKm: Number(meta?.kuszobKm) || 0,
       },
     }));
   }
@@ -416,7 +419,9 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
     const tetelek = form.penzugy.dijtablaTetelek || [];
     const tetelekOsszesen = tetelek.reduce((s, t) => s + (Number(t.osszesen) || 0), 0);
     const kellKm = tetelek.some(t => t.kmDij) && Number(form.penzugy.dijtablaKmDijFtKm) > 0;
-    const kmOsszeg = kellKm ? Math.round((Number(form.penzugy.tavKm) || 0) * 2 * (Number(form.penzugy.dijtablaKmDijFtKm) || 0)) : 0;
+    const kuszob = Number(form.penzugy.dijtablaKmKuszobKm) || 0;
+    const effKm  = Math.max(0, (Number(form.penzugy.tavKm) || 0) - kuszob);
+    const kmOsszeg = kellKm ? Math.round(effKm * 2 * (Number(form.penzugy.dijtablaKmDijFtKm) || 0)) : 0;
     upd("elfogadottAjanlat", tetelekOsszesen + kmOsszeg);
   }
   function updPenz(k, v) {
@@ -1224,7 +1229,7 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 value={form.penzugy.dijtablaTetelek || []}
                 onChange={updateDijtablaKosar}
                 tavKm={form.penzugy.tavKm}
-                kmMeta={{ kmTetelId: form.penzugy.dijtablaKmTetelId, ftKm: form.penzugy.dijtablaKmDijFtKm }}
+                kmMeta={{ kmTetelId: form.penzugy.dijtablaKmTetelId, ftKm: form.penzugy.dijtablaKmDijFtKm, kuszobKm: form.penzugy.dijtablaKmKuszobKm }}
                 onKmMetaChange={updateKmMeta}
               />
               {vanDijtablaKosar && (
