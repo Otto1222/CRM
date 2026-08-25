@@ -419,12 +419,23 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
 
   async function handleSave() {
     if(!validate()) { setActive("alap"); return; }
+    // P0: a sablon-választó X gombja bezárható választás nélkül (ez a
+    // "sablon módosítása" folyamatnál helyes, ha egy MÁR kiválasztott
+    // sablont akar valaki megtartani) – de mentéskor a sablon EGYÁLTALÁN
+    // hiánya nem engedhető át csendben, mert az a teljes kötelező
+    // dokumentáció-kényszert (VBF/LMRA/TIG/fotók/aláírás) kikapcsolná.
+    if (!kivalasztottSablon) {
+      setErrors({ sablon: "Munkalap sablon kiválasztása kötelező – e nélkül nem tudjuk, milyen dokumentumok/fotók kellenek ehhez a munkához." });
+      setSablonPickerNyitva(true);
+      setActive("sablon");
+      return;
+    }
     setSaving(true);
     createBackup("Új munkalap mentés előtt");
     const generaltEdi = nextEdiSorszam(); // belső egyedi azonosító (Drive sync)
 
     // Sablon mezők validáció – kötelező mezők ellenőrzése
-    if (kivalasztottSablon) {
+    {
       const kotelez = (kivalasztottSablon.mezok || []).filter(m => m.kotelezo);
       const hianyzo = kotelez.filter(m => !String(sablonMezokErtekek[m.id] || "").trim());
       if (hianyzo.length > 0) {

@@ -256,7 +256,7 @@ function SablonEditor({ sablon, userRole, onSave, onCancel }) {
               {isNew ? "Új munkalap sablon" : "Sablon szerkesztése"}
             </h2>
             {sablon.gyari && (
-              <span style={{ fontSize:11, color:C.muted, background:"#FEF9C3", borderRadius:5, padding:"2px 7px", fontWeight:600 }}>🏭 Gyári sablon – nem törölhető</span>
+              <span style={{ fontSize:11, color:C.muted, background:"#FEF9C3", borderRadius:5, padding:"2px 7px", fontWeight:600 }}>🏭 Gyári sablon</span>
             )}
           </div>
         </div>
@@ -459,7 +459,7 @@ function SablonKartya({ sablon, userRole, onEdit, onMasol, onInaktival, onAktiva
               <ArchiveRestore size={12}/> Aktivál
             </button>
           )}
-          {!sablon.gyari && !aktiv && (
+          {!aktiv && (
             <button onClick={() => onDelete(sablon.id)}
               style={{ padding:"7px 12px", background:C.dangerLight, color:C.danger, border:"none", borderRadius:8, cursor:"pointer", fontFamily:FONT, fontSize:12, display:"flex", alignItems:"center", gap:4 }}>
               <Trash2 size={12}/> Törlés
@@ -513,7 +513,10 @@ export default function MunkalapSablonokPage({ userRole }) {
   function handleDelete(id) {
     const sablon = sablonok.find(s => s.id === id);
     if (!sablon) return;
-    if (sablon.gyari) { alert("Gyári sablont nem lehet törölni. Inaktiválás lehetséges."); return; }
+    // A "gyári" jelzés mostantól csak tájékoztató (honnan származik a
+    // sablon), NEM védi törléstől – bármelyik sablon törölhető, ha épp
+    // inaktív (ez utóbbi feltétel marad: aktív, használatban lévő sablont
+    // nem lehet véletlenül eltüntetni, előbb inaktiválni kell).
     if (!window.confirm(`Biztosan törlöd: „${sablon.nev}"?`)) return;
     deleteSablon(id);
     setSablonok(loadSablonok());
@@ -547,7 +550,7 @@ export default function MunkalapSablonokPage({ userRole }) {
             📋 Munkalap sablonok
           </h2>
           <p style={{ fontSize:13, color:C.muted, margin:"4px 0 0" }}>
-            Programozás nélkül hozz létre, másolj vagy módosíts munkalap sablonokat. Gyári sablonok nem törölhetők.
+            Programozás nélkül hozz létre, másolj, módosíts vagy törölj munkalap sablonokat.
           </p>
         </div>
         {isAdmin && (
@@ -597,7 +600,7 @@ export default function MunkalapSablonokPage({ userRole }) {
         <ul style={{ fontSize:12, color:C.accent, margin:0, paddingLeft:18, lineHeight:2 }}>
           <li>Új munkalap létrehozásakor kötelező sablont választani</li>
           <li>A sablon mezői megjelennek a munkalapban – a telepítő tölti ki</li>
-          <li>Gyári sablonok nem törölhetők, de másolhatók és módosíthatók</li>
+          <li>Bármelyik sablon szerkeszthető, másolható vagy törölhető (törléshez előbb inaktiválni kell)</li>
           <li>OETP és egyéb új típusokhoz készíts új sablont másolással</li>
         </ul>
       </div>
