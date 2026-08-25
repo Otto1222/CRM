@@ -147,6 +147,30 @@ export function addTetelToKivitelezesiCsomag(csomagId, tetel, user = "") {
 }
 
 /**
+ * Excel/CSV-ből beolvasott tételek (ld. tetelesExcelImport.js +
+ * TetelesExcelImportPanel.jsx) tömeges hozzáadása egy MÁR LÉTEZŐ
+ * Kivitelezési Csomaghoz – nem csak projekt-létrehozáskor (ld.
+ * createKivitelezesiCsomagForProjekt), hanem bármikor utólag is.
+ *
+ * Fővállalkozói munkánál tipikusan kétszer is használt: egyszer a
+ * fővállalkozó saját tételes listájával, egyszer a PM kiegészítő
+ * (szerelési kellék, csavar, kábel stb.) listájával – mindkettő
+ * ugyanabba a csomagba kerül, egymást nem írják felül.
+ *
+ * A generateKiviTetelekFromExcelPillanatkep() ugyanazt az alakot adja,
+ * mint a projekt-létrehozáskori Excel-import (anyagtorzs_id: null –
+ * szabad szöveges tétel, nincs anyagtörzs-kényszer), ezért ugyanaz a
+ * kód szolgálja ki mindkét belépési pontot, nincs duplikálva.
+ */
+export function addExcelTetelekToKivitelezesiCsomag(csomagId, excelTetelek = [], user = "") {
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) throw new Error("A Kivitelezési Csomag nem található.");
+  const ujTetelek = generateKiviTetelekFromExcelPillanatkep({ tetelek: excelTetelek });
+  if (ujTetelek.length === 0) return csomag;
+  return updateKivitelezesiCsomag(csomagId, { tetelek: [...(csomag.tetelek || []), ...ujTetelek] }, user);
+}
+
+/**
  * Kézi tétel hozzáadása a Kivitelezési Csomaghoz – kizárólag létező
  * anyagtörzs-rekordból (Fázis 4C). Szabad szöveges anyagfelvitel nincs:
  * a tétel mindig createKeziTetelPillanatkep(...) segítségével, az

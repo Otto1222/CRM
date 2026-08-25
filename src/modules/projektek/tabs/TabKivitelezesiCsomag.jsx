@@ -5,12 +5,14 @@ import {
   getKivitelezesiCsomagByProjektId,
   createKivitelezesiCsomagForProjekt,
   addAnyagokBulkToKivitelezesiCsomag,
+  addExcelTetelekToKivitelezesiCsomag,
   setKivitelezesiCsomagStatus,
   updateKiviTetelMennyisegek,
   updateKiviTetelLathatosag,
   updateKiviTetelSorozatszamKoteles,
 } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import AnyagKosarPicker from "../../../components/AnyagKosarPicker.jsx";
+import TetelesExcelImportPanel from "../../../components/TetelesExcelImportPanel.jsx";
 import {
   getKivitelezesiCsomagStatusConfig,
   calcKiviTetelEltérés,
@@ -47,6 +49,24 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
   // munkalapot kiosztanák egy csapatnak) ──
   const [keziKosar, setKeziKosar] = useState([]);
   const [keziHiba, setKeziHiba]   = useState("");
+
+  // ── Tételek importálása Excel/CSV-ből (fővállalkozótól kapott lista,
+  // vagy PM kiegészítő lista) – ugyanabba a csomagba, tetszőleges
+  // számú alkalommal, egymást nem írják felül. ──
+  const [excelImportNyitva, setExcelImportNyitva] = useState(false);
+  const [excelSiker, setExcelSiker] = useState("");
+
+  function handleExcelPillanatkep(pillanatkep) {
+    if (!pillanatkep || !csomag) return;
+    try {
+      const updated = addExcelTetelekToKivitelezesiCsomag(csomag.id, pillanatkep.tetelek, currentUser?.name || "");
+      setCsomag(updated);
+      setExcelSiker(`✓ ${pillanatkep.tetelek.length} tétel hozzáadva (${pillanatkep.fileName})`);
+      setTimeout(() => setExcelSiker(""), 4000);
+    } catch (e) {
+      setKeziHiba(e.message || "Excel import sikertelen.");
+    }
+  }
 
   // ── Státusz- és mennyiségkezelés (Fázis 4D) ──
   const [statuszHiba, setStatuszHiba]   = useState("");
@@ -273,6 +293,29 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
           {keziHiba && (
             <p style={{ fontSize: 12, color: C.danger, fontWeight: 700, margin: "10px 0 0" }}>{keziHiba}</p>
           )}
+
+          {/* Tételek importálása Excel/CSV-ből – ugyanabba a csomagba, ahányszor
+              kell (pl. egyszer a fővállalkozó saját listájával, egyszer a PM
+              kiegészítő – szerelési kellék, csavar, kábel – listájával). Nem
+              az anyagtörzsből választ, szabad tétel, ahogy a fájlban szerepel. */}
+          <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px dashed ${C.border}` }}>
+            <button type="button" onClick={() => setExcelImportNyitva(o => !o)}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, border: `1.5px solid ${C.accent}`, background: excelImportNyitva ? C.accentLight : "#fff", color: C.accent, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT }}>
+              <Plus size={14} /> Tételek importálása Excelből/CSV-ből
+            </button>
+            <p style={{ fontSize: 11.5, color: C.muted, margin: "6px 0 0" }}>
+              Ha a fővállalkozó vagy egy beszállító táblázatban adta meg, mit kell vinni – ezt is beolvashatod, akár
+              többször is (pl. külön a fővállalkozói listát, külön a saját kiegészítő anyaglistát).
+            </p>
+            {excelSiker && (
+              <p style={{ fontSize: 12, color: C.success, fontWeight: 700, margin: "8px 0 0" }}>{excelSiker}</p>
+            )}
+            {excelImportNyitva && (
+              <div style={{ marginTop: 12 }}>
+                <TetelesExcelImportPanel value={null} onChange={handleExcelPillanatkep} />
+              </div>
+            )}
+          </div>
         </div>
       )}
 
