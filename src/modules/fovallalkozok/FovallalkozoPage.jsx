@@ -557,6 +557,7 @@ function FvSor({ fv, onUpdate, onDelete }) {
   }
 
   const aktivSzabaly = szabalyok.filter(s => s.aktiv !== false).length;
+  const aktivKatalogusTetel = katalogus.filter(t => t.aktiv !== false).length;
 
   // Csoportosítás profilNev szerint; névtelenek a végére kerülnek
   function groupByProfil(lista) {
@@ -591,8 +592,8 @@ function FvSor({ fv, onUpdate, onDelete }) {
             <span style={{ fontSize: 11, background: fv.aktiv ? C.successLight : C.bg, color: fv.aktiv ? C.success : C.muted, padding: "2px 9px", borderRadius: 20, fontWeight: 600 }}>
               {fv.aktiv ? "Aktív" : "Inaktív"}
             </span>
-            <span style={{ fontSize: 12, color: C.muted }}>
-              {aktivSzabaly} aktív díjtétel
+            <span style={{ fontSize: 12, color: C.muted }} title="Kézi, munkatípus-alapú szabály / Díjtétel-katalógus tétel – a kettő két különböző elszámolási mechanizmus, ld. lentebb.">
+              {aktivSzabaly} kézi szabály · {aktivKatalogusTetel} katalógus-tétel
             </span>
           </div>
           {fv.megjegyzes && (
