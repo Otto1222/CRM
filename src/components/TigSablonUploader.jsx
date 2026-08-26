@@ -13,7 +13,7 @@ import { TIG_MOD_OPCIOK } from "../modules/fovallalkozok/fovallalkozo.schema.js"
 import {
   hasTigSablon, saveTigSablon, deleteTigSablon, getTigSablonMeta, readFileAsBase64,
 } from "../lib/tigDocxService.js";
-import { TIG_XLSX_FEJLEC_KONVENCIO } from "../lib/tigXlsxService.js";
+import { TIG_XLSX_MUNKALAP, FEJLEC_FELIRATOK } from "../lib/tigXlsxService.js";
 
 export default function TigSablonUploader({ fovallalkozo, onUpdate }) {
   const fileRef = useRef();
@@ -81,20 +81,21 @@ export default function TigSablonUploader({ fovallalkozo, onUpdate }) {
       {meta?.fileType === "xlsx" ? (
         <div style={{ marginTop: 8, padding: "8px 10px", background: "#fff", border: `1px dashed ${C.border}`, borderRadius: 8 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: C.textSub, margin: "0 0 4px" }}>
-            Fix elrendezés – ezt a sablonnak követnie kell:
+            Így tölti ki a rendszer – ehhez nincs teendőd:
           </p>
           <p style={{ fontSize: 10.5, color: C.muted, margin: 0, lineHeight: 1.6 }}>
-            A kitöltendő fül neve: <b>{TIG_XLSX_FEJLEC_KONVENCIO.munkalap}</b>. Ezen a fülön a rendszer
-            automatikusan (a projekt adataiból, nincs kézi bevitel) ide írja:
-            Ügyfél neve → <b>{TIG_XLSX_FEJLEC_KONVENCIO.ugyfelNev}</b>,
-            Projekt száma → <b>{TIG_XLSX_FEJLEC_KONVENCIO.projektSzam}</b>,
-            Dátum → <b>{TIG_XLSX_FEJLEC_KONVENCIO.datum}</b>,
-            Irányítószám → <b>{TIG_XLSX_FEJLEC_KONVENCIO.iranyitoszam}</b>,
-            Város → <b>{TIG_XLSX_FEJLEC_KONVENCIO.varos}</b>,
-            Cím maradéka → <b>{TIG_XLSX_FEJLEC_KONVENCIO.cimMaradek}</b>.
-            Ez minden fővállalkozónál ugyanaz – ha egy sablon máshogy van felépítve, ezekre a
-            cellákra kell rendezni a fejlécét. A tétel-sorok (mennyiség/ár) helyét a fejlesztő
-            állítja be a fővállalkozó valódi Excel-fájlja alapján – ehhez nincs teendőd.
+            A kitöltendő fül neve: <b>{TIG_XLSX_MUNKALAP}</b>. Ezen a fülön a rendszer megkeresi a
+            lenti feliratokat (nem számít, melyik sorban vannak – ha átrendezed a sablont, ez is
+            követi), és a projekt adataiból automatikusan a felirat melletti cellába írja:
+            "<b>{FEJLEC_FELIRATOK.ugyfelNev}</b>" → Ügyfél neve,
+            "<b>{FEJLEC_FELIRATOK.projektSzam}</b>" → Projekt száma,
+            "<b>{FEJLEC_FELIRATOK.datum}</b>" → Dátum,
+            "<b>{FEJLEC_FELIRATOK.iranyitoszam}</b>" → Irányítószám,
+            "<b>{FEJLEC_FELIRATOK.varos}</b>" → Város,
+            "<b>{FEJLEC_FELIRATOK.cimMaradek}</b>" → Cím maradéka.
+            Fontos: ezeknek a feliratszövegeknek pontosan így kell szerepelniük az A oszlopban –
+            ha átfogalmazod őket, a mező üresen marad. A tétel-sorok (mennyiség/ár) helyét a
+            fejlesztő állítja be a fővállalkozó valódi Excel-fájlja alapján – ehhez sincs teendőd.
           </p>
         </div>
       ) : (

@@ -5,18 +5,23 @@
  * valódi TIG-formátuma Excel (pl. Wagner-Solar "Kitöltőlap" + képletekkel
  * hivatkozó "NYOMTATHATÓ TIG" fül), nem Word.
  *
- * FONTOS: az Excel-sablonban NINCS docxtemplater-szerű {mező} csere – a
- * kitöltés fix CELLACÍMEK alapján történik, és EGYIK sem felhasználói
- * beállítás (ez korábban admin-oldali cellacím-mezőkkel volt megoldva,
- * de senki nem értette, mit kell beleírni – a fejlesztő tölti ki egyszer,
- * a fővállalkozó valódi Excel-fájlját megnézve):
- *   - fejléc-mezők (ügyfél/projekt/dátum/cím): FIX, mindenkire egyforma
- *     konvenció (ld. TIG_XLSX_FEJLEC_KONVENCIO lent).
- *   - tétel-sorok: fővállalkozónként eltérő árlista/sorrend miatt
- *     fővállalkozónkénti táblázat (ld. TETEL_CELLA_TERKEPEK lent) – a
- *     katalógus-tétel KÓDJA alapján keresi meg, melyik cellába kerüljön
- *     a mennyiség, az egységár pedig 2 oszloppal jobbra (a Wagner-Solar
- *     minta "mennyiség / m.e. / egységár / összesen" oszlop-elrendezése).
+ * FONTOS: az Excel-sablonban NINCS docxtemplater-szerű {mező} csere.
+ * Első nekifutásra ez fix CELLACÍMEKKEL (pl. "B10") volt megoldva – ez
+ * kiderült, hogy törékeny: amint a felhasználó egy sort betesz/kivesz a
+ * sablonban, minden alatta lévő adat rossz cellába kerül (pontosan ez
+ * történt: egy beszúrt sor miatt az "Ügyfél neve" a szomszédos sorba
+ * csúszott). Ehelyett most SZÖVEGES FELIRAT alapján keresi meg a cellát
+ * (A oszlopban megkeresi pl. az "Ügyfél neve:" feliratot, és a MELLETTE
+ * lévő cellába ír) – ez a sablon sorainak átrendezésekor is helyesen
+ * működik, amíg a feliratok szövege nem változik.
+ *   - fejléc-mezők (ügyfél/projekt/dátum/cím): FIX feliratszöveg, ld.
+ *     FEJLEC_FELIRATOK lent – a Wagner-Solar minta alapján.
+ *   - tétel-sorok: a katalógus-tétel MEGNEVEZÉSE alapján (ld.
+ *     TETEL_NEV_TERKEPEK lent, fővállalkozónként, mert az árlista/
+ *     tétel-szöveg fővállalkozónként eltér) – a mennyiség a felirat
+ *     melletti cellába kerül, az egységár 2 oszloppal jobbra (a
+ *     Wagner-Solar minta "Tétel / mennyiség / m.e. / egységár / összesen"
+ *     oszlop-elrendezése).
  * A sablon egyéb képletei (pl. "NYOMTATHATÓ TIG" fül, összesítő sorok)
  * NEM kerülnek kiszámolásra itt – ExcelJS nem futtat képletmotort, de a
  * `fullCalcOnLoad` beállítás miatt Excelben/LibreOffice-ban megnyitva a
@@ -27,36 +32,44 @@ import { getTigSablonMeta, getTigSablonBase64, tigProjektDatum } from "./tigDocx
 import { getKatalogusTetelek } from "../modules/fovallalkozok/dijtetelKatalogus.service.js";
 import { calcKmDijOsszeg } from "../modules/fovallalkozok/elszamolasiMotor.js";
 
-// Fix, mindenkire egyforma fejléc-elrendezés (ld. Wagner-Solar_TIG.xlsx
-// "Kitöltőlap" füle) – jövőbeli Excel TIG-sablonoknak ezt kell követniük.
-export const TIG_XLSX_FEJLEC_KONVENCIO = {
-  munkalap:     "Kitöltőlap",
-  ugyfelNev:    "B10",
-  projektSzam:  "B11",
-  datum:        "B12",
-  iranyitoszam: "B13",
-  varos:        "B14",
-  cimMaradek:   "B15",
+export const TIG_XLSX_MUNKALAP = "Kitöltőlap";
+
+// Fejléc-mezők felirat-szövege (A oszlop) – a Wagner-Solar minta alapján,
+// mindenkire egyforma konvenció. A rendszer ezt keresi meg a sablonban, és
+// a MELLETTE (jobbra) lévő cellába írja az adatot.
+export const FEJLEC_FELIRATOK = {
+  ugyfelNev:    "Ügyfél neve:",
+  projektSzam:  "Projekt száma:",
+  datum:        "Telepítés (befejezésének) napja:",
+  iranyitoszam: "Telepítési irsz",
+  varos:        "Telepítési város",
+  cimMaradek:   "Telepítési címmaradék (utca, házszám..)",
 };
 
-// Tétel-sorok cellái, fővállalkozónként (kód → "mennyiség" cella, az
-// egységár 2 oszloppal jobbra). Ez a fővállalkozó VALÓDI Excel-sablonjának
-// felépítéséből jön (ld. Wagner-Solar_TIG.xlsx "Kitöltőlap" füle) – nem a
-// felhasználó tölti ki, mert ehhez a sablon soronkénti szerkezetét kellene
-// ismernie. Ha az admin lecseréli a sablont egy máshogy felépített
-// Excelre, ezt a táblát is frissíteni kell (fejlesztői feladat, nem
-// felhasználói beállítás).
-const TETEL_CELLA_TERKEPEK = {
+// Tétel-sorok, fővállalkozónként: katalógus-tétel KÓDJA → a sablonban
+// szereplő tétel-NÉV szövege (ez a fővállalkozó valódi Excel-sablonjának
+// "Tétel" oszlopában szó szerint így szerepel). Ha az admin lecseréli a
+// sablont egy máshogy megfogalmazott Excelre, ezt a táblát kell frissíteni
+// (fejlesztői feladat, nem felhasználói beállítás).
+const TETEL_NEV_TERKEPEK = {
   "wagner-solar": {
-    N01: "B20", N02: "B20", N03: "B20", N04: "B20", // egy sor van rá, a helyes sávot választja ki a felhasználó a kosárban
-    B06: "B21", C09: "B22", B03: "B23", D01: "B24", E01: "B25",
-    K03: "B26", K04: "B27", J04: "B28",
-    L03: "B75", M02: "B76",
+    N01: "Napelem építés/bontás", N02: "Napelem építés/bontás",
+    N03: "Napelem építés/bontás", N04: "Napelem építés/bontás", // egy sor van rá, a helyes sávot a kosárban választja ki a felhasználó
+    B06: "Inverter szerelés (AC és DC oldali bekötéssel, kulcsrakészen)",
+    C09: "Okosmérő szerelés (bekötéssel)",
+    B03: "Energiatároló szerelés (bekötéssel)",
+    D01: "EPS/Backup doboz szerelés (bekötéssel)",
+    E01: "Elektromos autótöltő szerelés (bekötéssel)",
+    K03: "Egyéb munkák napidíja (villanyszerelő)",
+    K04: "Egyéb munkák napidíja (ács/segéd)",
+    J04: "Kivitelezéssel egybekötött napkollektor bontás",
+    L03: "Kiszállási díj 50 km-es távolság felett",
+    M02: "Állásidő",
   },
 };
 
-function tetelCellaTerkep(fovallalkozoNev) {
-  return TETEL_CELLA_TERKEPEK[String(fovallalkozoNev || "").trim().toLowerCase()] || null;
+function tetelNevTerkep(fovallalkozoNev) {
+  return TETEL_NEV_TERKEPEK[String(fovallalkozoNev || "").trim().toLowerCase()] || null;
 }
 
 function base64ToArrayBuffer(base64) {
@@ -68,31 +81,54 @@ function base64ToArrayBuffer(base64) {
 
 /** "6710 Szeged, Szérűskerti sor 7." → { irsz, varos, maradek } – legjobb
  * próbálkozás, nem kritikus ha nem illeszkedik (akkor a teljes cím a
- * "cimMaradek" cellába kerül, ha az be van állítva). */
+ * "cimMaradek" cellába kerül). */
 function bontsdCimet(cim) {
   const m = String(cim || "").match(/^(\d{4})\s+([^,]+),?\s*(.*)$/);
   if (m) return { irsz: m[1], varos: m[2].trim(), maradek: m[3].trim() };
   return { irsz: "", varos: "", maradek: cim || "" };
 }
 
-function irjCellaba(ws, cellCim, ertek) {
-  if (!cellCim || ertek === undefined || ertek === null || ertek === "") return;
-  try { ws.getCell(cellCim).value = ertek; } catch { /* rossz cellacím – kihagyjuk, nem dobjuk el az egészet */ }
+const normSzoveg = s => String(s ?? "").trim().toLowerCase();
+
+/** Megkeresi az A oszlopban a megadott feliratot (pontos, whitespace-
+ * toleráns egyezés), és visszaadja azt a cellát – a hívó a mellette lévő
+ * (jobbra) cellába ír. Nem talál esetén null (nem dobunk hibát, csak
+ * kihagyjuk azt a mezőt/tételt). */
+function keresFeliratCella(ws, felirat, maxRow = 150) {
+  const cel = normSzoveg(felirat);
+  if (!cel) return null;
+  for (let r = 1; r <= maxRow; r++) {
+    const cell = ws.getCell(r, 1); // A oszlop
+    if (normSzoveg(cell.value) === cel) return cell;
+  }
+  return null;
+}
+
+function irjFeliratMelle(ws, felirat, ertek) {
+  if (ertek === undefined || ertek === null || ertek === "") return;
+  const labelCell = keresFeliratCella(ws, felirat);
+  if (!labelCell) return;
+  ws.getCell(labelCell.row, labelCell.col + 1).value = ertek;
+}
+
+function irjTetelSort(ws, felirat, mennyiseg, egysegar) {
+  const labelCell = keresFeliratCella(ws, felirat);
+  if (!labelCell) return;
+  ws.getCell(labelCell.row, labelCell.col + 1).value = Math.round(Number(mennyiseg) || 0); // mennyiség: közvetlenül a felirat mellett
+  ws.getCell(labelCell.row, labelCell.col + 3).value = Math.round(Number(egysegar) || 0);  // egységár: 2 oszloppal arrébb (mennyiség/m.e./egységár)
 }
 
 /**
- * A projekt tétel-kosarát a fővállalkozóra vonatkozó, kódba írt tétel-
- * cellatérkép (TETEL_CELLA_TERKEPEK) alapján a sablonba írja: mennyiség a
- * megadott cellába, egységár 2 oszloppal jobbra. Ha ehhez a fővállalkozóhoz
- * nincs ismert cellatérkép, nem ír be semmit (a fejléc-mezők akkor is
- * kitöltődnek).
+ * A projekt tétel-kosarát a fővállalkozóra vonatkozó tétel-név-térkép
+ * alapján a sablonba írja. Ha ehhez a fővállalkozóhoz nincs ismert térkép,
+ * nem ír be semmit (a fejléc-mezők akkor is kitöltődnek).
  */
 function irdBeATeteleket(ws, projekt, fovallalkozo) {
   const penzugy = projekt?.penzugy || {};
   const kosar = penzugy.dijtablaTetelek || [];
   if (kosar.length === 0) return;
 
-  const terkep = tetelCellaTerkep(fovallalkozo?.nev);
+  const terkep = tetelNevTerkep(fovallalkozo?.nev);
   if (!terkep) return;
 
   const tulajdonosId = penzugy.fovallalkoziId;
@@ -101,9 +137,9 @@ function irdBeATeteleket(ws, projekt, fovallalkozo) {
 
   kosar.forEach(t => {
     const kt = katalogusById.get(t.katalogusTetelId);
-    const cella = kt?.kod && terkep[kt.kod];
-    if (!cella) return;
-    irjMennyisegEsAr(ws, cella, t.mennyiseg, t.egysegar);
+    const nev = kt?.kod && terkep[kt.kod];
+    if (!nev) return;
+    irjTetelSort(ws, nev, t.mennyiseg, t.egysegar);
   });
 
   // Küszöbös kiszállási díj – nem kosár-sor, hanem a kmMeta pillanatkép
@@ -112,23 +148,14 @@ function irdBeATeteleket(ws, projekt, fovallalkozo) {
   const kellKm = kosar.some(t => t.kmDij) && Number(penzugy.dijtablaKmDijFtKm) > 0;
   if (kellKm && penzugy.dijtablaKmTetelId) {
     const kmKt = katalogusById.get(penzugy.dijtablaKmTetelId);
-    const cella = kmKt?.kod && terkep[kmKt.kod];
-    if (cella) {
+    const nev = kmKt?.kod && terkep[kmKt.kod];
+    if (nev) {
       const kuszob = Number(penzugy.dijtablaKmKuszobKm) || 0;
       const ftKm   = Number(penzugy.dijtablaKmDijFtKm) || 0;
       const { fizetendoKm } = calcKmDijOsszeg(penzugy.tavKm, kuszob, ftKm);
-      irjMennyisegEsAr(ws, cella, fizetendoKm, ftKm);
+      irjTetelSort(ws, nev, fizetendoKm, ftKm);
     }
   }
-}
-
-function irjMennyisegEsAr(ws, mennyisegCellCim, mennyiseg, egysegar) {
-  try {
-    const mCell = ws.getCell(mennyisegCellCim);
-    mCell.value = Math.round(Number(mennyiseg) || 0);
-    const arCell = ws.getCell(mCell.row, mCell.col + 2);
-    arCell.value = Math.round(Number(egysegar) || 0);
-  } catch { /* rossz cellacím a katalógustételen – kihagyjuk */ }
 }
 
 async function epitsdFelAWorkbookot(projekt, fovallalkozo) {
@@ -141,21 +168,20 @@ async function epitsdFelAWorkbookot(projekt, fovallalkozo) {
   await wb.xlsx.load(base64ToArrayBuffer(base64));
   wb.calcProperties.fullCalcOnLoad = true;
 
-  const cellak = TIG_XLSX_FEJLEC_KONVENCIO;
-  const ws = wb.getWorksheet(cellak.munkalap) || wb.worksheets[0];
+  const ws = wb.getWorksheet(TIG_XLSX_MUNKALAP) || wb.worksheets[0];
   if (!ws) return { ok: false, error: "A sablonban nem található kitöltendő munkalap." };
 
   const cim = bontsdCimet(projekt?.telepitesiCim || projekt?.clientCim || "");
-  irjCellaba(ws, cellak.ugyfelNev,   projekt?.clientNev || "");
-  irjCellaba(ws, cellak.projektSzam, [projekt?.projektkod, projekt?.kulsoAzonosito].filter(Boolean).join(", "));
+  irjFeliratMelle(ws, FEJLEC_FELIRATOK.ugyfelNev,   projekt?.clientNev || "");
+  irjFeliratMelle(ws, FEJLEC_FELIRATOK.projektSzam, [projekt?.projektkod, projekt?.kulsoAzonosito].filter(Boolean).join(", "));
   const datumStr = tigProjektDatum(projekt);
   if (datumStr) {
     const d = new Date(datumStr);
-    irjCellaba(ws, cellak.datum, isNaN(d) ? datumStr : d);
+    irjFeliratMelle(ws, FEJLEC_FELIRATOK.datum, isNaN(d) ? datumStr : d);
   }
-  irjCellaba(ws, cellak.iranyitoszam, cim.irsz);
-  irjCellaba(ws, cellak.varos,        cim.varos);
-  irjCellaba(ws, cellak.cimMaradek,   cim.maradek);
+  irjFeliratMelle(ws, FEJLEC_FELIRATOK.iranyitoszam, cim.irsz);
+  irjFeliratMelle(ws, FEJLEC_FELIRATOK.varos,        cim.varos);
+  irjFeliratMelle(ws, FEJLEC_FELIRATOK.cimMaradek,   cim.maradek);
 
   irdBeATeteleket(ws, projekt, fovallalkozo);
 
