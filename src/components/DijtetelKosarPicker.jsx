@@ -14,7 +14,7 @@
  * távolság-mezőjéből (oda-vissza).
  */
 import { useMemo, useState } from "react";
-import { Plus, Minus, Trash2, Search, Navigation } from "lucide-react";
+import { Plus, Minus, Trash2, Search, Navigation, PlusCircle } from "lucide-react";
 import { C, FONT } from "../lib/constants";
 import { getAktivKatalogusTetelek, groupKatalogusByKategoria } from "../modules/fovallalkozok/dijtetelKatalogus.service.js";
 import { calcSavosOsszeg, calcKmDijOsszeg } from "../modules/fovallalkozok/elszamolasiMotor.js";
@@ -23,6 +23,9 @@ const ft = n => Number(n || 0).toLocaleString("hu-HU") + " Ft";
 
 export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tavKm, kmMeta, onKmMetaChange }) {
   const [kereses, setKereses] = useState("");
+  const [egyediOpen, setEgyediOpen] = useState(false);
+  const [egyediNev, setEgyediNev] = useState("");
+  const [egyediAr, setEgyediAr] = useState("");
   const katalogus = useMemo(() => tulajdonosId ? getAktivKatalogusTetelek(tulajdonosId) : [], [tulajdonosId]);
   const kosar = value || [];
 
@@ -76,6 +79,34 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
       const elso = kmTetelek[0];
       onKmMetaChange?.({ kmTetelId: elso.id, kod: elso.kod, nev: elso.megnevezes, ftKm: Number(elso.ar) || 0, kuszobKm: Number(elso.kmKuszobKm) || 0 });
     }
+  }
+
+  // Egyedi (nem katalógusból választott) tétel – pl. daru/emelőgép bérlés,
+  // szállás, ami a KONKRÉT munkánál merül fel és a fővállalkozó megtéríti.
+  // Az itt felvett "Részletes költségek" (ProjektForm) csak a SAJÁT
+  // kiadásunk, semmit nem számláz tovább a fővállalkozónak – ha egy ilyen
+  // tételt a fővállalkozó fizet, IDE kell felvenni, mert ez a kosár adja a
+  // bevételt ÉS a TIG tétel-sorait is (ld. buildTigTetelSorok), a
+  // "Részletes költségek" blokk egyiket sem.
+  function addEgyediTetel() {
+    const ar = Number(egyediAr) || 0;
+    if (!egyediNev.trim() || ar <= 0) return;
+    onChange([...kosar, {
+      katalogusTetelId: `egyedi_${crypto.randomUUID()}`,
+      kod: "",
+      kategoria: "Egyedi tétel (fővállalkozónak továbbszámlázva)",
+      nev: egyediNev.trim(),
+      egyseg: "alkalom",
+      egysegar: ar,
+      tipus: "flat",
+      savok: [],
+      mennyiseg: 1,
+      osszesen: ar,
+      kmDij: false,
+    }]);
+    setEgyediNev("");
+    setEgyediAr("");
+    setEgyediOpen(false);
   }
 
   function updMennyiseg(katalogusTetelId, mennyiseg) {
@@ -162,6 +193,38 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
           </div>
         ))}
       </div>
+
+      {/* Egyedi tétel – olyan eseti költség (pl. daru/emelőgép bérlés,
+          szállás), ami nem szerepel a katalógusban, de a fővállalkozó
+          megtéríti – ezért a bevételbe és a TIG-be is be kell kerülnie,
+          nem a "Részletes költségek" (saját, nem továbbszámlázott) blokkba. */}
+      {!egyediOpen ? (
+        <button type="button" onClick={() => setEgyediOpen(true)}
+          style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, padding: "6px 10px", background: "none", border: `1px dashed ${C.border}`, borderRadius: 8, cursor: "pointer", fontSize: 12, color: C.accent, fontWeight: 700, fontFamily: FONT }}>
+          <PlusCircle size={13} /> Egyedi tétel (pl. daru, szállás – amit a fővállalkozó megtérít)
+        </button>
+      ) : (
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 8, marginBottom: 12, padding: "10px", background: C.bg, borderRadius: 9, border: `1px solid ${C.border}` }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 10.5, color: C.muted, display: "block", marginBottom: 3 }}>Megnevezés</label>
+            <input value={egyediNev} onChange={e => setEgyediNev(e.target.value)} placeholder="pl. Daru bérlés"
+              style={{ width: "100%", boxSizing: "border-box", padding: "6px 8px", border: `1px solid ${C.border}`, borderRadius: 7, fontSize: 12.5, fontFamily: FONT }} />
+          </div>
+          <div style={{ width: 120 }}>
+            <label style={{ fontSize: 10.5, color: C.muted, display: "block", marginBottom: 3 }}>Ft</label>
+            <input type="number" min={0} value={egyediAr} onChange={e => setEgyediAr(e.target.value)} placeholder="0"
+              style={{ width: "100%", boxSizing: "border-box", padding: "6px 8px", border: `1px solid ${C.border}`, borderRadius: 7, fontSize: 12.5, fontFamily: FONT }} />
+          </div>
+          <button type="button" onClick={addEgyediTetel} disabled={!egyediNev.trim() || !(Number(egyediAr) > 0)}
+            style={{ padding: "7px 12px", background: (!egyediNev.trim() || !(Number(egyediAr) > 0)) ? C.border : C.accent, color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: FONT }}>
+            Hozzáad
+          </button>
+          <button type="button" onClick={() => { setEgyediOpen(false); setEgyediNev(""); setEgyediAr(""); }}
+            style={{ padding: "7px 10px", background: "none", border: `1px solid ${C.border}`, borderRadius: 7, cursor: "pointer", fontSize: 12, color: C.muted, fontFamily: FONT }}>
+            Mégse
+          </button>
+        </div>
+      )}
 
       {/* Kosár */}
       {kosar.length > 0 && (

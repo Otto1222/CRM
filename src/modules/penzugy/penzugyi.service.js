@@ -283,7 +283,7 @@ export function calcDashboardPenzugyiOsszesito(projektek, munkalapok = []) {
     bontas.utikoltseg     += kalk.utikoltség || 0;
     bontas.egyeb          += (kalk.emelőgepKoltseg || 0) + (kalk.daruKoltseg || 0)
                             + (kalk.szallasKoltseg || 0) + (kalk.bereltEszkozKoltseg || 0)
-                            + (kalk.irodaAdminKoltseg || 0) + (kalk.egyebKoltseg || 0);
+                            + (kalk.egyebKoltseg || 0);
   });
 
   belso.forEach(p => {

@@ -185,7 +185,7 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
         emeloKoltsegNetto:        kalk.emelőgepKoltseg || 0,
         szerelesiKoltsegNetto:    kalk.szerelesiAnyagKoltseg || 0,
         szerszamKoltsegNetto:     kalk.szerszamKoltseg || 0,
-        egyebKoltsegNetto:        (kalk.daruKoltseg||0) + (kalk.szallasKoltseg||0) + (kalk.bereltEszkozKoltseg||0) + (kalk.irodaAdminKoltseg||0) + (kalk.egyebKoltseg||0),
+        egyebKoltsegNetto:        (kalk.daruKoltseg||0) + (kalk.szallasKoltseg||0) + (kalk.bereltEszkozKoltseg||0) + (kalk.egyebKoltseg||0),
       };
       n.osszesKoltsegNetto = n.anyagKoltsegNetto + n.sajatCsapatKoltsegNetto + n.alvallalkozoKoltsegNetto + n.kiszallasKoltsegNetto + n.emeloKoltsegNetto + n.szerelesiKoltsegNetto + n.szerszamKoltsegNetto + n.egyebKoltsegNetto;
       return n;
@@ -410,7 +410,7 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
               { label: "Emelőgép",               key: "emeloKoltsegNetto",        terv: kalk?.emelőgepKoltseg },
               { label: "Szerelési kellék (kábel, csatorna, csavar)", key: "szerelesiKoltsegNetto", terv: kalk?.szerelesiAnyagKoltseg },
               { label: "Szerszám / eszköz vásárlás",                 key: "szerszamKoltsegNetto",  terv: kalk?.szerszamKoltseg },
-              { label: "Egyéb (gépbérlés, állvány, autó, organizáció)", key: "egyebKoltsegNetto",  terv: kalk ? (kalk.daruKoltseg||0) + (kalk.szallasKoltseg||0) + (kalk.bereltEszkozKoltseg||0) + (kalk.irodaAdminKoltseg||0) + (kalk.egyebKoltseg||0) : undefined },
+              { label: "Egyéb (gépbérlés, állvány, autó, organizáció)", key: "egyebKoltsegNetto",  terv: kalk ? (kalk.daruKoltseg||0) + (kalk.szallasKoltseg||0) + (kalk.bereltEszkozKoltseg||0) + (kalk.egyebKoltseg||0) : undefined },
             ].map(f => (
               <div key={f.key}>
                 <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: .6 }}>

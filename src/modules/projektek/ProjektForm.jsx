@@ -147,7 +147,6 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
         daruKoltseg:           0,
         szallasKoltseg:        0,
         bereltEszkozKoltseg:   0,
-        irodaAdminKoltseg:     0,
         egyebKoltseg:          0,
         szerelesiAnyagKoltseg: 0,
         szerszamKoltseg:       0,
@@ -1065,16 +1064,17 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               )}
             </Field>
             )}
-            {/* Kivitelező csapat, Telepítés dátuma, Egyéb megjegyzés –
-                mindhárom mindig látható fővállalkozói munkánál: a csapat és
-                a dátum a km/csapatbér-számításhoz kell, a megjegyzés pedig
-                általánosan hasznos, alacsony súrlódású szabad szöveg. A
-                "Telepítés dátuma" UGYANAZT a form.tervezettKezdes mezőt írja,
-                mint az Ütemezés blokk "Tervezett kezdés" mezője – szándékosan
-                csak EGY helyen (itt) szerkeszthető, hogy ne tűnjön két külön
-                dátumnak (ld. lent, az Ütemezésnél csak "Tervezett befejezés"
-                maradt). A "Státusz (finanszírozás)" a "További adatok" mögé
-                került – ritkábban kell, nem elsődleges. */}
+            {/* Kivitelező csapat, Projektvezető, Telepítés dátuma, Tervezett
+                befejezés, Egyéb megjegyzés – mindegyik mindig látható
+                fővállalkozói munkánál. Szándékosan páronként egymás mellett
+                (csapat+PM, majd a két dátum), hogy a két dátum összevethető
+                legyen, ne essen köztük más mező. A "Telepítés dátuma"
+                UGYANAZT a form.tervezettKezdes mezőt írja, mint az Ütemezés
+                blokk "Tervezett kezdés" mezője – szándékosan csak EGY helyen
+                (itt) szerkeszthető, hogy ne tűnjön két külön dátumnak (ld.
+                lent, az Ütemezésnél csak nem-fővállalkozói munkánál jelenik
+                meg mindkettő). A "Státusz (finanszírozás)" a "További adatok"
+                mögé került – ritkábban kell, nem elsődleges. */}
             {form.forrás === "fovallalkozoi_munka" && (<>
             <Field label="Kivitelező csapat (a km- és csapatbér-számításhoz)" half>
               <select value={form.csapatId} onChange={handleCsapat} style={inp}>
@@ -1089,9 +1089,22 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 <p style={{ fontSize: 10, color: C.warning, marginTop: 3 }}>⚠️ Még nincs létrehozva csapat — előbb add hozzá a Csapat menüben</p>
               )}
             </Field>
+            <Field label="Projektvezető *" half>
+              <select value={form.projektvezetoId} onChange={handlePM} style={inp}>
+                <option value="">— Válassz —</option>
+                {pmList.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
             <Field label="Telepítés dátuma" half>
               <input type="date" value={form.tervezettKezdes} onChange={e => upd("tervezettKezdes", e.target.value)}
                 min={new Date().toISOString().slice(0,10)} style={inp} />
+            </Field>
+            <Field label="Tervezett befejezés" half>
+              <input type="date" value={form.tervezettBefejezes} onChange={e => upd("tervezettBefejezes", e.target.value)} style={inp} />
             </Field>
             <Field label="Egyéb megjegyzés (opcionális)">
               <input value={form.fovMegjegyzes} onChange={e => upd("fovMegjegyzes", e.target.value)}
@@ -1127,20 +1140,9 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
                 lenne szükség, azt a fővállalkozó Excel-katalógusával vagy
                 explicit munkatípusos szabállyal kell megoldani, nem ezzel
                 a mezővel. Nem szükséges projektenként kitölteni. */}
-            {/* Projektvezető – fővállalkozói munkánál mindig elsődlegesen
-                látható és kötelező (a validáció is megköveteli, ld. lent). */}
-            {form.forrás === "fovallalkozoi_munka" && (
-            <Field label="Projektvezető *" half>
-              <select value={form.projektvezetoId} onChange={handlePM} style={inp}>
-                <option value="">— Válassz —</option>
-                {pmList.map(u => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            )}
+            {/* Projektvezető fővállalkozói munkánál – ld. fentebb, a
+                "Kivitelező csapat" mellé mozgatva, hogy páronként legyen
+                elrendezve a csapat/dátum blokk. */}
             {reszletekOpen && (<>
             {form.forrás !== "fovallalkozoi_munka" && (<>
             <div style={{ gridColumn: "span 2", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
@@ -1233,15 +1235,9 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
               </label>
             </Field>
             </>)}
-            {/* Fővállalkozói munkánál a "Tervezett befejezés" elsődlegesen
-                látható (a felhasználó ezt ténylegesen kitölti), a "Tervezett
-                kezdés" viszont ugyanaz a mező, mint a fentebbi "Telepítés
-                dátuma" (form.tervezettKezdes) – itt nem duplikáljuk. */}
-            {form.forrás === "fovallalkozoi_munka" && (
-            <Field label="Tervezett befejezés" half>
-              <input type="date" value={form.tervezettBefejezes} onChange={e => upd("tervezettBefejezes", e.target.value)} style={inp} />
-            </Field>
-            )}
+            {/* Fővállalkozói munkánál a "Tervezett befejezés" a fentebbi
+                "Telepítés dátuma" mellé lett mozgatva (a két dátum együtt),
+                itt nem duplikáljuk. */}
             {form.forrás !== "fovallalkozoi_munka" && (<>
             {!reszletekOpen && (form.tervezettKezdes || form.tervezettBefejezes) && (
               <div style={{ gridColumn: "span 2", fontSize: 12, color: C.muted }}>
@@ -1408,9 +1404,9 @@ export default function ProjektForm({ projekt, ajanlatElofolt, onClose, onSaved,
             <Field label="Gépbérlés / állvány / eszközbérlés (Ft)" half>
               <input type="number" value={form.penzugy.bereltEszkozKoltseg || ""} onChange={e => updPenz("bereltEszkozKoltseg", e.target.value)} placeholder="0" style={inp} />
             </Field>
-            <Field label="Iroda / Admin (Ft)" half>
-              <input type="number" value={form.penzugy.irodaAdminKoltseg || ""} onChange={e => updPenz("irodaAdminKoltseg", e.target.value)} placeholder="0" style={inp} />
-            </Field>
+            {/* "Iroda / Admin" mező törölve – nem volt egyértelmű, mit kell
+                ide beírni, és semmi más nem hivatkozott rá külön (csak az
+                összköltség-szummába ment bele, ld. workOrderFinancial). */}
             <Field label="Egyéb (autó szerviz, tankolás, organizáció stb.) (Ft)" half>
               <input type="number" value={form.penzugy.egyebKoltseg || ""} onChange={e => updPenz("egyebKoltseg", e.target.value)} placeholder="0" style={inp} />
             </Field>

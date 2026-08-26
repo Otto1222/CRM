@@ -193,7 +193,7 @@ export function calcEsmentProjektPenzugy(projekt) {
     felultBevitel, keziCsapatBer, keziUtikoltség, keziAnyagkoltság,
     keziKartérités,
     emelőgepKoltseg = 0, daruKoltseg = 0, szallasKoltseg = 0,
-    bereltEszkozKoltseg = 0, irodaAdminKoltseg = 0, egyebKoltseg = 0,
+    bereltEszkozKoltseg = 0, egyebKoltseg = 0,
     szerelesiAnyagKoltseg = 0, szerszamKoltseg = 0,
   } = penzugy;
 
@@ -357,7 +357,7 @@ export function calcEsmentProjektPenzugy(projekt) {
   // ── Összesítés ────────────────────────────────────────────
   const fixKoltsegek = Number(emelőgepKoltseg  || 0) + Number(daruKoltseg         || 0)
                      + Number(szallasKoltseg    || 0) + Number(bereltEszkozKoltseg || 0)
-                     + Number(irodaAdminKoltseg || 0) + Number(egyebKoltseg        || 0);
+                     + Number(egyebKoltseg      || 0);
   const szerelesiAnyagOsszeg = Number(szerelesiAnyagKoltseg) || 0;
   const szerszamOsszeg       = Number(szerszamKoltseg) || 0;
 
@@ -390,7 +390,6 @@ export function calcEsmentProjektPenzugy(projekt) {
     daruKoltseg:         Number(daruKoltseg         || 0),
     szallasKoltseg:      Number(szallasKoltseg      || 0),
     bereltEszkozKoltseg: Number(bereltEszkozKoltseg || 0),
-    irodaAdminKoltseg:   Number(irodaAdminKoltseg   || 0),
     kartérités,
     egyebKoltseg:        Number(egyebKoltseg        || 0),
     szerelesiAnyagKoltseg: szerelesiAnyagOsszeg,

@@ -132,7 +132,7 @@ export function calcProjektElszamolas(projekt, munkalapok = []) {
     felultBevitel,
     keziCsapatBer, keziUtikoltség, keziAnyagkoltság, keziKartérités,
     emelőgepKoltseg = 0, daruKoltseg = 0, szallasKoltseg = 0,
-    bereltEszkozKoltseg = 0, irodaAdminKoltseg = 0, egyebKoltseg = 0,
+    bereltEszkozKoltseg = 0, egyebKoltseg = 0,
     szerelesiAnyagKoltseg = 0, szerszamKoltseg = 0,
   } = penzugy;
 
@@ -194,7 +194,7 @@ export function calcProjektElszamolas(projekt, munkalapok = []) {
     .reduce((s, k) => s + (k.osszeg || 0), 0);
   if (keziKartérités !== null && keziKartérités !== undefined) kartérités = Number(keziKartérités);
 
-  const fixKoltsegek = [emelőgepKoltseg, daruKoltseg, szallasKoltseg, bereltEszkozKoltseg, irodaAdminKoltseg, egyebKoltseg]
+  const fixKoltsegek = [emelőgepKoltseg, daruKoltseg, szallasKoltseg, bereltEszkozKoltseg, egyebKoltseg]
     .reduce((s, v) => s + (Number(v) || 0), 0);
   const szerelesiAnyagOsszeg = Number(szerelesiAnyagKoltseg) || 0;
   const szerszamOsszeg       = Number(szerszamKoltseg) || 0;
@@ -232,7 +232,6 @@ export function calcProjektElszamolas(projekt, munkalapok = []) {
     daruKoltseg:     Number(daruKoltseg     || 0),
     szallasKoltseg:  Number(szallasKoltseg  || 0),
     bereltEszkozKoltseg: Number(bereltEszkozKoltseg || 0),
-    irodaAdminKoltseg:   Number(irodaAdminKoltseg   || 0),
     egyebKoltseg:    Number(egyebKoltseg    || 0),
     szerelesiAnyagKoltseg: szerelesiAnyagOsszeg,
     szerszamKoltseg:       szerszamOsszeg,

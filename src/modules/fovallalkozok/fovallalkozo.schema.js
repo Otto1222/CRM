@@ -89,7 +89,6 @@ export const PROJEKT_PENZUGY_SCHEMA = {
   daruKoltseg:         0,
   szallasKoltseg:      0,
   bereltEszkozKoltseg: 0,
-  irodaAdminKoltseg:   0,
   egyebKoltseg:        0,
   szabalyElteres:      false,
 };
