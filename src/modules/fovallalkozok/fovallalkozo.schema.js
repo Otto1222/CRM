@@ -17,6 +17,20 @@ export const FOVALLALKOZO_SCHEMA = {
   // eltérő gyakorlat: van, aki munkánként (projektenként) kér TIG-et, van,
   // aki egy-egy időszakot (pl. két hetet) összesítve. Ld. tigDocxService.js.
   tigMod:     "munkankenti",   // "munkankenti" | "idoszaki"
+  // Excel TIG-sablon esetén (ld. tigXlsxService.js) a fejléc-mezők cellacímei
+  // az adatbeviteli munkalapon – egyszeri, fővállalkozónkénti beállítás.
+  // Üresen hagyott mező = a rendszer nem ír bele semmit (a sablon eredeti
+  // tartalma marad). A tétel-soroké NEM itt, hanem a díjtétel-katalógus
+  // egyes tételein van (ld. dijtetelKatalogus.schema.js tigCellaCim).
+  tigXlsxCellak: {
+    munkalap:      "Kitöltőlap", // a kitöltendő fül neve a sablonban
+    ugyfelNev:     "",
+    projektSzam:   "",
+    datum:         "",
+    iranyitoszam:  "",
+    varos:         "",
+    cimMaradek:    "",
+  },
 };
 
 export const TIG_MOD_OPCIOK = [

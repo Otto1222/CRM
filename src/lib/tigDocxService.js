@@ -21,6 +21,7 @@
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { calcEsmentProjektPenzugy } from "../services/workOrderFinancial.service.js";
+import { calcKmDijOsszeg } from "../modules/fovallalkozok/elszamolasiMotor.js";
 
 export { readFileAsBase64 } from "./vbfDocxService.js";
 
@@ -42,9 +43,18 @@ export function hasTigSablon(tulajdonosId) {
   return !!loadSablonok()[tulajdonosId]?.base64;
 }
 
+/** .docx vagy .xlsx – a fájlnév kiterjesztéséből, hogy a hívó tudja, melyik
+ * motort (docxtemplater / tigXlsxService) kell futtatnia a generáláshoz. */
+function fileTypeOf(fileName) {
+  return /\.xlsx$/i.test(fileName || "") ? "xlsx" : "docx";
+}
+
 export function saveTigSablon(tulajdonosId, base64, fileName) {
   const map = loadSablonok();
-  map[tulajdonosId] = { base64, fileName: fileName || "", uploadedAt: new Date().toISOString() };
+  map[tulajdonosId] = {
+    base64, fileName: fileName || "", uploadedAt: new Date().toISOString(),
+    fileType: fileTypeOf(fileName),
+  };
   saveSablonok(map);
 }
 
@@ -57,7 +67,18 @@ export function deleteTigSablon(tulajdonosId) {
 export function getTigSablonMeta(tulajdonosId) {
   const s = loadSablonok()[tulajdonosId];
   if (!s?.base64) return null;
-  return { fileName: s.fileName, uploadedAt: s.uploadedAt, kb: Math.round((s.base64.length * 3 / 4) / 1024) };
+  return {
+    fileName: s.fileName, uploadedAt: s.uploadedAt,
+    kb: Math.round((s.base64.length * 3 / 4) / 1024),
+    fileType: s.fileType || fileTypeOf(s.fileName),
+  };
+}
+
+/** A sablon nyers base64-e – az Excel-motor (tigXlsxService.js) ebből
+ * tölti be a workbookot; docxtemplater a saját loadSablonok()-ját használja
+ * közvetlenül, ezt csak az xlsx-oldal importálja, körkörös import elkerülve. */
+export function getTigSablonBase64(tulajdonosId) {
+  return loadSablonok()[tulajdonosId]?.base64 || null;
 }
 
 // ─── Projekt → TIG tétel-sorok ─────────────────────────────────
@@ -77,9 +98,10 @@ const huFt = n => ft0(n).toLocaleString("hu-HU");
  * fővállalkozóhoz működjön a TIG, nem csak a katalógusosokhoz).
  */
 export function buildTigTetelSorok(projekt) {
-  const kosar = projekt?.penzugy?.dijtablaTetelek || [];
+  const penzugy = projekt?.penzugy || {};
+  const kosar = penzugy.dijtablaTetelek || [];
   if (kosar.length > 0) {
-    return kosar.map(t => ({
+    const sorok = kosar.map(t => ({
       kod:        t.kod || "",
       megnevezes: t.nev || "",
       mennyiseg:  ft0(t.mennyiseg),
@@ -87,6 +109,26 @@ export function buildTigTetelSorok(projekt) {
       egysegar:   ft0(t.egysegar),
       osszesen:   ft0(t.osszesen),
     }));
+    // P0: a küszöbös kiszállási díj (pl. Wagner-Solar "50 km felett") eddig
+    // hiányzott a TIG-ből – a kosárban nincs önálló sorként, csak a
+    // nettó bevétel számításánál (ld. dijtablaBevetel.js) adódott hozzá.
+    // Emiatt a fővállalkozónak kiállított TIG kevesebbet mutatott, mint
+    // amennyi ténylegesen jár.
+    const kellKm = kosar.some(t => t.kmDij) && Number(penzugy.dijtablaKmDijFtKm) > 0;
+    if (kellKm) {
+      const kuszob = Number(penzugy.dijtablaKmKuszobKm) || 0;
+      const ftKm   = Number(penzugy.dijtablaKmDijFtKm) || 0;
+      const { fizetendoKm, osszeg } = calcKmDijOsszeg(penzugy.tavKm, kuszob, ftKm);
+      sorok.push({
+        kod:        penzugy.dijtablaKmKod || "",
+        megnevezes: kuszob > 0 ? `Kiszállási díj (${kuszob} km felett)` : "Kiszállási díj",
+        mennyiseg:  ft0(fizetendoKm),
+        egyseg:     "km",
+        egysegar:   ft0(ftKm),
+        osszesen:   ft0(osszeg),
+      });
+    }
+    return sorok;
   }
   try {
     const kalk = calcEsmentProjektPenzugy(projekt);

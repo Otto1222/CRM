@@ -24,7 +24,8 @@ import { getCsapat }         from "../../csapatok/csapat.service.js";
 import { calcMunkalapRiportAdat } from "../../../lib/munkalapRiportHelper.js";
 import { getAnyagelszamolasiModConfig, hasAnyagelszamolasiMod } from "../../../lib/workflowRules.js";
 import { loadFovallalkozok } from "../../fovallalkozok/fovallalkozo.service.js";
-import { hasTigSablon, generateTigDocxEgyProjekt } from "../../../lib/tigDocxService.js";
+import { hasTigSablon, getTigSablonMeta, generateTigDocxEgyProjekt } from "../../../lib/tigDocxService.js";
+import { generateTigXlsxEgyProjekt } from "../../../lib/tigXlsxService.js";
 
 // Anyagköltség-forrás megjelenítendő rövid neve – P0-2 javítás: a forrás
 // MINDIG látható, hogy pénzügyi vita esetén egyértelmű legyen, honnan jött a szám.
@@ -495,9 +496,12 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
                     ℹ️ <strong>{fovallalkozo.nev}</strong> időszaki, összesített TIG-et használ – a dokumentum a <strong>TIG</strong> menüpontról generálható, több projektet egybefűzve.
                   </p>
                 ) : hasTigSablon(fovallalkozo.id) ? (
-                  <button type="button" onClick={() => generateTigDocxEgyProjekt(projekt, fovallalkozo)}
+                  <button type="button" onClick={() => {
+                    const isXlsx = getTigSablonMeta(fovallalkozo.id)?.fileType === "xlsx";
+                    return isXlsx ? generateTigXlsxEgyProjekt(projekt, fovallalkozo) : generateTigDocxEgyProjekt(projekt, fovallalkozo);
+                  }}
                     style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
-                    <Download size={14} /> TIG letöltése (.docx)
+                    <Download size={14} /> TIG letöltése ({getTigSablonMeta(fovallalkozo.id)?.fileType === "xlsx" ? ".xlsx" : ".docx"})
                   </button>
                 ) : (
                   <p style={{ fontSize: 12, color: C.warning, margin: 0 }}>

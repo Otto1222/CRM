@@ -213,6 +213,23 @@ export function updateProjekt(id, updates, user = "") {
     });
   }
 
+  // A fővállalkozói díjtétel-kosár (Pénzügy fül / ProjektForm) a forrása a
+  // TIG-nek is – ezt szerkeszti a felhasználó, NEM a legenerált TIG fájlt,
+  // ezért itt naplózzuk a módosítást (ki/mikor), és lent automatikusan
+  // újragenerálódik a Drive-on lévő TIG (ld. kotelezoDokumentumok.service.js
+  // regenerateTigDocumentum).
+  const kosarValtozott = updates.penzugy?.dijtablaTetelek !== undefined
+    && JSON.stringify(updates.penzugy.dijtablaTetelek) !== JSON.stringify(old.penzugy?.dijtablaTetelek || []);
+  if (kosarValtozott) {
+    naplobej.push({
+      id: `ev_${crypto.randomUUID()}`,
+      datum: now,
+      user,
+      esemeny: "Díjtétel-kosár módosítva",
+      reszletek: `${(old.penzugy?.dijtablaTetelek || []).length} → ${updates.penzugy.dijtablaTetelek.length} tétel`,
+    });
+  }
+
   const updated = {
     ...old,
     ...updates,
@@ -222,6 +239,12 @@ export function updateProjekt(id, updates, user = "") {
     syncStatus:   "synced",
     esemenynaplo: [...(old.esemenynaplo || []), ...naplobej],
   };
+
+  if (kosarValtozott) {
+    import("../../lib/kotelezoDokumentumok.service.js")
+      .then(({ regenerateTigDocumentum }) => regenerateTigDocumentum(updated))
+      .catch(() => {});
+  }
 
   list[idx] = updated;
   // P0 fix: ha a mentés nem sikerül (quota/sérülés), ne adjunk vissza "updated"-et

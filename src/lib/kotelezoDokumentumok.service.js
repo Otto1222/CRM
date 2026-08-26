@@ -22,9 +22,23 @@ import { loadFovallalkozok } from "../modules/fovallalkozok/fovallalkozo.service
 import { loadVbf } from "./munkalapDb.js";
 import { loadLmraRec } from "./lmraData.service.js";
 import { buildVbfDocxBlob } from "./vbfDocxService.js";
-import { buildTigDocxBlob } from "./tigDocxService.js";
+import { buildTigDocxBlob, getTigSablonMeta } from "./tigDocxService.js";
+import { buildTigXlsxBlob } from "./tigXlsxService.js";
 import { buildLmraDocxBlob } from "./lmraDocxService.js";
 import { driveSaveGeneratedDoc, driveAvailable } from "./driveApi.js";
+
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+/** A fővállalkozó sablonjának formátuma dönti el, melyik motor generálja a
+ * TIG-et – a hívó (mentTipus) ugyanúgy kezeli mindkét eredményt. */
+async function buildTig(projekt, fovallalkozo) {
+  const meta = getTigSablonMeta(fovallalkozo.id);
+  if (meta?.fileType === "xlsx") {
+    const res = await buildTigXlsxBlob(projekt, fovallalkozo);
+    return { ...res, mimeType: XLSX_MIME };
+  }
+  return { ...buildTigDocxBlob(projekt, fovallalkozo), mimeType: undefined };
+}
 
 export async function generateKotelezoDokumentumok(munkalap, projekt) {
   const eredmeny = { generalt: [], kihagyva: [], hiba: [] };
@@ -43,7 +57,7 @@ export async function generateKotelezoDokumentumok(munkalap, projekt) {
       return;
     }
     try {
-      const res = await driveSaveGeneratedDoc(projekt, buildResult.fajlnev, buildResult.blob);
+      const res = await driveSaveGeneratedDoc(projekt, buildResult.fajlnev, buildResult.blob, buildResult.mimeType);
       if (res?.ok) eredmeny.generalt.push({ tipus, fajlnev: buildResult.fajlnev });
       else eredmeny.hiba.push({ tipus, ok: res?.error || "Drive mentés sikertelen" });
     } catch (e) {
@@ -57,7 +71,7 @@ export async function generateKotelezoDokumentumok(munkalap, projekt) {
 
   if (beall.kellTIG) {
     const fv = loadFovallalkozok().find(f => f.id === projekt?.penzugy?.fovallalkoziId);
-    if (fv) await mentTipus("TIG", buildTigDocxBlob(projekt, fv));
+    if (fv) await mentTipus("TIG", await buildTig(projekt, fv));
     else eredmeny.kihagyva.push({ tipus: "TIG", ok: "Nincs fővállalkozó beállítva a projekten" });
   }
 
@@ -69,4 +83,26 @@ export async function generateKotelezoDokumentumok(munkalap, projekt) {
   }
 
   return eredmeny;
+}
+
+/**
+ * A TIG-et NEM a legenerált fájlon szerkesztjük, hanem a projekt
+ * díjtétel-kosarán (ProjektForm / Pénzügy fül) – ha az módosul, ezt hívjuk
+ * meg, hogy a Drive-on lévő TIG-fájl is frissüljön, ne maradjon elavult
+ * másolat. Fire-and-forget: projekt.service.js updateProjekt hívja,
+ * hibát csendben nyel (nem szabad, hogy egy TIG-generálási hiba miatt a
+ * projekt mentése elszálljon).
+ */
+export async function regenerateTigDocumentum(projekt) {
+  try {
+    if (!driveAvailable()) return;
+    if (projekt?.forrás !== "fovallalkozoi_munka") return;
+    const fv = loadFovallalkozok().find(f => f.id === projekt?.penzugy?.fovallalkoziId);
+    if (!fv) return;
+    const buildResult = await buildTig(projekt, fv);
+    if (!buildResult.ok) return;
+    await driveSaveGeneratedDoc(projekt, buildResult.fajlnev, buildResult.blob, buildResult.mimeType);
+  } catch (e) {
+    console.warn("[kotelezoDokumentumok] regenerateTigDocumentum hiba:", e);
+  }
 }

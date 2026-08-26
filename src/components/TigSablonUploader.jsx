@@ -23,7 +23,7 @@ export default function TigSablonUploader({ fovallalkozo, onUpdate }) {
 
   async function handleFile(file) {
     if (!file) return;
-    if (!file.name.match(/\.docx$/i)) { alert("Csak .docx fájl tölthető fel."); return; }
+    if (!file.name.match(/\.(docx|xlsx)$/i)) { alert("Csak .docx vagy .xlsx fájl tölthető fel."); return; }
     setBusy(true);
     try {
       const b64 = await readFileAsBase64(file);
@@ -69,15 +69,58 @@ export default function TigSablonUploader({ fovallalkozo, onUpdate }) {
             <Trash2 size={11} />
           </button>
         )}
-        <a href={mintaUrl} download style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: C.accent, textDecoration: "none", fontWeight: 600 }}>
-          <Download size={11} /> Minta sablon letöltése
-        </a>
-        <input ref={fileRef} type="file" accept=".docx" style={{ display: "none" }}
+        {meta?.fileType !== "xlsx" && (
+          <a href={mintaUrl} download style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: C.accent, textDecoration: "none", fontWeight: 600 }}>
+            <Download size={11} /> Minta sablon letöltése
+          </a>
+        )}
+        <input ref={fileRef} type="file" accept=".docx,.xlsx" style={{ display: "none" }}
           onChange={e => handleFile(e.target.files[0])} />
       </div>
-      <p style={{ fontSize: 10, color: C.muted, marginTop: 6, marginBottom: 0 }}>
-        A sablonban a {"{"}#tetelek{"}"}…{"{"}/tetelek{"}"} táblázat-sor tölti ki a tételeket – töltsd le a minta sablont kiindulásnak, és igazítsd a fővállalkozó valódi TIG formátumához.
-      </p>
+      {meta?.fileType === "xlsx" ? (
+        <>
+          <p style={{ fontSize: 10, color: C.muted, marginTop: 6, marginBottom: 0 }}>
+            Excel sablon: a rendszer a lenti cellacímekbe írja a fejléc-adatokat, a tétel-soroké
+            pedig a díjtétel-katalógus egyes tételein állítható be ("TIG cella", Fővállalkozók oldal).
+          </p>
+          <TigXlsxCellaterkep fovallalkozo={fovallalkozo} onUpdate={onUpdate} />
+        </>
+      ) : (
+        <p style={{ fontSize: 10, color: C.muted, marginTop: 6, marginBottom: 0 }}>
+          A sablonban a {"{"}#tetelek{"}"}…{"{"}/tetelek{"}"} táblázat-sor tölti ki a tételeket – töltsd le a minta sablont kiindulásnak, és igazítsd a fővállalkozó valódi TIG formátumához.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Egyszeri, fővállalkozónkénti beállítás: hova írja a rendszer a fejléc-
+ * mezőket az Excel TIG-sablonban. A tétel-soroké külön, a díjtétel-
+ * katalóguson (tigCellaCim), nem itt. */
+function TigXlsxCellaterkep({ fovallalkozo, onUpdate }) {
+  const cellak = fovallalkozo.tigXlsxCellak || {};
+  const mezok = [
+    { key: "munkalap",     label: "Munkalap (fül) neve" },
+    { key: "ugyfelNev",    label: "Ügyfél neve" },
+    { key: "projektSzam",  label: "Projekt száma" },
+    { key: "datum",        label: "Dátum" },
+    { key: "iranyitoszam", label: "Irányítószám" },
+    { key: "varos",        label: "Város" },
+    { key: "cimMaradek",   label: "Cím maradéka (utca, hsz.)" },
+  ];
+  function upd(key, val) {
+    onUpdate(fovallalkozo.id, { tigXlsxCellak: { ...cellak, [key]: val } });
+  }
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8, marginTop: 8 }}>
+      {mezok.map(m => (
+        <div key={m.key}>
+          <label style={{ fontSize: 10, color: C.muted, display: "block", marginBottom: 2 }}>{m.label}</label>
+          <input value={cellak[m.key] || ""} onChange={e => upd(m.key, e.target.value)}
+            placeholder={m.key === "munkalap" ? "Kitöltőlap" : "pl. B10"}
+            style={{ width: "100%", boxSizing: "border-box", padding: "5px 7px", border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 11.5, fontFamily: FONT }} />
+        </div>
+      ))}
     </div>
   );
 }
