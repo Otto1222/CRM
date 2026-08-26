@@ -508,7 +508,7 @@ function DijtablaKatalogusSzekcio({ fv, katalogus, onRefresh }) {
                       Solar: 50 km felett). Enélkül a projekt-létrehozásnál a
                       "Kiszállási díj" doboz nem tudja kiszámolni a fizetendő
                       részt – ld. calcKmDijOsszeg. */}
-                  {(t.egyseg === "km" || Number(t.kmKuszobKm) > 0 || /kiszáll/i.test(t.megnevezes || "")) && (
+                  {(t.egyseg === "km" || Number(t.kmKuszobKm) > 0 || /kiszáll|küszöb/i.test(t.megnevezes || "")) && (
                     <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 12px 6px 12px" }}>
                       <span style={{ fontSize: 10.5, color: C.muted }}>Küszöb (km, ez felett a rész oda-vissza számolódik):</span>
                       <input type="number" min={0} value={t.kmKuszobKm || 0}
