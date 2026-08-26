@@ -72,8 +72,14 @@ export function calcSavosOsszeg(savok, darabszam) {
  * változatlan marad.
  */
 export function calcKmDijOsszeg(tavKmEgyirany, kuszobKm, ftKm) {
-  const odaVisszaTeljes = (Number(tavKmEgyirany) || 0) * 2;
-  const fizetendoKm     = Math.max(0, odaVisszaTeljes - (Number(kuszobKm) || 0));
+  const odaVisszaTeljes  = (Number(tavKmEgyirany) || 0) * 2;
+  const fizetendoKmNyers = Math.max(0, odaVisszaTeljes - (Number(kuszobKm) || 0));
+  // A fizetendő km-t egész számra kerekítjük (szokásos kerekítési szabály) –
+  // a térkép-alapú távolság tizedes pontosságú (pl. 59,1 km), de a
+  // kiszállási díjat senki nem törtkilométerre számlázza. Enélkül a
+  // Pénzügy fülön mutatott összeg eltért attól, amit a TIG (Excel/Word)
+  // ténylegesen tartalmazott, mert ott a mennyiség eleve egész szám volt.
+  const fizetendoKm = Math.round(fizetendoKmNyers);
   return {
     odaVisszaTeljes,
     fizetendoKm,
