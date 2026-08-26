@@ -17,8 +17,9 @@ import { loadFovallalkozok } from "../modules/fovallalkozok/fovallalkozo.service
 import { loadProjektek } from "../modules/projektek/projekt.service.js";
 import { getPenzugyi, upsertPenzugyi } from "../modules/penzugy/penzugyi.service.js";
 import {
-  hasTigSablon, buildTigTetelSorok, tigProjektDatum, generateTigDocxIdoszaki,
+  hasTigSablon, getTigSablonMeta, buildTigTetelSorok, tigProjektDatum, generateTigDocxIdoszaki,
 } from "../lib/tigDocxService.js";
+import { generateTigXlsxIdoszaki } from "../lib/tigXlsxService.js";
 
 const inp = {
   padding: "9px 12px", border: `1.5px solid ${C.border}`, borderRadius: 9,
@@ -89,9 +90,12 @@ export default function TigPage({ currentUser }) {
     .filter(({ projekt }) => kijelolt.has(projekt.id))
     .reduce((s, { tetelek }) => s + tetelek.reduce((x, t) => x + (Number(t.osszesen) || 0), 0), 0);
 
-  function handleGeneral() {
+  async function handleGeneral() {
     if (!fovallalkozo || kivalasztottProjektek.length === 0) return;
-    const ok = generateTigDocxIdoszaki(kivalasztottProjektek, fovallalkozo, datumTol, datumIg);
+    const isXlsx = getTigSablonMeta(fovallalkozo.id)?.fileType === "xlsx";
+    const ok = isXlsx
+      ? await generateTigXlsxIdoszaki(kivalasztottProjektek, fovallalkozo, datumTol, datumIg)
+      : generateTigDocxIdoszaki(kivalasztottProjektek, fovallalkozo, datumTol, datumIg);
     if (!ok) return;
     if (statuszFrissit) {
       kivalasztottProjektek.forEach(p => {

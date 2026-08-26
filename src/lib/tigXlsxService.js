@@ -31,6 +31,7 @@ import ExcelJS from "exceljs";
 import { getTigSablonMeta, getTigSablonBase64, tigProjektDatum } from "./tigDocxService.js";
 import { getKatalogusTetelek } from "../modules/fovallalkozok/dijtetelKatalogus.service.js";
 import { calcKmDijOsszeg } from "../modules/fovallalkozok/elszamolasiMotor.js";
+import { karteritesOsszegProjekthez } from "./karterites.js";
 
 export const TIG_XLSX_MUNKALAP = "Kitöltőlap";
 
@@ -70,6 +71,213 @@ const TETEL_NEV_TERKEPEK = {
 
 function tetelNevTerkep(fovallalkozoNev) {
   return TETEL_NEV_TERKEPEK[String(fovallalkozoNev || "").trim().toLowerCase()] || null;
+}
+
+// ─── Időszaki, összesített TIG (Green-Home-típus) ──────────────
+//
+// Ez a formátum gyökeresen más, mint a munkánkénti (Wagner-Solar): nem
+// egy sablon projektenként, hanem egy folyamatosan bővülő táblázat, ahol
+// minden sor egy elszámolt munka, a bevétel pedig 7 fix kategória-oszlopba
+// van szétosztva (ld. Green-Home_TIG.xlsx "Részletek" füle). Minden
+// generálás egy ÚJ, önálló fájlt ad (letöltés, nem Drive-mentés – ahogy a
+// docx időszaki TIG is), a sablon fejléce alapján felépítve, a kiválasztott
+// projektek friss adataival – a sablonban esetleg bennmaradt régi minta-
+// sorokat NEM őrzi meg (törli), hogy ne keveredjen valós adattal.
+
+const GH_MUNKALAP = "Részletek";
+const GH_FEJLEC = {
+  partner:        "Partner",
+  cim:            "Telepítési cím",
+  tipus:          "Típus",
+  bizonylatszam:  "Bizonylatszám",
+  teljesites:     "Teljesítés",
+  elvegzettMunka: "Elvégzett munka",
+  smartMeter:     "Smart meter (Ft)",
+  akku:           "Akku (Ft)",
+  panel:          "Panel (Ft)",
+  kmDij:          "km díj (Ft)",
+  kivitelezes:    "kivitelezési díj (Ft)",
+  pluszKoltseg:   "plusz költség (Ft)",
+  levonas:        "Levonás (Ft)",
+  osszesen:       "Összesen (Ft)",
+  megjegyzes:     "Megjegyzés",
+};
+
+// Melyik díjtétel-kód melyik oszlopba számít bele – a tétel MEGNEVEZÉSE
+// alapján, jelentés szerint (ld. dijtetelKatalogus.service.js GH_DIJTABLA_
+// SEED). Amit a szöveg egyértelműen "smart meter"/"mérés" (C-kategória) ír
+// le → Smart meter; ami "akkumulátor" (B-kategória egy része) → Akku; a
+// napelem-kivitelezés (A01-A03) → Panel; a per-km kiszállási tételek
+// (L01-L02) → km díj; minden más kivitelezési munka (inverter, backup, EV
+// töltő, bontás, support) → kivitelezési díj; az "M01 pótdíj" és bármilyen
+// egyedi (nem katalógusból választott) tétel → plusz költség. A "Levonás"
+// nem díjtételből jön, hanem az elfogadott kártérítésekből (ld. lent).
+const GH_KATEGORIA_TERKEP = {
+  A01: "panel", A02: "panel", A03: "panel",
+  A04: "kivitelezes", A05: "kivitelezes", A06: "kivitelezes",
+  B01: "kivitelezes",
+  B02: "akku", B03: "akku", B04: "akku", B05: "akku",
+  C01: "smartMeter", C02: "smartMeter", C03: "smartMeter", C04: "smartMeter",
+  C05: "kivitelezes", C06: "kivitelezes",
+  C07: "smartMeter", C08: "smartMeter",
+  D01: "kivitelezes", D02: "kivitelezes", D03: "kivitelezes",
+  D04: "kivitelezes", D05: "kivitelezes", D06: "kivitelezes", D07: "kivitelezes",
+  E01: "kivitelezes", E02: "kivitelezes", E03: "kivitelezes",
+  J01: "kivitelezes", J02: "kivitelezes", J03: "kivitelezes",
+  K01: "kivitelezes", K02: "kivitelezes",
+  L01: "kmDij", L02: "kmDij",
+  M01: "pluszKoltseg",
+};
+
+function ghKategoria() {
+  return GH_KATEGORIA_TERKEP;
+}
+
+/** A fejléc-sorban (1. sor) megkeresi az oszlop-feliratokat, és
+ * { kulcs: oszlopIndex } térképet ad vissza. Nem talált feliratnál a
+ * kulcs hiányzik a térképből (a hívó akkor kihagyja azt a mezőt). */
+function epitsdFelOszlopTerkepet(ws) {
+  const terkep = {};
+  const maxCol = ws.columnCount || 30;
+  Object.entries(GH_FEJLEC).forEach(([kulcs, felirat]) => {
+    const cel = normSzoveg(felirat);
+    for (let c = 1; c <= maxCol; c++) {
+      if (normSzoveg(ws.getCell(1, c).value) === cel) { terkep[kulcs] = c; break; }
+    }
+  });
+  return terkep;
+}
+
+/**
+ * Egy projekt kategorizált bevétel-bontása a Green-Home oszlopokhoz.
+ */
+function ghProjektBontas(projekt) {
+  const penzugy = projekt?.penzugy || {};
+  const kosar = penzugy.dijtablaTetelek || [];
+  const tulajdonosId = penzugy.fovallalkoziId;
+  const katalogus = tulajdonosId ? getKatalogusTetelek(tulajdonosId) : [];
+  const katalogusById = new Map(katalogus.map(t => [t.id, t]));
+  const kategoriaTerkep = ghKategoria();
+
+  const bontas = { smartMeter: 0, akku: 0, panel: 0, kmDij: 0, kivitelezes: 0, pluszKoltseg: 0 };
+
+  kosar.forEach(t => {
+    const kt = katalogusById.get(t.katalogusTetelId);
+    const kulcs = kt?.kod ? (kategoriaTerkep[kt.kod] || "kivitelezes") : "pluszKoltseg"; // katalógusban nem található = egyedi tétel
+    bontas[kulcs] += Number(t.osszesen) || 0;
+  });
+
+  const kellKm = kosar.some(t => t.kmDij) && Number(penzugy.dijtablaKmDijFtKm) > 0;
+  if (kellKm) {
+    const kuszob = Number(penzugy.dijtablaKmKuszobKm) || 0;
+    const ftKm   = Number(penzugy.dijtablaKmDijFtKm) || 0;
+    const { osszeg } = calcKmDijOsszeg(penzugy.tavKm, kuszob, ftKm);
+    bontas.kmDij += osszeg;
+  }
+
+  const levonas = karteritesOsszegProjekthez(projekt.id, projekt.munkalapIds || []);
+  const osszesen = bontas.smartMeter + bontas.akku + bontas.panel + bontas.kmDij
+    + bontas.kivitelezes + bontas.pluszKoltseg - levonas;
+
+  return { ...bontas, levonas, osszesen };
+}
+
+/**
+ * Időszaki, összesített TIG Excel – a projektek listájából friss táblázatot
+ * épít a sablon fejléce alapján (a sablonban esetleg bennmaradt régi
+ * sorokat törli). Csak "green-home"-hoz van kategória-térkép; más "idoszaki"
+ * módú fővállalkozónál (amíg nincs beállítva) hibaüzenetet ad.
+ */
+export async function buildTigXlsxIdoszaki(projektek, fovallalkozo, datumTol, datumIg) {
+  const meta = getTigSablonMeta(fovallalkozo?.id);
+  if (!meta || meta.fileType !== "xlsx") {
+    return { ok: false, error: "Nincs Excel TIG sablon feltöltve ehhez a fővállalkozóhoz." };
+  }
+  const base64 = getTigSablonBase64(fovallalkozo.id);
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(base64ToArrayBuffer(base64));
+  wb.calcProperties.fullCalcOnLoad = true;
+
+  const ws = wb.getWorksheet(GH_MUNKALAP) || wb.worksheets[0];
+  if (!ws) return { ok: false, error: "A sablonban nem található kitöltendő munkalap." };
+
+  const oszlop = epitsdFelOszlopTerkepet(ws);
+  if (!oszlop.osszesen) {
+    return { ok: false, error: "A sablon fejlécében nem található a várt oszlop-feliratok mindegyike – ellenőrizd, hogy az 1. sor tartalmazza-e pl. az \"Összesen (Ft)\" feliratot." };
+  }
+
+  // Meglévő adatsorok törlése (a fejléc után) – ne keveredjen a sablonban
+  // esetleg bennmaradt régi minta-adattal. FONTOS: `ws.addRow` mindig a
+  // JELENLEGI sor-számláló UTÁN fűz be, tehát ha csak törölnénk (vagy
+  // spliceRows-szal próbálnánk törölni – ami ebben a könyvtárverzióban
+  // nem csökkenti a rowCount-ot), az új adatok a régi (üres) sorok ALÁ
+  // kerülnének, üres sorokat hagyva közöttük. Ezért közvetlenül a 2.
+  // sortól kezdve, sorszám szerint írjuk felül a cellákat.
+  const maxCol = ws.columnCount || Math.max(...Object.values(oszlop));
+  const eredetiSorszam = ws.rowCount;
+  for (let r = 2; r <= eredetiSorszam; r++) {
+    for (let c = 1; c <= maxCol; c++) ws.getCell(r, c).value = null;
+  }
+
+  let sorSzam = 2;
+  let osszSum = 0;
+  projektek.forEach(projekt => {
+    const b = ghProjektBontas(projekt);
+    osszSum += b.osszesen;
+    const rowNum = sorSzam++;
+    const irj = (kulcs, ertek) => {
+      if (!oszlop[kulcs] || ertek === "" || ertek === undefined || ertek === null) return;
+      ws.getCell(rowNum, oszlop[kulcs]).value = ertek;
+    };
+    irj("partner",        projekt.clientNev || "");
+    irj("cim",            projekt.telepitesiCim || projekt.clientCim || "");
+    irj("tipus",          "TIG");
+    irj("bizonylatszam",  projekt.projektkod || "");
+    const d = new Date(tigProjektDatum(projekt));
+    irj("teljesites",     isNaN(d) ? "" : d);
+    irj("elvegzettMunka", projekt.tipus || "Telepítés");
+    irj("smartMeter",     Math.round(b.smartMeter) || "");
+    irj("akku",           Math.round(b.akku) || "");
+    irj("panel",          Math.round(b.panel) || "");
+    irj("kmDij",          Math.round(b.kmDij) || "");
+    irj("kivitelezes",    Math.round(b.kivitelezes) || "");
+    irj("pluszKoltseg",   Math.round(b.pluszKoltseg) || "");
+    irj("levonas",        Math.round(b.levonas) || "");
+    irj("osszesen",       Math.round(b.osszesen));
+    irj("megjegyzes",     `${projekt.projektkod || ""} munkalapjainak elszámolása`);
+  });
+
+  // Záró összesítő sor – csak az "Összesen" oszlopban (ld. Green-Home minta).
+  ws.getCell(sorSzam, oszlop.osszesen).value = Math.round(osszSum);
+
+  try {
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const fajlnev = `TIG_idoszaki_${fovallalkozo?.nev || "fovallalkozo"}_${datumTol || ""}_${datumIg || ""}.xlsx`.replace(/\s+/g, "_");
+    return { ok: true, blob, fajlnev };
+  } catch (err) {
+    console.error("[tigXlsxService] buildTigXlsxIdoszaki", err);
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
+/** Kézi letöltés gomb (TigPage.jsx) – ld. tigDocxService.js
+ * generateTigDocxIdoszaki, ugyanaz a viselkedés Excel sablonnal. */
+export async function generateTigXlsxIdoszaki(projektek, fovallalkozo, datumTol, datumIg) {
+  const res = await buildTigXlsxIdoszaki(projektek, fovallalkozo, datumTol, datumIg);
+  if (!res.ok) {
+    alert(res.error || "TIG generálás sikertelen.");
+    return false;
+  }
+  const url = URL.createObjectURL(res.blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = res.fajlnev;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  return true;
 }
 
 function base64ToArrayBuffer(base64) {
