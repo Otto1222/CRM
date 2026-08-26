@@ -26,12 +26,18 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
   const katalogus = useMemo(() => tulajdonosId ? getAktivKatalogusTetelek(tulajdonosId) : [], [tulajdonosId]);
   const kosar = value || [];
 
-  const kmTetelek = useMemo(() => katalogus.filter(t => t.egyseg === "km"), [katalogus]);
+  // Egy tétel akkor a km-díj ARÁNAK forrása (nem hozzáadható, hanem a kmMeta-t
+  // vezérli), ha az egysége "km", VAGY van rajta beállított küszöb – utóbbi
+  // azért kell, mert sok valódi Excel-díjtáblában ez a sor "db" egységgel jön
+  // (pl. Wagner-Solar "50 km feletti kiszállás" tétele), a "km" szöveges
+  // egységre hagyatkozás önmagában nem elég megbízható.
+  const kmRateTetelE = t => t.egyseg === "km" || Number(t.kmKuszobKm) > 0;
+  const kmTetelek = useMemo(() => katalogus.filter(kmRateTetelE), [katalogus]);
   const kellKmDij = kosar.some(t => t.kmDij);
 
   const szurt = useMemo(() => {
     const q = kereses.trim().toLowerCase();
-    const alap = katalogus.filter(t => t.egyseg !== "km"); // a km-díj tételek nem "hozzáadható" sorok, hanem a kmMeta-t vezérlik
+    const alap = katalogus.filter(t => !kmRateTetelE(t)); // a km-díj tételek nem "hozzáadható" sorok, hanem a kmMeta-t vezérlik
     if (!q) return alap;
     return alap.filter(t =>
       t.megnevezes?.toLowerCase().includes(q) ||

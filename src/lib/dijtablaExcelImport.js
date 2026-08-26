@@ -21,6 +21,7 @@ export const DIJTABLA_MEZOK = [
   { key: "egyseg",     label: "Egység",           kotelezo: false },
   { key: "ar",         label: "Díj (nettó Ft)",   kotelezo: true },
   { key: "kmDij",      label: "Km-díj jelölés",   kotelezo: false },
+  { key: "kmKuszobKm", label: "Km-küszöb (opc.)", kotelezo: false },
   { key: "kategoria",  label: "Kategória",        kotelezo: false },
   { key: "megjegyzes", label: "Megjegyzés",       kotelezo: false },
 ];
@@ -68,6 +69,7 @@ export function guessDijtablaColumnMap(fejlec) {
     egyseg:     [/^egys[eé]g$/, /m[eé]rt[eé]kegys/],
     ar:         [/d[ií]j/, /egys[eé]g[aá]r/, /nett[oó] ?[aá]r/, /^[aá]r$/],
     kmDij:      [/km[- ]?d[ií]j/, /kiszall/],
+    kmKuszobKm: [/k[uü]sz[oö]b/],
     kategoria:  [/kateg[oó]ria/, /csoport/, /szakasz/],
     megjegyzes: [/megjegyz/, /note/],
   };
@@ -143,6 +145,7 @@ export function buildKatalogusTetelekFromRows(sorok, columnMap) {
       egyseg:     columnMap.egyseg     !== undefined ? String(sor[columnMap.egyseg] ?? "").trim() || "db" : "db",
       ar,
       kmDij:      columnMap.kmDij      !== undefined ? toKmDij(sor[columnMap.kmDij]) : false,
+      kmKuszobKm: columnMap.kmKuszobKm !== undefined ? toNumber(sor[columnMap.kmKuszobKm]) : 0,
       kategoria:  vanKategoriaOszlop ? String(sor[columnMap.kategoria] ?? "").trim() : aktKategoria,
       megjegyzes: columnMap.megjegyzes !== undefined ? String(sor[columnMap.megjegyzes] ?? "").trim() : "",
       aktiv: true,
