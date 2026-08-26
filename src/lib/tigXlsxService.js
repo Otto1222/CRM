@@ -7,11 +7,18 @@
  *
  * FONTOS: az Excel-sablonban NINCS docxtemplater-szerű {mező} csere – a
  * kitöltés fix CELLACÍMEK alapján történik:
- *   - fejléc-mezők:  fovallalkozo.tigXlsxCellak (ld. fovallalkozo.schema.js)
- *   - tétel-sorok:   a díjtétel-katalógus egyes tételein a tigCellaCim mező
- *     (ld. dijtetelKatalogus.schema.js) – ide írja a mennyiséget, az
- *     egységárat pedig 2 oszloppal jobbra (ez a Wagner-Solar minta
- *     "mennyiség / m.e. / egységár / összesen" oszlop-elrendezése).
+ *   - fejléc-mezők (ügyfél/projekt/dátum/cím): FIX, mindenkire egyforma
+ *     konvenció (ld. FEJLEC_CELLAK lent) – nincs fővállalkozónkénti
+ *     beállítás, hogy ne kelljen admin-oldalon cellacímeket megérteni és
+ *     kitölteni. Amikor egy fővállalkozóhoz Excel TIG-sablont készítünk,
+ *     ezt a fix elrendezést kell követni (ld. TigSablonUploader.jsx
+ *     súgószövege) – ez a projekt/ügyfél adatai szempontjából egységes
+ *     minden jövőbeli sablonnál, gyors és nem tévedhető el.
+ *   - tétel-sorok: a fővállalkozónként eltérő árlista miatt EZ marad
+ *     tételenként beállítható (ld. dijtetelKatalogus.schema.js
+ *     tigCellaCim) – ide írja a mennyiséget, az egységárat pedig 2
+ *     oszloppal jobbra (a Wagner-Solar minta "mennyiség / m.e. /
+ *     egységár / összesen" oszlop-elrendezése).
  * A sablon egyéb képletei (pl. "NYOMTATHATÓ TIG" fül, összesítő sorok)
  * NEM kerülnek kiszámolásra itt – ExcelJS nem futtat képletmotort, de a
  * `fullCalcOnLoad` beállítás miatt Excelben/LibreOffice-ban megnyitva a
@@ -21,6 +28,18 @@ import ExcelJS from "exceljs";
 import { getTigSablonMeta, getTigSablonBase64, tigProjektDatum } from "./tigDocxService.js";
 import { getKatalogusTetelek } from "../modules/fovallalkozok/dijtetelKatalogus.service.js";
 import { calcKmDijOsszeg } from "../modules/fovallalkozok/elszamolasiMotor.js";
+
+// Fix, mindenkire egyforma fejléc-elrendezés (ld. Wagner-Solar_TIG.xlsx
+// "Kitöltőlap" füle) – jövőbeli Excel TIG-sablonoknak ezt kell követniük.
+export const TIG_XLSX_FEJLEC_KONVENCIO = {
+  munkalap:     "Kitöltőlap",
+  ugyfelNev:    "B10",
+  projektSzam:  "B11",
+  datum:        "B12",
+  iranyitoszam: "B13",
+  varos:        "B14",
+  cimMaradek:   "B15",
+};
 
 function base64ToArrayBuffer(base64) {
   const binaryStr = atob(base64);
@@ -96,15 +115,15 @@ async function epitsdFelAWorkbookot(projekt, fovallalkozo) {
   await wb.xlsx.load(base64ToArrayBuffer(base64));
   wb.calcProperties.fullCalcOnLoad = true;
 
-  const cellak = fovallalkozo.tigXlsxCellak || {};
-  const ws = wb.getWorksheet(cellak.munkalap || "Kitöltőlap") || wb.worksheets[0];
+  const cellak = TIG_XLSX_FEJLEC_KONVENCIO;
+  const ws = wb.getWorksheet(cellak.munkalap) || wb.worksheets[0];
   if (!ws) return { ok: false, error: "A sablonban nem található kitöltendő munkalap." };
 
   const cim = bontsdCimet(projekt?.telepitesiCim || projekt?.clientCim || "");
   irjCellaba(ws, cellak.ugyfelNev,   projekt?.clientNev || "");
   irjCellaba(ws, cellak.projektSzam, [projekt?.projektkod, projekt?.kulsoAzonosito].filter(Boolean).join(", "));
   const datumStr = tigProjektDatum(projekt);
-  if (cellak.datum && datumStr) {
+  if (datumStr) {
     const d = new Date(datumStr);
     irjCellaba(ws, cellak.datum, isNaN(d) ? datumStr : d);
   }

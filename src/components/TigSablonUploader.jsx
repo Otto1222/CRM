@@ -13,6 +13,7 @@ import { TIG_MOD_OPCIOK } from "../modules/fovallalkozok/fovallalkozo.schema.js"
 import {
   hasTigSablon, saveTigSablon, deleteTigSablon, getTigSablonMeta, readFileAsBase64,
 } from "../lib/tigDocxService.js";
+import { TIG_XLSX_FEJLEC_KONVENCIO } from "../lib/tigXlsxService.js";
 
 export default function TigSablonUploader({ fovallalkozo, onUpdate }) {
   const fileRef = useRef();
@@ -78,49 +79,29 @@ export default function TigSablonUploader({ fovallalkozo, onUpdate }) {
           onChange={e => handleFile(e.target.files[0])} />
       </div>
       {meta?.fileType === "xlsx" ? (
-        <>
-          <p style={{ fontSize: 10, color: C.muted, marginTop: 6, marginBottom: 0 }}>
-            Excel sablon: a rendszer a lenti cellacímekbe írja a fejléc-adatokat, a tétel-soroké
-            pedig a díjtétel-katalógus egyes tételein állítható be ("TIG cella", Fővállalkozók oldal).
+        <div style={{ marginTop: 8, padding: "8px 10px", background: "#fff", border: `1px dashed ${C.border}`, borderRadius: 8 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: C.textSub, margin: "0 0 4px" }}>
+            Fix elrendezés – ezt a sablonnak követnie kell:
           </p>
-          <TigXlsxCellaterkep fovallalkozo={fovallalkozo} onUpdate={onUpdate} />
-        </>
+          <p style={{ fontSize: 10.5, color: C.muted, margin: 0, lineHeight: 1.6 }}>
+            A kitöltendő fül neve: <b>{TIG_XLSX_FEJLEC_KONVENCIO.munkalap}</b>. Ezen a fülön a rendszer
+            automatikusan (a projekt adataiból, nincs kézi bevitel) ide írja:
+            Ügyfél neve → <b>{TIG_XLSX_FEJLEC_KONVENCIO.ugyfelNev}</b>,
+            Projekt száma → <b>{TIG_XLSX_FEJLEC_KONVENCIO.projektSzam}</b>,
+            Dátum → <b>{TIG_XLSX_FEJLEC_KONVENCIO.datum}</b>,
+            Irányítószám → <b>{TIG_XLSX_FEJLEC_KONVENCIO.iranyitoszam}</b>,
+            Város → <b>{TIG_XLSX_FEJLEC_KONVENCIO.varos}</b>,
+            Cím maradéka → <b>{TIG_XLSX_FEJLEC_KONVENCIO.cimMaradek}</b>.
+            Ez minden fővállalkozónál ugyanaz – ha egy sablon máshogy van felépítve, ezekre a
+            cellákra kell rendezni a fejlécét. A tétel-sorok (mennyiség/ár) helyét viszont a
+            díjtétel-katalógus egyes tételein állítod be ("TIG cella", lentebb).
+          </p>
+        </div>
       ) : (
         <p style={{ fontSize: 10, color: C.muted, marginTop: 6, marginBottom: 0 }}>
           A sablonban a {"{"}#tetelek{"}"}…{"{"}/tetelek{"}"} táblázat-sor tölti ki a tételeket – töltsd le a minta sablont kiindulásnak, és igazítsd a fővállalkozó valódi TIG formátumához.
         </p>
       )}
-    </div>
-  );
-}
-
-/** Egyszeri, fővállalkozónkénti beállítás: hova írja a rendszer a fejléc-
- * mezőket az Excel TIG-sablonban. A tétel-soroké külön, a díjtétel-
- * katalóguson (tigCellaCim), nem itt. */
-function TigXlsxCellaterkep({ fovallalkozo, onUpdate }) {
-  const cellak = fovallalkozo.tigXlsxCellak || {};
-  const mezok = [
-    { key: "munkalap",     label: "Munkalap (fül) neve" },
-    { key: "ugyfelNev",    label: "Ügyfél neve" },
-    { key: "projektSzam",  label: "Projekt száma" },
-    { key: "datum",        label: "Dátum" },
-    { key: "iranyitoszam", label: "Irányítószám" },
-    { key: "varos",        label: "Város" },
-    { key: "cimMaradek",   label: "Cím maradéka (utca, hsz.)" },
-  ];
-  function upd(key, val) {
-    onUpdate(fovallalkozo.id, { tigXlsxCellak: { ...cellak, [key]: val } });
-  }
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8, marginTop: 8 }}>
-      {mezok.map(m => (
-        <div key={m.key}>
-          <label style={{ fontSize: 10, color: C.muted, display: "block", marginBottom: 2 }}>{m.label}</label>
-          <input value={cellak[m.key] || ""} onChange={e => upd(m.key, e.target.value)}
-            placeholder={m.key === "munkalap" ? "Kitöltőlap" : "pl. B10"}
-            style={{ width: "100%", boxSizing: "border-box", padding: "5px 7px", border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 11.5, fontFamily: FONT }} />
-        </div>
-      ))}
     </div>
   );
 }
