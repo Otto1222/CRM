@@ -39,10 +39,6 @@ export const DIJTETEL_KATALOGUS_TETEL_SCHEMA = {
   savok:         [],     // csak tipus==="savos": [{ tol, ig, osszeg, perDb }]
   kmDij:         false,  // true = "+ km-díj" – a projektben egyszer, összesítve számolandó fel
   kmKuszobKm:    0,      // csak kmDij tételnél: ennyi km-ig nincs km-díj, csak a felette lévő rész számolódik
-  tigCellaCim:   "",     // opcionális, pl. "B20" – ha a fővállalkozó Excel TIG-sablont használ,
-                         // ide írja a rendszer a mennyiséget (az egységárat 2 oszloppal jobbra,
-                         // ld. tigXlsxService.js); üresen hagyva a tétel nem kerül automatikusan
-                         // az Excel TIG-be, csak a Word TIG-be (ami a teljes kosarat listázza).
   aktiv:         true,
   megjegyzes:    "",
   forras:        "kezi", // "kezi" | "excelImport"

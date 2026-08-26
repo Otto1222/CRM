@@ -516,18 +516,6 @@ function DijtablaKatalogusSzekcio({ fv, katalogus, onRefresh }) {
                         style={{ width: 56, padding: "2px 6px", border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 11, fontFamily: FONT }} />
                     </div>
                   )}
-                  {/* Csak Excel TIG-sablonos fővállalkozóknál számít (ld.
-                      TigSablonUploader.jsx) – ide írja a rendszer a
-                      mennyiséget generáláskor, az egységárat 2 oszloppal
-                      jobbra. Docx sablonnál / kézi elszámolásnál nincs
-                      jelentősége, üresen hagyható. */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 12px 6px 12px" }}>
-                    <span style={{ fontSize: 10.5, color: C.muted }}>TIG cella (csak Excel TIG-sablonnál, pl. B20):</span>
-                    <input value={t.tigCellaCim || ""}
-                      onChange={e => { updateKatalogusTetel(t.id, { tigCellaCim: e.target.value.trim() }); onRefresh(); }}
-                      placeholder="—"
-                      style={{ width: 64, padding: "2px 6px", border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 11, fontFamily: FONT }} />
-                  </div>
                 </div>
               ))}
             </div>

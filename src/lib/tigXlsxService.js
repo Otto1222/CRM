@@ -6,19 +6,17 @@
  * hivatkozó "NYOMTATHATÓ TIG" fül), nem Word.
  *
  * FONTOS: az Excel-sablonban NINCS docxtemplater-szerű {mező} csere – a
- * kitöltés fix CELLACÍMEK alapján történik:
+ * kitöltés fix CELLACÍMEK alapján történik, és EGYIK sem felhasználói
+ * beállítás (ez korábban admin-oldali cellacím-mezőkkel volt megoldva,
+ * de senki nem értette, mit kell beleírni – a fejlesztő tölti ki egyszer,
+ * a fővállalkozó valódi Excel-fájlját megnézve):
  *   - fejléc-mezők (ügyfél/projekt/dátum/cím): FIX, mindenkire egyforma
- *     konvenció (ld. FEJLEC_CELLAK lent) – nincs fővállalkozónkénti
- *     beállítás, hogy ne kelljen admin-oldalon cellacímeket megérteni és
- *     kitölteni. Amikor egy fővállalkozóhoz Excel TIG-sablont készítünk,
- *     ezt a fix elrendezést kell követni (ld. TigSablonUploader.jsx
- *     súgószövege) – ez a projekt/ügyfél adatai szempontjából egységes
- *     minden jövőbeli sablonnál, gyors és nem tévedhető el.
- *   - tétel-sorok: a fővállalkozónként eltérő árlista miatt EZ marad
- *     tételenként beállítható (ld. dijtetelKatalogus.schema.js
- *     tigCellaCim) – ide írja a mennyiséget, az egységárat pedig 2
- *     oszloppal jobbra (a Wagner-Solar minta "mennyiség / m.e. /
- *     egységár / összesen" oszlop-elrendezése).
+ *     konvenció (ld. TIG_XLSX_FEJLEC_KONVENCIO lent).
+ *   - tétel-sorok: fővállalkozónként eltérő árlista/sorrend miatt
+ *     fővállalkozónkénti táblázat (ld. TETEL_CELLA_TERKEPEK lent) – a
+ *     katalógus-tétel KÓDJA alapján keresi meg, melyik cellába kerüljön
+ *     a mennyiség, az egységár pedig 2 oszloppal jobbra (a Wagner-Solar
+ *     minta "mennyiség / m.e. / egységár / összesen" oszlop-elrendezése).
  * A sablon egyéb képletei (pl. "NYOMTATHATÓ TIG" fül, összesítő sorok)
  * NEM kerülnek kiszámolásra itt – ExcelJS nem futtat képletmotort, de a
  * `fullCalcOnLoad` beállítás miatt Excelben/LibreOffice-ban megnyitva a
@@ -40,6 +38,26 @@ export const TIG_XLSX_FEJLEC_KONVENCIO = {
   varos:        "B14",
   cimMaradek:   "B15",
 };
+
+// Tétel-sorok cellái, fővállalkozónként (kód → "mennyiség" cella, az
+// egységár 2 oszloppal jobbra). Ez a fővállalkozó VALÓDI Excel-sablonjának
+// felépítéséből jön (ld. Wagner-Solar_TIG.xlsx "Kitöltőlap" füle) – nem a
+// felhasználó tölti ki, mert ehhez a sablon soronkénti szerkezetét kellene
+// ismernie. Ha az admin lecseréli a sablont egy máshogy felépített
+// Excelre, ezt a táblát is frissíteni kell (fejlesztői feladat, nem
+// felhasználói beállítás).
+const TETEL_CELLA_TERKEPEK = {
+  "wagner-solar": {
+    N01: "B20", N02: "B20", N03: "B20", N04: "B20", // egy sor van rá, a helyes sávot választja ki a felhasználó a kosárban
+    B06: "B21", C09: "B22", B03: "B23", D01: "B24", E01: "B25",
+    K03: "B26", K04: "B27", J04: "B28",
+    L03: "B75", M02: "B76",
+  },
+};
+
+function tetelCellaTerkep(fovallalkozoNev) {
+  return TETEL_CELLA_TERKEPEK[String(fovallalkozoNev || "").trim().toLowerCase()] || null;
+}
 
 function base64ToArrayBuffer(base64) {
   const binaryStr = atob(base64);
@@ -63,13 +81,19 @@ function irjCellaba(ws, cellCim, ertek) {
 }
 
 /**
- * A projekt tétel-kosarát a katalógus tigCellaCim-jei alapján a sablonba
- * írja: mennyiség a megadott cellába, egységár 2 oszloppal jobbra.
+ * A projekt tétel-kosarát a fővállalkozóra vonatkozó, kódba írt tétel-
+ * cellatérkép (TETEL_CELLA_TERKEPEK) alapján a sablonba írja: mennyiség a
+ * megadott cellába, egységár 2 oszloppal jobbra. Ha ehhez a fővállalkozóhoz
+ * nincs ismert cellatérkép, nem ír be semmit (a fejléc-mezők akkor is
+ * kitöltődnek).
  */
-function irdBeATeteleket(ws, projekt) {
+function irdBeATeteleket(ws, projekt, fovallalkozo) {
   const penzugy = projekt?.penzugy || {};
   const kosar = penzugy.dijtablaTetelek || [];
   if (kosar.length === 0) return;
+
+  const terkep = tetelCellaTerkep(fovallalkozo?.nev);
+  if (!terkep) return;
 
   const tulajdonosId = penzugy.fovallalkoziId;
   const katalogus = tulajdonosId ? getKatalogusTetelek(tulajdonosId) : [];
@@ -77,8 +101,9 @@ function irdBeATeteleket(ws, projekt) {
 
   kosar.forEach(t => {
     const kt = katalogusById.get(t.katalogusTetelId);
-    if (!kt?.tigCellaCim) return;
-    irjMennyisegEsAr(ws, kt.tigCellaCim, t.mennyiseg, t.egysegar);
+    const cella = kt?.kod && terkep[kt.kod];
+    if (!cella) return;
+    irjMennyisegEsAr(ws, cella, t.mennyiseg, t.egysegar);
   });
 
   // Küszöbös kiszállási díj – nem kosár-sor, hanem a kmMeta pillanatkép
@@ -87,11 +112,12 @@ function irdBeATeteleket(ws, projekt) {
   const kellKm = kosar.some(t => t.kmDij) && Number(penzugy.dijtablaKmDijFtKm) > 0;
   if (kellKm && penzugy.dijtablaKmTetelId) {
     const kmKt = katalogusById.get(penzugy.dijtablaKmTetelId);
-    if (kmKt?.tigCellaCim) {
+    const cella = kmKt?.kod && terkep[kmKt.kod];
+    if (cella) {
       const kuszob = Number(penzugy.dijtablaKmKuszobKm) || 0;
       const ftKm   = Number(penzugy.dijtablaKmDijFtKm) || 0;
       const { fizetendoKm } = calcKmDijOsszeg(penzugy.tavKm, kuszob, ftKm);
-      irjMennyisegEsAr(ws, kmKt.tigCellaCim, fizetendoKm, ftKm);
+      irjMennyisegEsAr(ws, cella, fizetendoKm, ftKm);
     }
   }
 }
@@ -131,7 +157,7 @@ async function epitsdFelAWorkbookot(projekt, fovallalkozo) {
   irjCellaba(ws, cellak.varos,        cim.varos);
   irjCellaba(ws, cellak.cimMaradek,   cim.maradek);
 
-  irdBeATeteleket(ws, projekt);
+  irdBeATeteleket(ws, projekt, fovallalkozo);
 
   return { ok: true, wb };
 }

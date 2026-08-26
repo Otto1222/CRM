@@ -93,8 +93,8 @@ export default function TigSablonUploader({ fovallalkozo, onUpdate }) {
             Város → <b>{TIG_XLSX_FEJLEC_KONVENCIO.varos}</b>,
             Cím maradéka → <b>{TIG_XLSX_FEJLEC_KONVENCIO.cimMaradek}</b>.
             Ez minden fővállalkozónál ugyanaz – ha egy sablon máshogy van felépítve, ezekre a
-            cellákra kell rendezni a fejlécét. A tétel-sorok (mennyiség/ár) helyét viszont a
-            díjtétel-katalógus egyes tételein állítod be ("TIG cella", lentebb).
+            cellákra kell rendezni a fejlécét. A tétel-sorok (mennyiség/ár) helyét a fejlesztő
+            állítja be a fővállalkozó valódi Excel-fájlja alapján – ehhez nincs teendőd.
           </p>
         </div>
       ) : (
