@@ -479,23 +479,43 @@ function DijtablaKatalogusSzekcio({ fv, katalogus, onRefresh }) {
                 {g.kategoria}
               </div>
               {g.tetelek.map(t => (
-                <div key={t.id} style={{ display: "grid", gridTemplateColumns: "46px 1fr 52px 96px 46px 62px 30px", gap: 8, alignItems: "center", padding: "6px 12px", borderTop: `1px solid ${C.bg}`, opacity: t.aktiv === false ? 0.5 : 1 }}>
-                  <span style={{ fontSize: 11, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.kod || "—"}</span>
-                  <span style={{ fontSize: 12.5, color: C.text, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={t.megnevezes}>{t.megnevezes}</span>
-                  <span style={{ fontSize: 11, color: C.muted }}>{t.egyseg}</span>
-                  <span style={{ fontSize: 12.5, fontWeight: 700, color: C.text, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{ft(t.ar)}</span>
-                  <span style={{ display: "flex", justifyContent: "center" }}>
-                    {t.kmDij && <span style={{ fontSize: 10, background: C.accentLight, color: C.accent, padding: "1px 6px", borderRadius: 20, fontWeight: 700, whiteSpace: "nowrap" }}>+km</span>}
-                  </span>
-                  <button onClick={() => { updateKatalogusTetel(t.id, { aktiv: t.aktiv === false }); onRefresh(); }}
-                    title={t.aktiv === false ? "Aktiválás" : "Inaktiválás"}
-                    style={{ padding: "3px 7px", background: t.aktiv === false ? C.successLight : C.warningLight, color: t.aktiv === false ? C.success : C.warning, border: "none", borderRadius: 6, cursor: "pointer", fontSize: 10, fontWeight: 700, fontFamily: FONT, whiteSpace: "nowrap" }}>
-                    {t.aktiv === false ? "Aktivál" : "Inakt."}
-                  </button>
-                  <button onClick={() => { if (window.confirm("Törlöd ezt a díjtétel-katalógus tételt?")) { deleteKatalogusTetel(t.id); onRefresh(); } }}
-                    style={{ padding: "3px 6px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 6, cursor: "pointer", display: "flex", justifyContent: "center" }}>
-                    <Trash2 size={11} />
-                  </button>
+                <div key={t.id} style={{ borderTop: `1px solid ${C.bg}`, opacity: t.aktiv === false ? 0.5 : 1 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "46px 1fr 52px 96px 46px 62px 30px", gap: 8, alignItems: "center", padding: "6px 12px" }}>
+                    <span style={{ fontSize: 11, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.kod || "—"}</span>
+                    <span style={{ fontSize: 12.5, color: C.text, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={t.megnevezes}>{t.megnevezes}</span>
+                    <span style={{ fontSize: 11, color: C.muted }}>{t.egyseg}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: C.text, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{ft(t.ar)}</span>
+                    <span style={{ display: "flex", justifyContent: "center" }}>
+                      <button onClick={() => { updateKatalogusTetel(t.id, { kmDij: !t.kmDij }); onRefresh(); }}
+                        title={t.kmDij ? "Km-díj is jár érte – kattints a kikapcsoláshoz" : "Nincs km-díj – kattints a bekapcsoláshoz"}
+                        style={{ fontSize: 10, background: t.kmDij ? C.accentLight : C.bg, color: t.kmDij ? C.accent : C.muted, padding: "1px 6px", borderRadius: 20, fontWeight: 700, whiteSpace: "nowrap", border: "none", cursor: "pointer" }}>
+                        +km
+                      </button>
+                    </span>
+                    <button onClick={() => { updateKatalogusTetel(t.id, { aktiv: t.aktiv === false }); onRefresh(); }}
+                      title={t.aktiv === false ? "Aktiválás" : "Inaktiválás"}
+                      style={{ padding: "3px 7px", background: t.aktiv === false ? C.successLight : C.warningLight, color: t.aktiv === false ? C.success : C.warning, border: "none", borderRadius: 6, cursor: "pointer", fontSize: 10, fontWeight: 700, fontFamily: FONT, whiteSpace: "nowrap" }}>
+                      {t.aktiv === false ? "Aktivál" : "Inakt."}
+                    </button>
+                    <button onClick={() => { if (window.confirm("Törlöd ezt a díjtétel-katalógus tételt?")) { deleteKatalogusTetel(t.id); onRefresh(); } }}
+                      style={{ padding: "3px 6px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 6, cursor: "pointer", display: "flex", justifyContent: "center" }}>
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
+                  {/* Csak "km" egységű tételeknél értelmezett: ez a sor adja a
+                      Ft/km díjat, a küszöb pedig azt, hogy a teljes oda-vissza
+                      távolságból mennyi felett kell csak fizetni (pl. Wagner-
+                      Solar: 50 km felett). Enélkül a projekt-létrehozásnál a
+                      "Kiszállási díj" doboz nem tudja kiszámolni a fizetendő
+                      részt – ld. calcKmDijOsszeg. */}
+                  {t.egyseg === "km" && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 12px 6px 12px" }}>
+                      <span style={{ fontSize: 10.5, color: C.muted }}>Küszöb (km, ez felett a rész oda-vissza számolódik):</span>
+                      <input type="number" min={0} value={t.kmKuszobKm || 0}
+                        onChange={e => { updateKatalogusTetel(t.id, { kmKuszobKm: Number(e.target.value) || 0 }); onRefresh(); }}
+                        style={{ width: 56, padding: "2px 6px", border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 11, fontFamily: FONT }} />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
