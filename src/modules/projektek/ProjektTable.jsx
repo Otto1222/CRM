@@ -2,9 +2,18 @@ import { C, FONT } from "../../lib/constants.js";
 import { getStatusConfig } from "./projekt.schema.js";
 import { calcEsmentProjektPenzugy } from "../../services/workOrderFinancial.service.js";
 import { ft } from "../../lib/helpers.js";
+import { loadFovallalkozok } from "../fovallalkozok/fovallalkozo.service.js";
 
 export default function ProjektTable({ projektek, munkalapok, onSelect, userRole }) {
   const showPenz = ["Admin","Projektmenedzser","Iroda/Könyvelés"].includes(userRole);
+  // Fővállalkozó neve – csak fővállalkozói munkánál értelmezett, hogy
+  // a listán is látszódjon, kitől van a munka (nem kell projektenként
+  // bekattintani a Pénzügy fülre, hogy ezt megtudjuk).
+  const fovallalkozok = loadFovallalkozok();
+  function fovallalkozoNeve(p) {
+    if (p.forrás !== "fovallalkozoi_munka") return null;
+    return fovallalkozok.find(f => f.id === p.penzugy?.fovallalkoziId)?.nev || null;
+  }
 
   return (
     <div style={{ background:"#fff", borderRadius:14, border:`1px solid ${C.border}`, overflow:"hidden" }}>
@@ -12,7 +21,7 @@ export default function ProjektTable({ projektek, munkalapok, onSelect, userRole
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
           <thead>
             <tr style={{ background:C.bg, borderBottom:`2px solid ${C.border}` }}>
-              {["Projektkód","Projekt neve","Ügyfél","Státusz","Típus","Csapat",
+              {["Projektkód","Projekt neve","Ügyfél","Fővállalkozó","Státusz","Típus","Csapat",
                 ...(showPenz?["Ajánlat","Eredmény","Haszon%"]:[]),"Terv. befejezés"].map(h=>(
                 <th key={h} style={{ padding:"10px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:.7, whiteSpace:"nowrap" }}>{h}</th>
               ))}
@@ -36,6 +45,7 @@ export default function ProjektTable({ projektek, munkalapok, onSelect, userRole
                     {p.kulsoAzonosito && <div style={{ fontSize:11, color:C.muted }}>{p.kulsoAzonosito}</div>}
                   </td>
                   <td style={{ padding:"11px 12px", color:C.textSub }}>{p.clientNev||"—"}</td>
+                  <td style={{ padding:"11px 12px", color:C.text, fontWeight:600 }}>{fovallalkozoNeve(p)||"—"}</td>
                   <td style={{ padding:"11px 12px" }}>
                     <span style={{ background:stCfg.bg, color:stCfg.szin, borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:700, whiteSpace:"nowrap" }}>{p.status}</span>
                   </td>
