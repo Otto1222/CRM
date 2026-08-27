@@ -13,7 +13,7 @@
  * a kiválasztott km-díj katalógustétel alapján (ld. kmMeta), a projekt
  * távolság-mezőjéből (oda-vissza).
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Minus, Trash2, Search, Navigation, PlusCircle } from "lucide-react";
 import { C, FONT } from "../lib/constants";
 import { getAktivKatalogusTetelek, groupKatalogusByKategoria } from "../modules/fovallalkozok/dijtetelKatalogus.service.js";
@@ -27,7 +27,21 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
   const [egyediOpen, setEgyediOpen] = useState(false);
   const [egyediNev, setEgyediNev] = useState("");
   const [egyediAr, setEgyediAr] = useState("");
-  const katalogus = useMemo(() => tulajdonosId ? getAktivKatalogusTetelek(tulajdonosId) : [], [tulajdonosId]);
+  // A katalógus a fővállalkozók oldalon bármikor frissülhet (import vagy
+  // kézi szerkesztés) – ha ez a picker közben nyitva marad (pl. az "Új
+  // projekt" form háttérben, route-váltás nélkül), a puszta useMemo([tulaj-
+  // donosId]) sosem venné észre a frissítést. A "crm-db-updated" eseményre
+  // (ld. dijtetelKatalogus.service.js saveKatalogus) egy számláló-tick-kel
+  // reagálunk, ami újraszámoltatja a katalógust.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const fn = e => {
+      if (!e.detail?.collection || e.detail.collection === "dijtetel_katalogus") setTick(t => t + 1);
+    };
+    window.addEventListener("crm-db-updated", fn);
+    return () => window.removeEventListener("crm-db-updated", fn);
+  }, []);
+  const katalogus = useMemo(() => tulajdonosId ? getAktivKatalogusTetelek(tulajdonosId) : [], [tulajdonosId, tick]);
   const kosar = value || [];
 
   // Egy tétel akkor a km-díj ARÁNAK forrása (nem hozzáadható, hanem a kmMeta-t

@@ -13,7 +13,7 @@ import {
 import { getAktivMunkatipusok } from "../munkatipusok/munkatipus.service.js";
 import {
   getKatalogusTetelek, groupKatalogusByKategoria,
-  updateKatalogusTetel, deleteKatalogusTetel, seedGreenHomeDijtabla, seedWagnerSolarDijtabla,
+  createKatalogusTetel, updateKatalogusTetel, deleteKatalogusTetel, seedGreenHomeDijtabla, seedWagnerSolarDijtabla,
 } from "./dijtetelKatalogus.service.js";
 import DijtablaImportPanel from "../../components/DijtablaImportPanel.jsx";
 import TigSablonUploader from "../../components/TigSablonUploader.jsx";
@@ -105,6 +105,127 @@ function SavokSzerkeszto({ savok, onChange }) {
         style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", border: `1.5px dashed ${C.border}`, borderRadius: 7, background: C.bg, cursor: "pointer", fontSize: 12, color: C.textSub, fontFamily: FONT, marginTop: 4 }}>
         <Plus size={12} /> Új sáv hozzáadása
       </button>
+    </div>
+  );
+}
+
+// ─── Díjtétel-katalógus tétel form ──────────────────────────────
+//
+// A generikus Excel-importer (dijtablaExcelImport.js) csak "flat" (ár ×
+// mennyiség) tételeket tud sorokból felépíteni – egy valódi sávos árazást
+// (pl. EU-Solar "Napelemes rendszer telepítése, 12–23 panel" = 164 000 Ft
+// EGYSZER a sávban, nem panelenként) csak úgy tud kezelni, hogy a felhasználó
+// itt, a katalógusban KÉZZEL sávos ("savos") tétellé alakítja – ugyanaz a
+// SavokSzerkeszto komponens és sávok-formátum, mint a régi, munkatípus-alapú
+// szabály-motornál (ld. SzabalyForm fent), csak itt a projekt tétel-kosarába
+// kerül be, nem a régi szabály-motorba.
+function KatalogusTetelForm({ tetel, tulajdonosId, onSave, onClose }) {
+  const isNew = !tetel?.id;
+  const [f, setF] = useState({
+    kod:        tetel?.kod        || "",
+    kategoria:  tetel?.kategoria  || "",
+    megnevezes: tetel?.megnevezes || "",
+    egyseg:     tetel?.egyseg     || "db",
+    tipus:      tetel?.tipus      || "flat",
+    ar:         tetel?.ar         || 0,
+    savok:      tetel?.savok      || [],
+    kmDij:      tetel?.kmDij      || false,
+    kmKuszobKm: tetel?.kmKuszobKm || 0,
+    aktiv:      tetel?.aktiv      ?? true,
+    megjegyzes: tetel?.megjegyzes || "",
+  });
+  const u = (k, v) => setF(p => ({ ...p, [k]: v }));
+  const canSave = f.megnevezes.trim() && (f.tipus !== "savos" || f.savok.length > 0);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 2100, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 560, padding: "24px", fontFamily: FONT, maxHeight: "92vh", overflowY: "auto" }}>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <h3 style={{ fontFamily: FONT_HEADING, fontSize: 16, fontWeight: 800, margin: 0 }}>
+            {isNew ? "Új katalógus-tétel" : "Katalógus-tétel szerkesztése"}
+          </h3>
+          <button onClick={onClose} style={{ padding: "4px 8px", border: "none", background: "none", cursor: "pointer", color: C.muted }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 14px" }}>
+          <FL label="Kód (opcionális)" half>
+            <input value={f.kod} onChange={e => u("kod", e.target.value)} placeholder="pl. A01" style={inp} />
+          </FL>
+          <FL label="Kategória" half>
+            <input value={f.kategoria} onChange={e => u("kategoria", e.target.value)} placeholder="pl. A) NAPELEM TELEPÍTÉS" style={inp} />
+          </FL>
+          <FL label="Megnevezés *" full>
+            <input value={f.megnevezes} onChange={e => u("megnevezes", e.target.value)} placeholder="pl. Napelemes rendszer telepítése" style={inp} />
+          </FL>
+          <FL label="Egység" half>
+            <input value={f.egyseg} onChange={e => u("egyseg", e.target.value)} placeholder="db / panel / km ..." style={inp} />
+          </FL>
+          <FL label="Típus" half>
+            <select value={f.tipus} onChange={e => u("tipus", e.target.value)} style={inp}>
+              <option value="flat">Fix ár × mennyiség</option>
+              <option value="savos">Sávos (mennyiség szerinti sáv-lookup)</option>
+            </select>
+          </FL>
+
+          {f.tipus === "flat" ? (
+            <FL label="Díj (nettó Ft / egység)" half>
+              <input type="number" min={0} value={f.ar} onChange={e => u("ar", Number(e.target.value))} style={inp} />
+            </FL>
+          ) : (
+            <FL label="Sávok (mennyiség tól–ig = összeg)" full>
+              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 9, padding: "12px 14px", marginTop: 4 }}>
+                <SavokSzerkeszto savok={f.savok} onChange={v => u("savok", v)} />
+              </div>
+              <p style={{ fontSize: 11, color: C.muted, margin: "5px 0 0" }}>
+                A „Ft/db" pipa NÉLKÜL az összeg egy fix, a sávon belül EGYSZER fizetendő végösszeg
+                (pl. EU-Solar: 12–23 panel = 164 000 Ft, függetlenül a pontos darabszámtól).
+                Bepipálva az összeg Ft/db egységár, ami a TELJES darabszámra vetül (pl. Wagner-Solar 11 db-tól).
+              </p>
+            </FL>
+          )}
+
+          <FL label="Km-díj" half>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 8, cursor: "pointer" }}>
+              <input type="checkbox" checked={f.kmDij} onChange={e => u("kmDij", e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: C.accent }} />
+              <span style={{ fontSize: 13, color: C.text }}>+ km-díj is jár érte</span>
+            </label>
+          </FL>
+          {(f.egyseg === "km" || f.kmDij) && (
+            <FL label="Km-küszöb (ez alatt nincs km-díj)" half>
+              <input type="number" min={0} value={f.kmKuszobKm} onChange={e => u("kmKuszobKm", Number(e.target.value))} style={inp} />
+            </FL>
+          )}
+
+          <FL label="Állapot" half>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 8, cursor: "pointer" }}>
+              <input type="checkbox" checked={f.aktiv} onChange={e => u("aktiv", e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: C.accent }} />
+              <span style={{ fontSize: 13, color: f.aktiv ? C.success : C.muted, fontWeight: 600 }}>
+                {f.aktiv ? "Aktív" : "Inaktív"}
+              </span>
+            </label>
+          </FL>
+
+          <FL label="Megjegyzés" full>
+            <input value={f.megjegyzes} onChange={e => u("megjegyzes", e.target.value)} style={inp} />
+          </FL>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
+          <button onClick={onClose}
+            style={{ padding: "8px 16px", border: `1.5px solid ${C.border}`, borderRadius: 8, background: "#fff", cursor: "pointer", fontFamily: FONT }}>
+            Mégse
+          </button>
+          <button onClick={() => canSave && onSave(f)} disabled={!canSave}
+            style={{ padding: "8px 20px", background: canSave ? C.accent : C.border, color: "#fff", border: "none", borderRadius: 8, cursor: canSave ? "pointer" : "default", fontWeight: 700, fontFamily: FONT }}>
+            {isNew ? "Létrehozás" : "Mentés"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -437,8 +558,18 @@ function SzabalyKartya({ sz, onEdit, onDelete, onToggle }) {
 
 function DijtablaKatalogusSzekcio({ fv, katalogus, onRefresh }) {
   const [importOpen, setImportOpen] = useState(false);
+  const [ujTetel,    setUjTetel]    = useState(false);
+  const [szerkTetel, setSzerkTetel] = useState(null);
   const csoportok = groupKatalogusByKategoria(katalogus);
   const aktivDb = katalogus.filter(t => t.aktiv !== false).length;
+
+  function handleTetelSave(data) {
+    if (szerkTetel?.id) updateKatalogusTetel(szerkTetel.id, data);
+    else createKatalogusTetel({ ...data, tulajdonosId: fv.id });
+    onRefresh();
+    setUjTetel(false);
+    setSzerkTetel(null);
+  }
 
   return (
     <div style={{ marginTop: 18, borderTop: `1px solid ${C.bg}`, paddingTop: 14 }}>
@@ -449,18 +580,26 @@ function DijtablaKatalogusSzekcio({ fv, katalogus, onRefresh }) {
             ({aktivDb} aktív tétel — ez tölti fel a projekt létrehozásnál a "Tételek a díjtáblából" kosarat)
           </span>
         </div>
-        <button onClick={() => setImportOpen(true)}
-          style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", background: katalogus.length > 0 ? "#fff" : C.accent, color: katalogus.length > 0 ? C.accent : "#fff", border: `1.5px solid ${C.accent}`, borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: FONT }}>
-          <Upload size={12} /> {katalogus.length > 0 ? "Díjtábla frissítése" : "Díjtábla import"}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setUjTetel(true)}
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", background: "#fff", color: C.accent, border: `1.5px solid ${C.accent}`, borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: FONT }}>
+            <Plus size={12} /> Új tétel
+          </button>
+          <button onClick={() => setImportOpen(true)}
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", background: katalogus.length > 0 ? "#fff" : C.accent, color: katalogus.length > 0 ? C.accent : "#fff", border: `1.5px solid ${C.accent}`, borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: FONT }}>
+            <Upload size={12} /> {katalogus.length > 0 ? "Díjtábla frissítése" : "Díjtábla import"}
+          </button>
+        </div>
       </div>
 
       {katalogus.length === 0 ? (
         <div style={{ background: C.bg, border: `1px dashed ${C.border}`, borderRadius: 9, padding: "14px", textAlign: "center" }}>
           <FileSpreadsheet size={20} color={C.muted} style={{ display: "block", margin: "0 auto 6px" }} />
           <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>
-            Még nincs feltöltve tételes díjtábla. Az "Új díjtétel" fentebb a régi, munkatípus-alapú szabály-motort szerkeszti –
-            a valódi, soronkénti díjtáblához (pl. Green Home ártábla) itt tölts fel egy Excelt.
+            Még nincs feltöltve tételes díjtábla. Tölts fel egy Excelt, vagy vedd fel kézzel az "Új tétel" gombbal
+            (sávos árazásnál – ahol egy mennyiség-tartományban egyszeri, nem darabonkénti összeg jár – csak a kézi
+            felvétel ad helyes eredményt, ld. Sávos típus). Az "Új díjtétel" fentebb a régi, munkatípus-alapú
+            szabály-motort szerkeszti, ami külön mechanizmus ettől.
           </p>
         </div>
       ) : (
@@ -470,8 +609,8 @@ function DijtablaKatalogusSzekcio({ fv, katalogus, onRefresh }) {
               ha az adott tételnek épp nem volt km-díja. A jelvény-oszlop
               mostantól MINDIG lefoglalt helyet kap (üres, ha nincs km-díj),
               így minden sor pontosan egy oszlopsorba rendeződik. */}
-          <div style={{ display: "grid", gridTemplateColumns: "46px 1fr 52px 96px 46px 62px 30px", gap: 8, alignItems: "center", padding: "5px 12px", background: C.bg, fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .4 }}>
-            <span>Kód</span><span>Megnevezés</span><span>Egys.</span><span style={{ textAlign: "right" }}>Ár</span><span /><span /><span />
+          <div style={{ display: "grid", gridTemplateColumns: "46px 1fr 52px 96px 46px 62px 30px 30px", gap: 8, alignItems: "center", padding: "5px 12px", background: C.bg, fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .4 }}>
+            <span>Kód</span><span>Megnevezés</span><span>Egys.</span><span style={{ textAlign: "right" }}>Ár</span><span /><span /><span /><span />
           </div>
           {csoportok.map(g => (
             <div key={g.kategoria}>
@@ -480,11 +619,13 @@ function DijtablaKatalogusSzekcio({ fv, katalogus, onRefresh }) {
               </div>
               {g.tetelek.map(t => (
                 <div key={t.id} style={{ borderTop: `1px solid ${C.bg}`, opacity: t.aktiv === false ? 0.5 : 1 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "46px 1fr 52px 96px 46px 62px 30px", gap: 8, alignItems: "center", padding: "6px 12px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "46px 1fr 52px 96px 46px 62px 30px 30px", gap: 8, alignItems: "center", padding: "6px 12px" }}>
                     <span style={{ fontSize: 11, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.kod || "—"}</span>
                     <span style={{ fontSize: 12.5, color: C.text, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={t.megnevezes}>{t.megnevezes}</span>
                     <span style={{ fontSize: 11, color: C.muted }}>{t.egyseg}</span>
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: C.text, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{ft(t.ar)}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: C.text, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                      {t.tipus === "savos" ? <span style={{ color: C.accent }}>sávos</span> : ft(t.ar)}
+                    </span>
                     <span style={{ display: "flex", justifyContent: "center" }}>
                       <button onClick={() => { updateKatalogusTetel(t.id, { kmDij: !t.kmDij }); onRefresh(); }}
                         title={t.kmDij ? "Km-díj is jár érte – kattints a kikapcsoláshoz" : "Nincs km-díj – kattints a bekapcsoláshoz"}
@@ -497,11 +638,24 @@ function DijtablaKatalogusSzekcio({ fv, katalogus, onRefresh }) {
                       style={{ padding: "3px 7px", background: t.aktiv === false ? C.successLight : C.warningLight, color: t.aktiv === false ? C.success : C.warning, border: "none", borderRadius: 6, cursor: "pointer", fontSize: 10, fontWeight: 700, fontFamily: FONT, whiteSpace: "nowrap" }}>
                       {t.aktiv === false ? "Aktivál" : "Inakt."}
                     </button>
+                    <button onClick={() => setSzerkTetel(t)} title="Szerkesztés"
+                      style={{ padding: "3px 6px", background: C.accentLight, color: C.accent, border: "none", borderRadius: 6, cursor: "pointer", display: "flex", justifyContent: "center" }}>
+                      <Pencil size={11} />
+                    </button>
                     <button onClick={() => { if (window.confirm("Törlöd ezt a díjtétel-katalógus tételt?")) { deleteKatalogusTetel(t.id); onRefresh(); } }}
                       style={{ padding: "3px 6px", background: C.dangerLight, color: C.danger, border: "none", borderRadius: 6, cursor: "pointer", display: "flex", justifyContent: "center" }}>
                       <Trash2 size={11} />
                     </button>
                   </div>
+                  {t.tipus === "savos" && (t.savok || []).length > 0 && (
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", padding: "0 12px 6px 12px" }}>
+                      {t.savok.map((s, i) => (
+                        <span key={i} style={{ fontSize: 10, background: C.accentLight, color: C.accent, padding: "2px 7px", borderRadius: 20, fontWeight: 600 }}>
+                          {s.tol}–{s.ig || "∞"} {t.egyseg}: {Number(s.osszeg || 0).toLocaleString("hu-HU")} Ft{s.perDb ? "/db" : ""}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {/* Csak "km" egységű tételeknél értelmezett: ez a sor adja a
                       Ft/km díjat, a küszöb pedig azt, hogy a teljes oda-vissza
                       távolságból mennyi felett kell csak fizetni (pl. Wagner-
@@ -529,6 +683,15 @@ function DijtablaKatalogusSzekcio({ fv, katalogus, onRefresh }) {
           meglevoDb={aktivDb}
           onClose={() => setImportOpen(false)}
           onImported={() => { setImportOpen(false); onRefresh(); }}
+        />
+      )}
+
+      {(ujTetel || szerkTetel) && (
+        <KatalogusTetelForm
+          tetel={szerkTetel}
+          tulajdonosId={fv.id}
+          onSave={handleTetelSave}
+          onClose={() => { setUjTetel(false); setSzerkTetel(null); }}
         />
       )}
     </div>
