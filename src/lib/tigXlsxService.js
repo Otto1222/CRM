@@ -233,7 +233,7 @@ export async function buildTigXlsxIdoszaki(projektek, fovallalkozo, datumTol, da
     irj("partner",        projekt.clientNev || "");
     irj("cim",            projekt.telepitesiCim || projekt.clientCim || "");
     irj("tipus",          "TIG");
-    irj("bizonylatszam",  projekt.projektkod || "");
+    irj("bizonylatszam",  projekt.kulsoAzonosito || projekt.projektkod || "");
     const d = new Date(tigProjektDatum(projekt));
     irj("teljesites",     isNaN(d) ? "" : d);
     irj("elvegzettMunka", projekt.tipus || "Telepítés");
