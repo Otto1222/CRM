@@ -71,8 +71,18 @@ export async function generateKotelezoDokumentumok(munkalap, projekt) {
 
   if (beall.kellTIG) {
     const fv = loadFovallalkozok().find(f => f.id === projekt?.penzugy?.fovallalkoziId);
-    if (fv) await mentTipus("TIG", await buildTig(projekt, fv));
-    else eredmeny.kihagyva.push({ tipus: "TIG", ok: "Nincs fővállalkozó beállítva a projekten" });
+    if (!fv) {
+      eredmeny.kihagyva.push({ tipus: "TIG", ok: "Nincs fővállalkozó beállítva a projekten" });
+    } else if (fv.tigMod === "idoszaki") {
+      // Időszaki, összesített TIG-módú fővállalkozónál (pl. Green-Home)
+      // NEM projektenként, hanem kézzel, a TIG oldalon, több projektet
+      // egybefűzve generálódik a dokumentum – itt semmit nem csinálunk,
+      // különben az automatikus, munkánkénti motor (ami más sablon-
+      // struktúrát vár) hibás/üres fájlt generálna erre a fővállalkozóra.
+      eredmeny.kihagyva.push({ tipus: "TIG", ok: `${fv.nev} időszaki TIG-módú – a TIG oldalon, kézzel generálandó` });
+    } else {
+      await mentTipus("TIG", await buildTig(projekt, fv));
+    }
   }
 
   if (beall.kellLMRA) {
@@ -98,7 +108,7 @@ export async function regenerateTigDocumentum(projekt) {
     if (!driveAvailable()) return;
     if (projekt?.forrás !== "fovallalkozoi_munka") return;
     const fv = loadFovallalkozok().find(f => f.id === projekt?.penzugy?.fovallalkoziId);
-    if (!fv) return;
+    if (!fv || fv.tigMod === "idoszaki") return; // időszaki módnál a TIG oldalon, kézzel generálódik
     const buildResult = await buildTig(projekt, fv);
     if (!buildResult.ok) return;
     await driveSaveGeneratedDoc(projekt, buildResult.fajlnev, buildResult.blob, buildResult.mimeType);

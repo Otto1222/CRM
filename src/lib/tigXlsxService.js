@@ -200,6 +200,7 @@ export async function buildTigXlsxIdoszaki(projektek, fovallalkozo, datumTol, da
 
   const ws = wb.getWorksheet(GH_MUNKALAP) || wb.worksheets[0];
   if (!ws) return { ok: false, error: "A sablonban nem található kitöltendő munkalap." };
+  tavolitsdElATablazatokat(ws);
 
   const oszlop = epitsdFelOszlopTerkepet(ws);
   if (!oszlop.osszesen) {
@@ -278,6 +279,23 @@ export async function generateTigXlsxIdoszaki(projektek, fovallalkozo, datumTol,
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   return true;
+}
+
+/**
+ * Kiveszi a munkalapból az Excel "Táblázat" (structured Table) objektumo-
+ * kat, ha vannak. Ok: a Green-Home_TIG.xlsx sablon "Részletek" fülén egy
+ * ilyen Táblázat volt beszúrva (Beszúrás → Táblázat) – az ExcelJS csomag
+ * (4.4.0) a beolvasás/mentés körben MEGRONGÁLJA ennek belső leírását
+ * (totalsRowShown és headerRowCount ellentmondásba kerül a tényleges
+ * cellatartalommal), ami miatt Excel megnyitáskor "tartalma hibás,
+ * helyreállítsuk?" hibát dobott. Nekünk nincs szükségünk a Táblázat
+ * funkcióra (szűrés/formázás) a generált fájlban, ezért egyszerűen
+ * eltávolítjuk – ez megszünteti a hibát, sima cellatartalom marad.
+ */
+function tavolitsdElATablazatokat(ws) {
+  Object.keys(ws.tables || {}).forEach(nev => {
+    try { ws.removeTable(nev); } catch { /* nincs ilyen tábla / már eltávolítva */ }
+  });
 }
 
 function base64ToArrayBuffer(base64) {
@@ -378,6 +396,7 @@ async function epitsdFelAWorkbookot(projekt, fovallalkozo) {
 
   const ws = wb.getWorksheet(TIG_XLSX_MUNKALAP) || wb.worksheets[0];
   if (!ws) return { ok: false, error: "A sablonban nem található kitöltendő munkalap." };
+  tavolitsdElATablazatokat(ws);
 
   const cim = bontsdCimet(projekt?.telepitesiCim || projekt?.clientCim || "");
   irjFeliratMelle(ws, FEJLEC_FELIRATOK.ugyfelNev,   projekt?.clientNev || "");
