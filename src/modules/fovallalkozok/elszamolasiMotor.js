@@ -58,6 +58,23 @@ export function calcSavosOsszeg(savok, darabszam) {
 }
 
 /**
+ * Egy sávos tétel "egységára" a TIG-hez / kosár-sorhoz – a katalógus-tétel
+ * "ar" mezője sávos típusnál nincs használva (ld. dijtetelKatalogus.schema.js),
+ * úgyhogy önmagában 0 maradna. A TIG/számla-sor viszont mindig egy fix
+ * "Mennyiség × Egységár = Összesen" oszlopszerkezetet ír ki – enélkül egy
+ * nem-nulla Összesen mellett 0 Ft-os Egységár látszódna, ami a fővállalkozó
+ * felé kiállított dokumentumon hibásnak/hiányosnak tűnne. Ezért a MEGADOTT
+ * (valós) darabszámra visszavetítjük az egységárat (összeg / darabszám) –
+ * ez a fix ("nem Ft/db") sávoknál egy a beírt darabszámtól függő, levezetett
+ * érték lesz, a Ft/db sávoknál pedig pontosan a sáv tényleges Ft/db díja.
+ */
+export function calcSavosEgysegar(savok, darabszam) {
+  const db = Number(darabszam) || 0;
+  if (db <= 0) return 0;
+  return Math.round(calcSavosOsszeg(savok, db) / db);
+}
+
+/**
  * Küszöb-alapú (sávos) kiszállási díj – EGYETLEN, közös képlet, hogy ne
  * duplikálódjon (és ne térjen el) a projekt létrehozás előnézetében
  * (ProjektForm.jsx), a kosár-választóban (DijtetelKosarPicker.jsx), a

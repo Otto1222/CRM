@@ -17,7 +17,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, Minus, Trash2, Search, Navigation, PlusCircle } from "lucide-react";
 import { C, FONT } from "../lib/constants";
 import { getAktivKatalogusTetelek, groupKatalogusByKategoria } from "../modules/fovallalkozok/dijtetelKatalogus.service.js";
-import { calcSavosOsszeg, calcKmDijOsszeg } from "../modules/fovallalkozok/elszamolasiMotor.js";
+import { calcSavosOsszeg, calcSavosEgysegar, calcKmDijOsszeg } from "../modules/fovallalkozok/elszamolasiMotor.js";
 import { parseMennyisegTartomany } from "../modules/fovallalkozok/dijtetelKatalogus.schema.js";
 
 const ft = n => Number(n || 0).toLocaleString("hu-HU") + " Ft";
@@ -77,7 +77,11 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
       let m = meglevo.mennyiseg + 1;
       if (tartomany) m = Math.min(tartomany.ig, m);
       onChange(kosar.map(k => k.katalogusTetelId === kt.id
-        ? { ...k, mennyiseg: m, osszesen: isSavos ? calcSavosOsszeg(k.savok, m) : Math.round(m * k.egysegar) }
+        ? {
+            ...k, mennyiseg: m,
+            egysegar: isSavos ? calcSavosEgysegar(k.savok, m) : k.egysegar,
+            osszesen: isSavos ? calcSavosOsszeg(k.savok, m) : Math.round(m * k.egysegar),
+          }
         : k));
       return;
     }
@@ -88,7 +92,11 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
       kategoria: kt.kategoria || "",
       nev: kt.megnevezes,
       egyseg: kt.egyseg,
-      egysegar: Number(kt.ar) || 0,
+      // Sávos tételnél az "ar" mező nincs használva (a katalógusban 0) – a
+      // TIG/számla-sor "Egységár" oszlopa a MEGADOTT darabszámra visszavetített,
+      // levezetett díjat kapja (ld. calcSavosEgysegar), különben egy nem-nulla
+      // Összesen mellett 0 Ft-os egységár látszódna a dokumentumon.
+      egysegar: isSavos ? calcSavosEgysegar(kt.savok, kezdoMennyiseg) : (Number(kt.ar) || 0),
       tipus: isSavos ? "savos" : "flat",
       savok: isSavos ? (kt.savok || []) : [],
       mennyiseg: kezdoMennyiseg,
@@ -136,7 +144,11 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
     let m = Math.max(0, Number(mennyiseg) || 0);
     if (tartomany) m = Math.min(tartomany.ig, Math.max(tartomany.tol, m));
     onChange(kosar.map(k => k.katalogusTetelId === katalogusTetelId
-      ? { ...k, mennyiseg: m, osszesen: k.tipus === "savos" ? calcSavosOsszeg(k.savok, m) : Math.round(m * k.egysegar) }
+      ? {
+          ...k, mennyiseg: m,
+          egysegar: k.tipus === "savos" ? calcSavosEgysegar(k.savok, m) : k.egysegar,
+          osszesen: k.tipus === "savos" ? calcSavosOsszeg(k.savok, m) : Math.round(m * k.egysegar),
+        }
       : k));
   }
 
