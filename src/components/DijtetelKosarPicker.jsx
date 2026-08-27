@@ -18,6 +18,7 @@ import { Plus, Minus, Trash2, Search, Navigation, PlusCircle } from "lucide-reac
 import { C, FONT } from "../lib/constants";
 import { getAktivKatalogusTetelek, groupKatalogusByKategoria } from "../modules/fovallalkozok/dijtetelKatalogus.service.js";
 import { calcSavosOsszeg, calcKmDijOsszeg } from "../modules/fovallalkozok/elszamolasiMotor.js";
+import { parseMennyisegTartomany } from "../modules/fovallalkozok/dijtetelKatalogus.schema.js";
 
 const ft = n => Number(n || 0).toLocaleString("hu-HU") + " Ft";
 
@@ -53,14 +54,20 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
 
   function addTetel(kt) {
     const isSavos = kt.tipus === "savos";
+    // Sávos-jellegű flat tétel (pl. "12–23 panel") – a mennyiség nem lehet a
+    // sávon kívüli, ezért induláskor rögtön a sáv alsó határára állítjuk,
+    // nem az általános 1-re (ami sok ilyen tételnél kívül esne a sávon).
+    const tartomany = !isSavos ? parseMennyisegTartomany(kt.megnevezes) : null;
     const meglevo = kosar.find(k => k.katalogusTetelId === kt.id);
     if (meglevo) {
-      const m = meglevo.mennyiseg + 1;
+      let m = meglevo.mennyiseg + 1;
+      if (tartomany) m = Math.min(tartomany.ig, m);
       onChange(kosar.map(k => k.katalogusTetelId === kt.id
         ? { ...k, mennyiseg: m, osszesen: isSavos ? calcSavosOsszeg(k.savok, m) : Math.round(m * k.egysegar) }
         : k));
       return;
     }
+    const kezdoMennyiseg = tartomany ? tartomany.tol : 1;
     onChange([...kosar, {
       katalogusTetelId: kt.id,
       kod: kt.kod || "",
@@ -70,8 +77,8 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
       egysegar: Number(kt.ar) || 0,
       tipus: isSavos ? "savos" : "flat",
       savok: isSavos ? (kt.savok || []) : [],
-      mennyiseg: 1,
-      osszesen: isSavos ? calcSavosOsszeg(kt.savok, 1) : (Number(kt.ar) || 0),
+      mennyiseg: kezdoMennyiseg,
+      osszesen: isSavos ? calcSavosOsszeg(kt.savok, kezdoMennyiseg) : Math.round(kezdoMennyiseg * (Number(kt.ar) || 0)),
       kmDij: !!kt.kmDij,
     }]);
     // Ha ez az első km-díjas tétel a kosárban, alapértelmezetten beállítjuk az első elérhető km-díj tételt.
@@ -110,7 +117,10 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
   }
 
   function updMennyiseg(katalogusTetelId, mennyiseg) {
-    const m = Math.max(0, Number(mennyiseg) || 0);
+    const kosarTetel = kosar.find(k => k.katalogusTetelId === katalogusTetelId);
+    const tartomany = kosarTetel && kosarTetel.tipus !== "savos" ? parseMennyisegTartomany(kosarTetel.nev) : null;
+    let m = Math.max(0, Number(mennyiseg) || 0);
+    if (tartomany) m = Math.min(tartomany.ig, Math.max(tartomany.tol, m));
     onChange(kosar.map(k => k.katalogusTetelId === katalogusTetelId
       ? { ...k, mennyiseg: m, osszesen: k.tipus === "savos" ? calcSavosOsszeg(k.savok, m) : Math.round(m * k.egysegar) }
       : k));
@@ -238,6 +248,10 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
               const ig  = (s.ig !== "" && s.ig !== null && s.ig !== undefined) ? Number(s.ig) : Infinity;
               return (Number(k.mennyiseg) || 0) >= tol && (Number(k.mennyiseg) || 0) <= ig;
             }) : null;
+            // Sávos-jellegű flat tétel (pl. "12–23 panel") – a mennyiség nem
+            // léphet a sávon kívülre, hogy ne lehessen véletlenül rossz
+            // darabszámot beírni egy adott sávhoz tartozó sorhoz.
+            const tartomany = k.tipus !== "savos" ? parseMennyisegTartomany(k.nev) : null;
             return (
             <div key={k.katalogusTetelId} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <span style={{ flex: 1, fontSize: 12.5, color: C.text }}>
@@ -247,17 +261,24 @@ export default function DijtetelKosarPicker({ tulajdonosId, value, onChange, tav
                     {aktSav ? `(sáv: ${aktSav.tol}–${aktSav.ig || "∞"} db)` : "(nincs egyező sáv)"}
                   </span>
                 )}
+                {tartomany && (
+                  <span style={{ marginLeft: 6, fontSize: 10.5, color: C.muted }}>
+                    (megadható: {tartomany.tol}–{tartomany.ig} {k.egyseg})
+                  </span>
+                )}
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <button type="button" onClick={() => updMennyiseg(k.katalogusTetelId, k.mennyiseg - 1)}
-                  style={{ width: 22, height: 22, border: `1px solid ${C.border}`, background: "#fff", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  disabled={tartomany && k.mennyiseg <= tartomany.tol}
+                  style={{ width: 22, height: 22, border: `1px solid ${C.border}`, background: (tartomany && k.mennyiseg <= tartomany.tol) ? C.bg : "#fff", borderRadius: 6, cursor: (tartomany && k.mennyiseg <= tartomany.tol) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Minus size={11} />
                 </button>
-                <input type="number" min={0} value={k.mennyiseg}
+                <input type="number" min={tartomany ? tartomany.tol : 0} max={tartomany ? tartomany.ig : undefined} value={k.mennyiseg}
                   onChange={e => updMennyiseg(k.katalogusTetelId, e.target.value)}
-                  style={{ width: 48, textAlign: "center", padding: "3px 4px", border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontFamily: FONT }} />
+                  style={{ width: 48, textAlign: "center", padding: "3px 4px", border: `1px solid ${tartomany ? C.accent : C.border}`, borderRadius: 6, fontSize: 12, fontFamily: FONT }} />
                 <button type="button" onClick={() => updMennyiseg(k.katalogusTetelId, k.mennyiseg + 1)}
-                  style={{ width: 22, height: 22, border: `1px solid ${C.border}`, background: "#fff", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  disabled={tartomany && k.mennyiseg >= tartomany.ig}
+                  style={{ width: 22, height: 22, border: `1px solid ${C.border}`, background: (tartomany && k.mennyiseg >= tartomany.ig) ? C.bg : "#fff", borderRadius: 6, cursor: (tartomany && k.mennyiseg >= tartomany.ig) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Plus size={11} />
                 </button>
                 <span style={{ fontSize: 10, color: C.muted, width: 30 }}>{k.egyseg}</span>

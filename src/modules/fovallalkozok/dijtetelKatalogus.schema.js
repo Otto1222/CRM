@@ -66,6 +66,26 @@ export const DIJTABLA_KOSAR_TETEL_SCHEMA = {
   kmDij:            false,
 };
 
+/**
+ * Sávos-jellegű FLAT tételeknél (pl. EU-Solar "Napelemes rendszer
+ * telepítése, 12–23 panel" – minden sávhoz külön katalógus-sor, ár = Ft/db)
+ * a megnevezésből kiolvassuk a sáv alsó/felső határát, hogy a kosárban a
+ * mennyiség mezőt erre a tartományra lehessen korlátozni – kevesebb vagy
+ * több darabszám beírása ennél a tételnél mindig hibás sávválasztást
+ * jelentene (a helyes sávot magát a sort kell lecserélni, nem a mennyiséget
+ * a tartományon kívülre írni). Nincs külön admin-mező hozzá: a szöveges
+ * mintából automatikusan felismerődik, ezért import után és kézi
+ * szerkesztésnél is azonnal működik, bármelyik fővállalkozónál.
+ */
+export function parseMennyisegTartomany(megnevezes) {
+  const m = String(megnevezes || "").match(/(\d{1,4})\s*[-–—]\s*(\d{1,4})\s*(panel|db|darab|fő|modul)\b/i);
+  if (!m) return null;
+  const tol = Number(m[1]);
+  const ig  = Number(m[2]);
+  if (!Number.isFinite(tol) || !Number.isFinite(ig) || ig < tol) return null;
+  return { tol, ig };
+}
+
 export function calcKosarTetelOsszesen(tetel) {
   if (tetel?.tipus === "savos") {
     return calcSavosOsszeg(tetel.savok, tetel.mennyiseg);
