@@ -398,6 +398,19 @@ async function epitsdFelAWorkbookot(projekt, fovallalkozo) {
   if (!ws) return { ok: false, error: "A sablonban nem található kitöltendő munkalap." };
   tavolitsdElATablazatokat(ws);
 
+  // Ha az "Ügyfél neve:" felirat sem található, ez nem munkánkénti
+  // (Wagner-Solar-típusú) sablon – enélkül a fájl néma csendben üresen
+  // generálódna (semmi sem illeszkedne), ami sokkal zavaróbb, mint egy
+  // egyértelmű hibaüzenet. Ez tipikusan azt jelenti, hogy a fővállalkozó
+  // valójában "Időszaki összesített" TIG-módú (ld. Fővállalkozók oldal),
+  // és a TIG oldalról kellene generálni, nem a projekt Pénzügy füléről.
+  if (!keresFeliratCella(ws, FEJLEC_FELIRATOK.ugyfelNev)) {
+    return {
+      ok: false,
+      error: `A(z) "${fovallalkozo?.nev || ""}" sablonja nem munkánkénti (Wagner-Solar-típusú) szerkezetű – nem található benne az "${FEJLEC_FELIRATOK.ugyfelNev}" felirat. Ha ez a fővállalkozó időszaki, összesített TIG-et használ, a Fővállalkozók oldalon állítsd a TIG módot "Időszaki összesített"-re, és a TIG menüpontról generáld.`,
+    };
+  }
+
   const cim = bontsdCimet(projekt?.telepitesiCim || projekt?.clientCim || "");
   irjFeliratMelle(ws, FEJLEC_FELIRATOK.ugyfelNev,   projekt?.clientNev || "");
   irjFeliratMelle(ws, FEJLEC_FELIRATOK.projektSzam, [projekt?.projektkod, projekt?.kulsoAzonosito].filter(Boolean).join(", "));
