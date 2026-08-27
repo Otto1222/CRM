@@ -73,12 +73,14 @@ export async function generateKotelezoDokumentumok(munkalap, projekt) {
     const fv = loadFovallalkozok().find(f => f.id === projekt?.penzugy?.fovallalkoziId);
     if (!fv) {
       eredmeny.kihagyva.push({ tipus: "TIG", ok: "Nincs fővállalkozó beállítva a projekten" });
-    } else if (fv.tigMod === "idoszaki") {
+    } else if (fv.tigMod === "idoszaki" && getTigSablonMeta(fv.id)?.fileType !== "xlsx") {
       // Időszaki, összesített TIG-módú fővállalkozónál (pl. Green-Home)
-      // NEM projektenként, hanem kézzel, a TIG oldalon, több projektet
-      // egybefűzve generálódik a dokumentum – itt semmit nem csinálunk,
-      // különben az automatikus, munkánkénti motor (ami más sablon-
-      // struktúrát vár) hibás/üres fájlt generálna erre a fővállalkozóra.
+      // Word sablonnal NEM projektenként, hanem kézzel, a TIG oldalon,
+      // több projektet egybefűzve generálódik a dokumentum. Excel
+      // sablonnál viszont a motor magától felismeri a sablon szerkezetét
+      // (ld. tigXlsxService.js buildTigXlsxBlob) és ilyenkor is helyesen,
+      // egysoros táblázatként tud automatikusan generálni – ott nem kell
+      // kihagyni.
       eredmeny.kihagyva.push({ tipus: "TIG", ok: `${fv.nev} időszaki TIG-módú – a TIG oldalon, kézzel generálandó` });
     } else {
       await mentTipus("TIG", await buildTig(projekt, fv));
@@ -108,7 +110,8 @@ export async function regenerateTigDocumentum(projekt) {
     if (!driveAvailable()) return;
     if (projekt?.forrás !== "fovallalkozoi_munka") return;
     const fv = loadFovallalkozok().find(f => f.id === projekt?.penzugy?.fovallalkoziId);
-    if (!fv || fv.tigMod === "idoszaki") return; // időszaki módnál a TIG oldalon, kézzel generálódik
+    if (!fv) return;
+    if (fv.tigMod === "idoszaki" && getTigSablonMeta(fv.id)?.fileType !== "xlsx") return; // Word időszaki: a TIG oldalon, kézzel generálódik
     const buildResult = await buildTig(projekt, fv);
     if (!buildResult.ok) return;
     await driveSaveGeneratedDoc(projekt, buildResult.fajlnev, buildResult.blob, buildResult.mimeType);

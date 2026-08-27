@@ -24,7 +24,7 @@ import { getCsapat }         from "../../csapatok/csapat.service.js";
 import { calcMunkalapRiportAdat } from "../../../lib/munkalapRiportHelper.js";
 import { getAnyagelszamolasiModConfig, hasAnyagelszamolasiMod } from "../../../lib/workflowRules.js";
 import { loadFovallalkozok } from "../../fovallalkozok/fovallalkozo.service.js";
-import { hasTigSablon, getTigSablonMeta, generateTigDocxEgyProjekt } from "../../../lib/tigDocxService.js";
+import { getTigSablonMeta, generateTigDocxEgyProjekt } from "../../../lib/tigDocxService.js";
 import { generateTigXlsxEgyProjekt } from "../../../lib/tigXlsxService.js";
 
 // Anyagköltség-forrás megjelenítendő rövid neve – P0-2 javítás: a forrás
@@ -491,23 +491,50 @@ export default function TabPenzugy({ projekt, munkalapok, currentUser }) {
 
             {fovallalkozo && (
               <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
-                {(fovallalkozo.tigMod || "munkankenti") === "idoszaki" ? (
-                  <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>
-                    ℹ️ <strong>{fovallalkozo.nev}</strong> időszaki, összesített TIG-et használ – a dokumentum a <strong>TIG</strong> menüpontról generálható, több projektet egybefűzve.
-                  </p>
-                ) : hasTigSablon(fovallalkozo.id) ? (
-                  <button type="button" onClick={() => {
-                    const isXlsx = getTigSablonMeta(fovallalkozo.id)?.fileType === "xlsx";
-                    return isXlsx ? generateTigXlsxEgyProjekt(projekt, fovallalkozo) : generateTigDocxEgyProjekt(projekt, fovallalkozo);
-                  }}
-                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
-                    <Download size={14} /> TIG letöltése ({getTigSablonMeta(fovallalkozo.id)?.fileType === "xlsx" ? ".xlsx" : ".docx"})
-                  </button>
-                ) : (
-                  <p style={{ fontSize: 12, color: C.warning, margin: 0 }}>
-                    ⚠️ Nincs TIG sablon feltöltve <strong>{fovallalkozo.nev}</strong> fővállalkozóhoz. Beállítások → Fővállalkozók → TIG sablon feltöltése.
-                  </p>
-                )}
+                {(() => {
+                  const sablonMeta = getTigSablonMeta(fovallalkozo.id);
+                  const isIdoszaki = (fovallalkozo.tigMod || "munkankenti") === "idoszaki";
+                  // Az xlsx motor a sablon TÉNYLEGES szerkezetét ismeri fel
+                  // (ld. tigXlsxService.js buildTigXlsxBlob) – működik akkor
+                  // is, ha a fővállalkozó "időszaki" módú (Green-Home-
+                  // stílusú gyűjtő-táblázat), csak ilyenkor egy egysoros
+                  // táblázatot ad erről az egy projektről. A docx motor
+                  // ezt nem tudja, ott továbbra is a TIG oldalra kell
+                  // irányítani az időszaki fővállalkozókat.
+                  if (sablonMeta?.fileType === "xlsx") {
+                    return (<>
+                      <button type="button" onClick={() => generateTigXlsxEgyProjekt(projekt, fovallalkozo)}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
+                        <Download size={14} /> TIG letöltése (.xlsx)
+                      </button>
+                      {isIdoszaki && (
+                        <p style={{ fontSize: 11, color: C.muted, margin: "6px 0 0" }}>
+                          Ez csak ezt az egy projektet tartalmazza – ha több projektet egybefűzve szeretnél, a <strong>TIG</strong> menüpontról generáld.
+                        </p>
+                      )}
+                    </>);
+                  }
+                  if (isIdoszaki) {
+                    return (
+                      <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>
+                        ℹ️ <strong>{fovallalkozo.nev}</strong> időszaki, összesített TIG-et használ – a dokumentum a <strong>TIG</strong> menüpontról generálható, több projektet egybefűzve.
+                      </p>
+                    );
+                  }
+                  if (sablonMeta) {
+                    return (
+                      <button type="button" onClick={() => generateTigDocxEgyProjekt(projekt, fovallalkozo)}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
+                        <Download size={14} /> TIG letöltése (.docx)
+                      </button>
+                    );
+                  }
+                  return (
+                    <p style={{ fontSize: 12, color: C.warning, margin: 0 }}>
+                      ⚠️ Nincs TIG sablon feltöltve <strong>{fovallalkozo.nev}</strong> fővállalkozóhoz. Beállítások → Fővállalkozók → TIG sablon feltöltése.
+                    </p>
+                  );
+                })()}
               </div>
             )}
           </div>

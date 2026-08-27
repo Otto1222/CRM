@@ -430,18 +430,35 @@ async function epitsdFelAWorkbookot(projekt, fovallalkozo) {
 
 /** Blob előállítás letöltés/Drive-mentés nélkül (ld. tigDocxService.js
  * buildTigDocxBlob – ugyanaz a minta, hogy kotelezoDokumentumok.service.js
- * formátumtól függetlenül tudja hívni). */
+ * formátumtól függetlenül tudja hívni).
+ *
+ * Nem kell előre eldönteni/beállítani, hogy a fővállalkozó "munkánkénti"
+ * vagy "időszaki" sablont használ – a rendszer megnézi a feltöltött Excel
+ * TÉNYLEGES szerkezetét: ha megtalálja a munkánkénti (Wagner-Solar-
+ * stílusú) "Ügyfél neve:" feliratot, azt a motort futtatja; ha nem (mert
+ * a sablon egy Green-Home-stílusú, oszlopos gyűjtő-táblázat), automatikusan
+ * átvált az időszaki motorra, és EGYETLEN projektből (a hívott projektből)
+ * épít egy egysoros táblázatot. A fővállalkozó "TIG mód" beállítása így
+ * csak azt dönti el, hogy a TIG oldal többprojektes választójában
+ * megjelenjen-e – a generálás mindkét sablon-fajtával helyesen működik,
+ * bármelyik felületről indítod. */
 export async function buildTigXlsxBlob(projekt, fovallalkozo) {
   const res = await epitsdFelAWorkbookot(projekt, fovallalkozo);
-  if (!res.ok) return res;
-  try {
-    const buffer = await res.wb.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    return { ok: true, blob, fajlnev: `TIG_${projekt?.projektkod || projekt?.id || "projekt"}.xlsx` };
-  } catch (err) {
-    console.error("[tigXlsxService] buildTigXlsxBlob", err);
-    return { ok: false, error: err?.message || String(err) };
+  if (res.ok) {
+    try {
+      const buffer = await res.wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      return { ok: true, blob, fajlnev: `TIG_${projekt?.projektkod || projekt?.id || "projekt"}.xlsx` };
+    } catch (err) {
+      console.error("[tigXlsxService] buildTigXlsxBlob", err);
+      return { ok: false, error: err?.message || String(err) };
+    }
   }
+  // Nem munkánkénti szerkezetű sablon – próbáljuk időszaki (gyűjtő-
+  // táblázatos) motorral, csak ezzel az egy projekttel.
+  const idoszakiRes = await buildTigXlsxIdoszaki([projekt], fovallalkozo);
+  if (idoszakiRes.ok) return idoszakiRes;
+  return res; // egyik motorral sem sikerült – az eredeti (munkánkénti) hibaüzenet informatívabb
 }
 
 /** Kézi letöltés gomb (TabPenzugy.jsx) – ld. tigDocxService.js
