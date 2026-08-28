@@ -1,6 +1,7 @@
 import { driveLoad, driveLoadStatus, driveSave } from "./driveApi";
 import { loadLocal, saveLocal } from "./localDb";
 import { startJob, updateJob, finishJob, failJob } from "./jobProgress";
+import { applyTombstones } from "./tombstones.js";
 
 // P0-005: "crm_tombstones" MINDIG az első – lásd lent a Tombstone szekciót.
 // A merge csak akkor tudja helyesen kiszűrni egy már törölt rekordot, ha a
@@ -55,31 +56,26 @@ export function recordDeletion(collection, targetId) {
     const now = new Date().toISOString();
     const next = [...list.filter(t => t.id !== tombId), { id: tombId, collection, targetId, updatedAt: now }];
     saveLocal(TOMBSTONE_KEY, next);
-    driveSave(TOMBSTONE_KEY, { [TOMBSTONE_KEY]: next }).catch(() => {});
+    // A tombstone Drive-mentése eddig csendben nyelte a hibát – ha ez
+    // elveszik (átmeneti hálózati hiba, Apps Script hideg indítás), a
+    // törlés csak ezen az eszközön marad érvényes: egy másik eszköz (vagy
+    // akár ugyanez, ha a lokális adatok törlődnek/ki-be lépés után frissen
+    // húzza le a Drive-ot) nem tudja, hogy ezt a rekordot törölni kell, és
+    // visszahozza. Ugyanazt a "crm-sync-warning" jelzést adjuk, mint minden
+    // más Drive-mentési hibánál (ld. notifySyncFailed a többi service-ben).
+    driveSave(TOMBSTONE_KEY, { [TOMBSTONE_KEY]: next })
+      .then(res => { if (res && !res.ok && !res.offline) notifyTombstoneSyncFailed(collection); })
+      .catch(() => notifyTombstoneSyncFailed(collection));
   } catch (e) {
     console.warn("[dataSync] recordDeletion sikertelen:", collection, targetId, e?.message || e);
+    notifyTombstoneSyncFailed(collection);
   }
 }
 
-/** Kiszűri egy kollekció adatból azokat a rekordokat, amelyekre érvényes (a
- *  rekordnál nem régebbi) tombstone létezik. Nem-tömb adatra (pl. beallitasok)
- *  és magára a tombstone kollekcióra no-op. */
-function applyTombstones(collection, data) {
-  if (collection === TOMBSTONE_KEY || !Array.isArray(data)) return data;
-  let tombstones;
-  try { tombstones = loadLocal(TOMBSTONE_KEY); } catch { return data; }
-  if (!Array.isArray(tombstones) || tombstones.length === 0) return data;
-  const relevant = tombstones.filter(t => t.collection === collection);
-  if (relevant.length === 0) return data;
-  return data.filter(rec => {
-    const t = relevant.find(t => t.targetId === rec?.id);
-    if (!t) return true;
-    const recordTs = rec.updatedAt ? new Date(rec.updatedAt).getTime() : 0;
-    const tombTs    = new Date(t.updatedAt).getTime();
-    // Ha a rekord frissebb, mint a törlés (pl. valaki újra létrehozta ugyanazzal
-    // az id-vel egy törlés UTÁN), a rekord marad – az újabb módosítás nyer.
-    return tombTs < recordTs;
-  });
+function notifyTombstoneSyncFailed(collection) {
+  window.dispatchEvent(new CustomEvent("crm-sync-warning", {
+    detail: { message: `A(z) "${collection}" törlése helyileg megtörtént, de nem sikerült szinkronizálni – másik eszközön még visszatérhet.` },
+  }));
 }
 
 // ─── Drive szinkron napló (per-kollekció utolsó szinkron státusz) ─

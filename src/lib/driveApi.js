@@ -10,6 +10,8 @@
  *   04_Fotok      → fotók, projekt mappák (MUNKA_FOLDER)
  */
 
+import { applyTombstones } from "./tombstones.js";
+
 const SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL || "";
 
 export const DRIVE_DB_FOLDER_ID    = "1jkRh98v5pm73Dyhmn3FioFkznBaxWwsW";
@@ -119,9 +121,30 @@ export async function driveLoadStatus(collection) {
   return { ok: false, content: null, error: res?.error || "Drive betöltési hiba" };
 }
 
-/** Mentés Drive-ra – visszaadja az Apps Script tényleges válaszát */
+/**
+ * Mentés Drive-ra – visszaadja az Apps Script tényleges válaszát.
+ *
+ * P0-005 kiegészítés: a törlés két, egymástól független Drive-írásból áll
+ * (a lekurtított tömb mentése + a tombstone mentése, ld. dataSync.service.js
+ * recordDeletion) – ha eközben egy MÁSIK fül/eszköz/háttér-szinkron egy még
+ * a törlés ELŐTTI állapotú, elavult tömböt ment el (mert nem vette észre
+ * időben a törlést), az visszaírhatná a törölt rekordot Drive-ra, akkor is,
+ * ha a tombstone már megvan – a tombstone-ellenőrzés eddig csak OLVASÁSKOR
+ * (loadCollectionWithStatus) futott, ÍRÁSKOR nem. Ezért itt, minden kimenő
+ * mentésnél is kiszűrjük a saját eszközön ismert, érvényes tombstone-okkal
+ * rendelkező rekordokat – bármelyik hívási helyről (és bármilyen régi,
+ * elfelejtett, közvetlenül localStorage-ot toldó kódútvonalról) érkező adat
+ * sem tud így törölt rekordot visszaírni Drive-ra.
+ */
 export async function driveSave(collection, data) {
-  return post({ action: "saveJson", fileName: `${collection}.json`, content: data });
+  let payload = data;
+  if (data && Array.isArray(data[collection])) {
+    const filtered = applyTombstones(collection, data[collection]);
+    if (filtered.length !== data[collection].length) {
+      payload = { ...data, [collection]: filtered };
+    }
+  }
+  return post({ action: "saveJson", fileName: `${collection}.json`, content: payload });
 }
 
 /**
