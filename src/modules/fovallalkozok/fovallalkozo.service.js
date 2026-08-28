@@ -5,6 +5,7 @@
 import { FOVALLALKOZO_SCHEMA, ELSZAMOLASI_SZABALY_SCHEMA } from "./fovallalkozo.schema.js";
 import { findEgyezoSzabalyok } from "./elszamolasiMotor.js";
 import { createBackup } from "../../lib/backupService.js";
+import { recordDeletion } from "../../lib/dataSync.service.js";
 
 const FV_KEY = "fovallalkozok";
 const SZ_KEY = "elszamolasi_szabalyok";
@@ -63,6 +64,10 @@ export function updateFovallalkozo(id, updates) {
 export function deleteFovallalkozo(id) {
   createBackup("Fővállalkozó törlés előtt");
   saveFovallalkozok(loadFovallalkozok().filter(f => f.id !== id));
+  // P0-005: tombstone nélkül egy másik eszköz (vagy ugyanennek az eszköznek
+  // egy ki-/belépés utáni Drive-szinkronja) elavult cache-e visszahozná ezt
+  // a fővállalkozót a következő szinkronnál ("feltámadás" bug).
+  recordDeletion(FV_KEY, id);
 }
 
 // ─── Elszámolási szabályok ────────────────────────────────────
@@ -97,6 +102,7 @@ export function updateSzabaly(id, updates) {
 export function deleteSzabaly(id) {
   createBackup("Szabály törlés előtt");
   saveSzabalyok(loadSzabalyok().filter(s => s.id !== id));
+  recordDeletion(SZ_KEY, id);
 }
 
 export function getSzabalyokByFovallalkozo(fovallalkoziId) {

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Search, Plus, Pencil, Trash2, X, Save, User, Phone, Mail, MapPin, FolderOpen, Download } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { loadLocal, saveLocal } from "../lib/localDb";
+import { recordDeletion } from "../lib/dataSync.service.js";
 import { canSeeFovallalkozo } from "../lib/roles";
 import { loadFovallalkozok } from "../modules/fovallalkozok/fovallalkozo.service";
 
@@ -253,6 +254,7 @@ export default function Ugyfelek({ data, currentUser }) {
     saveLocal("ugyfelek", updated);
     setUgyfelek(updated);
     window.dispatchEvent(new CustomEvent("crm-db-updated", { detail: { collection: "ugyfelek" } }));
+    recordDeletion("ugyfelek", c.id);
     setTorlesItem(null);
   }
 

@@ -1,5 +1,6 @@
 // ─── Kártérítés kezelő ────────────────────────────────────────
 import { loadLocal, saveLocal } from "./localDb";
+import { recordDeletion } from "./dataSync.service.js";
 
 const KEY = "karteritesek";
 
@@ -71,6 +72,7 @@ export function updateKarterites(id, updates) {
 export function deleteKarterites(id) {
   const list = loadKarteritesek();
   saveKarteritesek(list.filter(k => k.id !== id));
+  recordDeletion(KEY, id);
 }
 
 /** Elfogadott kártérítések összege egy projekthez (munkalap + projekt szintű) */

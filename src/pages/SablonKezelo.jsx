@@ -3,6 +3,7 @@ import { Plus, Trash2, Edit3, Save, X, Upload, Eye, FileText } from "lucide-reac
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { SABLON_SCHEMA } from "../lib/schema";
 import { createBackup } from "../lib/backupService";
+import { recordDeletion } from "../lib/dataSync.service.js";
 
 const SABLON_TIPUSOK = [
   { id:"atadasatvetes", nev:"Munkaterület Átadás/Átvétel Jegyzőkönyv", icon:"📋" },
@@ -225,6 +226,7 @@ export default function SablonKezelo({ userRole }) {
     const list = sablonok.filter(s => s.id!==id);
     saveSablonok(list);
     setSablonok(list);
+    recordDeletion("sablonok", id);
   }
 
   function handlePreview(sablon) {

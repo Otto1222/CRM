@@ -2,6 +2,7 @@
  * szamla.service.js – Számla CRUD és összesítők
  */
 import { loadLocal, saveLocal } from "../../lib/localDb";
+import { recordDeletion } from "../../lib/dataSync.service.js";
 import { SZAMLA_SCHEMA, isKesedelmes } from "./szamla.schema";
 
 const KEY = "szamlak";
@@ -49,6 +50,7 @@ export function updateSzamla(id, updates) {
 
 export function deleteSzamla(id) {
   saveSzamlak(loadSzamlak().filter(s => s.id !== id));
+  recordDeletion(KEY, id);
 }
 
 // ─── Összesítők ───────────────────────────────────────────────

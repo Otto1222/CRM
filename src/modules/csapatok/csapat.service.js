@@ -1,5 +1,6 @@
 import { CSAPAT_SCHEMA, CSAPAT_TAG_SCHEMA } from "./csapat.schema.js";
 import { calcKmDijOsszeg } from "../fovallalkozok/elszamolasiMotor.js";
+import { recordDeletion } from "../../lib/dataSync.service.js";
 
 const KEY            = "csapatok";
 const CSAPAT_TAGOK_KEY = "csapat_tagok";
@@ -55,6 +56,7 @@ export function updateCsapat(id, updates, updatedBy = "") {
 
 export function deleteCsapat(id) {
   saveCsapatok(loadCsapatok().filter(c => c.id !== id));
+  recordDeletion(KEY, id);
 }
 
 // ─── Csapat Tagok ─────────────────────────────────────────────
@@ -106,6 +108,7 @@ export function updateCsapatTag(id, updates) {
 
 export function deleteCsapatTag(id) {
   saveCsapatTagok(loadCsapatTagok().filter(t => t.id !== id));
+  recordDeletion(CSAPAT_TAGOK_KEY, id);
 }
 
 // ─── Csapat alvállalkozói bér számítás (backward compat) ─────

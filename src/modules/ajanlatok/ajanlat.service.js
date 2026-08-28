@@ -1,4 +1,5 @@
 import { loadLocal, saveLocal, addItem, removeItem, updateItem } from "../../lib/localDb.js";
+import { recordDeletion } from "../../lib/dataSync.service.js";
 
 const KEY = "ajanlatok";
 const COUNTER_KEY = "edi_ajanlat_sorszam_counter";
@@ -75,5 +76,7 @@ export function updateAjanlat(id, updates) {
 }
 
 export function deleteAjanlat(id) {
-  return removeItem(KEY, id);
+  const result = removeItem(KEY, id);
+  recordDeletion(KEY, id);
+  return result;
 }

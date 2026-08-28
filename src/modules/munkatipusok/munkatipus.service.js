@@ -3,6 +3,7 @@
  */
 import { MUNKATIPUS_SCHEMA, DEFAULT_MUNKATIPUSOK } from "./munkatipus.schema.js";
 import { createBackup } from "../../lib/backupService.js";
+import { recordDeletion } from "../../lib/dataSync.service.js";
 
 const KEY = "munkatipusok";
 const dispatch = (col) =>
@@ -55,4 +56,5 @@ export function updateMunkatipus(id, updates) {
 export function deleteMunkatipus(id) {
   createBackup("Munkatípus törlés előtt");
   saveMunkatipusok(loadMunkatipusok().filter(m => m.id !== id));
+  recordDeletion(KEY, id);
 }
