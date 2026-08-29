@@ -30,6 +30,12 @@ export const ROLE_PAGES = {
   "Telepítő": [
     "munkalapok",
   ],
+  // Csak a raktár fizikai kezelése (bevételezés, kiadás, visszahozott anyag
+  // jóváhagyása) és a projektek Kivitelezési Csomagjainak komissiózása –
+  // se ár, se ügyfél-/pénzügyi adat nem tartozik ide (ld. RaktarosPage.jsx).
+  "Raktáros": [
+    "raktaros",
+  ],
 };
 
 export function canSeePrice(role) {
@@ -42,7 +48,9 @@ export function canEditMunkalap(role) {
   return ["Admin", "Projektmenedzser", "Iroda/Könyvelés"].includes(role);
 }
 export function getHomePage(role) {
-  return role === "Telepítő" ? "munkalapok" : "dashboard";
+  if (role === "Telepítő") return "munkalapok";
+  if (role === "Raktáros") return "raktaros";
+  return "dashboard";
 }
 export function getAllowedPages(role) {
   return ROLE_PAGES[role] || ["munkalapok"];

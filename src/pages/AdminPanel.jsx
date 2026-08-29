@@ -238,7 +238,7 @@ function UserRow({ user, onSave, onDelete }) {
 // ════════════════════════════════════════════════════════
 // FŐ ADMIN PANEL
 // ════════════════════════════════════════════════════════
-const SZEREPKOROK = ["Telepítő","Projektmenedzser","Admin","Iroda/Könyvelés"];
+const SZEREPKOROK = ["Telepítő","Projektmenedzser","Admin","Iroda/Könyvelés","Raktáros"];
 const SZINEK = [C.success,C.accent,C.accent,C.warning,"#0891B2",C.danger,"#EA580C","#0EA5E9"];
 
 export default function AdminPanel({ currentUser }) {

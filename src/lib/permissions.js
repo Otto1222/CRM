@@ -34,6 +34,7 @@ export const PERMISSION_GROUPS = [
       { key: "page_riportok",          label: "Riportok" },
       { key: "page_tig",               label: "TIG" },
       { key: "page_raktarkeszlet",     label: "Raktárkészlet" },
+      { key: "page_raktaros",          label: "Raktáros felület" },
       { key: "page_csapat",            label: "Csapatok" },
       { key: "page_munkalap_sablonok", label: "Munkalap-sablonok" },
       { key: "page_beallitasok",       label: "Beállítások" },

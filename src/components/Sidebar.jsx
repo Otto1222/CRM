@@ -149,6 +149,39 @@ function TelepItoNav({ page, onNav, onClose }) {
   );
 }
 
+// ─── Raktáros nézet ───────────────────────────────────────────────────────────
+// Egyetlen menüpont – a Raktáros szerepkör csak a saját felületét éri el
+// (ld. roles.js ROLE_PAGES "Raktáros": ["raktaros"]), semmi mást a
+// sidebarban nem kell megjelenteni.
+
+function RaktarosNav({ page, onNav, onClose }) {
+  const label = {
+    fontSize: 10, fontWeight: 700, letterSpacing: 1.8,
+    color: "rgba(111,173,168,0.5)", textTransform: "uppercase",
+    padding: "4px 10px", marginBottom: 6,
+  };
+  const active = page === "raktaros";
+  return (
+    <>
+      <p style={label}>Feladataim</p>
+      <button
+        onClick={() => { onNav("raktaros"); onClose?.(); }}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 11,
+          padding: "10px 12px", borderRadius: 9, border: "none",
+          borderLeft: active ? `3px solid ${C.accent}` : "3px solid transparent",
+          background: active ? C.sidebarActive : "transparent",
+          color: active ? C.accent : C.sidebarText,
+          cursor: "pointer", fontSize: 13, fontWeight: active ? 700 : 500,
+          marginBottom: 2, transition: "all .15s", fontFamily: FONT,
+        }}
+      >
+        <Warehouse size={16} strokeWidth={active ? 2.2 : 1.7} />Raktáros felület
+      </button>
+    </>
+  );
+}
+
 // ─── Egyszeres nav gomb ───────────────────────────────────────────────────────
 
 function SingleItem({ id, label, icon: Icon, page, onNav, onClose }) {
@@ -249,6 +282,7 @@ function GroupItem({ group, page, onNav, onClose, allowed, openGroups, toggleGro
 function SidebarContent({ page, onNav, user, onLogout, onClose }) {
   const allowed    = getAllowedPagesForUser(user);
   const isTelepito = user?.role === "Telepítő";
+  const isRaktaros = user?.role === "Raktáros";
 
   // Csoportok nyitott állapota – az aktív oldal csoportja automatikusan nyílik
   const [openGroups, setOpenGroups] = useState(() => {
@@ -312,6 +346,8 @@ function SidebarContent({ page, onNav, user, onLogout, onClose }) {
       <nav style={{ flex: 1, padding: "14px 10px", overflowY: "auto" }}>
         {isTelepito ? (
           <TelepItoNav page={page} onNav={onNav} onClose={onClose} />
+        ) : isRaktaros ? (
+          <RaktarosNav page={page} onNav={onNav} onClose={onClose} />
         ) : (
           <>
             <p style={{
