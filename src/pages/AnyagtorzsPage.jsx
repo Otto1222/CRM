@@ -181,8 +181,28 @@ export default function AnyagtorzsPage() {
   }
 
   const tulajdonosAnyagok = anyagok.filter(a => (a.tulajdonosId || FVK_SAJAT) === aktivTulajdonosId);
+
+  // A "kellékanyag csoport" szűrő-fülek DINAMIKUSAN, a kiválasztott tulajdonos
+  // tényleges anyagaiból épülnek fel (nem a fix TELEPITOI_KATEGORIAK 7 eleme) –
+  // egy Excel-importnál a "telepitoi_kategoria" lehet a forrás cikkcsoport
+  // szabad szövege is (pl. "Akkumulátorok"), nem csak a hét ismert id egyike
+  // (ld. anyagtorzsExcelImport.js illesztKategoriak), ezért ezeknek is kell
+  // saját, kattintható fülnek lennie, nem csak a "Mind" alatt látszódniuk.
+  const kategoriaFulek = useMemo(() => {
+    const map = new Map();
+    tulajdonosAnyagok.forEach(a => {
+      const kat = a.telepitoi_kategoria || "egyeb";
+      if (!map.has(kat)) {
+        map.set(kat, TELEPITOI_KATEGORIAK.find(k => k.id === kat)?.label || kat);
+      }
+    });
+    return Array.from(map.entries())
+      .map(([id, label]) => ({ id, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, "hu"));
+  }, [tulajdonosAnyagok]);
+
   const szurt = szuroKat === "mind" ? tulajdonosAnyagok
-    : tulajdonosAnyagok.filter(a => a.telepitoi_kategoria === szuroKat);
+    : tulajdonosAnyagok.filter(a => (a.telepitoi_kategoria || "egyeb") === szuroKat);
 
   return (
     <div style={{ padding: "16px", fontFamily: FONT, maxWidth: 620 }}>
@@ -213,7 +233,7 @@ export default function AnyagtorzsPage() {
           fővállalkozó saját, a többiétől független anyaglistája/készlete. */}
       <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
         {[{ id: FVK_SAJAT, nev: "Saját munka" }, ...fovallalkozok.map(f => ({ id: f.id, nev: f.nev }))].map(t => (
-          <button key={t.id || "sajat"} onClick={() => setAktivTulajdonosId(t.id)}
+          <button key={t.id || "sajat"} onClick={() => { setAktivTulajdonosId(t.id); setSzuroKat("mind"); }}
             style={{ padding: "6px 13px", borderRadius: 20, border: `1.5px solid ${aktivTulajdonosId === t.id ? C.accent : C.border}`,
               background: aktivTulajdonosId === t.id ? C.accent : "#fff", color: aktivTulajdonosId === t.id ? "#fff" : C.textSub,
               cursor: "pointer", fontSize: 13, fontFamily: FONT, fontWeight: aktivTulajdonosId === t.id ? 700 : 500 }}>
@@ -222,9 +242,9 @@ export default function AnyagtorzsPage() {
         ))}
       </div>
 
-      {/* Szűrő */}
+      {/* Szűrő – a kiválasztott tulajdonos tényleges kellékanyag-csoportjai */}
       <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 12 }}>
-        {[{ id: "mind", label: "Mind" }, ...TELEPITOI_KATEGORIAK].map(k => (
+        {[{ id: "mind", label: "Mind" }, ...kategoriaFulek].map(k => (
           <button key={k.id} onClick={() => setSzuroKat(k.id)}
             style={{ padding: "5px 11px", borderRadius: 20, border: `1.5px solid ${szuroKat === k.id ? C.accent : C.border}`,
               background: szuroKat === k.id ? C.accent : "#fff", color: szuroKat === k.id ? "#fff" : C.textSub,

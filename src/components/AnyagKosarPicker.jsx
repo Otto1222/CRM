@@ -25,7 +25,12 @@ const KAT_LABEL = Object.fromEntries(TELEPITOI_KATEGORIAK.map(k => [k.id, k.labe
 // egyetlen "Egyéb" csoportban landoljanak.
 const AJANLAT_KAT_LABEL = Object.fromEntries(AJANLAT_KATEGORIAK.map(k => [k.id, k.label]));
 function csoportKulcs(a) { return a.telepitoi_kategoria || a.kategoria || "egyeb"; }
-function csoportLabel(kat) { return KAT_LABEL[kat] || AJANLAT_KAT_LABEL[kat] || "Egyéb"; }
+// A "kellékanyag csoport" (telepitoi_kategoria) Excel-importnál nem
+// feltétlenül egy ismert TELEPITOI_KATEGORIAK/AJANLAT_KATEGORIAK id – lehet
+// maga a forrás Excel cikkcsoport-szövege is (ld. anyagtorzsExcelImport.js
+// illesztKategoriak) –, ilyenkor a nyers érték maga a helyes, olvasható
+// csoportnév, azt kell megjeleníteni "Egyéb" helyett.
+function csoportLabel(kat) { return KAT_LABEL[kat] || AJANLAT_KAT_LABEL[kat] || kat || "Egyéb"; }
 
 export default function AnyagKosarPicker({ value, onChange, tulajdonosId }) {
   const [kereses, setKereses] = useState("");

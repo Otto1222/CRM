@@ -31,7 +31,8 @@ function normSzoveg(s) {
   return String(s ?? "").trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
-const AJANLAT_KAT_NORM   = new Map(AJANLAT_KATEGORIAK.map(k => [normSzoveg(k.label), k.id]));
+const AJANLAT_KAT_NORM  = new Map(AJANLAT_KATEGORIAK.map(k => [normSzoveg(k.label), k.id]));
+const AJANLAT_KAT_LABEL = Object.fromEntries(AJANLAT_KATEGORIAK.map(k => [k.id, k.label]));
 const TELEPITOI_KAT_NORM = new Map(TELEPITOI_KATEGORIAK.map(k => [normSzoveg(k.label), k.id]));
 
 // Másodlagos, kulcsszavas illesztés a telepítői kategóriákhoz – különböző
@@ -127,25 +128,34 @@ function normEgyseg(v) {
  * A cikkcsoport szövegét megpróbálja ráilleszteni EGYSZERRE a két meglévő
  * kategória-rendszerre:
  *   - AJANLAT_KATEGORIAK ("kategoria" mező) – teljes termékkör (napelem,
- *     inverter, akku…), ezt használja pl. a Raktárkészlet oldal csoportosítása.
- *   - TELEPITOI_KATEGORIAK ("telepitoi_kategoria" mező) – szűkebb, csak
- *     szerelési kellékanyag (kábel, csatlakozó, védőcső/tálca…), ezt
- *     használja a "mit vigyen a csapat" tétel-választó (AnyagKosarPicker).
+ *     inverter, akku…), ezt használja a Raktárkészlet oldal csoportosítása.
+ *   - TELEPITOI_KATEGORIAK ("telepitoi_kategoria" mező) – "kellékanyag
+ *     csoport": ezt mutatja az Anyagtörzs lista és ezt használja a "mit
+ *     vigyen a csapat" tétel-választó (AnyagKosarPicker).
  * Különböző fővállalkozók más-más szemléletű listát adnak (pl. Green-Home:
- * "Akkumulátorok"/"Inverterek" → az első rendszerre illik; Wagner-Solar:
- * "Kábelek"/"Csatlakozók"/"Kábelcsatorna" → a másodikra) – ezért mindkettőt
- * megpróbáljuk, nem csak az egyiket. Ha semelyik nem illik, a tétel a
- * Raktárkészleten "Villanyszerelési anyagok" alá kerül (ha legalább a
- * telepítői kategóriát sikerült felismerni – ez a domináns eset a szerelési
- * kellékanyagoknál, ld. DEFAULT_ANYAGOK ugyanezt a mintát követi), egyébként
- * "Egyéb"-be – az eredeti szöveg egyik esetben sem vész el, a hívó
- * (buildAnyagokFromRows) a megjegyzésbe teszi, ha egyik rendszer sem talált rá.
+ * "Akkumulátorok"/"Inverterek" → az első rendszerre illik pontosan;
+ * Wagner-Solar: "Kábelek"/"Csatlakozók"/"Kábelcsatorna" → a másodikra) –
+ * ezért mindkettőt megpróbáljuk.
+ *
+ * A "kellékanyag csoport" (telepitoi_kategoria) SOSEM marad üres, ha a
+ * forrásban egyáltalán volt cikkcsoport-szöveg – a felhasználói elvárás
+ * szerint minden fővállalkozónál a saját cikkcsoport-megnevezése legyen a
+ * kellékanyag csoport, ne csak a hét fixen felsorolt TELEPITOI_KATEGORIAK
+ * egyike. Sorrend:
+ *   1. pontos/kulcsszavas egyezés a TELEPITOI_KATEGORIAK listával → annak id-ja
+ *      (ismert fül/szűrő van hozzá az Anyagtörzs oldalon),
+ *   2. különben, ha az AJANLAT_KATEGORIAK-kal egyezik → annak FELIRAT-szövege
+ *      (pl. "Akkumulátorok") szabad szövegként – a megjelenítés (AnyagSor,
+ *      AnyagKosarPicker) ismeretlen id-nál is a nyers értéket írja ki,
+ *      tehát helyesen jelenik meg, csak nincs hozzá fix szűrő-gomb,
+ *   3. különben maga az eredeti cikkcsoport-szöveg, változtatás nélkül.
  */
 function illesztKategoriak(nyersSzoveg) {
   const ajanlatKat   = illesztAjanlatKategoria(nyersSzoveg);
   const telepitoiKat = illesztTelepitoiKategoria(nyersSzoveg);
   const kategoria    = ajanlatKat || (telepitoiKat ? "villanyszereles" : "egyeb");
-  return { kategoria, telepitoiKat, egyeztetve: !!(ajanlatKat || telepitoiKat) };
+  const kellekanyagCsoport = telepitoiKat || (ajanlatKat ? AJANLAT_KAT_LABEL[ajanlatKat] : null) || nyersSzoveg.trim() || null;
+  return { kategoria, telepitoiKat: kellekanyagCsoport };
 }
 
 /**
@@ -161,10 +171,9 @@ export function buildAnyagokFromRows(sorok, columnMap) {
     if (!nev) { hibasSorok.push({ sorIndex: i, ok: "Hiányzó megnevezés" }); return; }
 
     const nyersKategoria = columnMap.kategoria !== undefined ? String(sor[columnMap.kategoria] ?? "").trim() : "";
-    const { kategoria, telepitoiKat, egyeztetve } = nyersKategoria
+    const { kategoria, telepitoiKat } = nyersKategoria
       ? illesztKategoriak(nyersKategoria)
-      : { kategoria: "egyeb", telepitoiKat: null, egyeztetve: false };
-    const kategoriaEgyeztetetlen = nyersKategoria && !egyeztetve;
+      : { kategoria: "egyeb", telepitoiKat: null };
 
     tetelek.push({
       kulsoAzonosito: columnMap.kulsoAzonosito !== undefined ? String(sor[columnMap.kulsoAzonosito] ?? "").trim() : "",
@@ -174,10 +183,7 @@ export function buildAnyagokFromRows(sorok, columnMap) {
       ...(telepitoiKat ? { telepitoi_kategoria: telepitoiKat } : {}),
       keszlet:        columnMap.keszlet        !== undefined ? toNumber(sor[columnMap.keszlet]) : 0,
       netto_egysegar: columnMap.netto_egysegar !== undefined ? toNumber(sor[columnMap.netto_egysegar]) : 0,
-      megjegyzes: [
-        columnMap.megjegyzes !== undefined ? String(sor[columnMap.megjegyzes] ?? "").trim() : "",
-        kategoriaEgyeztetetlen ? `Eredeti cikkcsoport: ${nyersKategoria}` : "",
-      ].filter(Boolean).join(" – "),
+      megjegyzes:     columnMap.megjegyzes !== undefined ? String(sor[columnMap.megjegyzes] ?? "").trim() : "",
       aktiv: true,
     });
   });

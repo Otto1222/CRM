@@ -67,7 +67,6 @@ export default function AnyagtorzsImportPanel({ tulajdonosId, tulajdonosNev, meg
     : { tetelek: [], hibasSorok: [] };
 
   const kategoriak = [...new Set(elonezetTetelek.map(elonezetKategoriaLabel))];
-  const egyeztetetlenDb = elonezetTetelek.filter(t => t.megjegyzes.includes("Eredeti cikkcsoport")).length;
 
   function handleMegerosites() {
     if (kotelezoMezokHianyzanak.length > 0) {
@@ -163,9 +162,9 @@ export default function AnyagtorzsImportPanel({ tulajdonosId, tulajdonosNev, meg
             </div>
             {columnMap.kategoria !== undefined && (
               <p style={{ fontSize: 11, color: C.accent, marginTop: -8, marginBottom: 14 }}>
-                ℹ A cikkcsoport-oszlop szövege automatikusan ráillesztődik a meglévő kategóriákra
-                ({kategoriak.join(", ")})
-                {egyeztetetlenDb > 0 && ` – ${egyeztetetlenDb} tételnél nem talált egyezést, ezek "Egyéb" alá kerülnek, az eredeti szöveg a megjegyzésben marad.`}
+                ℹ A cikkcsoport-oszlop szövege lesz a "kellékanyag csoport" – ha egyezik egy már
+                ismert kategóriával, azt használja, egyébként a saját szövege marad a csoport neve
+                ({kategoriak.join(", ")}).
               </p>
             )}
 
