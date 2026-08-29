@@ -177,9 +177,28 @@ export async function loadCollection(collection) {
 /**
  * Mint loadCollection, de visszaadja a Drive-betöltés tényleges állapotát is,
  * hogy a szinkron-job NE mutasson hamis "ok"-ot Drive-hiba esetén.
+ *
+ * P0 fix: ez a függvény (a teljes "Drive-ról szinkronizálás" ciklus,
+ * ld. syncAllFromDrive, minden kollekcióra végigfut ezen) eddig KÖZVETLENÜL
+ * saveLocal()-t hívott, ami NEM ad "crm-db-updated" eseményt – emiatt egy
+ * már megnyitott oldal (pl. Dashboard) sosem vette észre, hogy a háttérben
+ * lefutó szinkron frissítette/összefésülte alatta az adatot: a képernyő a
+ * régi állapotot mutatta tovább egészen a következő manuális oldal-
+ * újratöltésig, még akkor is, ha a tényleges adat közben már helyesen
+ * frissült. Ezért itt minden hívás után (a tényleges betöltő logikát a
+ * belső loadCollectionWithStatusInner végzi) kiadjuk ugyanazt a
+ * "crm-db-updated" eseményt, amit minden más mentő-függvény is kiad.
  * @returns {{ data:any, status:"drive"|"merged"|"empty"|"offline"|"error", error?:string }}
  */
 export async function loadCollectionWithStatus(collection) {
+  const result = await loadCollectionWithStatusInner(collection);
+  window.dispatchEvent(new CustomEvent("crm-db-updated", {
+    detail: { collection, action: "sync", fromDataSync: true },
+  }));
+  return result;
+}
+
+async function loadCollectionWithStatusInner(collection) {
   const localData = loadLocal(collection);
 
   let r;
