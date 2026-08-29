@@ -72,6 +72,10 @@ export default function AnyagtorzsImportPanel({ tulajdonosId, tulajdonosNev, meg
       return;
     }
     const ujLista = bulkUpsertAnyagok(tulajdonosId, elonezetTetelek, mode, { fileName });
+    if (!ujLista) {
+      setHiba("A mentés nem sikerült – valószínűleg megtelt a böngésző tárhelye. Törölj néhány régi biztonsági mentést (Beállítások → Rendszer → Biztonsági mentések), majd próbáld újra.");
+      return;
+    }
     onImported?.(ujLista);
   }
 

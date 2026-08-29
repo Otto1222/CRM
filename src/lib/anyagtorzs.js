@@ -221,9 +221,24 @@ export function loadAnyagtorzs() {
   } catch { return DEFAULT_ANYAGOK; }
 }
 
+// A nyers localStorage.setItem korábban KEZELETLENÜL dobta a hibát, ha a
+// böngésző tárhelye betelt (QuotaExceededError) – ez egy elkapatlan
+// kivétel volt, ami a hívó gomb-kattintás közepén állította meg a
+// végrehajtást, a felhasználó számára "semmi nem történik" élményt adva
+// (pl. Excel import megerősítésénél). Mostantól elkapjuk, jelezzük, és a
+// hívó (ld. bulkUpsertAnyagok) false-t kap, amit tud kezelni/kiírni.
 export function saveAnyagtorzs(list) {
-  localStorage.setItem(KEY, JSON.stringify(list));
+  try {
+    localStorage.setItem(KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error("[anyagtorzs] Mentési hiba:", e);
+    window.dispatchEvent(new CustomEvent("crm-storage-error", {
+      detail: { key: "anyagtorzs", type: e?.name === "QuotaExceededError" ? "quota" : "write" },
+    }));
+    return false;
+  }
   dispatch();
+  return true;
 }
 
 export function getAktivAnyagok() {
@@ -335,7 +350,8 @@ export function bulkUpsertAnyagok(tulajdonosId, tetelek, mode = "csere", meta = 
     ujSajat = beerkezo;
   }
 
-  saveAnyagtorzs([...masok, ...ujSajat]);
+  const ok = saveAnyagtorzs([...masok, ...ujSajat]);
+  if (!ok) return null; // a hívó (AnyagtorzsImportPanel) ebből ismeri fel a sikertelenséget
   return ujSajat;
 }
 

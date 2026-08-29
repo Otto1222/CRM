@@ -7,7 +7,15 @@
 import { driveSave } from "./driveApi.js";
 
 const BACKUP_KEY = "crm_backups";
-const MAX_BACKUPS = 10;
+// createBackup() a TELJES adatbázist lemásolja ide, és szinte minden
+// create/update/delete művelet meghívja (ld. a service fájlok createBackup
+// hívásait) – 10 megtartott, majdnem-azonos teljes-DB másolat a domináns
+// fogyasztója lehet a böngésző (jellemzően ~5-10 MB-os) localStorage
+// kvótájának, ami aztán egy-egy nagyobb írásnál (pl. tömeges Excel import)
+// "Uncaught QuotaExceededError"-ral hiúsul meg. 5-re csökkentve feleannyi
+// hely kell, a visszaállítási védelem lényegében változatlan marad (a
+// legutóbbi néhány állapot a releváns, nem a 10. legrégebbi).
+const MAX_BACKUPS = 5;
 
 // FONTOS: MAIN_KEYS = azok a kulcsok, amelyeket a snapshot NÉVVEL kezel
 // (collectLocalStorageSnapshot named mezők + restoreBackup restoreMap).
