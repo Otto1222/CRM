@@ -165,6 +165,27 @@ export function getAnyagokByTulajdonos(tulajdonosId) {
   return getAktivAnyagok().filter(a => (a.tulajdonosId || FVK_SAJAT) === cel);
 }
 
+/**
+ * Egy fővállalkozói anyagtörzs-tételhez a MEGNEVEZÉS alapján megkeresi a
+ * megfelelő "saját raktár" (FVK_SAJAT tulajdonosú) párját.
+ *
+ * Miért kell ez: fizikailag EGY raktár van (Ti vásároljátok, Ti tároljátok
+ * az anyagot) – a fővállalkozónkénti katalógusok (Wagner-Solar, EU-Solar…)
+ * csak ÁRREFERENCIÁK (mennyiért térítik vissza), nem külön fizikai készlet.
+ * Ezért a kiadáskori raktárkészlet-levonásnak és a tényleges beszerzési ár
+ * alapértékének mindig a SAJÁT raktár egyező nevű tételéből kell jönnie –
+ * ehhez a hívó (ld. kivitelezesiCsomag.schema.js buildArPillanatkep) ezt a
+ * függvényt használja, a névegyezés pedig szándékosan pontos, ékezet/
+ * kis-nagybetű-független (nem "okos" illesztés), hogy a PM lássa, ha egy
+ * tétel nem egyeztethető (ilyenkor null-t ad vissza, a hívó ezt jelzi).
+ */
+export function getSajatAnyagNevAlapjan(nev) {
+  const norm = s => String(s ?? "").trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const cel = norm(nev);
+  if (!cel) return null;
+  return getAktivAnyagok().find(a => (a.tulajdonosId || FVK_SAJAT) === FVK_SAJAT && norm(a.nev) === cel) || null;
+}
+
 // ─── Fázis 2B – mezőkonszolidáció ────────────────────────────
 // A Fázis 2A egy külön "telepitokategoria" mezőt vezetett be tévedésből
 // a már létező és ténylegesen használt "telepitoi_kategoria" mellé.

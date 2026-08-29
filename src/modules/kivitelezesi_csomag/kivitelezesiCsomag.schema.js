@@ -20,7 +20,7 @@ import {
   ANYAGELSZAMOLAS_NINCS_KIVALASZTVA,
   hasAnyagelszamolasiMod,
 } from "../../lib/workflowRules.js";
-import { getAnyag } from "../../lib/anyagtorzs.js";
+import { getAnyag, getSajatAnyagNevAlapjan } from "../../lib/anyagtorzs.js";
 import { FO_TETELEK } from "../ajanlatok/ajanlat.schema.js";
 
 export const KIVITELEZESI_CSOMAG_SCHEMA_VERSION = "1.0";
@@ -171,6 +171,12 @@ export function makeUresKiviTetel() {
   return {
     id:                    `ktet_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     anyagtorzs_id:         null,
+    // Fővállalkozói (nem saját) anyagnál a névegyezés alapján megtalált
+    // "saját raktár" pár id-ja – ld. buildArPillanatkep. Ide könyvelődik a
+    // tényleges raktárkészlet-levonás és innen jön a beszerzési ár
+    // alapértéke, mert fizikailag EGY raktár van (ld. anyagtorzs.js
+    // getSajatAnyagNevAlapjan dokumentációja).
+    sajatAnyagtorzsId:     null,
     forras:                "",
     cikkszam:              "",
     nev:                   "",
@@ -316,6 +322,39 @@ export function generateKiviTetelekFromExcelPillanatkep(excelPillanatkep) {
 // úgy, ahogy az elfogadott ajánlat pillanatképe sem változik utólag.
 //
 /**
+ * Egy anyagtörzs-rekordból az ár-pillanatkép mezőket állítja elő – a
+ * tulajdonos (saját munka / fővállalkozó) szerint ELTÉRŐ jelentéssel:
+ *
+ *   Saját munka (nincs tulajdonosId): a klasszikus, eredeti modell –
+ *     "beszerzési" = amennyiért Ti vettétek (netto_egysegar), "eladási" =
+ *     a saját haszonkulccsal számolt, ügyfélnek kiajánlott ár
+ *     (javasoltEladasiAr). Ez már eddig is helyesen működött, változatlan.
+ *
+ *   Fővállalkozói anyag (van tulajdonosId, pl. Wagner-Solar/EU-Solar): a
+ *     feltöltött ár (netto_egysegar) valójában a fővállalkozó FIX
+ *     VISSZATÉRÍTÉSI ára, nem a Ti beszerzési áratok – ezért ez lesz az
+ *     "eladási" oldal. A tényleges beszerzési ár a SAJÁT RAKTÁR egyező
+ *     nevű tételéből jön alapértékként (fizikailag egy raktár van), és a
+ *     Kivitelezési Csomagban utólag szabadon felülírható a valós számla
+ *     szerint (ld. updateKiviTetelBeszerzesiAr).
+ */
+function buildArPillanatkep(anyag) {
+  if (anyag.tulajdonosId) {
+    const sajatParja = getSajatAnyagNevAlapjan(anyag.nev);
+    return {
+      egysegarPillanatkepEladasi:    Number(anyag.netto_egysegar) || 0,
+      egysegarPillanatkepBeszerzesi: Number(sajatParja?.netto_egysegar ?? anyag.netto_egysegar) || 0,
+      sajatAnyagtorzsId:             sajatParja?.id || null,
+    };
+  }
+  return {
+    egysegarPillanatkepEladasi:    Number(anyag.javasoltEladasiAr) || 0,
+    egysegarPillanatkepBeszerzesi: Number(anyag.netto_egysegar) || 0,
+    sajatAnyagtorzsId:             null,
+  };
+}
+
+/**
  * Kézi tétel pillanatkép-objektum létrehozása egy kiválasztott anyagtörzs-
  * rekordból (Fázis 4C – kézi tételkezelés fővállalkozói / belső projektekhez).
  *
@@ -341,8 +380,7 @@ export function createKeziTetelPillanatkep(anyagtorzsId, mennyisegek = {}) {
     nev:                   anyag.nev || "",
     kategoria:             anyag.telepitoi_kategoria || anyag.kategoria || "",
     egyseg:                anyag.egyseg || "db",
-    egysegarPillanatkepEladasi:    Number(anyag.javasoltEladasiAr) || 0,
-    egysegarPillanatkepBeszerzesi: Number(anyag.netto_egysegar) || 0,
+    ...buildArPillanatkep(anyag),
     tervezettMennyiseg:    Number(mennyisegek.tervezettMennyiseg) || 0,
     kiadandoMennyiseg:     Number(mennyisegek.kiadandoMennyiseg) || 0,
     kiadottMennyiseg:      0,
@@ -380,8 +418,7 @@ export function createAnyagszamitoTetelPillanatkep(anyagtorzsId, szamoltMennyise
     nev:                   anyag.nev || "",
     kategoria:             anyag.telepitoi_kategoria || anyag.kategoria || "",
     egyseg:                anyag.egyseg || "db",
-    egysegarPillanatkepEladasi:    Number(anyag.javasoltEladasiAr) || 0,
-    egysegarPillanatkepBeszerzesi: Number(anyag.netto_egysegar) || 0,
+    ...buildArPillanatkep(anyag),
     tervezettMennyiseg:    Number(szamoltMennyiseg) || 0,
     kiadandoMennyiseg:     0,
     kiadottMennyiseg:      0,

@@ -10,6 +10,7 @@ import {
   updateKiviTetelMennyisegek,
   updateKiviTetelLathatosag,
   updateKiviTetelSorozatszamKoteles,
+  updateKiviTetelBeszerzesiAr,
 } from "../../kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import AnyagKosarPicker from "../../../components/AnyagKosarPicker.jsx";
 import TetelesExcelImportPanel from "../../../components/TetelesExcelImportPanel.jsx";
@@ -27,6 +28,7 @@ import {
   anyagHasznotKellSzamolniAModban,
   csakMennyisegiElszamolasAModban,
   calculateAnyagProfitByMod,
+  ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_FIX_VISSZASZAMLAZAS,
 } from "../../../lib/workflowRules.js";
 import AnyagszamitoPanel from "./AnyagszamitoPanel.jsx";
 
@@ -168,6 +170,19 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
     }
   }
 
+  // "Fix áras visszaszámlázás" módban a tényleges beszerzési ár utólag,
+  // tételenként felülírható a valós számla szerint – a visszaszámlázási
+  // (eladási) ár marad fix, azt nem lehet innen módosítani.
+  function handleBeszerzesiArValtas(tetelId, ujAr) {
+    setMennyisegHiba("");
+    try {
+      const updated = updateKiviTetelBeszerzesiAr(csomag.id, tetelId, ujAr, currentUser?.name || "");
+      setCsomag(updated);
+    } catch (err) {
+      setMennyisegHiba(err.message || "A beszerzési ár módosítása sikertelen.");
+    }
+  }
+
   if (!csomag) {
     return (
       <div style={{ padding: "32px 16px", textAlign: "center" }}>
@@ -206,6 +221,17 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
   const anyagHasznotKellSzamolni = anyagHasznotKellSzamolniAModban(anyagMod);
   const csakMennyisegiElszamolas = csakMennyisegiElszamolasAModban(anyagMod);
   const anyagHaszon = calculateAnyagProfitByMod(csomag, anyagMod);
+  // "Fix áras visszaszámlázás" módban a beszerzési ár csak ALAPÉRTÉK (a
+  // saját raktár egyező nevű tételéből) – itt szerkeszthető, hogy a PM a
+  // valós számla szerint felülírhassa. A visszaszámlázási (eladási) ár a
+  // fővállalkozó fix ára, az NEM szerkeszthető.
+  const beszerzesiArSzerkesztheto = mennyisegSzerkesztheto && anyagMod === ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_FIX_VISSZASZAMLAZAS;
+  // Ha egy fővállalkozói tételhez nem talált egyező nevű saját raktár-
+  // tételt (ld. anyagtorzs.js getSajatAnyagNevAlapjan), a raktárkészlet
+  // NEM csökken kiadáskor – ezt a PM-nek látnia kell, ne vesszen el csendben.
+  const hianyzoSajatParDb = anyagMod === ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_FIX_VISSZASZAMLAZAS
+    ? tetelek.filter(t => t.anyagtorzs_id && !t.sajatAnyagtorzsId).length
+    : 0;
 
   return (
     <div style={{ padding: "20px 0" }}>
@@ -223,6 +249,13 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
           <span style={{ fontSize: 12, fontWeight: 700, color: C.danger, fontFamily: FONT }}>⚠ Admin ellenőrzés szükséges – nincs beállítva a projektnél</span>
         )}
       </div>
+      {hianyzoSajatParDb > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "9px 14px", borderRadius: 9, background: C.warningLight, border: `1px solid ${C.warning}40`, fontSize: 12, color: C.warning, fontFamily: FONT }}>
+          ⚠ {hianyzoSajatParDb} tételnél nem található egyező nevű tétel a Saját munka raktárban – ezeknél a raktárkészlet
+          nem csökken kiadáskor, csak a fővállalkozói visszaszámlázás számolódik. Ellenőrizd, hogy a megnevezés pontosan
+          egyezik-e (Anyagtörzs → Saját munka fül).
+        </div>
+      )}
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 8, flexWrap: "wrap" }}>
         <span style={{ background: stCfg.bg, color: stCfg.szin, border: `1.5px solid ${stCfg.szin}40`, borderRadius: 20, padding: "4px 14px", fontSize: 13, fontWeight: 700, fontFamily: FONT }}>
           {csomag.status}
@@ -352,8 +385,12 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
                 <th style={{ ...th, textAlign: "center", width: 110 }}>Sorozatszám köteles</th>
                 {arakLathatok && (
                   <>
-                    <th style={{ ...th, textAlign: "right" }}>Eladási ár</th>
-                    <th style={{ ...th, textAlign: "right" }}>Beszerzési ár</th>
+                    <th style={{ ...th, textAlign: "right" }}>
+                      {anyagMod === ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_FIX_VISSZASZAMLAZAS ? "Visszaszámlázási ár" : "Eladási ár"}
+                    </th>
+                    <th style={{ ...th, textAlign: "right" }}>
+                      {anyagMod === ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_FIX_VISSZASZAMLAZAS ? "Tényleges beszerzési ár" : "Beszerzési ár"}
+                    </th>
                     <th style={{ ...th, textAlign: "right" }}>Anyaghaszon</th>
                   </>
                 )}
@@ -435,8 +472,17 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
                     {arakLathatok && (
                       <>
                         <td style={{ ...td, textAlign: "right" }}>{eladasiAr.toLocaleString("hu-HU")} Ft</td>
-                        <td style={{ ...td, textAlign: "right" }}>{beszerzesiAr.toLocaleString("hu-HU")} Ft</td>
-                        <td style={{ ...td, textAlign: "right", fontWeight: 700, color: anyagHasznotKellSzamolni ? C.success : C.muted }}>
+                        <td style={{ ...td, textAlign: "right" }}>
+                          {beszerzesiArSzerkesztheto ? (
+                            <input type="number" min="0" step="any" defaultValue={beszerzesiAr}
+                              onBlur={e => handleBeszerzesiArValtas(t.id, e.target.value)}
+                              title={t.anyagtorzs_id && !t.sajatAnyagtorzsId ? "Nincs egyeztetve saját raktár tétellel – az alapérték a fővállalkozó árából jött" : undefined}
+                              style={{ ...mennyisegInputStyle, width: 84, borderColor: (t.anyagtorzs_id && !t.sajatAnyagtorzsId) ? C.warning : C.border }} />
+                          ) : (
+                            `${beszerzesiAr.toLocaleString("hu-HU")} Ft`
+                          )}
+                        </td>
+                        <td style={{ ...td, textAlign: "right", fontWeight: 700, color: anyagHasznotKellSzamolni ? (sorHaszon >= 0 ? C.success : C.danger) : C.muted }}>
                           {sorHaszon.toLocaleString("hu-HU")} Ft
                         </td>
                       </>

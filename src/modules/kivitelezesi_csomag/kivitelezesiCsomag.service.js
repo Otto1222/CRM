@@ -299,6 +299,30 @@ export function updateKiviTetelMennyisegek(csomagId, tetelId, mezok = {}, user =
 }
 
 /**
+ * A "Tényleges beszerzési ár" utólagos szerkesztése egy fővállalkozói
+ * tételnél – "Fix áras visszaszámlázás" módban a feltöltött (fővállalkozói)
+ * ár a pillanatkép-generáláskor csak ALAPÉRTÉKKÉNT kerül a beszerzési ár
+ * mezőbe (a saját raktár egyező nevű tételéből, ha van), a PM ide írja be
+ * a valós számla/blokk szerinti összeget, amint megvan. A visszatérítési
+ * (eladási) ár NEM módosítható itt – az a fővállalkozó fix ára, azt a
+ * pillanatkép rögzíti.
+ */
+export function updateKiviTetelBeszerzesiAr(csomagId, tetelId, ujAr, user = "") {
+  const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
+  if (!csomag) throw new Error("A Kivitelezési Csomag nem található.");
+  if (isKivitelezesiCsomagSzerkesztesTiltott(csomag.status)) {
+    throw new Error("Lezárt vagy elszámolt csomagban a beszerzési ár nem módosítható.");
+  }
+  if (!(csomag.tetelek || []).some(t => t.id === tetelId)) {
+    throw new Error("A tétel nem található a csomagban.");
+  }
+  const tetelek = csomag.tetelek.map(t =>
+    t.id === tetelId ? { ...t, egysegarPillanatkepBeszerzesi: Number(ujAr) || 0 } : t
+  );
+  return updateKivitelezesiCsomag(csomagId, { tetelek }, user);
+}
+
+/**
  * Az Anyagszámítási Motor előnézetében jóváhagyott sorok beillesztése a
  * Kivitelezési Csomagba (Fázis 5A spec 6–8. pont).
  *
@@ -491,10 +515,11 @@ export function approveVisszahozas(csomagId, tetelId, munkalapId, jovahagyoNev, 
 
   const updated = updateKivitelezesiCsomag(csomagId, { tetelek }, jovahagyoNev);
 
-  if (tetel.anyagtorzs_id && menny > 0) {
-    adjustAnyagKeszlet(tetel.anyagtorzs_id, menny);
+  const keszletCelAnyagId = tetel.sajatAnyagtorzsId || tetel.anyagtorzs_id;
+  if (keszletCelAnyagId && menny > 0) {
+    adjustAnyagKeszlet(keszletCelAnyagId, menny);
     addRaktarMozgas({
-      anyagtorzsId:   tetel.anyagtorzs_id,
+      anyagtorzsId:   keszletCelAnyagId,
       anyagNev:       tetel.nev,
       egyseg:         tetel.egyseg,
       mennyiseg:      -menny, // negatív = készletnövekedés (visszahozás)
@@ -655,9 +680,14 @@ export function updateKiadottMennyisegFromMunkalap(csomagId, munkalapId, kiadaso
       }];
     }
 
-    if (delta !== 0 && t.anyagtorzs_id) {
+    // A raktárkészlet-levonás a SAJÁT raktár egyező nevű tételét célozza,
+    // ha van (fizikailag egy raktár van – ld. anyagtorzs.js
+    // getSajatAnyagNevAlapjan) – enélkül a fővállalkozói (Wagner-Solar/
+    // EU-Solar) katalógustétel saját, nem létező "készletét" csökkentenénk.
+    const keszletCelAnyagId = t.sajatAnyagtorzsId || t.anyagtorzs_id;
+    if (delta !== 0 && keszletCelAnyagId) {
       raktarMozgasok.push({
-        anyagtorzsId:   t.anyagtorzs_id,
+        anyagtorzsId:   keszletCelAnyagId,
         anyagNev:       t.nev,
         egyseg:         t.egyseg,
         mennyiseg:      delta, // pozitív: kiadás nő → készlet csökken; negatív: kiadás csökken → készlet nő

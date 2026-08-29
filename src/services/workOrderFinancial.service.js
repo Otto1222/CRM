@@ -16,6 +16,7 @@ import { updateItem } from "../lib/localDb.js";
 import {
   ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_HOZOTT_ANYAG,
   ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_NULLAS_TOVABBSZAMLAZAS,
+  calculateAnyagVisszateritesByMod,
 } from "../lib/workflowRules.js";
 import { buildBeveteliTetelekKosarbol, vanDijtablaKosar as hasDijtablaKosar } from "../modules/fovallalkozok/dijtablaBevetel.js";
 
@@ -105,6 +106,7 @@ export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
   if (anyagelszamolasiMod === ANYAGELSZAMOLASI_MOD_FOVALLALKOZO_HOZOTT_ANYAG) {
     return {
       ertek: 0,
+      visszaterites: 0,
       forras: ANYAGKOLTSEG_FORRAS.FOVALLALKOZO_HOZOTT_ANYAG,
       megbizhatosag: "mod_alapu",
       warning: null,
@@ -116,6 +118,7 @@ export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
   if (keziAnyagkoltseg !== null && keziAnyagkoltseg !== undefined) {
     return {
       ertek: Number(keziAnyagkoltseg) || 0,
+      visszaterites: 0,
       forras: ANYAGKOLTSEG_FORRAS.KEZI_PENZUGYI_ADAT,
       megbizhatosag: "kezi",
       warning: null,
@@ -134,8 +137,17 @@ export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
       const m  = Number(t.felhasznaltMennyiseg) || 0;
       return s + ar * m;
     }, 0);
+    // A fővállalkozó felé történő anyag-visszaszámlázás (ha a mód szerint
+    // ez külön bevételi sor – ld. anyagVisszateritesKulonBevetelAModban)
+    // ugyanabból a tényleges felhasználásból számol, csak az eladási ár
+    // pillanatképet nézi a beszerzési helyett. Enélkül (P0 hiba, most
+    // javítva) a beszerzési ár levonódott a költségből, de a visszatérítés
+    // sosem került be bevételként – a nullás továbbszámlázásnál ez a
+    // projekt eredményét feleslegesen, tévesen rontotta.
+    const visszaterites = calculateAnyagVisszateritesByMod(csomag, anyagelszamolasiMod);
     return {
       ertek,
+      visszaterites,
       forras: ANYAGKOLTSEG_FORRAS.KIVITELEZESI_CSOMAG_TENYLEGES,
       megbizhatosag: "magas",
       warning: null,
@@ -148,6 +160,7 @@ export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
   if (mlAnyagKolts > 0) {
     return {
       ertek: mlAnyagKolts,
+      visszaterites: 0,
       forras: ANYAGKOLTSEG_FORRAS.MUNKALAP_ANYAGKOLTSEG_TOTAL,
       megbizhatosag: "kozepes",
       warning: `${NEM_ELSODLEGES_FIGYELMEZTETES} Forrás: munkalap rögzített anyagköltség-összege (nincs tényleges felhasználás a Kivitelezési Csomagban).`,
@@ -167,6 +180,7 @@ export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
   if (localOsszeg > 0) {
     return {
       ertek: localOsszeg,
+      visszaterites: 0,
       forras: ANYAGKOLTSEG_FORRAS.FELHASZNALT_ANYAGOK_LOCAL,
       megbizhatosag: "alacsony",
       warning: `${NEM_ELSODLEGES_FIGYELMEZTETES} Forrás: ideiglenes, helyi (nem szinkronizált) felhasznált anyag adatok.`,
@@ -177,6 +191,7 @@ export function resolveAnyagkoltsegForras(munkalap, projekt, options = {}) {
   // 5. Egyik forrásból sem áll rendelkezésre adat.
   return {
     ertek: 0,
+    visszaterites: 0,
     forras: ANYAGKOLTSEG_FORRAS.NINCS_ADAT,
     megbizhatosag: "nincs",
     warning: "Nincs elérhető anyagköltség-adat egyik forrásból sem.",
@@ -328,6 +343,12 @@ export function calcEsmentProjektPenzugy(projekt) {
   const anyagkoltsegForras      = anyagkoltsegEredmeny.forras;
   const anyagkoltsegWarning     = anyagkoltsegEredmeny.warning;
   const anyagelszamolasiModNote = anyagkoltsegEredmeny.anyagelszamolasiModNote || null;
+  // A fővállalkozó felé történő anyag-visszaszámlázás ("Fix áras
+  // visszaszámlázás" / "Nullás továbbszámlázás" módban) – KÜLÖN bevételi
+  // sor, a munkadíj-kosártól (nettoBevitel) függetlenül, hogy a "Saját
+  // anyag profit" módnál (ahol az eladási ár már az elfogadott ajánlat
+  // összegébe van beépítve) ne duplázódjon a bevétel.
+  const anyagVisszaterites      = anyagkoltsegEredmeny.visszaterites || 0;
   let utikoltség = (keziUtikoltség !== null && keziUtikoltség !== undefined) ? Number(keziUtikoltség) : 0;
 
   // ── Csapat bér (FV oldalon) ──────────────────────────────
@@ -363,8 +384,12 @@ export function calcEsmentProjektPenzugy(projekt) {
 
   const osszesKolts = csapatBer + alvallalkozoiBer + alvallalkozoiKmBer
     + utikoltség + anyagkoltság + fixKoltsegek + szerelesiAnyagOsszeg + szerszamOsszeg + kartérités;
-  const haszon    = nettoBevitel - osszesKolts;
-  const haszonPct = nettoBevitel > 0 ? Math.round((haszon / nettoBevitel) * 100) : null;
+  // A teljes bevétel a munkadíj-kosár (nettoBevitel) ÉS az anyag-
+  // visszaszámlázás összege – utóbbi a legtöbb módban 0, csak a
+  // fővállalkozói visszaszámlázós módoknál nem (ld. fent).
+  const teljesBevitel = nettoBevitel + anyagVisszaterites;
+  const haszon    = teljesBevitel - osszesKolts;
+  const haszonPct = teljesBevitel > 0 ? Math.round((haszon / teljesBevitel) * 100) : null;
 
   // ── Eltérés detektálás ────────────────────────────────────
   const elteresek = [];
@@ -380,7 +405,8 @@ export function calcEsmentProjektPenzugy(projekt) {
   return {
     // Bevétel
     autoBevitel, nettoBevitel,
-    bruttoBevitel: Math.round(nettoBevitel * 1.27),
+    anyagVisszaterites, teljesBevitel,
+    bruttoBevitel: Math.round(teljesBevitel * 1.27),
     // Tételek
     beveteliTetelek,
     // Költségek
