@@ -15,7 +15,7 @@
  * semmi nem tűnik el némán, csak nem kap saját csoportot.
  */
 import * as XLSX from "xlsx";
-import { AJANLAT_KATEGORIAK } from "./anyagtorzs.js";
+import { AJANLAT_KATEGORIAK, TELEPITOI_KATEGORIAK } from "./anyagtorzs.js";
 
 export const ANYAGTORZS_MEZOK = [
   { key: "kulsoAzonosito", label: "Cikkszám",       kotelezo: false },
@@ -27,12 +27,36 @@ export const ANYAGTORZS_MEZOK = [
   { key: "megjegyzes",     label: "Megjegyzés",     kotelezo: false },
 ];
 
-const KATEGORIA_NORM_TERKEP = new Map(
-  AJANLAT_KATEGORIAK.map(k => [normSzoveg(k.label), k.id])
-);
-
 function normSzoveg(s) {
   return String(s ?? "").trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+const AJANLAT_KAT_NORM   = new Map(AJANLAT_KATEGORIAK.map(k => [normSzoveg(k.label), k.id]));
+const TELEPITOI_KAT_NORM = new Map(TELEPITOI_KATEGORIAK.map(k => [normSzoveg(k.label), k.id]));
+
+// Másodlagos, kulcsszavas illesztés a telepítői kategóriákhoz – különböző
+// fővállalkozók más-más szót használnak ugyanarra (pl. "Kábelcsatorna",
+// "Csövek", "Kábeltálca" mind a "Védőcső / Tálca" alá valók), ezért a
+// pontos label-egyezés önmagában nem elég. Csak akkor fut, ha a pontos
+// egyezés (TELEPITOI_KAT_NORM) nem talált semmit.
+const TELEPITOI_KULCSSZAVAK = [
+  { re: /cs[oö]v|csatorna|t[aá]lca/, id: "vedocso_talca" },
+  { re: /f[oö]ldel/,                   id: "foldeles" },
+  { re: /bilincs|r[oö]gz[ií]t[oő]|csavar/, id: "rogzito" },
+  { re: /tart[oó]szerkezet|s[ií]n\b/,  id: "tartoszerk_any" },
+  { re: /csatlakoz[oó]/,               id: "csatlakozo" },
+  { re: /k[aá]bel/,                    id: "kabel" },
+];
+
+function illesztAjanlatKategoria(nyersSzoveg) {
+  return AJANLAT_KAT_NORM.get(normSzoveg(nyersSzoveg)) || null;
+}
+
+function illesztTelepitoiKategoria(nyersSzoveg) {
+  const n = normSzoveg(nyersSzoveg);
+  if (TELEPITOI_KAT_NORM.has(n)) return TELEPITOI_KAT_NORM.get(n);
+  const talalat = TELEPITOI_KULCSSZAVAK.find(k => k.re.test(n));
+  return talalat?.id || null;
 }
 
 export function parseAnyagtorzsExcelFile(file) {
@@ -100,14 +124,28 @@ function normEgyseg(v) {
 }
 
 /**
- * A cikkcsoport szövegét megpróbálja ráilleszteni egy AJANLAT_KATEGORIAK
- * id-ra (pontos, ékezet/kis-nagybetű-független egyezés). Ha nem talál
- * egyezést, "egyeb"-et ad vissza – az eredeti szöveg elvesztése nélkül a
- * hívó (buildAnyagokFromRows) a megjegyzésbe teszi.
+ * A cikkcsoport szövegét megpróbálja ráilleszteni EGYSZERRE a két meglévő
+ * kategória-rendszerre:
+ *   - AJANLAT_KATEGORIAK ("kategoria" mező) – teljes termékkör (napelem,
+ *     inverter, akku…), ezt használja pl. a Raktárkészlet oldal csoportosítása.
+ *   - TELEPITOI_KATEGORIAK ("telepitoi_kategoria" mező) – szűkebb, csak
+ *     szerelési kellékanyag (kábel, csatlakozó, védőcső/tálca…), ezt
+ *     használja a "mit vigyen a csapat" tétel-választó (AnyagKosarPicker).
+ * Különböző fővállalkozók más-más szemléletű listát adnak (pl. Green-Home:
+ * "Akkumulátorok"/"Inverterek" → az első rendszerre illik; Wagner-Solar:
+ * "Kábelek"/"Csatlakozók"/"Kábelcsatorna" → a másodikra) – ezért mindkettőt
+ * megpróbáljuk, nem csak az egyiket. Ha semelyik nem illik, a tétel a
+ * Raktárkészleten "Villanyszerelési anyagok" alá kerül (ha legalább a
+ * telepítői kategóriát sikerült felismerni – ez a domináns eset a szerelési
+ * kellékanyagoknál, ld. DEFAULT_ANYAGOK ugyanezt a mintát követi), egyébként
+ * "Egyéb"-be – az eredeti szöveg egyik esetben sem vész el, a hívó
+ * (buildAnyagokFromRows) a megjegyzésbe teszi, ha egyik rendszer sem talált rá.
  */
-export function illesztCikkcsoport(nyersSzoveg) {
-  const talalat = KATEGORIA_NORM_TERKEP.get(normSzoveg(nyersSzoveg));
-  return talalat || "egyeb";
+function illesztKategoriak(nyersSzoveg) {
+  const ajanlatKat   = illesztAjanlatKategoria(nyersSzoveg);
+  const telepitoiKat = illesztTelepitoiKategoria(nyersSzoveg);
+  const kategoria    = ajanlatKat || (telepitoiKat ? "villanyszereles" : "egyeb");
+  return { kategoria, telepitoiKat, egyeztetve: !!(ajanlatKat || telepitoiKat) };
 }
 
 /**
@@ -123,14 +161,17 @@ export function buildAnyagokFromRows(sorok, columnMap) {
     if (!nev) { hibasSorok.push({ sorIndex: i, ok: "Hiányzó megnevezés" }); return; }
 
     const nyersKategoria = columnMap.kategoria !== undefined ? String(sor[columnMap.kategoria] ?? "").trim() : "";
-    const kategoria = nyersKategoria ? illesztCikkcsoport(nyersKategoria) : "egyeb";
-    const kategoriaEgyeztetetlen = nyersKategoria && kategoria === "egyeb";
+    const { kategoria, telepitoiKat, egyeztetve } = nyersKategoria
+      ? illesztKategoriak(nyersKategoria)
+      : { kategoria: "egyeb", telepitoiKat: null, egyeztetve: false };
+    const kategoriaEgyeztetetlen = nyersKategoria && !egyeztetve;
 
     tetelek.push({
       kulsoAzonosito: columnMap.kulsoAzonosito !== undefined ? String(sor[columnMap.kulsoAzonosito] ?? "").trim() : "",
       nev,
       egyseg:         columnMap.egyseg    !== undefined ? normEgyseg(sor[columnMap.egyseg]) : "db",
       kategoria,
+      ...(telepitoiKat ? { telepitoi_kategoria: telepitoiKat } : {}),
       keszlet:        columnMap.keszlet        !== undefined ? toNumber(sor[columnMap.keszlet]) : 0,
       netto_egysegar: columnMap.netto_egysegar !== undefined ? toNumber(sor[columnMap.netto_egysegar]) : 0,
       megjegyzes: [

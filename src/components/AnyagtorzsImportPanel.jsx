@@ -14,7 +14,7 @@ import {
   guessAnyagtorzsColumnMap,
   buildAnyagokFromRows,
 } from "../lib/anyagtorzsExcelImport.js";
-import { bulkUpsertAnyagok, AJANLAT_KATEGORIAK } from "../lib/anyagtorzs.js";
+import { bulkUpsertAnyagok, AJANLAT_KATEGORIAK, TELEPITOI_KATEGORIAK } from "../lib/anyagtorzs.js";
 
 const selectStyle = {
   width: "100%", padding: "7px 10px", border: `1.5px solid ${C.border}`, borderRadius: 8,
@@ -22,6 +22,13 @@ const selectStyle = {
 };
 const KAT_LABEL = Object.fromEntries(AJANLAT_KATEGORIAK.map(k => [k.id, k.label]));
 KAT_LABEL.egyeb = "Egyéb / nincs kategória";
+const TELEPITOI_KAT_LABEL = Object.fromEntries(TELEPITOI_KATEGORIAK.map(k => [k.id, k.label]));
+// Előnézetben a specifikusabb (telepítői) kategóriát mutatjuk, ha van –
+// ugyanezt a sorrendet követi az AnyagKosarPicker csoportosítása is.
+function elonezetKategoriaLabel(t) {
+  if (t.telepitoi_kategoria) return TELEPITOI_KAT_LABEL[t.telepitoi_kategoria] || t.telepitoi_kategoria;
+  return KAT_LABEL[t.kategoria] || t.kategoria;
+}
 
 export default function AnyagtorzsImportPanel({ tulajdonosId, tulajdonosNev, meglevoDb = 0, onClose, onImported }) {
   const [stage, setStage]         = useState("idle"); // idle | mapping
@@ -59,8 +66,8 @@ export default function AnyagtorzsImportPanel({ tulajdonosId, tulajdonosNev, meg
     ? buildAnyagokFromRows(sorok, columnMap)
     : { tetelek: [], hibasSorok: [] };
 
-  const kategoriak = [...new Set(elonezetTetelek.map(t => t.kategoria))];
-  const egyeztetetlenDb = elonezetTetelek.filter(t => t.kategoria === "egyeb" && t.megjegyzes.includes("Eredeti cikkcsoport")).length;
+  const kategoriak = [...new Set(elonezetTetelek.map(elonezetKategoriaLabel))];
+  const egyeztetetlenDb = elonezetTetelek.filter(t => t.megjegyzes.includes("Eredeti cikkcsoport")).length;
 
   function handleMegerosites() {
     if (kotelezoMezokHianyzanak.length > 0) {
@@ -157,7 +164,7 @@ export default function AnyagtorzsImportPanel({ tulajdonosId, tulajdonosNev, meg
             {columnMap.kategoria !== undefined && (
               <p style={{ fontSize: 11, color: C.accent, marginTop: -8, marginBottom: 14 }}>
                 ℹ A cikkcsoport-oszlop szövege automatikusan ráillesztődik a meglévő kategóriákra
-                ({kategoriak.map(k => KAT_LABEL[k] || k).join(", ")})
+                ({kategoriak.join(", ")})
                 {egyeztetetlenDb > 0 && ` – ${egyeztetetlenDb} tételnél nem talált egyezést, ezek "Egyéb" alá kerülnek, az eredeti szöveg a megjegyzésben marad.`}
               </p>
             )}
@@ -205,7 +212,7 @@ export default function AnyagtorzsImportPanel({ tulajdonosId, tulajdonosNev, meg
                     <tr key={i} style={{ borderTop: `1px solid ${C.bg}` }}>
                       <td style={{ padding: "5px 10px", color: C.muted }}>{t.kulsoAzonosito || "—"}</td>
                       <td style={{ padding: "5px 10px" }}>{t.nev}</td>
-                      <td style={{ padding: "5px 10px", color: C.muted, fontSize: 11 }}>{KAT_LABEL[t.kategoria] || t.kategoria}</td>
+                      <td style={{ padding: "5px 10px", color: C.muted, fontSize: 11 }}>{elonezetKategoriaLabel(t)}</td>
                       <td style={{ padding: "5px 10px" }}>{t.egyseg}</td>
                       <td style={{ padding: "5px 10px", textAlign: "right", fontWeight: 600 }}>{t.keszlet.toLocaleString("hu-HU")}</td>
                     </tr>
