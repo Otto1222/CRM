@@ -37,36 +37,211 @@ const mennyisegInputStyle = { width: 64, padding: "4px 6px", textAlign: "right",
 // bármikor előhívhatók, ha vissza akar nézni valamit).
 const AKTIV_STATUSZOK = ["PM jóváhagyta", "Komissiózás alatt", "Anyag kiadva", "Kivitelezés alatt"];
 
-function nyomtatKomissiosListat(projektCim, fovallalkoNev, tetelek) {
-  const w = window.open("", "_blank");
-  if (!w) return;
-  const sorok = tetelek.map(t => `
-    <tr>
-      <td>${t.cikkszam || "—"}</td>
-      <td>${t.nev || "—"}</td>
-      <td>${t.kategoria || "—"}</td>
-      <td style="text-align:right">${t.kiadandoMennyiseg ?? 0} ${t.egyseg || ""}</td>
-      <td style="text-align:right">${t.kiadottMennyiseg ?? 0} ${t.egyseg || ""}</td>
-    </tr>
-  `).join("");
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Komissiós lista – ${projektCim}</title>
-    <style>
-      body{font-family:Arial,sans-serif;padding:20mm;max-width:210mm;margin:0 auto;color:#111;}
-      h1{font-size:18px;margin:0 0 4px;}
-      p{font-size:12px;color:#555;margin:0 0 16px;}
-      table{border-collapse:collapse;width:100%;font-size:12px;}
-      th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;}
-      th{background:#f2f2f2;text-transform:uppercase;font-size:10px;letter-spacing:.4px;}
-    </style></head><body>
-    <h1>Komissiós lista – ${projektCim}</h1>
-    <p>Fővállalkozó: ${fovallalkoNev || "—"} · Nyomtatva: ${new Date().toLocaleString("hu-HU")}</p>
-    <table>
-      <thead><tr><th>Cikkszám</th><th>Megnevezés</th><th>Kategória</th><th style="text-align:right">Kiadandó</th><th style="text-align:right">Kiadott</th></tr></thead>
-      <tbody>${sorok}</tbody>
-    </table>
-    <script>window.onload = () => window.print();</script>
-    </body></html>`);
-  w.document.close();
+function escHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function fmtDate(d) {
+  if (!d) return "";
+  try { return new Date(d).toLocaleDateString("hu-HU"); } catch { return d; }
+}
+
+/**
+ * Nyomtatható, offline kitölthető komissiós lista – a valós
+ * Kivitelezesi_csomag_lista.xlsx papíralapú munkafolyamata alapján:
+ * a raktáros kiadás előtt kinyomtatja, a helyszíni csapat internet
+ * nélkül, kézzel vezeti a "Beépített" oszlopot, majd a raktáros a
+ * visszahozott anyagot ez alapján rögzíti a rendszerben. A fejléc/lábléc
+ * és a betűtípus/szín-választás az arculati kézikönyvet követi (ld.
+ * ajanlatPrint.js – ugyanaz a mintázat, hogy minden nyomtatott
+ * dokumentum egységes legyen).
+ */
+function nyomtatKomissiosListat(projekt, fovallalkoNev, tetelek) {
+  const csoportok = {};
+  (tetelek || []).forEach(t => {
+    const kat = t.kategoria || "Egyéb";
+    (csoportok[kat] = csoportok[kat] || []).push(t);
+  });
+
+  const szekciok = Object.entries(csoportok).map(([kat, katTetelek]) => {
+    const sorok = katTetelek.map((t, i) => `
+      <tr>
+        <td class="col-idx">${i + 1}.</td>
+        <td class="col-nev">${escHtml(t.nev || "—")}${t.cikkszam ? `<div class="sub">${escHtml(t.cikkszam)}</div>` : ""}</td>
+        <td class="col-num">${t.kiadandoMennyiseg ?? t.tervezettMennyiseg ?? 0} ${escHtml(t.egyseg || "")}</td>
+        <td class="col-fill"></td>
+        <td class="col-fill"></td>
+        <td class="col-fill"></td>
+        <td class="col-hiany"></td>
+      </tr>`).join("");
+    return `
+    <div class="section">
+      <div class="section-title"><span class="tag">${escHtml(kat)}</span><span class="cnt">${katTetelek.length} tétel</span></div>
+      <table>
+        <thead><tr>
+          <th class="col-idx">#</th><th class="col-nev">Megnevezés</th><th class="col-num">Menny.</th>
+          <th class="col-fill">Kiadott</th><th class="col-fill">Beépített</th><th class="col-fill">Vissza­hozott</th><th class="col-hiany">Hiány</th>
+        </tr></thead>
+        <tbody>${sorok || `<tr><td colspan="7" class="empty">Ez a csoport üres.</td></tr>`}</tbody>
+      </table>
+    </div>`;
+  }).join("") || `<p class="empty">Ez a csomag még üres – nincs mit kiadni.</p>`;
+
+  const ugyfelCim = projekt.telepitesiCim || projekt.clientCim || "—";
+  const ugyfelLakcimSor = projekt.clientCim && projekt.clientCim !== projekt.telepitesiCim
+    ? `<div class="meta-sub">Ügyfél lakcíme: ${escHtml(projekt.clientCim)}</div>` : "";
+  const tervDatumSor = [fmtDate(projekt.tervezettKezdes), fmtDate(projekt.tervezettBefejezes)].filter(Boolean).join(" → ");
+
+  const html = `<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8"/>
+<title>Komissiós lista – ${escHtml(formatProjektAzonosito(projekt.projektkod, projekt.kulsoAzonosito))}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@400;500;600;700&family=Raleway:wght@700;800&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Montserrat', Arial, sans-serif; font-size: 10.5pt; color: #1D1D1B; background: #fff; }
+  .page { max-width: 800px; margin: 0 auto; padding: 32px 40px 30px; }
+
+  .header { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 14px; border-bottom: 3px solid #075E56; margin-bottom: 18px; }
+  .edi-logo .name    { font-family: 'Raleway', serif; font-size: 24pt; font-weight: 800; color: #075E56; letter-spacing: 3px; line-height: 1; }
+  .edi-logo .tagline { font-family: 'Raleway', serif; font-size: 6.5pt; color: #18ACA0; letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
+  .header-right { text-align: right; font-size: 8pt; color: #3C3C3B; line-height: 1.65; }
+  .header-right strong { color: #075E56; }
+
+  .doc-title-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .doc-title { font-family: 'EB Garamond', serif; font-weight: 700; font-size: 16pt; color: #075E56; }
+  .doc-sub { font-family: 'EB Garamond', serif; font-style: italic; font-size: 11pt; color: #7BA8A3; }
+
+  .notebox { background: #FDEBEC; border: 1px solid #F3C3C6; border-left: 4px solid #E30613; border-radius: 2px; padding: 8px 12px; margin-bottom: 14px; }
+  .notebox .lbl { font-size: 8pt; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #861001; margin-bottom: 2px; }
+  .notebox .txt { font-size: 10.5pt; color: #3C3C3B; line-height: 1.5; }
+
+  .metagrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .metacard { border: 1px solid #D0E8E6; border-radius: 2px; }
+  .metacard .hd { font-size: 8pt; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #fff; background: #075E56; padding: 3px 9px; }
+  .metarow { display: flex; border-bottom: 1px solid #EDF6F5; font-size: 10pt; }
+  .metarow:last-child { border-bottom: none; }
+  .metarow .k { width: 40%; flex: none; font-size: 8pt; color: #7BA8A3; padding: 4px 8px; border-right: 1px solid #EDF6F5; }
+  .metarow .v { flex: 1; font-weight: 600; padding: 4px 8px; }
+  .meta-sub { font-size: 8.5pt; color: #7BA8A3; padding: 2px 8px 4px; font-style: italic; }
+
+  .timerow { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 16px; }
+  .timebox { border: 1px dashed #B9B6AC; border-radius: 2px; padding: 5px 8px; }
+  .timebox .lbl { font-size: 7.5pt; letter-spacing: .4px; text-transform: uppercase; color: #7BA8A3; }
+  .timebox .line { margin-top: 9px; border-bottom: 1px solid #1D1D1B; height: 1px; }
+
+  .section { margin-bottom: 16px; page-break-inside: avoid; }
+  .section-title { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .section-title .tag { font-size: 8.5pt; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; background: #18ACA0; color: #04201D; padding: 3px 9px; border-radius: 2px; }
+  .section-title .cnt { margin-left: auto; font-size: 9pt; color: #7BA8A3; font-weight: 600; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th { text-align: left; font-size: 7.5pt; letter-spacing: .3px; text-transform: uppercase; color: #7BA8A3; border-bottom: 1.5px solid #1D1D1B; padding: 4px 6px; font-weight: 700; }
+  th.col-fill { color: #075E56; } th.col-hiany { color: #E30613; }
+  th.col-num, td.col-num { text-align: right; }
+  tbody td { padding: 6px; border-bottom: 1px solid #EDF6F5; font-size: 9.5pt; vertical-align: top; }
+  tbody tr:nth-child(even) td { background: #F7FBFA; }
+  td.col-nev .sub { color: #7BA8A3; font-size: 8pt; }
+  td.col-fill { background: #EAF6F5; }
+  td.col-hiany { background: #FDEBEC; }
+  .empty { text-align: center; color: #7BA8A3; padding: 10px; font-style: italic; font-size: 10pt; }
+
+  .specbox { border: 1px solid #D0E8E6; border-radius: 2px; padding: 8px 12px; margin: 12px 0; font-size: 9.5pt; }
+  .specbox .full { font-family: 'EB Garamond', serif; font-style: italic; color: #7BA8A3; }
+
+  .oath { font-family: 'EB Garamond', serif; font-style: italic; font-size: 10.5pt; line-height: 1.5; background: #FAFAF7; border-left: 3px solid #18ACA0; padding: 8px 12px; margin: 18px 0 14px; }
+  .siggrid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-bottom: 14px; }
+  .sig-box { text-align: left; }
+  .sig-line { border-top: 1px solid #1D1D1B; margin-top: 26px; padding-top: 5px; font-size: 8pt; color: #3C3C3B; }
+  .sig-label { font-size: 7.5pt; letter-spacing: .4px; text-transform: uppercase; color: #7BA8A3; }
+
+  .footer { margin-top: 10px; border-top: 2px solid #D0E8E6; padding-top: 10px; display: flex; justify-content: space-between; font-size: 8pt; color: #7BA8A3; }
+
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page { padding: 14px 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="edi-logo">
+      <div class="name">E.D.I.</div>
+      <div class="tagline">Solutions Kft. &bull; Electronic &bull; Development &bull; Innovations</div>
+    </div>
+    <div class="header-right">
+      <strong>E.D.I. Solutions Kft.</strong><br/>
+      6724 Szeged, Kossuth Lajos sgt. 72/b<br/>
+      +36 20 237 7661 &bull; titkarsag@edisolutions.hu
+    </div>
+  </div>
+
+  <div class="doc-title-row">
+    <span class="doc-title">Komissiós lista</span>
+    <span class="doc-sub">${escHtml(formatProjektAzonosito(projekt.projektkod, projekt.kulsoAzonosito))} · Nyomtatva: ${new Date().toLocaleString("hu-HU")}</span>
+  </div>
+
+  ${projekt.fovMegjegyzes ? `
+  <div class="notebox">
+    <div class="lbl">Fontos tudnivaló a helyszíni csapatnak</div>
+    <div class="txt">${escHtml(projekt.fovMegjegyzes).replace(/\n/g, "<br/>")}</div>
+  </div>` : ""}
+
+  <div class="metagrid">
+    <div class="metacard">
+      <div class="hd">Ügyfél</div>
+      <div class="metarow"><div class="k">Név / telefon</div><div class="v">${escHtml(projekt.clientNev || "—")}${projekt.clientTel ? ` · ${escHtml(projekt.clientTel)}` : ""}</div></div>
+      ${projekt.kapcsolattarto ? `<div class="metarow"><div class="k">Kapcsolattartó</div><div class="v">${escHtml(projekt.kapcsolattarto)}</div></div>` : ""}
+      <div class="metarow"><div class="k">Cím</div><div class="v">${escHtml(ugyfelCim)}</div></div>
+      ${ugyfelLakcimSor}
+    </div>
+    <div class="metacard">
+      <div class="hd">Kivitelezés</div>
+      <div class="metarow"><div class="k">Fővállalkozó</div><div class="v">${escHtml(fovallalkoNev || "Saját munka")}</div></div>
+      ${projekt.csapatNev ? `<div class="metarow"><div class="k">Csapat</div><div class="v">${escHtml(projekt.csapatNev)}</div></div>` : ""}
+      ${projekt.projektvezetoNev ? `<div class="metarow"><div class="k">Projektvezető</div><div class="v">${escHtml(projekt.projektvezetoNev)}</div></div>` : ""}
+      ${tervDatumSor ? `<div class="metarow"><div class="k">Tervezett időszak</div><div class="v">${escHtml(tervDatumSor)}</div></div>` : ""}
+    </div>
+  </div>
+
+  <div class="timerow">
+    <div class="timebox"><div class="lbl">Raktárba érkezés ideje</div><div class="line"></div></div>
+    <div class="timebox"><div class="lbl">Anyagok átadásának ideje</div><div class="line"></div></div>
+    <div class="timebox"><div class="lbl">Raktártól távozás ideje</div><div class="line"></div></div>
+  </div>
+
+  ${szekciok}
+
+  <div class="oath">„A »Kiadott« oszlopban szereplő anyagokat hiánytalanul és sérülésmentesen átvettem. A fenti anyagokat a »Beépített« oszlopban feltüntetett mennyiségben építettem be.”</div>
+
+  <div class="siggrid">
+    <div class="sig-box"><div class="sig-line">Raktáros — kiadás (név, dátum)</div></div>
+    <div class="sig-box"><div class="sig-line">Kivitelező — átvétel / beépítés (név, dátum)</div></div>
+    <div class="sig-box"><div class="sig-line">Raktáros — visszavétel (név, dátum)</div></div>
+  </div>
+
+  <div class="footer">
+    <div>E.D.I. Solutions Kft. &bull; Adószám: 26740122-2-06 &bull; Cégjsz: 06-09-025279</div>
+    <div>www.edikamera.hu</div>
+  </div>
+
+</div>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank", "width=920,height=780,scrollbars=yes");
+  if (!win) { alert("Engedélyezd az ablak nyitást a böngészőben!"); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 700);
 }
 
 function CsomagSor({ sor, onKiadottValtoztat }) {
@@ -90,7 +265,7 @@ function CsomagSor({ sor, onKiadottValtoztat }) {
           {sor.csomag.status}
         </span>
         <span style={{ fontSize: 11.5, color: C.muted, whiteSpace: "nowrap" }}>{tetelDb} tétel</span>
-        <button type="button" onClick={e => { e.stopPropagation(); nyomtatKomissiosListat(`${sor.projekt.projektkod} – ${sor.projekt.clientNev || sor.projekt.nev || ""}`, sor.fovallalkoNev, sor.csomag.tetelek || []); }}
+        <button type="button" onClick={e => { e.stopPropagation(); nyomtatKomissiosListat(sor.projekt, sor.fovallalkoNev, sor.csomag.tetelek || []); }}
           title="Komissiós lista nyomtatása"
           style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 11px", background: C.bg, color: C.textSub, border: `1px solid ${C.border}`, borderRadius: 7, cursor: "pointer", fontSize: 11.5, fontWeight: 700, fontFamily: FONT }}>
           <Printer size={13} /> Nyomtatás
