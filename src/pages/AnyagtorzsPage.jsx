@@ -4,15 +4,17 @@
  *
  * Ugyanaz a localStorage["anyagtorzs"] adatforrás amit az Árajánlat is használ.
  */
-import { useState } from "react";
-import { Plus, Pencil, Trash2, Save, Info } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, Pencil, Trash2, Save, Info, Upload } from "lucide-react";
 import { C, FONT } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import {
   loadAnyagtorzs, saveAnyagtorzs, createAnyag,
   updateAnyag, deleteAnyag, calcJavasoltEladasiAr,
-  AJANLAT_KATEGORIAK, TELEPITOI_KATEGORIAK,
+  AJANLAT_KATEGORIAK, TELEPITOI_KATEGORIAK, FVK_SAJAT,
 } from "../lib/anyagtorzs";
+import { loadFovallalkozok } from "../modules/fovallalkozok/fovallalkozo.service.js";
+import AnyagtorzsImportPanel from "../components/AnyagtorzsImportPanel.jsx";
 
 const EGYSEGEK = ["db", "m", "m²", "m³", "kg", "kész", "csomag", "tekercs", "pár"];
 
@@ -161,18 +163,26 @@ export default function AnyagtorzsPage() {
   const [anyagok, setAnyagok] = useState(loadAnyagtorzs);
   const [editAnyag, setEditAnyag] = useState(null);
   const [ujOpen, setUjOpen]       = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [szuroKat, setSzuroKat]   = useState("mind");
+  // Fővállalkozónkénti raktár-elkülönítés (ld. anyagtorzs.js FVK_SAJAT /
+  // getAnyagokByTulajdonos) – "Saját munka" fül + egy-egy fül minden aktív
+  // fővállalkozóhoz. Új anyag/import mindig az épp kiválasztott fülre kerül.
+  const fovallalkozok = useMemo(() => loadFovallalkozok().filter(f => f.aktiv !== false), []);
+  const [aktivTulajdonosId, setAktivTulajdonosId] = useState(FVK_SAJAT);
+  const aktivFv = fovallalkozok.find(f => f.id === aktivTulajdonosId) || null;
 
   function reload() { setAnyagok(loadAnyagtorzs()); }
 
   function handleSave(form) {
     if (editAnyag?.id) updateAnyag(editAnyag.id, form);
-    else               createAnyag(form);
+    else               createAnyag({ ...form, tulajdonosId: aktivTulajdonosId });
     setEditAnyag(null); setUjOpen(false); reload();
   }
 
-  const szurt = szuroKat === "mind" ? anyagok
-    : anyagok.filter(a => a.telepitoi_kategoria === szuroKat);
+  const tulajdonosAnyagok = anyagok.filter(a => (a.tulajdonosId || FVK_SAJAT) === aktivTulajdonosId);
+  const szurt = szuroKat === "mind" ? tulajdonosAnyagok
+    : tulajdonosAnyagok.filter(a => a.telepitoi_kategoria === szuroKat);
 
   return (
     <div style={{ padding: "16px", fontFamily: FONT, maxWidth: 620 }}>
@@ -185,12 +195,31 @@ export default function AnyagtorzsPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <div>
           <h2 style={{ fontWeight: 800, fontSize: 18, margin: 0, color: C.text }}>Anyagtörzs</h2>
-          <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>{anyagok.filter(a => a.aktiv).length} aktív · {anyagok.length} összesen</p>
+          <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>{tulajdonosAnyagok.filter(a => a.aktiv).length} aktív · {tulajdonosAnyagok.length} összesen ({aktivFv?.nev || "Saját munka"})</p>
         </div>
-        <button onClick={() => setUjOpen(true)}
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
-          <Plus size={14} /> Új anyag
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setImportOpen(true)}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", background: "#fff", color: C.accent, border: `1.5px solid ${C.accent}`, borderRadius: 9, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
+            <Upload size={14} /> Excel import
+          </button>
+          <button onClick={() => setUjOpen(true)}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", background: C.accent, color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontFamily: FONT }}>
+            <Plus size={14} /> Új anyag
+          </button>
+        </div>
+      </div>
+
+      {/* Fővállalkozónkénti fülek – "Saját munka" + minden aktív
+          fővállalkozó saját, a többiétől független anyaglistája/készlete. */}
+      <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+        {[{ id: FVK_SAJAT, nev: "Saját munka" }, ...fovallalkozok.map(f => ({ id: f.id, nev: f.nev }))].map(t => (
+          <button key={t.id || "sajat"} onClick={() => setAktivTulajdonosId(t.id)}
+            style={{ padding: "6px 13px", borderRadius: 20, border: `1.5px solid ${aktivTulajdonosId === t.id ? C.accent : C.border}`,
+              background: aktivTulajdonosId === t.id ? C.accent : "#fff", color: aktivTulajdonosId === t.id ? "#fff" : C.textSub,
+              cursor: "pointer", fontSize: 13, fontFamily: FONT, fontWeight: aktivTulajdonosId === t.id ? 700 : 500 }}>
+            {t.nev}
+          </button>
+        ))}
       </div>
 
       {/* Szűrő */}
@@ -221,6 +250,16 @@ export default function AnyagtorzsPage() {
       {(ujOpen || editAnyag) && (
         <AnyagForm anyag={editAnyag} onSave={handleSave}
           onClose={() => { setEditAnyag(null); setUjOpen(false); }} />
+      )}
+
+      {importOpen && (
+        <AnyagtorzsImportPanel
+          tulajdonosId={aktivTulajdonosId}
+          tulajdonosNev={aktivFv?.nev || "Saját munka"}
+          meglevoDb={tulajdonosAnyagok.length}
+          onClose={() => setImportOpen(false)}
+          onImported={() => { setImportOpen(false); reload(); }}
+        />
       )}
     </div>
   );

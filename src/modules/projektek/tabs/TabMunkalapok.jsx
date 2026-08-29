@@ -274,7 +274,7 @@ function UjMunkalapInlineForm({ projekt, onDone, onCancel, currentUser }) {
             ez automatikusan bekerül a projekt tételes anyaglistájába is (Kivitelezési Csomag), nemcsak ennek a
             munkalapnak a kiadásába.
           </p>
-          <AnyagKosarPicker value={pluszAnyagKosar} onChange={setPluszAnyagKosar} />
+          <AnyagKosarPicker value={pluszAnyagKosar} onChange={setPluszAnyagKosar} tulajdonosId={projekt?.penzugy?.fovallalkoziId} />
         </div>
       )}
 

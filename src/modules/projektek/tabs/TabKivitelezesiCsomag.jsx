@@ -285,7 +285,7 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
             anyagtörzsből választható – szabad szöveges anyagfelvitel nincs, a megnevezés, kategória,
             egység és árak a kiválasztás pillanatában rögzült pillanatképként kerülnek a csomagba.
           </p>
-          <AnyagKosarPicker value={keziKosar} onChange={setKeziKosar} />
+          <AnyagKosarPicker value={keziKosar} onChange={setKeziKosar} tulajdonosId={projekt?.penzugy?.fovallalkoziId} />
           <button type="button" onClick={handleKeziKosarHozzaadas} disabled={keziKosar.length === 0}
             style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 12, padding: "9px 16px", borderRadius: 8, border: "none", background: keziKosar.length === 0 ? C.border : C.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: keziKosar.length === 0 ? "default" : "pointer", fontFamily: FONT }}>
             <Plus size={14} /> Hozzáadás a csomaghoz

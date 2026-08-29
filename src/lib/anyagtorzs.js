@@ -145,7 +145,24 @@ function migrateAnyagV2(a, netto_egysegar) {
     // mennyiség. Csak akkor tölti be nullával, ha még sosem volt beállítva –
     // utána kizárólag adjustAnyagKeszlet / setAnyagKeszlet módosíthatja.
     keszlet:           a.keszlet ?? 0,
+    // Fővállalkozónkénti raktár-elkülönítés: "" (üres) = saját munka anyaga,
+    // egyébként egy fővállalkozó id-ja (fovallalkozok kollekció) – minden
+    // fővállalkozónak saját, a másikétól független anyaglistája/készlete van
+    // ugyanabban a táblában, csak ez a mező szűr rájuk (ld. FVK_SAJAT,
+    // getAnyagokByTulajdonos). Meglévő (a migráció előtti) rekordoknál üresen
+    // marad, tehát változatlanul "saját munka" anyagként viselkednek tovább.
+    tulajdonosId:      a.tulajdonosId ?? "",
   };
+}
+
+// ─── Fővállalkozónkénti raktár-elkülönítés ───────────────────
+// "" = saját munka (a korábbi, egyetlen közös anyagtörzs viselkedése,
+// visszafelé kompatibilis – minden meglévő anyag ide tartozik).
+export const FVK_SAJAT = "";
+
+export function getAnyagokByTulajdonos(tulajdonosId) {
+  const cel = tulajdonosId || FVK_SAJAT;
+  return getAktivAnyagok().filter(a => (a.tulajdonosId || FVK_SAJAT) === cel);
 }
 
 // ─── Fázis 2B – mezőkonszolidáció ────────────────────────────
@@ -284,6 +301,42 @@ export function getTelepitoriAnyagok(telepitoi_kategoria = null) {
   const aktiv = getAktivAnyagok();
   if (!telepitoi_kategoria || telepitoi_kategoria === "mind") return aktiv;
   return aktiv.filter(a => a.telepitoi_kategoria === telepitoi_kategoria);
+}
+
+/**
+ * Excel-importból érkező anyagok tömeges betöltése egy fővállalkozóhoz
+ * (vagy saját munkához, FVK_SAJAT id-vel) – ugyanaz a minta, mint a
+ * díjtétel-katalógusnál (ld. dijtetelKatalogus.service.js bulkUpsertKatalogus).
+ *   mode = "csere"   → az adott tulajdonos MEGLÉVŐ anyagai teljesen lecserélődnek
+ *   mode = "hozzaad"  → a meglévők megmaradnak, az újak hozzáadódnak (külső
+ *                        azonosító/cikkszám szerinti egyezésnél frissül a többi mező)
+ */
+export function bulkUpsertAnyagok(tulajdonosId, tetelek, mode = "csere", meta = {}) {
+  const cel = tulajdonosId || FVK_SAJAT;
+  const all    = loadAnyagtorzs();
+  const masok  = all.filter(a => (a.tulajdonosId || FVK_SAJAT) !== cel);
+  const sajat  = all.filter(a => (a.tulajdonosId || FVK_SAJAT) === cel);
+
+  const beerkezo = tetelek.map(t => ({
+    aktiv: true,
+    ...t,
+    id: `a_${crypto.randomUUID()}`,
+    tulajdonosId: cel,
+    forras: "excelImport",
+    importFileName: meta.fileName || "",
+  }));
+
+  let ujSajat;
+  if (mode === "hozzaad") {
+    const beerkezoKodok = new Set(beerkezo.filter(t => t.kulsoAzonosito).map(t => t.kulsoAzonosito));
+    const megtartott = sajat.filter(a => !a.kulsoAzonosito || !beerkezoKodok.has(a.kulsoAzonosito));
+    ujSajat = [...megtartott, ...beerkezo];
+  } else {
+    ujSajat = beerkezo;
+  }
+
+  saveAnyagtorzs([...masok, ...ujSajat]);
+  return ujSajat;
 }
 
 // ─── Költségszámítás ─────────────────────────────────────────

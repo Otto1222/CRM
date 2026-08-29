@@ -15,7 +15,8 @@
 import { Fragment, useMemo, useState } from "react";
 import { Warehouse, Search, Plus, Minus, History, PackagePlus, Undo2, Check, X } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
-import { getAktivAnyagok, adjustAnyagKeszlet, AJANLAT_KATEGORIAK } from "../lib/anyagtorzs.js";
+import { getAktivAnyagok, adjustAnyagKeszlet, AJANLAT_KATEGORIAK, FVK_SAJAT } from "../lib/anyagtorzs.js";
+import { loadFovallalkozok } from "../modules/fovallalkozok/fovallalkozo.service.js";
 import { addRaktarMozgas, getRaktarMozgasokRendezve, getRaktarMozgasokByAnyag, RAKTAR_MOZGAS_TIPUSOK } from "../lib/raktarMozgas.js";
 import { getFuggoVisszahozasok, approveVisszahozas, rejectVisszahozas } from "../modules/kivitelezesi_csomag/kivitelezesiCsomag.service.js";
 import { getProjekt } from "../modules/projektek/projekt.service.js";
@@ -223,7 +224,19 @@ export default function RaktarkeszletPage({ currentUser }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const forceUpdate = () => setRefreshKey(n => n + 1);
 
-  const anyagok = useMemo(() => getAktivAnyagok(), [tab, nyitottAnyagId, refreshKey]);
+  // Fővállalkozónkénti raktár-elkülönítés – "Saját munka" + minden aktív
+  // fővállalkozó saját, egymástól független készlete (ld. anyagtorzs.js
+  // FVK_SAJAT / tulajdonosId). A "Mozgások" és "Visszahozás jóváhagyás" fül
+  // szándékosan a TELJES naplót mutatja (tulajdonostól függetlenül), mert
+  // az egy adott projekt/munkalap/csapat felől nézve amúgy is egyértelmű,
+  // csak a "Készlet" fül tétel-listáját szűrjük.
+  const fovallalkozok = useMemo(() => loadFovallalkozok().filter(f => f.aktiv !== false), []);
+  const [szuroTulajdonos, setSzuroTulajdonos] = useState(FVK_SAJAT);
+
+  const anyagok = useMemo(
+    () => getAktivAnyagok().filter(a => (a.tulajdonosId || FVK_SAJAT) === szuroTulajdonos),
+    [tab, nyitottAnyagId, refreshKey, szuroTulajdonos]
+  );
   const mozgasok = useMemo(() => getRaktarMozgasokRendezve(), [tab, refreshKey]);
   const fuggoVisszahozasokDb = useMemo(() => getFuggoVisszahozasok().length, [refreshKey]);
 
@@ -290,6 +303,19 @@ export default function RaktarkeszletPage({ currentUser }) {
           <Search size={14} color={C.muted} style={{ position: "absolute", left: 10, top: 10 }} />
           <input value={kereses} onChange={e => setKereses(e.target.value)} placeholder="Keresés anyag neve, kategória vagy beszállító szerint…"
             style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px 8px 32px", border: `1.5px solid ${C.border}`, borderRadius: 9, fontSize: 13, fontFamily: FONT, outline: "none" }} />
+        </div>
+      )}
+
+      {tab === "keszlet" && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 12 }}>
+          {[{ id: FVK_SAJAT, nev: "Saját munka" }, ...fovallalkozok.map(f => ({ id: f.id, nev: f.nev }))].map(t => (
+            <button key={t.id || "sajat"} onClick={() => setSzuroTulajdonos(t.id)}
+              style={{ padding: "6px 13px", borderRadius: 20, border: `1.5px solid ${szuroTulajdonos === t.id ? C.accent : C.border}`,
+                background: szuroTulajdonos === t.id ? C.accent : "#fff", color: szuroTulajdonos === t.id ? "#fff" : C.textSub,
+                cursor: "pointer", fontSize: 13, fontFamily: FONT, fontWeight: szuroTulajdonos === t.id ? 700 : 500 }}>
+              {t.nev}
+            </button>
+          ))}
         </div>
       )}
 

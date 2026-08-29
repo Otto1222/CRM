@@ -14,13 +14,26 @@
 import { useMemo, useState } from "react";
 import { Plus, Minus, Trash2, Search } from "lucide-react";
 import { C, FONT } from "../lib/constants";
-import { getAktivAnyagok, TELEPITOI_KATEGORIAK } from "../lib/anyagtorzs.js";
+import { getAktivAnyagok, TELEPITOI_KATEGORIAK, AJANLAT_KATEGORIAK, FVK_SAJAT } from "../lib/anyagtorzs.js";
 
 const KAT_LABEL = Object.fromEntries(TELEPITOI_KATEGORIAK.map(k => [k.id, k.label]));
+// Fővállalkozói (Excel-importált) anyagoknál jellemzően nincs kitöltve a
+// telepítői kategória (az egy szűkebb, csak szerelési kellékanyagra épülő
+// lista, ld. anyagtorzs.js) – ilyenkor a teljes termékkört lefedő Árajánlat
+// kategóriára (= az importált Excel "cikkcsoport" oszlopa) esünk vissza,
+// hogy a csapatnak vivendő tételek (pl. napelem, inverter, akku) ne mind
+// egyetlen "Egyéb" csoportban landoljanak.
+const AJANLAT_KAT_LABEL = Object.fromEntries(AJANLAT_KATEGORIAK.map(k => [k.id, k.label]));
+function csoportKulcs(a) { return a.telepitoi_kategoria || a.kategoria || "egyeb"; }
+function csoportLabel(kat) { return KAT_LABEL[kat] || AJANLAT_KAT_LABEL[kat] || "Egyéb"; }
 
-export default function AnyagKosarPicker({ value, onChange }) {
+export default function AnyagKosarPicker({ value, onChange, tulajdonosId }) {
   const [kereses, setKereses] = useState("");
-  const anyagok = useMemo(() => getAktivAnyagok(), []);
+  const cel = tulajdonosId || FVK_SAJAT;
+  const anyagok = useMemo(
+    () => getAktivAnyagok().filter(a => (a.tulajdonosId || FVK_SAJAT) === cel),
+    [cel]
+  );
   const kosar = value || [];
 
   const szurt = useMemo(() => {
@@ -29,19 +42,19 @@ export default function AnyagKosarPicker({ value, onChange }) {
     return anyagok.filter(a =>
       a.nev?.toLowerCase().includes(q) ||
       a.kulsoAzonosito?.toLowerCase().includes(q) ||
-      KAT_LABEL[a.telepitoi_kategoria]?.toLowerCase().includes(q)
+      csoportLabel(csoportKulcs(a)).toLowerCase().includes(q)
     );
   }, [anyagok, kereses]);
 
   const csoportok = useMemo(() => {
     const map = new Map();
     for (const a of szurt) {
-      const kat = a.telepitoi_kategoria || "egyeb";
+      const kat = csoportKulcs(a);
       if (!map.has(kat)) map.set(kat, []);
       map.get(kat).push(a);
     }
     return Array.from(map.entries())
-      .map(([kat, tetelek]) => ({ kat, label: KAT_LABEL[kat] || "Egyéb", tetelek }))
+      .map(([kat, tetelek]) => ({ kat, label: csoportLabel(kat), tetelek }))
       .sort((a, b) => a.label.localeCompare(b.label, "hu"));
   }, [szurt]);
 
