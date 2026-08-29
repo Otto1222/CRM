@@ -38,6 +38,12 @@ const NAV_GROUPS = [
   },
   {
     type: "single",
+    id: "munkalapok",
+    label: "Munkalapok",
+    icon: FileText,
+  },
+  {
+    type: "single",
     id: "naptar",
     label: "Naptár",
     icon: Calendar,
