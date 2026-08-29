@@ -289,14 +289,20 @@ export function deleteProjekt(id) {
   // takarítás soha ne törje el magát a törlést. Mindegyik a saját service
   // mentőjén megy át (local + Drive), így a következő szinkron sem hozza vissza.
 
-  // 1. Gyerek munkalapok projektId/projektKod nullázása
+  // 1. Gyerek munkalapok törlése – felhasználói visszajelzés alapján egy
+  //    törölt projekt munkalapjai sem relevánsak többé (nincs mit tovább
+  //    kezelni belőlük), ezért NEM csak leválasztjuk (projektId/projektKod
+  //    nullázás – a korábbi viselkedés), hanem tényleg töröljük őket,
+  //    ugyanazon az úton, mint egy önálló munkalap-törlésnél (deleteWorkorder:
+  //    tombstone, naptár-esemény törlése stb.) – így a Dashboard "Munkák
+  //    állapot szerint" táblájában sem marad árván lógó, a felhasználó
+  //    számára már törtnek hitt munka.
   try {
     const mls = loadLocal("munkalapok") || [];
-    if (mls.some(m => m.projektId === id)) {
+    const erintettIds = mls.filter(m => m.projektId === id).map(m => m.id);
+    if (erintettIds.length > 0) {
       import("../../services/workorder.service.js").then(m => {
-        const list = m.loadWorkorders()
-          .map(w => w.projektId === id ? { ...w, projektId: "", projektKod: "" } : w);
-        m.saveWorkorders(list);
+        erintettIds.forEach(mId => m.deleteWorkorder(mId));
       }).catch(() => {});
     }
   } catch { /* non-critical */ }
