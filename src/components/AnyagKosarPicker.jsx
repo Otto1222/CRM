@@ -11,10 +11,11 @@
  * anyagtörzs-adat NEM került importálásra, a kosár a CRM saját
  * anyagtörzsét (lib/anyagtorzs.js) használja.
  */
-import { useMemo, useState } from "react";
-import { Plus, Minus, Trash2, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Minus, Trash2, Search, HardHat } from "lucide-react";
 import { C, FONT } from "../lib/constants";
 import { getAktivAnyagok, TELEPITOI_KATEGORIAK, AJANLAT_KATEGORIAK, FVK_SAJAT } from "../lib/anyagtorzs.js";
+import { loadFovallalkozok } from "../modules/fovallalkozok/fovallalkozo.service.js";
 
 const KAT_LABEL = Object.fromEntries(TELEPITOI_KATEGORIAK.map(k => [k.id, k.label]));
 // Fővállalkozói (Excel-importált) anyagoknál jellemzően nincs kitöltve a
@@ -34,6 +35,7 @@ function csoportLabel(kat) { return KAT_LABEL[kat] || AJANLAT_KAT_LABEL[kat] || 
 
 export default function AnyagKosarPicker({ value, onChange, tulajdonosId }) {
   const [kereses, setKereses] = useState("");
+  const [aktivKat, setAktivKat] = useState("mind");
   const cel = tulajdonosId || FVK_SAJAT;
   const anyagok = useMemo(
     () => getAktivAnyagok().filter(a => (a.tulajdonosId || FVK_SAJAT) === cel),
@@ -41,15 +43,41 @@ export default function AnyagKosarPicker({ value, onChange, tulajdonosId }) {
   );
   const kosar = value || [];
 
+  // Ha másik projektre/fővállalkozóra váltunk, a korábban kiválasztott
+  // kategória-gomb a régi listára vonatkozott – "Mind"-ra állunk vissza,
+  // különben egy nem létező kategóriára szűrve üresnek tűnne a lista.
+  useEffect(() => { setAktivKat("mind"); }, [cel]);
+
+  const tulajdonosNev = useMemo(() => {
+    if (!cel) return "Saját munka";
+    return loadFovallalkozok().find(f => f.id === cel)?.nev || "Fővállalkozó";
+  }, [cel]);
+
+  // Kategória-gombok (Fázis: gyorskereső) – DINAMIKUSAN, a ténylegesen
+  // jelenlévő "kellékanyag csoportokból" épülnek fel, ugyanaz a minta, mint
+  // az Anyagtörzs oldal fülei – egy fővállalkozónkénti (akár 40-270 tételes)
+  // listában enélkül csak görgetéssel lehetne tájékozódni.
+  const kategoriaFulek = useMemo(() => {
+    const map = new Map();
+    for (const a of anyagok) {
+      const kat = csoportKulcs(a);
+      map.set(kat, (map.get(kat) || 0) + 1);
+    }
+    return Array.from(map.entries())
+      .map(([kat, db]) => ({ kat, label: csoportLabel(kat), db }))
+      .sort((a, b) => a.label.localeCompare(b.label, "hu"));
+  }, [anyagok]);
+
   const szurt = useMemo(() => {
+    const alap = aktivKat === "mind" ? anyagok : anyagok.filter(a => csoportKulcs(a) === aktivKat);
     const q = kereses.trim().toLowerCase();
-    if (!q) return anyagok;
-    return anyagok.filter(a =>
+    if (!q) return alap;
+    return alap.filter(a =>
       a.nev?.toLowerCase().includes(q) ||
       a.kulsoAzonosito?.toLowerCase().includes(q) ||
       csoportLabel(csoportKulcs(a)).toLowerCase().includes(q)
     );
-  }, [anyagok, kereses]);
+  }, [anyagok, kereses, aktivKat]);
 
   const csoportok = useMemo(() => {
     const map = new Map();
@@ -89,15 +117,38 @@ export default function AnyagKosarPicker({ value, onChange, tulajdonosId }) {
 
   return (
     <div>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: C.accent, background: C.accentLight, padding: "4px 10px", borderRadius: 20, marginBottom: 10 }}>
+        <HardHat size={12} /> {tulajdonosNev} anyaglistája
+      </span>
+
       <div style={{ position: "relative", marginBottom: 10 }}>
         <Search size={14} color={C.muted} style={{ position: "absolute", left: 10, top: 10 }} />
         <input
           value={kereses}
           onChange={e => setKereses(e.target.value)}
-          placeholder="Keresés anyag neve vagy kategória szerint…"
+          placeholder="Keresés anyag neve szerint…"
           style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px 8px 32px", border: `1.5px solid ${C.border}`, borderRadius: 9, fontSize: 13, fontFamily: FONT, outline: "none" }}
         />
       </div>
+
+      {kategoriaFulek.length > 1 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 10 }}>
+          <button type="button" onClick={() => setAktivKat("mind")}
+            style={{ padding: "5px 12px", borderRadius: 20, border: `1.5px solid ${aktivKat === "mind" ? C.accent : C.border}`,
+              background: aktivKat === "mind" ? C.accent : "#fff", color: aktivKat === "mind" ? "#fff" : C.textSub,
+              cursor: "pointer", fontSize: 11.5, fontFamily: FONT, fontWeight: aktivKat === "mind" ? 700 : 600 }}>
+            Mind <span style={{ opacity: .75 }}>{anyagok.length}</span>
+          </button>
+          {kategoriaFulek.map(k => (
+            <button key={k.kat} type="button" onClick={() => setAktivKat(k.kat)}
+              style={{ padding: "5px 12px", borderRadius: 20, border: `1.5px solid ${aktivKat === k.kat ? C.accent : C.border}`,
+                background: aktivKat === k.kat ? C.accent : "#fff", color: aktivKat === k.kat ? "#fff" : C.textSub,
+                cursor: "pointer", fontSize: 11.5, fontFamily: FONT, fontWeight: aktivKat === k.kat ? 700 : 600, whiteSpace: "nowrap" }}>
+              {k.label} <span style={{ opacity: .75 }}>{k.db}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div style={{ maxHeight: 240, overflowY: "auto", border: `1px solid ${C.border}`, borderRadius: 9, marginBottom: 12 }}>
         {csoportok.length === 0 && (
@@ -105,9 +156,14 @@ export default function AnyagKosarPicker({ value, onChange, tulajdonosId }) {
         )}
         {csoportok.map(g => (
           <div key={g.kat}>
-            <div style={{ background: C.bg, padding: "5px 10px", fontSize: 11, fontWeight: 700, color: C.textSub, position: "sticky", top: 0 }}>
-              {g.label}
-            </div>
+            {/* Ha egy kategória-gombra szűkítve épp csak egy csoport maradt,
+                a fejléc megismételné a már kiválasztott gomb feliratát –
+                ilyenkor kihagyjuk. */}
+            {(aktivKat === "mind" || csoportok.length > 1) && (
+              <div style={{ background: C.bg, padding: "5px 10px", fontSize: 11, fontWeight: 700, color: C.textSub, position: "sticky", top: 0 }}>
+                {g.label}
+              </div>
+            )}
             {g.tetelek.map(a => {
               const kosarban = kosar.find(k => k.anyagtorzsId === a.id);
               return (
