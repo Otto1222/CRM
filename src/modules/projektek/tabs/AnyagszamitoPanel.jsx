@@ -122,7 +122,8 @@ export default function AnyagszamitoPanel({ csomag, currentUser, onCsomagFrissul
       const { csomag: updated, hozzaadva, duplikalt } = addAnyagszamitoTetelekToKivitelezesiCsomag(
         csomag.id,
         elonezet?.anyaglista || [],
-        currentUser?.name || ""
+        currentUser?.name || "",
+        anyagelszamolasiMod
       );
       onCsomagFrissult(updated);
       setEredmeny({ hozzaadva, duplikalt });

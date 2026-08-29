@@ -181,7 +181,7 @@ export function addExcelTetelekToKivitelezesiCsomag(csomagId, excelTetelek = [],
  * ugyanúgy, ahogy createKivitelezesiCsomagForProjekt is teszi a
  * projekt-szintű duplikáció esetén (UI ezt elkapja és megjeleníti).
  */
-export function addKeziTetelToKivitelezesiCsomag(csomagId, anyagtorzsId, mennyisegek = {}, user = "") {
+export function addKeziTetelToKivitelezesiCsomag(csomagId, anyagtorzsId, mennyisegek = {}, user = "", anyagelszamolasiMod = null) {
   const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
   if (!csomag) {
     throw new Error("A Kivitelezési Csomag nem található.");
@@ -189,7 +189,7 @@ export function addKeziTetelToKivitelezesiCsomag(csomagId, anyagtorzsId, mennyis
   if ((csomag.tetelek || []).some(t => t.anyagtorzs_id === anyagtorzsId)) {
     throw new Error("Ez az anyag már szerepel a csomagban.");
   }
-  const tetel = createKeziTetelPillanatkep(anyagtorzsId, mennyisegek);
+  const tetel = createKeziTetelPillanatkep(anyagtorzsId, mennyisegek, anyagelszamolasiMod);
   if (!tetel) {
     throw new Error("A kiválasztott anyag nem található az anyagtörzsben.");
   }
@@ -208,7 +208,7 @@ export function addKeziTetelToKivitelezesiCsomag(csomagId, anyagtorzsId, mennyis
  * Új anyagnál új tétel jön létre (createKeziTetelPillanatkep mintájára),
  * tervezett = kiadandó = a megadott mennyiség.
  */
-export function addAnyagokBulkToKivitelezesiCsomag(csomagId, picks = [], user = "") {
+export function addAnyagokBulkToKivitelezesiCsomag(csomagId, picks = [], user = "", anyagelszamolasiMod = null) {
   const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
   if (!csomag) {
     throw new Error("A Kivitelezési Csomag nem található.");
@@ -230,7 +230,7 @@ export function addAnyagokBulkToKivitelezesiCsomag(csomagId, picks = [], user = 
         kiadandoMennyiseg:  (Number(tetelek[idx].kiadandoMennyiseg) || 0) + menny,
       };
     } else {
-      const uj = createKeziTetelPillanatkep(pick.anyagtorzsId, { tervezettMennyiseg: menny, kiadandoMennyiseg: menny });
+      const uj = createKeziTetelPillanatkep(pick.anyagtorzsId, { tervezettMennyiseg: menny, kiadandoMennyiseg: menny }, anyagelszamolasiMod);
       if (uj) tetelek.push(uj);
     }
   }
@@ -346,7 +346,7 @@ export function updateKiviTetelBeszerzesiAr(csomagId, tetelId, ujAr, user = "") 
  *   - hozzaadva: az újonnan beillesztett tétel-pillanatképek
  *   - duplikalt: a kihagyott sorok (anyagtorzs_id már szerepelt a csomagban)
  */
-export function addAnyagszamitoTetelekToKivitelezesiCsomag(csomagId, anyaglista = [], user = "") {
+export function addAnyagszamitoTetelekToKivitelezesiCsomag(csomagId, anyaglista = [], user = "", anyagelszamolasiMod = null) {
   const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
   if (!csomag) {
     throw new Error("A Kivitelezési Csomag nem található.");
@@ -364,7 +364,7 @@ export function addAnyagszamitoTetelekToKivitelezesiCsomag(csomagId, anyaglista 
       duplikalt.push(sor);
       continue;
     }
-    const tetel = createAnyagszamitoTetelPillanatkep(sor.anyagtorzs_id, sor.szamoltMennyiseg);
+    const tetel = createAnyagszamitoTetelPillanatkep(sor.anyagtorzs_id, sor.szamoltMennyiseg, anyagelszamolasiMod);
     if (!tetel) continue;
     ujTetelek.push(tetel);
     meglevoIdk.add(sor.anyagtorzs_id);
@@ -760,7 +760,8 @@ export function assignAnyagokToMunkalap(projekt, munkalapId, tetelekPick = [], c
         csomag.id,
         pick.anyagtorzsId,
         { tervezettMennyiseg: pick.mennyiseg, kiadandoMennyiseg: pick.mennyiseg },
-        user
+        user,
+        projekt?.anyagelszamolasiMod
       );
     }
   }

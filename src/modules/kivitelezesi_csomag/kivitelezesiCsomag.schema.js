@@ -19,6 +19,7 @@
 import {
   ANYAGELSZAMOLAS_NINCS_KIVALASZTVA,
   hasAnyagelszamolasiMod,
+  anyagVisszateritesKulonBevetelAModban,
 } from "../../lib/workflowRules.js";
 import { getAnyag, getSajatAnyagNevAlapjan } from "../../lib/anyagtorzs.js";
 import { FO_TETELEK } from "../ajanlatok/ajanlat.schema.js";
@@ -330,16 +331,25 @@ export function generateKiviTetelekFromExcelPillanatkep(excelPillanatkep) {
  *     a saját haszonkulccsal számolt, ügyfélnek kiajánlott ár
  *     (javasoltEladasiAr). Ez már eddig is helyesen működött, változatlan.
  *
- *   Fővállalkozói anyag (van tulajdonosId, pl. Wagner-Solar/EU-Solar): a
- *     feltöltött ár (netto_egysegar) valójában a fővállalkozó FIX
- *     VISSZATÉRÍTÉSI ára, nem a Ti beszerzési áratok – ezért ez lesz az
- *     "eladási" oldal. A tényleges beszerzési ár a SAJÁT RAKTÁR egyező
- *     nevű tételéből jön alapértékként (fizikailag egy raktár van), és a
- *     Kivitelezési Csomagban utólag szabadon felülírható a valós számla
- *     szerint (ld. updateKiviTetelBeszerzesiAr).
+ *   Fővállalkozói anyag, DE csak "Fix áras visszaszámlázás" / "Nullás
+ *     továbbszámlázás" módban (ld. anyagVisszateritesKulonBevetelAModban –
+ *     ilyenkor TI vásároljátok az anyagot): a feltöltött ár (netto_egysegar)
+ *     valójában a fővállalkozó FIX VISSZATÉRÍTÉSI ára, nem a Ti beszerzési
+ *     áratok – ezért ez lesz az "eladási" oldal. A tényleges beszerzési ár
+ *     a SAJÁT RAKTÁR egyező nevű tételéből jön alapértékként (fizikailag
+ *     egy raktár van), és a Kivitelezési Csomagban utólag szabadon
+ *     felülírható a valós számla szerint (ld. updateKiviTetelBeszerzesiAr).
+ *
+ *   Fővállalkozói anyag "Fővállalkozói hozott anyag" módban (pl.
+ *     Green-Home): itt a fővállalkozó FIZIKAILAG is szállítja az anyagot –
+ *     Ti bevételezitek/kiadjátok/nyilvántartjátok, de nem vásároljátok, és
+ *     nincs saját raktári megfelelője sem. A saját-raktár keresés ezért
+ *     NEM fut le – a raktárkészlet a fővállalkozó saját (nem a saját
+ *     munkás) anyagtörzs-tételének "keszlet" mezőjén nyilvántartva marad,
+ *     a Raktárkészlet oldal adott fővállalkozói fülén bevételezhető.
  */
-function buildArPillanatkep(anyag) {
-  if (anyag.tulajdonosId) {
+function buildArPillanatkep(anyag, anyagelszamolasiMod) {
+  if (anyag.tulajdonosId && anyagVisszateritesKulonBevetelAModban(anyagelszamolasiMod)) {
     const sajatParja = getSajatAnyagNevAlapjan(anyag.nev);
     return {
       egysegarPillanatkepEladasi:    Number(anyag.netto_egysegar) || 0,
@@ -369,7 +379,7 @@ function buildArPillanatkep(anyag) {
  * Mennyiségek: a hívó csak tervezett és kiadandó mennyiséget adhat meg –
  * a kiadott / felhasznált / visszahozott mezők 0-ról indulnak.
  */
-export function createKeziTetelPillanatkep(anyagtorzsId, mennyisegek = {}) {
+export function createKeziTetelPillanatkep(anyagtorzsId, mennyisegek = {}, anyagelszamolasiMod = null) {
   const anyag = getAnyag(anyagtorzsId);
   if (!anyag) return null;
   return {
@@ -380,7 +390,7 @@ export function createKeziTetelPillanatkep(anyagtorzsId, mennyisegek = {}) {
     nev:                   anyag.nev || "",
     kategoria:             anyag.telepitoi_kategoria || anyag.kategoria || "",
     egyseg:                anyag.egyseg || "db",
-    ...buildArPillanatkep(anyag),
+    ...buildArPillanatkep(anyag, anyagelszamolasiMod),
     tervezettMennyiseg:    Number(mennyisegek.tervezettMennyiseg) || 0,
     kiadandoMennyiseg:     Number(mennyisegek.kiadandoMennyiseg) || 0,
     kiadottMennyiseg:      0,
@@ -407,7 +417,7 @@ export function createKeziTetelPillanatkep(anyagtorzsId, mennyisegek = {}) {
  * Csak létező anyagtörzs-rekordra hívható (anyagtorzsId kötelező, a hívó
  * – generateAnyagszamitas – garantáltan csak ilyenekre ad vissza sort).
  */
-export function createAnyagszamitoTetelPillanatkep(anyagtorzsId, szamoltMennyiseg) {
+export function createAnyagszamitoTetelPillanatkep(anyagtorzsId, szamoltMennyiseg, anyagelszamolasiMod = null) {
   const anyag = getAnyag(anyagtorzsId);
   if (!anyag) return null;
   return {
@@ -418,7 +428,7 @@ export function createAnyagszamitoTetelPillanatkep(anyagtorzsId, szamoltMennyise
     nev:                   anyag.nev || "",
     kategoria:             anyag.telepitoi_kategoria || anyag.kategoria || "",
     egyseg:                anyag.egyseg || "db",
-    ...buildArPillanatkep(anyag),
+    ...buildArPillanatkep(anyag, anyagelszamolasiMod),
     tervezettMennyiseg:    Number(szamoltMennyiseg) || 0,
     kiadandoMennyiseg:     0,
     kiadottMennyiseg:      0,

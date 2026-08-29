@@ -120,7 +120,8 @@ export default function TabKivitelezesiCsomag({ projekt, currentUser }) {
       const updated = addAnyagokBulkToKivitelezesiCsomag(
         csomag.id,
         keziKosar.map(k => ({ anyagtorzsId: k.anyagtorzsId, mennyiseg: k.mennyiseg })),
-        currentUser?.name || ""
+        currentUser?.name || "",
+        projekt?.anyagelszamolasiMod
       );
       setCsomag(updated);
       setKeziKosar([]);
