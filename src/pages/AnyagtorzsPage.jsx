@@ -5,7 +5,7 @@
  * Ugyanaz a localStorage["anyagtorzs"] adatforrás amit az Árajánlat is használ.
  */
 import { useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, Save, Info, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, Info, Upload, Search } from "lucide-react";
 import { C, FONT } from "../lib/constants";
 import { ft } from "../lib/helpers";
 import {
@@ -165,6 +165,7 @@ export default function AnyagtorzsPage() {
   const [ujOpen, setUjOpen]       = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [szuroKat, setSzuroKat]   = useState("mind");
+  const [kereses, setKereses]     = useState("");
   // Fővállalkozónkénti raktár-elkülönítés (ld. anyagtorzs.js FVK_SAJAT /
   // getAnyagokByTulajdonos) – "Saját munka" fül + egy-egy fül minden aktív
   // fővállalkozóhoz. Új anyag/import mindig az épp kiválasztott fülre kerül.
@@ -201,8 +202,16 @@ export default function AnyagtorzsPage() {
       .sort((a, b) => a.label.localeCompare(b.label, "hu"));
   }, [tulajdonosAnyagok]);
 
-  const szurt = szuroKat === "mind" ? tulajdonosAnyagok
+  const katSzurt = szuroKat === "mind" ? tulajdonosAnyagok
     : tulajdonosAnyagok.filter(a => (a.telepitoi_kategoria || "egyeb") === szuroKat);
+
+  const q = kereses.trim().toLowerCase();
+  const szurt = !q ? katSzurt : katSzurt.filter(a =>
+    a.nev?.toLowerCase().includes(q) ||
+    a.kulsoAzonosito?.toLowerCase().includes(q) ||
+    a.beszallito?.toLowerCase().includes(q) ||
+    a.megjegyzes?.toLowerCase().includes(q)
+  );
 
   return (
     <div style={{ padding: "16px", fontFamily: FONT, maxWidth: 620 }}>
@@ -215,7 +224,10 @@ export default function AnyagtorzsPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <div>
           <h2 style={{ fontWeight: 800, fontSize: 18, margin: 0, color: C.text }}>Anyagtörzs</h2>
-          <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>{tulajdonosAnyagok.filter(a => a.aktiv).length} aktív · {tulajdonosAnyagok.length} összesen ({aktivFv?.nev || "Saját munka"})</p>
+          <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>
+            {tulajdonosAnyagok.filter(a => a.aktiv).length} aktív · {tulajdonosAnyagok.length} összesen ({aktivFv?.nev || "Saját munka"})
+            {q && <span style={{ color: C.accent, fontWeight: 700 }}> · {szurt.length} találat</span>}
+          </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={() => setImportOpen(true)}
@@ -233,13 +245,25 @@ export default function AnyagtorzsPage() {
           fővállalkozó saját, a többiétől független anyaglistája/készlete. */}
       <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
         {[{ id: FVK_SAJAT, nev: "Saját munka" }, ...fovallalkozok.map(f => ({ id: f.id, nev: f.nev }))].map(t => (
-          <button key={t.id || "sajat"} onClick={() => { setAktivTulajdonosId(t.id); setSzuroKat("mind"); }}
+          <button key={t.id || "sajat"} onClick={() => { setAktivTulajdonosId(t.id); setSzuroKat("mind"); setKereses(""); }}
             style={{ padding: "6px 13px", borderRadius: 20, border: `1.5px solid ${aktivTulajdonosId === t.id ? C.accent : C.border}`,
               background: aktivTulajdonosId === t.id ? C.accent : "#fff", color: aktivTulajdonosId === t.id ? "#fff" : C.textSub,
               cursor: "pointer", fontSize: 13, fontFamily: FONT, fontWeight: aktivTulajdonosId === t.id ? 700 : 500 }}>
             {t.nev}
           </button>
         ))}
+      </div>
+
+      {/* Keresés – név, cikkszám, beszállító, megjegyzés szerint, a kiválasztott
+          tulajdonos (Saját munka / fővállalkozó) listáján belül. */}
+      <div style={{ position: "relative", marginBottom: 12 }}>
+        <Search size={14} color={C.muted} style={{ position: "absolute", left: 10, top: 10 }} />
+        <input
+          value={kereses}
+          onChange={e => setKereses(e.target.value)}
+          placeholder="Keresés név, cikkszám vagy beszállító szerint…"
+          style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px 9px 32px", border: `1.5px solid ${C.border}`, borderRadius: 9, fontSize: 13, fontFamily: FONT, outline: "none" }}
+        />
       </div>
 
       {/* Szűrő – a kiválasztott tulajdonos tényleges kellékanyag-csoportjai */}
@@ -257,7 +281,7 @@ export default function AnyagtorzsPage() {
       {/* Lista */}
       <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         {szurt.length === 0
-          ? <p style={{ textAlign: "center", color: C.muted, padding: "28px 0", fontSize: 13 }}>Nincs anyag ebben a kategóriában</p>
+          ? <p style={{ textAlign: "center", color: C.muted, padding: "28px 0", fontSize: 13 }}>{q ? `Nincs találat: "${kereses.trim()}"` : "Nincs anyag ebben a kategóriában"}</p>
           : szurt.map(a => (
             <AnyagSor key={a.id} anyag={a}
               onEdit={a => setEditAnyag(a)}
