@@ -23,7 +23,7 @@ import {
   ChevronDown, Save
 } from "lucide-react";
 import { C, FONT, FONT_HEADING, STATUS_CFG, WORKFLOW_STATUSES } from "../lib/constants";
-import { getMunkalapUtvonal, canSetMunkalapStatus, MUNKALAP_MEGHIUSULT } from "../lib/workflowRules.js";
+import { getMunkalapUtvonal, canSetMunkalapStatus, MUNKALAP_MEGHIUSULT, getMunkalapKanonikusStatus } from "../lib/workflowRules.js";
 import { getUsers } from "../lib/crmUsers";
 import { loadLocal, updateItem } from "../lib/localDb";
 import { ft, totals, generateId } from "../lib/helpers";
@@ -229,7 +229,10 @@ export function MunkalapLista({ data, onSelect, onNew, userRole, currentUser }) 
       m.projektkod,
     ].filter(Boolean).join(" ").toLowerCase();
 
-    return (tab === "Összes" || m.status === tab) &&
+    // Alias-tudatos szűrés – egy régi adatban tárolt "Kiosztva csapatnak"
+    // (alias) is a "Kiosztásra vár" (kanonikus) fülön jelenjen meg, ne
+    // tűnjön el csak azért, mert a stringek nem egyeznek pontosan.
+    return (tab === "Összes" || getMunkalapKanonikusStatus(m.status) === tab) &&
       (azonosito.includes(q.toLowerCase()) ||
        clientNev.toLowerCase().includes(q.toLowerCase()));
   }).map(m => {

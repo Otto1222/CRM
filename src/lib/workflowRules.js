@@ -68,6 +68,43 @@ export function getMunkalapUtvonal(munkalap) {
   return tipus === "Felmérés" ? MUNKALAP_FELMERES_UTVONAL : MUNKALAP_FO_UTVONAL;
 }
 
+// A szűrő-fülekhez / új munkalap Státusz-mezőjéhez kell a TELJES, mindkét
+// útvonalat lefedő kanonikus lista (a stepper egy adott munkalapnál csak a
+// saját útvonalát mutatja, de egy szűrőnek/UI-választónak mindkettőt fel
+// kell ajánlania) – csak a kanonikus id-k, alias NÉLKÜL, hogy ne legyen két
+// fül ugyanarra a lépésre (ld. constants.js WORKFLOW_STATUSES régi hibája).
+export const MUNKALAP_KANONIKUS_STATUSZOK = [
+  ...MUNKALAP_FELMERES_UTVONAL.map(l => l.id),
+  ...MUNKALAP_FO_UTVONAL.map(l => l.id),
+  MUNKALAP_MEGHIUSULT,
+];
+
+let _munkalapAliasTerkep = null;
+function getMunkalapAliasTerkep() {
+  if (_munkalapAliasTerkep) return _munkalapAliasTerkep;
+  const terkep = new Map();
+  for (const utvonal of [MUNKALAP_FELMERES_UTVONAL, MUNKALAP_FO_UTVONAL]) {
+    for (const lepes of utvonal) {
+      terkep.set(lepes.id, lepes.id);
+      for (const alias of lepes.aliases) terkep.set(alias, lepes.id);
+    }
+  }
+  terkep.set(MUNKALAP_MEGHIUSULT, MUNKALAP_MEGHIUSULT);
+  _munkalapAliasTerkep = terkep;
+  return terkep;
+}
+
+/**
+ * Egy munkalap-státusz (akár régi alias, pl. "Kiosztva csapatnak", akár már
+ * kanonikus) kanonikus megfelelője – szűréshez/csoportosításhoz kell, hogy a
+ * régi adatokban tárolt alias-értékek is a helyes fülre/csoportba essenek,
+ * anélkül hogy a tárolt adatot át kellene írni. Ismeretlen értéknél
+ * változatlanul visszaadja (ne dobjunk el/rejtsünk el semmilyen adatot).
+ */
+export function getMunkalapKanonikusStatus(status) {
+  return getMunkalapAliasTerkep().get(status) || status;
+}
+
 function findMunkalapLepesIndex(utvonal, status) {
   return utvonal.findIndex(l => l.id === status || l.aliases.includes(status));
 }

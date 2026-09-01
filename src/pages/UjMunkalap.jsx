@@ -3,7 +3,8 @@ import {
   ArrowLeft, Save, Plus, Trash2, Upload, X,
   ChevronDown, ChevronUp, FileText, Search
 } from "lucide-react";
-import { C, FONT, FONT_HEADING, MUNKALAP_TIPUSOK, WORKFLOW_STATUSES } from "../lib/constants";
+import { C, FONT, FONT_HEADING, MUNKALAP_TIPUSOK } from "../lib/constants";
+import { MUNKALAP_FO_UTVONAL } from "../lib/workflowRules.js";
 import { getAktivSablonok } from "../modules/munkalap_sablonok/munkalapSablon.service.js";
 import { nextEdiSorszam } from "../lib/dokumentumszam";
 import { createBackup } from "../lib/backupService";
@@ -826,7 +827,11 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                   <div style={{ marginBottom:14 }}>
                     <label style={{ display:"block", fontSize:12, color:C.muted, marginBottom:5, fontWeight:600 }}>Státusz</label>
                     <select value={alap.status} onChange={e=>updAlap("status",e.target.value)} style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${C.border}`, borderRadius:9, fontSize:14, fontFamily:FONT, color:C.text, outline:"none", background:C.bg }}>
-                      {WORKFLOW_STATUSES.slice(0,8).map(s=><option key={s}>{s}</option>)}
+                      {/* Kanonikus fő-út (workflowRules.js) + "Felmérés" – a
+                          korábbi lista alias-értékeket (pl. "Kiosztva
+                          csapatnak") kevert a kanonikussal, két fület adva
+                          ugyanarra a lépésre. */}
+                      {["Felmérés", ...MUNKALAP_FO_UTVONAL.map(l=>l.id)].map(s=><option key={s}>{s}</option>)}
                     </select>
                     {alap.status === "Felmérés" && (
                       <div style={{ marginTop:8, padding:"8px 12px", background:"#E0F2FE", borderRadius:8, fontSize:12, color:"#0369A1", display:"flex", alignItems:"flex-start", gap:7, lineHeight:1.5 }}>
@@ -834,7 +839,7 @@ export default function UjMunkalap({ data, onBack, onSave, onClose, initialData 
                         <span>A telepítő <b>felmérési fotókat tölthet fel</b>. Az összes korábban feltöltött kép megtekinthető marad minden következő státuszban is.</span>
                       </div>
                     )}
-                    {alap.status === "Kivitelezés" && (
+                    {alap.status === "Folyamatban" && (
                       <div style={{ marginTop:8, padding:"8px 12px", background:"#FFF7ED", borderRadius:8, fontSize:12, color:"#9A3412", display:"flex", alignItems:"flex-start", gap:7, lineHeight:1.5 }}>
                         <span style={{ fontSize:16, flexShrink:0 }}>🔧</span>
                         <span>A telepítő látja a felmérési fotókat és <b>új kivitelezési képeket tölthet fel</b>.</span>
