@@ -18,6 +18,7 @@ import {
 } from "./kivitelezesiCsomag.schema.js";
 import { adjustAnyagKeszlet } from "../../lib/anyagtorzs.js";
 import { addRaktarMozgas, RAKTAR_MOZGAS_TIPUSOK } from "../../lib/raktarMozgas.js";
+import { PROJEKT_STATUSZOK } from "../../lib/workflowRules.js";
 
 // ─── Fázis 6D – Visszahozott anyag jóváhagyási állapotai ────────────────────
 // A telepítő csak BEJELENTI (JELENTVE), mennyit hoz vissza – a raktárkészletet
@@ -249,6 +250,36 @@ export function addAnyagokBulkToKivitelezesiCsomag(csomagId, picks = [], user = 
  *
  * Tétel SOHA nem törlődik – ez a függvény is csak a status mezőt módosítja.
  */
+// Kivitelezési Csomag → Projekt státusz automata frissítés (3. lépés a
+// státusz-egyszerűsítéshez – ld. workflowRules.js WORKORDER_TO_PROJECT_STATUS,
+// ugyanaz a minta a Munkalap oldalon már működik). Csak ELŐRE léptet, soha
+// nem ír felül egy már előrébb tartó projektet (pl. "Vissza kell menni"
+// vagy "Készre jelentve" állapotot egy késve befutó csomag-esemény ne
+// rántson vissza "Kivitelezés alatt"-ra).
+const KIVITELEZESI_CSOMAG_TO_PROJEKT_STATUS = {
+  "PM jóváhagyta":     "Kivitelezésre vár",
+  "Anyag kiadva":      "Kivitelezés alatt",
+  "Kivitelezés alatt": "Kivitelezés alatt",
+};
+
+function szinkronizaljProjektStatuszCsomagbol(projektId, ujCsomagStatus, user) {
+  const ujProjektStatusz = KIVITELEZESI_CSOMAG_TO_PROJEKT_STATUS[ujCsomagStatus];
+  if (!ujProjektStatusz || !projektId) return;
+  // Dinamikus import = nincs circular dep (projekt.service.js statikusan
+  // importálja ezt a fájlt, ld. assignAnyagokToMunkalap ugyanezen okból).
+  import("../projektek/projekt.service.js").then(({ loadProjektek, updateProjekt }) => {
+    try {
+      const projekt = loadProjektek().find(p => p.id === projektId);
+      if (!projekt) return;
+      const sorrend = PROJEKT_STATUSZOK.map(s => s.id);
+      const curIdx = sorrend.indexOf(projekt.status);
+      const ujIdx  = sorrend.indexOf(ujProjektStatusz);
+      if (curIdx !== -1 && ujIdx !== -1 && ujIdx <= curIdx) return; // ne lépjen vissza
+      updateProjekt(projektId, { status: ujProjektStatusz }, user || "system");
+    } catch (e) { console.warn("[setKivitelezesiCsomagStatus] projekt-státusz szinkron sikertelen:", e?.message || e); }
+  }).catch(() => {});
+}
+
 export function setKivitelezesiCsomagStatus(csomagId, ujStatus, user = "") {
   const csomag = loadKivitelezesiCsomagok().find(k => k.id === csomagId);
   if (!csomag) {
@@ -258,7 +289,9 @@ export function setKivitelezesiCsomagStatus(csomagId, ujStatus, user = "") {
   if (!ellenorzes.ok) {
     throw new Error(ellenorzes.message);
   }
-  return updateKivitelezesiCsomag(csomagId, { status: ujStatus }, user);
+  const eredmeny = updateKivitelezesiCsomag(csomagId, { status: ujStatus }, user);
+  szinkronizaljProjektStatuszCsomagbol(csomag.projektId, ujStatus, user);
+  return eredmeny;
 }
 
 /**
