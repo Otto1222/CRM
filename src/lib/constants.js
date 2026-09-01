@@ -1,3 +1,5 @@
+import { MUNKALAP_KANONIKUS_STATUSZOK } from "./workflowRules.js";
+
 // ─── E.D.I. SOLUTIONS – DESIGN SYSTEM ───────────────────────
 // Színek forrása: E.D.I. Arculati Kézikönyv
 // Light Sea Green: #18ACA0 | Mosque: #075E56
@@ -91,23 +93,15 @@ export const MUNKALAP_TIPUSOK = [
 ];
 
 // Munkalap státuszok – spec 5. pont (teljes sorrend)
-export const WORKFLOW_STATUSES = [
-  "Létrehozva",
-  "Kiosztva csapatnak",
-  "Folyamatban",
-  "Helyszínen lezárva",
-  "Ellenőrzés alatt",
-  "Jóváhagyva",
-  "Számlázásra kész",
-  "Lezárva",
-  // Extra
-  "Felmérés",
-  "Befejezett Felmérés",
-  "Kiosztásra vár",
-  "Kivitelezésre vár",
-  "Számlázva",
-  "Meghiúsult",
-];
+// A munkalap-státuszok EGYETLEN kanonikus forrása workflowRules.js
+// MUNKALAP_FO_UTVONAL / MUNKALAP_FELMERES_UTVONAL – ez korábban egy saját,
+// 14 elemű, félig-szinonim listaként élt itt (pl. "Kiosztva csapatnak" ÉS
+// "Kiosztásra vár" is szerepelt, két külön fülként, holott ugyanazt a
+// lépést jelentik), ami a szűrő-füleken/az Új munkalap Státusz mezőjén
+// zavaró duplikációt okozott. Régi, alias-értékű adatok szűréséhez ld.
+// getMunkalapKanonikusStatus() – az itteni lista maga csak a kanonikus id-ket
+// tartalmazza, hogy ne legyen két fül ugyanarra a lépésre.
+export const WORKFLOW_STATUSES = MUNKALAP_KANONIKUS_STATUSZOK;
 
 
 // ─── NAVIGÁCIÓ ────────────────────────────────────────────────
