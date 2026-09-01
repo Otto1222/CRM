@@ -78,6 +78,7 @@ function UserRow({ user, onSave, onDelete }) {
   const [permOpen, setPermOpen] = useState(false);
   const [name,     setName]     = useState(user.name);
   const [username, setUsername] = useState(user.username);
+  const [role,     setRole]     = useState(user.role);
   const [newPw,    setNewPw]    = useState("");
   const [showPw,   setShowPw]   = useState(false);
   const [copied,   setCopied]   = useState(false);
@@ -96,6 +97,7 @@ function UserRow({ user, onSave, onDelete }) {
     const updates = {
       name:     name.trim(),
       username: username.trim(),
+      role,
       initials: name.trim().split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(),
     };
     if (newPw.trim()) {
@@ -114,6 +116,7 @@ function UserRow({ user, onSave, onDelete }) {
     setEditing(false);
     setName(user.name);
     setUsername(user.username);
+    setRole(user.role);
     setNewPw("");
   }
 
@@ -197,6 +200,21 @@ function UserRow({ user, onSave, onDelete }) {
               <User size={14} color={C.muted} />
               <input value={username} onChange={e => setUsername(e.target.value)} style={{ flex: 1, border: "none", outline: "none", fontSize: 14, padding: "10px 0", fontFamily: FONT, background: "transparent", color: C.text }} />
             </div>
+          </div>
+
+          {/* Szerepkör – meghatározza, milyen oldalakat lát a user és mi a
+              kezdőoldala bejelentkezés után (ld. roles.js getHomePage/ROLE_PAGES).
+              Váltás után a jogosultság-panelen érdemes "Vissza az alapértelmezettre"-t
+              nyomni, hogy a régi szerepkör egyedi felülírásai ne maradjanak rajta. */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .8, display: "block", marginBottom: 6 }}>
+              Szerepkör
+              <span style={{ color: C.muted, fontWeight: 400, textTransform: "none", marginLeft: 8 }}>– ez dönti el, milyen oldalakat lát és mi a kezdőoldala</span>
+            </label>
+            <select value={role} onChange={e => setRole(e.target.value)}
+              style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${C.border}`, borderRadius: 10, fontSize: 14, fontFamily: FONT, outline: "none", background: C.bg, color: C.text }}>
+              {SZEREPKOROK.map(r => <option key={r}>{r}</option>)}
+            </select>
           </div>
 
           {/* Új jelszó */}
