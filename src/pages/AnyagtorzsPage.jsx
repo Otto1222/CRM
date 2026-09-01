@@ -30,6 +30,9 @@ function AnyagSor({ anyag, onEdit, onDelete, onToggle }) {
         <p style={{ fontSize: 11, color: C.muted, margin: "2px 0 0" }}>
           {tKat} · {anyag.egyseg}
           {anyag.netto_egysegar > 0 && <span style={{ color: C.success, marginLeft: 6, fontWeight: 600 }}>{ft(anyag.netto_egysegar)}/{anyag.egyseg}</span>}
+          <span style={{ marginLeft: 6, fontWeight: 600, color: (Number(anyag.keszlet) || 0) > 0 ? C.textSub : C.danger }}>
+            · Készlet: {Number(anyag.keszlet) || 0} {anyag.egyseg}
+          </span>
           <span style={{ color: C.muted, marginLeft: 6 }}>· Ajánlat: {aKat}</span>
         </p>
       </div>
