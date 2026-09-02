@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard, Users, ClipboardList, Calendar, Settings,
   LogOut, Building2, Receipt, FileText, BarChart3, BookOpen, X,
-  AlertTriangle, LayoutTemplate, ChevronDown, TrendingUp, FileCheck2, Warehouse,
+  AlertTriangle, LayoutTemplate, ChevronDown, TrendingUp, FileCheck2, Warehouse, Route,
 } from "lucide-react";
 import { C, FONT, FONT_HEADING } from "../lib/constants";
 import { getAllowedPagesForUser } from "../lib/permissions.js";
@@ -47,6 +47,12 @@ const NAV_GROUPS = [
     id: "naptar",
     label: "Naptár",
     icon: Calendar,
+  },
+  {
+    type: "single",
+    id: "napi_utemezes",
+    label: "Napi kiosztás-tervező",
+    icon: Route,
   },
   {
     type: "group",

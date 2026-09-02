@@ -66,6 +66,12 @@ export const PROJEKT_SCHEMA = {
   clientEmail:         "",
   kapcsolattarto:      "",
   telepitesiCim:       "",
+  // Napi kiosztás-tervezőhöz (ld. utemezesOptimalizalo.js) gyorsítótárazott
+  // geokód – geoCimSzoveg jelzi, melyik cím-szöveghez tartozik, hogy a cím
+  // módosítása után a rendszer észrevegye, hogy újra kell geokódolni.
+  geoLat:              null,
+  geoLon:              null,
+  geoCimSzoveg:        "",
   tipus:               "Napelem telepítés",
   status:              "Létrehozva",
   napelemDb:           0,

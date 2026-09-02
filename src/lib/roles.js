@@ -10,14 +10,14 @@ export const ROLE_PAGES = {
   "Admin": [
     "dashboard",
     "ugyfelek", "arajanlatok",
-    "projektek", "munkalapok", "naptar",
+    "projektek", "munkalapok", "naptar", "napi_utemezes",
     "szamlak", "karteritesek", "riportok", "tig", "raktarkeszlet",
     "csapat", "munkalap_sablonok", "beallitasok",
   ],
   "Projektmenedzser": [
     "dashboard",
     "ugyfelek", "arajanlatok",
-    "projektek", "munkalapok", "naptar",
+    "projektek", "munkalapok", "naptar", "napi_utemezes",
     "szamlak", "karteritesek", "riportok", "tig", "raktarkeszlet",
     "csapat", "munkalap_sablonok", "beallitasok",
   ],

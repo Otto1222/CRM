@@ -29,6 +29,7 @@ export const PERMISSION_GROUPS = [
       { key: "page_projektek",         label: "Projektek" },
       { key: "page_munkalapok",        label: "Munkalapok" },
       { key: "page_naptar",            label: "Naptár" },
+      { key: "page_napi_utemezes",     label: "Napi kiosztás-tervező" },
       { key: "page_szamlak",           label: "Számlák" },
       { key: "page_karteritesek",      label: "Kártérítések" },
       { key: "page_riportok",          label: "Riportok" },
