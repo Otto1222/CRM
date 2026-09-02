@@ -27,6 +27,7 @@ import RiportokPage from "./pages/RiportokPage.jsx";
 import TigPage from "./pages/TigPage.jsx";
 import RaktarkeszletPage from "./pages/RaktarkeszletPage.jsx";
 import RaktarosPage from "./pages/RaktarosPage.jsx";
+import NapiUtemezesPage from "./pages/NapiUtemezesPage.jsx";
 import NaptarPage from "./pages/NaptarPage.jsx";
 import KarteritesekPage from "./pages/KarteritesekTab.jsx";
 import MunkalapSablonokPage from "./modules/munkalap_sablonok/MunkalapSablonokPage.jsx";
@@ -47,6 +48,7 @@ const PAGE_TITLES = {
   tig:               "TIG",
   raktarkeszlet:     "Raktárkészlet",
   raktaros:          "Raktáros",
+  napi_utemezes:     "Napi kiosztás-tervező",
   karteritesek:      "Kártérítések",
   munkalap_sablonok: "ML Sablonok",
   dokumentumok:      "Dokumentumok",
@@ -431,6 +433,7 @@ initSablonok();
             {page === "tig" && <TigPage currentUser={user} />}
             {page === "raktarkeszlet" && <RaktarkeszletPage currentUser={user} />}
             {page === "raktaros" && <RaktarosPage currentUser={user} />}
+            {page === "napi_utemezes" && <NapiUtemezesPage currentUser={user} />}
 
             {page === "beallitasok" && (
               <>

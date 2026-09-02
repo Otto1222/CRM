@@ -64,6 +64,18 @@ export const CSAPAT_SCHEMA = {
   kapacitas:        2,      // db munka/nap
   hetvegen:         false,
   munkatipusok:     [],
+  // ── Napi kiosztás-tervező (ld. utemezesOptimalizalo.js) ────────
+  // A telephely geokódolt koordinátája – gyorsítótárazva, hogy ne kelljen
+  // minden tervezéskor újra lekérdezni. geoCimSzoveg jelzi, melyik cím-
+  // szöveghez tartozik a lat/lon, hogy a telephely módosítása után a
+  // rendszer észrevegye, hogy újra kell geokódolni.
+  lat:              null,
+  lon:              null,
+  geoCimSzoveg:     "",
+  // Munkatípusonként, ennél a konkrét csapatnál: hány db-ot bír egy nap
+  // alatt – { [munkatipusId]: maxDb }. Ha egy típusra nincs itt érték,
+  // az általános "kapacitas" mező az alapértelmezett.
+  maxNapiMunka:     {},
   aktiv:            true,
   // ── Alvállalkozói elszámolás ──────────────────────────────
   elszamolasAktiv:  false,

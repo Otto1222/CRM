@@ -72,11 +72,16 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
     nev:      csapat?.nev      || "",
     tipus:    csapat?.tipus    || "sajat",
     telephely: csapat?.telephely || "",
+    lat:      csapat?.lat      ?? null,
+    lon:      csapat?.lon      ?? null,
+    geoCimSzoveg: csapat?.geoCimSzoveg || "",
     szin:     csapat?.szin     || C.accent,
     tagok:    csapat?.tagok    || [],
     tagNevek: csapat?.tagNevek || [],
     kapacitas: csapat?.kapacitas ?? 2,
     hetvegen: csapat?.hetvegen || false,
+    munkatipusok: csapat?.munkatipusok || [],
+    maxNapiMunka: csapat?.maxNapiMunka || {},
     elszamolasAktiv:   csapat?.elszamolasAktiv   || false,
     elszamolasInfo:    csapat?.elszamolasInfo    || "",
     dijTipus:          csapat?.dijTipus          || "fix",
@@ -171,10 +176,22 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
             <AddressSearch
               value={form.telephely}
               onChange={v => upd("telephely", v)}
-              onSelect={r => upd("telephely", r.display_name.split(",").slice(0,3).join(",").trim())}
+              onSelect={r => {
+                const cim = r.display_name.split(",").slice(0,3).join(",").trim();
+                // A választott javaslat lat/lon-ja rögtön gyorsítótárazódik – a
+                // Napi kiosztás-tervezőnek nem kell újra geokódolnia ezt a
+                // telephelyet (ld. utemezesOptimalizalo.js).
+                setForm(p => ({ ...p, telephely: cim, lat: parseFloat(r.lat), lon: parseFloat(r.lon), geoCimSzoveg: cim }));
+              }}
               placeholder="pl. Szeged, Kossuth Lajos sugárút 5."
               style={inp}
             />
+            {form.lat != null && form.geoCimSzoveg === form.telephely && (
+              <p style={{ fontSize: 10, color: C.success, margin: "3px 0 0" }}>✓ Koordináta rögzítve a Napi kiosztás-tervezőhöz</p>
+            )}
+            {form.telephely.trim() && form.geoCimSzoveg !== form.telephely && (
+              <p style={{ fontSize: 10, color: C.warning, margin: "3px 0 0" }}>⚠ Válaszd ki a listából a javasolt címet, hogy a koordináta is elmentődjön</p>
+            )}
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px" }}>
@@ -197,6 +214,53 @@ function CsapatForm({ csapat, onClose, onSaved, currentUser }) {
           </div>
 
           <Toggle value={form.hetvegen} onChange={v => upd("hetvegen", v)} label="Hétvégén is dolgozik" />
+
+          {/* Munkatípusok + típusonkénti napi kapacitás – a Napi kiosztás-
+              tervezőnek kell (ld. utemezesOptimalizalo.js): mihez ért ez a
+              csapat, és abból hány db-ot bír el egy nap alatt. Ha egy
+              kiválasztott típusnál üresen hagyod a napi db-ot, a fenti
+              általános "Napi kapacitás" mezőt használja a tervező. */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.7 }}>
+              Munkatípusok, amikhez ért ez a csapat
+            </label>
+            <div style={{ border: `1.5px solid ${C.border}`, borderRadius: 10, overflow: "hidden" }}>
+              {getAktivMunkatipusok().length === 0 ? (
+                <p style={{ padding: 14, fontSize: 13, color: C.muted, margin: 0 }}>Nincs még munkatípus felvéve (Beállítások → Munkatípusok)</p>
+              ) : (
+                getAktivMunkatipusok().map(mt => {
+                  const selected = form.munkatipusok.includes(mt.id);
+                  return (
+                    <div key={mt.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", borderBottom: `1px solid ${C.bg}`, background: selected ? C.accentLight : "#fff" }}>
+                      <div onClick={() => {
+                        const uj = selected ? form.munkatipusok.filter(id => id !== mt.id) : [...form.munkatipusok, mt.id];
+                        upd("munkatipusok", uj);
+                      }} style={{
+                        width: 18, height: 18, borderRadius: 5, flexShrink: 0, cursor: "pointer",
+                        background: selected ? C.accent : "#fff", border: `2px solid ${selected ? C.accent : C.border}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        {selected && <span style={{ color: "#fff", fontSize: 11, fontWeight: 700 }}>✓</span>}
+                      </div>
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: C.text }}>{mt.nev}</span>
+                      {selected && (
+                        <input type="number" min="0" placeholder={String(form.kapacitas)}
+                          value={form.maxNapiMunka[mt.id] ?? ""}
+                          onChange={e => {
+                            const v = e.target.value === "" ? undefined : Number(e.target.value);
+                            const uj = { ...form.maxNapiMunka };
+                            if (v === undefined) delete uj[mt.id]; else uj[mt.id] = v;
+                            upd("maxNapiMunka", uj);
+                          }}
+                          title="Max db/nap ebből a típusból – üresen az általános napi kapacitást használja"
+                          style={{ width: 60, padding: "4px 7px", border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontFamily: FONT, textAlign: "right" }} />
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
 
           {/* CRM felhasználók hozzárendelése */}
           <div>
