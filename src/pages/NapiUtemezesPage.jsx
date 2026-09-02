@@ -17,7 +17,7 @@ import { getAktivMunkatipusok } from "../modules/munkatipusok/munkatipus.service
 import { createWorkorder } from "../services/workorder.service.js";
 import { geocodeTomegesen } from "../lib/geoCache.js";
 import { calcDrivingDistance } from "../lib/geoService.js";
-import { tervezzNapiUtemezest, finomitsNapiKotegOsrmVal } from "../lib/utemezesOptimalizalo.js";
+import { tervezzNapiUtemezest, javitsCsereLepesekkel, finomitsNapiKotegOsrmVal } from "../lib/utemezesOptimalizalo.js";
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function plusDays(n) { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
@@ -119,7 +119,22 @@ export default function NapiUtemezesPage({ currentUser }) {
       if (geoHianyzikCsapat.length > 0) {
         setHiba(`${geoHianyzikCsapat.length} csapat telephelye nem geokódolható (ellenőrizd a címet a Csapatok oldalon): ${geoHianyzikCsapat.map(c => c.nev).join(", ")}`);
       }
-      setEredmeny({ napiKotegek: res.napiKotegek, beosztatlanFeladatok: beosztatlan });
+
+      // ── 3. Csere-alapú helyi javítás – a csapatonkénti sorban-feldolgozás
+      // torzítását küszöböli ki (ld. javitsCsereLepesekkel dokumentációja):
+      // ha két csapat területe átfedi egymást, egy korábban feldolgozott
+      // csapat feleslegesen elvihet egy címet, ami valójában egy másikhoz
+      // esne közelebb. Mindig lefut, ingyenes (nincs hálózati hívás).
+      const csapatTelephelyLookup = id => csapatokGeo.find(c => c.id === id);
+      const elozoOsszTavKm = Math.round(res.napiKotegek.reduce((s, k) => s + k.osszTavKm, 0) * 10) / 10;
+      const javitottKotegek = javitsCsereLepesekkel(res.napiKotegek, csapatTelephelyLookup);
+      const ujOsszTavKm = Math.round(javitottKotegek.reduce((s, k) => s + k.osszTavKm, 0) * 10) / 10;
+
+      setEredmeny({
+        napiKotegek: javitottKotegek,
+        beosztatlanFeladatok: beosztatlan,
+        csereJavitas: { elozoOsszTavKm, ujOsszTavKm },
+      });
       setProjektek(loadProjektek());
     } catch (e) {
       setHiba(e.message || "Ismeretlen hiba a tervezés közben.");
@@ -279,6 +294,11 @@ export default function NapiUtemezesPage({ currentUser }) {
               Javasolt beosztás – {eredmeny.napiKotegek.length} csapat-nap, {eredmeny.napiKotegek.reduce((s, k) => s + k.feladatok.length, 0)} projekt
               {eredmeny.beosztatlanFeladatok.length > 0 && <span style={{ color: C.warning }}> · {eredmeny.beosztatlanFeladatok.length} nem fért bele</span>}
             </p>
+            {eredmeny.csereJavitas && eredmeny.csereJavitas.ujOsszTavKm < eredmeny.csereJavitas.elozoOsszTavKm - 0.05 && (
+              <span style={{ fontSize: 11.5, color: C.success, fontWeight: 600 }} title="A csapatonkénti sorban-feldolgozás okozta rosszul kiosztott címeket a csere-lépés kijavította.">
+                ✓ Csere-optimalizálás: {eredmeny.csereJavitas.elozoOsszTavKm} → {eredmeny.csereJavitas.ujOsszTavKm} km légvonalban
+              </span>
+            )}
             <button onClick={handleFinomitas} disabled={finomitDolgozik}
               title="Légvonal-becslés cseréje valós vezetési távolságra (OSRM) – néhány másodpercet vehet igénybe"
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", background: "#fff", color: C.accent, border: `1.5px solid ${C.accent}`, borderRadius: 8, cursor: finomitDolgozik ? "default" : "pointer", fontWeight: 700, fontSize: 12, fontFamily: FONT }}>

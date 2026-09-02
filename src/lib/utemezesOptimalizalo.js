@@ -107,6 +107,77 @@ export function tervezzNapiUtemezest({ feladatok = [], csapatok = [], datumTol, 
   return { napiKotegek, beosztatlanFeladatok: maradek };
 }
 
+function bucketKoltseg(telephely, feladatok) {
+  if (!telephely) return 0;
+  let koltseg = 0, prev = telephely;
+  for (const f of feladatok) { koltseg += haversineKm(prev, f); prev = f; }
+  return koltseg;
+}
+
+/**
+ * Csere-alapú helyi javítás (local search) a kezdeti mohó beosztáson.
+ *
+ * A tervezzNapiUtemezest() CSAPATONKÉNT, sorban dolgozik – az elsőként
+ * feldolgozott csapat "learathatja" a hozzá legközelebbi címeket, mielőtt a
+ * következő csapat egyáltalán választhatna, még akkor is, ha egy adott cím
+ * valójában a MÁSODIK csapathoz esne közelebb. Minél több csapat/cím van
+ * egyszerre, ennek annál nagyobb az esélye – ez ronthatja a gazdaságosságot
+ * (felesleges km).
+ *
+ * Ez a függvény minden lehetséges párt megvizsgál KÉT különböző csapat/nap
+ * köteg között, és ha egy csere (A köteg X feladata ↔ B köteg Y feladata)
+ * csökkentené a két köteg össz-távolságát, végrehajtja – addig ismétli,
+ * amíg talál javító cserét (vagy eléri a körkorlátot). Tisztán légvonal-
+ * alapú, gyors, nincs benne hálózati hívás – a "Javaslat készítése" minden
+ * futtatásakor érdemes lefuttatni, a kezdeti eredmény UTÁN.
+ *
+ * @param napiKotegek           tervezzNapiUtemezest() eredménye
+ * @param csapatTelephelyLookup (csapatId) => { lat, lon } | undefined
+ */
+export function javitsCsereLepesekkel(napiKotegek, csapatTelephelyLookup, maxKor = 25) {
+  const kotegek = napiKotegek.map(k => ({ ...k, feladatok: [...k.feladatok] }));
+  const telephelyek = kotegek.map(k => csapatTelephelyLookup(k.csapatId) || null);
+
+  let javult = true, kor = 0;
+  while (javult && kor < maxKor) {
+    javult = false;
+    kor++;
+    for (let a = 0; a < kotegek.length; a++) {
+      if (!telephelyek[a]) continue;
+      for (let b = a + 1; b < kotegek.length; b++) {
+        if (!telephelyek[b]) continue;
+        const regiA = bucketKoltseg(telephelyek[a], kotegek[a].feladatok);
+        const regiB = bucketKoltseg(telephelyek[b], kotegek[b].feladatok);
+        for (let i = 0; i < kotegek[a].feladatok.length; i++) {
+          for (let j = 0; j < kotegek[b].feladatok.length; j++) {
+            const ujA = kotegek[a].feladatok.slice(); ujA[i] = kotegek[b].feladatok[j];
+            const ujB = kotegek[b].feladatok.slice(); ujB[j] = kotegek[a].feladatok[i];
+            const ujKoltseg = bucketKoltseg(telephelyek[a], ujA) + bucketKoltseg(telephelyek[b], ujB);
+            if (ujKoltseg < regiA + regiB - 0.05) { // kis epsilon a lebegőpontos zajra
+              kotegek[a].feladatok = ujA;
+              kotegek[b].feladatok = ujB;
+              javult = true;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Táv-mezők és összegek frissítése a végleges sorrend alapján
+  return kotegek.map((k, idx) => {
+    const tel = telephelyek[idx];
+    let prev = tel, osszTavKm = 0;
+    const feladatok = k.feladatok.map(f => {
+      const tav = tel ? haversineKm(prev, f) : (f.tavKm ?? 0);
+      osszTavKm += tav;
+      prev = f;
+      return { ...f, tavKm: Math.round(tav * 10) / 10 };
+    });
+    return { ...k, feladatok, osszTavKm: Math.round(osszTavKm * 10) / 10 };
+  });
+}
+
 /**
  * Egy napi köteg légvonal-becslését valós vezetési távolságra/időre cseréli
  * (OSRM, ld. geoService.js calcDrivingDistance) – csak a jóváhagyás előtti
