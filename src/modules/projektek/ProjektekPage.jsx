@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Search, Download, Users, Handshake, AlertTriangle, WifiOff } from "lucide-react";
+import { Plus, Search, Download, Users, Handshake, AlertTriangle, WifiOff, Users2 } from "lucide-react";
+import ProjektBulkImportPanel from "../../components/ProjektBulkImportPanel.jsx";
 import { C, FONT, FONT_HEADING } from "../../lib/constants.js";
 import { PROJEKT_STATUSZOK, PROJEKT_FORRAS } from "./projekt.schema.js";
 import { FORRAS_ELLENORZES_SZUKSEGES } from "../../lib/workflowRules.js";
@@ -25,6 +26,7 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
   const [sel, setSel] = useState(null);
   const [ujOpen, setUjOpen] = useState(false);
   const [ujForrasInit, setUjForrasInit] = useState("");
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [q, setQ] = useState("");
   const [forrasFilter, setForrasFilter] = useState("Összes");
   const [tabFilter, setTabFilter] = useState("Összes");
@@ -168,6 +170,10 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
                 style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 18px", background:C.success, color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:14, fontFamily:FONT }}>
                 <Plus size={15} /> Belső munka
               </button>
+              <button onClick={() => setBulkImportOpen(true)} title="Sok, egyforma jellegű munka (pl. sok helyszínes felmérés) egyszerre felvitele Excelből"
+                style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 14px", background:"#fff", color:C.accent, border:`1.5px solid ${C.accent}`, borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:FONT }}>
+                <Users2 size={14} /> Tömeges import
+              </button>
             </>
           )}
         </div>
@@ -227,6 +233,14 @@ export default function ProjektekPage({ data, currentUser, onNavigateMunkalap, o
             setSel(p);
             setUjForrasInit("");
           }}
+        />
+      )}
+
+      {bulkImportOpen && (
+        <ProjektBulkImportPanel
+          currentUser={currentUser}
+          onClose={() => setBulkImportOpen(false)}
+          onImported={() => setProjektek(loadProjektek())}
         />
       )}
     </div>
